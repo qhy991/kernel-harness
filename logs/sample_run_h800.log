@@ -1,0 +1,50 @@
+# GPU: NVIDIA H800  Cap: (9, 0)  torch=2.5.1+cu124  cuda=12.4
+
+
+### linear ########################################################################################################################################
+# GPU: NVIDIA H800  Cap: (9, 0)  torch=2.5.1+cu124  cuda=12.4
+#--------------------------------------------------------------------------------------------------------------------------------------------
+   1 | Q_a (fused w/ KV_a)                | prefill  | F.linear bf16+fp8                | [16384,6144]x[6144,2624]                     |     762.37 us | TFLOPS_bf16=692.94 GB/s=419.16 fp8_TFLOPS=1190.99
+  14 | Q_a (fused w/ KV_a)                | decode   | F.linear bf16+fp8                | [16,6144]x[6144,2624]                        |      28.15 us | TFLOPS_bf16=18.33 GB/s=1155.39 fp8_TFLOPS=14.95
+   2 | Q_b                                | prefill  | F.linear bf16+fp8                | [16384,2048]x[2048,2048]                     |     205.33 us | TFLOPS_bf16=669.37 GB/s=694.54 fp8_TFLOPS=955.6
+  15 | Q_b                                | decode   | F.linear bf16+fp8                | [16,2048]x[2048,16384]                       |      49.94 us | TFLOPS_bf16=21.5 GB/s=1355.52 fp8_TFLOPS=29.05
+   4 | KV_b                               | prefill  | F.linear bf16+fp8                | [16384,512]x[512,3584]                       |     113.74 us | TFLOPS_bf16=528.65 GB/s=1212.3 fp8_TFLOPS=535.3
+   5 | O_proj                             | prefill  | F.linear bf16+fp8                | [16384,2048]x[2048,6144]                     |     554.85 us | TFLOPS_bf16=743.12 GB/s=529.16 fp8_TFLOPS=1123.08
+  19 | O_proj                             | decode   | F.linear bf16+fp8                | [16,16384]x[16384,6144]                      |      88.90 us | TFLOPS_bf16=36.23 GB/s=2272.62 fp8_TFLOPS=48.22
+   6 | Index_Q                            | prefill  | F.linear bf16+fp8                | [16384,6144]x[6144,4096]                     |    1133.59 us | TFLOPS_bf16=727.46 GB/s=340.4 fp8_TFLOPS=1245.33
+  20 | Index_Q                            | decode   | F.linear bf16+fp8                | [16,6144]x[6144,4096]                        |      43.59 us | TFLOPS_bf16=18.47 GB/s=1162.09 fp8_TFLOPS=23.21
+   7 | Index_K                            | prefill  | F.linear bf16+fp8                | [16384,6144]x[6144,128]                      |      95.56 us | TFLOPS_bf16=269.67 GB/s=2167.18 fp8_TFLOPS=403.99
+  21 | Index_K                            | decode   | F.linear bf16+fp8                | [16,6144]x[6144,128]                         |      20.92 us | TFLOPS_bf16=1.2 GB/s=84.79 fp8_TFLOPS=0.75
+   9 | Dense GateUp                       | prefill  | F.linear bf16+fp8                | [16384,6144]x[6144,6144]                     |    1671.98 us | TFLOPS_bf16=739.81 GB/s=285.98 fp8_TFLOPS=1287.47
+  10 | Dense Down                         | prefill  | F.linear bf16+fp8                | [16384,1536]x[1536,6144]                     |     430.74 us | TFLOPS_bf16=717.92 GB/s=628.06 fp8_TFLOPS=1035.15
+  11 | MoE Router                         | prefill  | F.linear bf16+fp8                | [16384,6144]x[6144,256]                      |     102.11 us | TFLOPS_bf16=504.73 GB/s=2084.54 fp8_TFLOPS=720.98
+  23 | MoE Router                         | decode   | F.linear bf16+fp8                | [16,6144]x[6144,256]                         |      21.07 us | TFLOPS_bf16=2.39 GB/s=159.05 fp8_TFLOPS=1.5
+
+### grouped #######################################################################################################################################
+# GPU: NVIDIA H800  Cap: (9, 0)  torch=2.5.1+cu124  cuda=12.4
+#--------------------------------------------------------------------------------------------------------------------------------------------
+  12 | MoE GateUp GroupGEMM               | prefill  | torch.bmm bf16 (proxy)           | 256x[512,6144]x[6144,512]                    |    1264.26 us | TFLOPS_bf16=652.27
+  13 | MoE Down GroupGEMM                 | prefill  | torch.bmm bf16 (proxy)           | 256x[512,256]x[256,6144]                     |    1008.73 us | TFLOPS_bf16=408.75
+  24 | MoE GateUp GroupGEMM               | decode   | torch.bmm bf16 (proxy)           | 8x[16,6144]x[6144,4096]                      |     156.38 us | TFLOPS_bf16=41.2
+  25 | MoE Down GroupGEMM                 | decode   | torch.bmm bf16 (proxy)           | 8x[16,2048]x[2048,6144]                      |      87.18 us | TFLOPS_bf16=36.95
+
+### bmm ###########################################################################################################################################
+# GPU: NVIDIA H800  Cap: (9, 0)  torch=2.5.1+cu124  cuda=12.4
+#--------------------------------------------------------------------------------------------------------------------------------------------
+  17 | q_nope absorb BMM                  | decode   | torch.bmm bf16 (ACTUAL path)     | [16,64,192]x[64,192,512]                     |      18.72 us | TFLOPS_bf16=10.75
+  18 | v absorb BMM                       | decode   | torch.bmm bf16 (ACTUAL path)     | [16,64,512]x[64,512,256]                     |      19.25 us | TFLOPS_bf16=13.95
+
+### indexer #######################################################################################################################################
+# GPU: NVIDIA H800  Cap: (9, 0)  torch=2.5.1+cu124  cuda=12.4
+#--------------------------------------------------------------------------------------------------------------------------------------------
+   8 | Index_Score (ragged prefill)       | prefill  | torch fp16 (naive; real kernel m | Q:[16384,32,128] K:[16384,128] topk=2048     |   56418.26 us | score_us=53720.33 topk_us=2697.93 TFLOPS_fp16=40.93
+  22 | Index_Score (paged decode)         | decode   | torch fp16 (naive; real kernel m | Q:[16,32,128] K:[2048,128] topk=2048         |     111.96 us | score_us=75.05 topk_us=36.91 TFLOPS_fp16=3.58
+
+### attention #####################################################################################################################################
+# GPU: NVIDIA H800  Cap: (9, 0)  torch=2.5.1+cu124  cuda=12.4
+#--------------------------------------------------------------------------------------------------------------------------------------------
+  27 | FlashAttn causal MHA (prefill)     | prefill  | flash_attn 2.x (proxy for FA3)   | Q:[1,8,16384,256] causal=True                |    3646.98 us | TFLOPS_fp16=301.49
+  26 | Flash Decoding MLA sparse MQA (spa | decode   | torch SDPA fp16 (proxy for flash | Q:[1,64,16,512] KV[1,1,8192,512] topk=2048   |     451.79 us | TFLOPS_fp16=9.51 dense_us=801.13
+
+# JSON: logs/results.json
+# CSV:  logs/results.csv

@@ -1,0 +1,87 @@
+[
+  {
+    "op_id": 26,
+    "op": "Flash Decoding MQA (dense proxy)",
+    "phase": "decode",
+    "backend": "torch SDPA fp16 (dense)",
+    "shape": "Q:[1,64,16,512] KV[1,1,2048,512]-MQA",
+    "latency_us": 220.58,
+    "TFLOPS_fp16": 19.47,
+    "note": "dense over ALL 2048 tokens; actual sglang uses sparse topk=2048 which happens to = T_kv here"
+  },
+  {
+    "op_id": 26,
+    "op": "Flash Decoding MQA (flashinfer MLA)",
+    "phase": "decode",
+    "backend": "flashinfer.BatchMLA",
+    "shape": "skipped",
+    "latency_us": -1,
+    "note": "requires paged KV cache setup"
+  },
+  {
+    "op_id": 26,
+    "op": "Flash Decoding MQA sparse-topk (T_kv_full=4096)",
+    "phase": "decode",
+    "backend": "SDPA + gather (proxy for flashmla_sparse)",
+    "shape": "Q:[1,64,16,512] topk=2048/T_kv_full=4096",
+    "latency_us": 456.31,
+    "TFLOPS_fp16": 9.41,
+    "note": "includes gather; real kernel is fused"
+  },
+  {
+    "op_id": 26,
+    "op": "Flash Decoding MQA sparse-topk (T_kv_full=8192)",
+    "phase": "decode",
+    "backend": "SDPA + gather (proxy for flashmla_sparse)",
+    "shape": "Q:[1,64,16,512] topk=2048/T_kv_full=8192",
+    "latency_us": 456.92,
+    "TFLOPS_fp16": 9.4,
+    "note": "includes gather; real kernel is fused"
+  },
+  {
+    "op_id": 26,
+    "op": "Flash Decoding MQA sparse-topk (T_kv_full=32768)",
+    "phase": "decode",
+    "backend": "SDPA + gather (proxy for flashmla_sparse)",
+    "shape": "Q:[1,64,16,512] topk=2048/T_kv_full=32768",
+    "latency_us": 458.51,
+    "TFLOPS_fp16": 9.37,
+    "note": "includes gather; real kernel is fused"
+  },
+  {
+    "op_id": 1,
+    "op": "Q_a (fused) fp8",
+    "phase": "both",
+    "backend": "torch._scaled_mm fp8_e4m3 (proxy)",
+    "shape": "[16384,6144]x[6144,2624]",
+    "latency_us": 439.98,
+    "TFLOPS_fp8": 1200.7
+  },
+  {
+    "op_id": 14,
+    "op": "Q_a (fused) fp8",
+    "phase": "both",
+    "backend": "torch._scaled_mm fp8_e4m3 (proxy)",
+    "shape": "[16,6144]x[6144,2624]",
+    "latency_us": 34.31,
+    "TFLOPS_fp8": 15.04
+  },
+  {
+    "op_id": 5,
+    "op": "O_proj fp8",
+    "phase": "both",
+    "backend": "torch._scaled_mm fp8_e4m3 (proxy)",
+    "shape": "[16384,2048]x[2048,6144]",
+    "latency_us": 364.16,
+    "TFLOPS_fp8": 1132.23
+  },
+  {
+    "op_id": 9,
+    "op": "Dense GateUp fp8",
+    "phase": "both",
+    "backend": "torch._scaled_mm fp8_e4m3 (proxy)",
+    "shape": "[16384,6144]x[6144,6144]",
+    "latency_us": 954.32,
+    "TFLOPS_fp8": 1296.16
+  }
+]

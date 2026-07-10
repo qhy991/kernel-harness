@@ -1,0 +1,12 @@
+# Optional: for the sglang-native benchmark scripts. Install matching your CUDA toolkit.
+# Baseline (works standalone, proxy measurements only):
+torch>=2.3
+# For attention op 27 (prefill FlashAttn causal MHA):
+flash-attn>=2.5
+# For attention proxies and future flashinfer.MLA calls:
+flashinfer-python>=0.2
+
+# Real sglang-path measurements need these — install alongside a matching sglang checkout:
+# sgl-kernel   >= 0.3   (block-fp8 GEMM, BMM fp8, flash_attn, flash_mla_sparse_fwd, dsv3_fused_a_gemm)
+# deep_gemm    >= 2.0   (fp8_gemm_nt, m_grouped_fp8_gemm_nt_contiguous/masked, fp8_mqa_logits, fp8_paged_mqa_logits)
+# triton       >= 3.0   (fused_moe, DSA topk transforms, sparse indexer fusion)

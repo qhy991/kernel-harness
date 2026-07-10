@@ -1,0 +1,16 @@
+*.pyc
+__pycache__/
+*.egg-info/
+.venv/
+venv/
+.env
+.DS_Store
+.pytest_cache/
+.mypy_cache/
+
+# Local run outputs — keep the reference logs in logs/ under version control
+# but exclude fresh per-machine outputs
+logs/local_*
+logs/*.tmp.*
+logs/results.json
+logs/results.csv

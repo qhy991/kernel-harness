@@ -1,0 +1,31 @@
+op_id,operator,phase,shape,measured_backend,latency_us,perf_metric,perf_value,notes
+1,Q_a (fused w/ KV_a),prefill,"[16384,6144]x[6144,2624]",F.linear bf16 (proxy for FP8 sglang path),759.22,TFLOPS_bf16,695.82,H800 bf16 peak ~989 TFLOPS; 70% of peak. FP8 same shape via torch._scaled_mm: 439.98us / 1200.70 TFLOPS (proxy for deep_gemm.fp8_gemm_nt). Actual sglang path also has dsv3_fused_a_gemm JIT for small M.
+2,Q_b,prefill,"[16384,2048]x[2048,2048]",F.linear bf16 (proxy for FP8),205.39,TFLOPS_bf16,669.18,"67% of bf16 peak. Real path uses block-fp8 -> ~1.5-2x speedup."
+3,KV_a (shared w/ Q_a),prefill,-,same GEMM as op 1 (sliced),-,-,-,No standalone kernel — sliced from op 1's fused_qkv_a_proj output.
+4,KV_b,prefill,"[16384,512]x[512,3584]",F.linear bf16,113.80,TFLOPS_bf16,528.39,53% peak; K is small (512). MXFP4+FP8 has fused_gemm_afp4wfp4_split_cat fast path.
+5,O_proj,prefill,"[16384,2048]x[2048,6144]",F.linear bf16,552.37,TFLOPS_bf16,746.45,75% of bf16 peak. FP8: 364.16us / 1132.23 TFLOPS (57% of fp8 peak).
+6,Index_Q,prefill,"[16384,6144]x[6144,4096]",F.linear bf16 (Linear part only; fused RoPE+quant kernel separate),1127.94,TFLOPS_bf16,731.10,74% peak on the Linear alone. Real path adds fused_q_indexer_rope_first_quant (JIT CUDA).
+7,Index_K,prefill,"[16384,6144]x[6144,128]",F.linear bf16 (Linear only),96.18,TFLOPS_bf16,267.94,N=128 too small; ~27% peak. Real path fuses norm+RoPE+FP8-quant+cache-store into fused_k_indexer_norm_rope_store.
+8,Index_Score,prefill,"Q:[16384,32,128] x K:[16384,128] topk=2048",torch einsum + relu + sum_h + topk (naive proxy),56277.58,TFLOPS_fp16,41.05,"Score naive: 53566us; topk: 2711us. Real deep_gemm.fp8_mqa_logits should be 10-50x faster (fused + FP8). Naive gives you a WORST-CASE reference — measured perf here is meaningless for the real kernel."
+9,Dense GateUp,prefill,"[16384,6144]x[6144,6144]",F.linear bf16,1665.65,TFLOPS_bf16,742.63,75% peak. FP8: 954.32us / 1296.16 TFLOPS (65% fp8 peak). Real path: deep_gemm.fp8_gemm_nt / CUTLASS.
+10,Dense Down,prefill,"[16384,1536]x[1536,6144]",F.linear bf16,424.54,TFLOPS_bf16,728.40,74% peak. V4 clamped-swiglu fast path fuses silu+quant+GEMM.
+11,MoE Router,prefill,"[16384,6144]x[6144,256]",F.linear bf16,104.46,TFLOPS_bf16,493.41,N=256 small; 50% peak. Real path: linear_bf16_fp32 (bf16->fp32 out) or JIT dsv3_router_gemm.
+12,MoE GateUp GroupGEMM,prefill,"256x[512,6144]x[6144,512]",torch.bmm bf16 (proxy for DeepGEMM contiguous grouped),1265.94,TFLOPS_bf16,651.40,65% peak. Real deep_gemm.m_grouped_fp8_gemm_nt_contiguous should be ~1.5-2x faster (FP8 + grouped efficiency).
+13,MoE Down GroupGEMM,prefill,"256x[512,256]x[256,6144]",torch.bmm bf16 (proxy),1019.51,TFLOPS_bf16,404.42,41% peak; K=256 is small. Real path fuses silu_and_mul_contig_post_quant between the two GEMMs.
+14,Q_a (fused w/ KV_a),decode,"[16,6144]x[6144,2624]",F.linear bf16 (proxy),27.95,GB/s,1163.75,Memory-bound. H800 HBM peak ~3.35 TB/s so 35% BW. FP8: 34.31us / 15.04 TFLOPS (BW-bound). Real sglang small-M path -> dsv3_fused_a_gemm JIT kernel.
+15,Q_b,decode,"[16,2048]x[2048,16384]",F.linear bf16,51.54,GB/s,1313.64,39% BW. K=2048 small M=16 -> BW bound.
+16,KV_a (shared w/ Q_a),decode,-,same as op 14,-,-,-,Sliced from op 14.
+17,q_nope absorb BMM,decode,"[16,64,192]x[64,192,512]",torch.bmm bf16 (ACTUAL sglang path),18.48,TFLOPS_bf16,10.89,"Small per-head BMM, latency-bound. This IS the real path; only FP8 variants differ."
+18,v absorb BMM,decode,"[16,64,512]x[64,512,256]",torch.bmm bf16 (ACTUAL sglang path),18.80,TFLOPS_bf16,14.28,Same as op 17. Very small; kernel launch overhead dominates.
+19,O_proj,decode,"[16,16384]x[16384,6144]",F.linear bf16,92.02,GB/s,2195.69,66% BW.
+20,Index_Q,decode,"[16,6144]x[6144,4096]",F.linear bf16 (Linear only),42.16,GB/s,1201.62,36% BW.
+21,Index_K,decode,"[16,6144]x[6144,128]",F.linear bf16 (Linear only),21.16,GB/s,83.82,N=128 tiny; kernel-launch-bound.
+22,Index_Score,decode,"Q:[16,32,128] x K_cache:[2048,128] topk=2048",torch einsum + relu + sum_h + topk (naive proxy),103.87,TFLOPS_fp16,4.10,Score naive: 65.54us; topk: 38.34us. Real deep_gemm.fp8_paged_mqa_logits + topk_transform_512_v2 should be 5-20x faster.
+23,MoE Router,decode,"[16,6144]x[6144,256]",F.linear bf16,22.24,GB/s,150.63,Tiny; latency-bound. Real path -> _jit_dsv3_router_gemm which fuses bias-add.
+24,MoE GateUp GroupGEMM,decode,"8x[16,6144]x[6144,4096]",torch.bmm bf16 (proxy for DeepGEMM masked),153.81,TFLOPS_bf16,41.89,BW-bound (8 experts x 512MB weights). Real deep_gemm.fp8_m_grouped_gemm_nt_masked halves weight BW (FP8).
+25,MoE Down GroupGEMM,decode,"8x[16,2048]x[2048,6144]",torch.bmm bf16 (proxy),86.39,TFLOPS_bf16,37.29,Similar to op 24.
+26a,Flash Decoding MQA (dense),decode,"Q:[1,64,16,512] KV[1,1,2048,512]",torch SDPA fp16 dense,220.58,TFLOPS_fp16,19.47,Dense over all 2048 KV tokens. Real flashmla_sparse skips non-topk tokens.
+26b,Flash Decoding MQA sparse-topk (T_kv_full=4096),decode,"Q:[1,64,16,512] topk=2048",SDPA + gather (proxy for flashmla_sparse),456.31,TFLOPS_fp16,9.41,Gather + SDPA. Includes gather cost; real fused kernel is faster.
+26c,Flash Decoding MQA sparse-topk (T_kv_full=8192),decode,"Q:[1,64,16,512] topk=2048",SDPA + gather,456.92,TFLOPS_fp16,9.40,Cost dominated by attention over topk=2048; T_kv_full barely matters (gather cost O(topk)).
+26d,Flash Decoding MQA sparse-topk (T_kv_full=32768),decode,"Q:[1,64,16,512] topk=2048",SDPA + gather,458.51,TFLOPS_fp16,9.37,Same — sparse cost is O(topk).
+27,FlashAttn causal MHA,prefill,"Q:[1,8,16384,256] K/V:[1,8,16384,256] causal",flash_attn 2.7.4 fp16 (proxy for FA3),3677.76,TFLOPS_fp16_causal,298.96,~30% peak for FA2. FA3 on H100/H800 typically 1.5-2x faster; real sglang uses FA3.

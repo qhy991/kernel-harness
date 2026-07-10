@@ -1,0 +1,246 @@
+[
+  {
+    "op_id": 1,
+    "op": "Q_a (fused with KV_a)",
+    "phase": "prefill",
+    "backend": "F.linear bf16 (proxy)",
+    "shape": "[16384,6144]x[6144,2624]",
+    "latency_us": 759.22,
+    "TFLOPS_bf16": 695.82,
+    "GB/s": 420.9
+  },
+  {
+    "op_id": 14,
+    "op": "Q_a (fused with KV_a)",
+    "phase": "decode",
+    "backend": "F.linear bf16 (proxy)",
+    "shape": "[16,6144]x[6144,2624]",
+    "latency_us": 27.95,
+    "TFLOPS_bf16": 18.46,
+    "GB/s": 1163.75
+  },
+  {
+    "op_id": 2,
+    "op": "Q_b",
+    "phase": "prefill",
+    "backend": "F.linear bf16 (proxy)",
+    "shape": "[16384,2048]x[2048,2048]",
+    "latency_us": 205.39,
+    "TFLOPS_bf16": 669.18,
+    "GB/s": 694.34
+  },
+  {
+    "op_id": 15,
+    "op": "Q_b",
+    "phase": "decode",
+    "backend": "F.linear bf16 (proxy)",
+    "shape": "[16,2048]x[2048,16384]",
+    "latency_us": 51.54,
+    "TFLOPS_bf16": 20.84,
+    "GB/s": 1313.64
+  },
+  {
+    "op_id": 4,
+    "op": "KV_b",
+    "phase": "prefill",
+    "backend": "F.linear bf16 (proxy)",
+    "shape": "[16384,512]x[512,3584]",
+    "latency_us": 113.8,
+    "TFLOPS_bf16": 528.39,
+    "GB/s": 1211.69
+  },
+  {
+    "op_id": 5,
+    "op": "O_proj",
+    "phase": "prefill",
+    "backend": "F.linear bf16 (proxy)",
+    "shape": "[16384,2048]x[2048,6144]",
+    "latency_us": 552.37,
+    "TFLOPS_bf16": 746.45,
+    "GB/s": 531.53
+  },
+  {
+    "op_id": 19,
+    "op": "O_proj",
+    "phase": "decode",
+    "backend": "F.linear bf16 (proxy)",
+    "shape": "[16,16384]x[16384,6144]",
+    "latency_us": 92.02,
+    "TFLOPS_bf16": 35.01,
+    "GB/s": 2195.69
+  },
+  {
+    "op_id": 6,
+    "op": "Index_Q",
+    "phase": "prefill",
+    "backend": "F.linear bf16 (proxy)",
+    "shape": "[16384,6144]x[6144,4096]",
+    "latency_us": 1127.94,
+    "TFLOPS_bf16": 731.1,
+    "GB/s": 342.11
+  },
+  {
+    "op_id": 20,
+    "op": "Index_Q",
+    "phase": "decode",
+    "backend": "F.linear bf16 (proxy)",
+    "shape": "[16,6144]x[6144,4096]",
+    "latency_us": 42.16,
+    "TFLOPS_bf16": 19.1,
+    "GB/s": 1201.62
+  },
+  {
+    "op_id": 7,
+    "op": "Index_K",
+    "phase": "prefill",
+    "backend": "F.linear bf16 (proxy)",
+    "shape": "[16384,6144]x[6144,128]",
+    "latency_us": 96.18,
+    "TFLOPS_bf16": 267.94,
+    "GB/s": 2153.21
+  },
+  {
+    "op_id": 21,
+    "op": "Index_K",
+    "phase": "decode",
+    "backend": "F.linear bf16 (proxy)",
+    "shape": "[16,6144]x[6144,128]",
+    "latency_us": 21.16,
+    "TFLOPS_bf16": 1.19,
+    "GB/s": 83.82
+  },
+  {
+    "op_id": 9,
+    "op": "Dense GateUp",
+    "phase": "prefill",
+    "backend": "F.linear bf16 (proxy)",
+    "shape": "[16384,6144]x[6144,6144]",
+    "latency_us": 1665.65,
+    "TFLOPS_bf16": 742.63,
+    "GB/s": 287.07
+  },
+  {
+    "op_id": 10,
+    "op": "Dense Down",
+    "phase": "prefill",
+    "backend": "F.linear bf16 (proxy)",
+    "shape": "[16384,1536]x[1536,6144]",
+    "latency_us": 424.54,
+    "TFLOPS_bf16": 728.4,
+    "GB/s": 637.23
+  },
+  {
+    "op_id": 11,
+    "op": "MoE Router",
+    "phase": "prefill",
+    "backend": "F.linear bf16 (proxy)",
+    "shape": "[16384,6144]x[6144,256]",
+    "latency_us": 104.46,
+    "TFLOPS_bf16": 493.41,
+    "GB/s": 2037.81
+  },
+  {
+    "op_id": 23,
+    "op": "MoE Router",
+    "phase": "decode",
+    "backend": "F.linear bf16 (proxy)",
+    "shape": "[16,6144]x[6144,256]",
+    "latency_us": 22.24,
+    "TFLOPS_bf16": 2.26,
+    "GB/s": 150.63
+  },
+  {
+    "op_id": 12,
+    "op": "MoE GateUp GroupGEMM",
+    "phase": "prefill",
+    "backend": "torch.bmm bf16 (proxy)",
+    "shape": "256x[512,6144]x[6144,512]",
+    "latency_us": 1265.94,
+    "TFLOPS_bf16": 651.4
+  },
+  {
+    "op_id": 13,
+    "op": "MoE Down GroupGEMM",
+    "phase": "prefill",
+    "backend": "torch.bmm bf16 (proxy)",
+    "shape": "256x[512,256]x[256,6144]",
+    "latency_us": 1019.51,
+    "TFLOPS_bf16": 404.42
+  },
+  {
+    "op_id": 24,
+    "op": "MoE GateUp GroupGEMM",
+    "phase": "decode",
+    "backend": "torch.bmm bf16 (proxy)",
+    "shape": "8x[16,6144]x[6144,4096]",
+    "latency_us": 153.81,
+    "TFLOPS_bf16": 41.89
+  },
+  {
+    "op_id": 25,
+    "op": "MoE Down GroupGEMM",
+    "phase": "decode",
+    "backend": "torch.bmm bf16 (proxy)",
+    "shape": "8x[16,2048]x[2048,6144]",
+    "latency_us": 86.39,
+    "TFLOPS_bf16": 37.29
+  },
+  {
+    "op_id": 17,
+    "op": "q_nope absorb BMM",
+    "phase": "decode",
+    "backend": "torch.bmm bf16 (actual path)",
+    "shape": "[16,64,192]x[64,192,512]",
+    "latency_us": 18.48,
+    "TFLOPS_bf16": 10.89
+  },
+  {
+    "op_id": 18,
+    "op": "v absorb BMM",
+    "phase": "decode",
+    "backend": "torch.bmm bf16 (actual path)",
+    "shape": "[16,64,512]x[64,512,256]",
+    "latency_us": 18.8,
+    "TFLOPS_bf16": 14.28
+  },
+  {
+    "op_id": 27,
+    "op": "FlashAttn causal MHA",
+    "phase": "prefill",
+    "backend": "flash_attn 2.7.4 (proxy for FA3)",
+    "shape": "Q:[1,8,16384,256] causal",
+    "latency_us": 3677.76,
+    "TFLOPS_fp16_causal": 298.96
+  },
+  {
+    "op_id": 26,
+    "op": "Flash Decoding MQA (dense proxy)",
+    "phase": "decode",
+    "backend": "flash_attn_with_kvcache",
+    "shape": "MQA[1,64,16,512]",
+    "latency_us": -1,
+    "error": "RuntimeError: FlashAttention forward only supports head dimension at most "
+  },
+  {
+    "op_id": 8,
+    "op": "Index_Score (Q@K + relu*w + sum_h)",
+    "phase": "prefill",
+    "backend": "torch fp16 (proxy for deep_gemm.fp8_mqa_logits)",
+    "shape": "Q:[16384,32,128] K:[16384,128] topk=2048",
+    "latency_us": 56277.58,
+    "score_us": 53566.2,
+    "topk_us": 2711.38,
+    "TFLOPS_fp16": 41.05
+  },
+  {
+    "op_id": 22,
+    "op": "Index_Score (Q@K + relu*w + sum_h)",
+    "phase": "decode",
+    "backend": "torch fp16 (proxy for deep_gemm.fp8_mqa_logits)",
+    "shape": "Q:[16,32,128] K:[2048,128] topk=2048",
+    "latency_us": 103.87,
+    "score_us": 65.54,
+    "topk_us": 38.34,
+    "TFLOPS_fp16": 4.1
+  }
+]
