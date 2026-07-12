@@ -1,0 +1,58 @@
+[
+  {
+    "name": "Indexer Q FP8 act-quant",
+    "phase": "prefill",
+    "backend": "dsa.act_quant (Triton, block=128)",
+    "shape": "[16384,32x128]",
+    "us": 83.74
+  },
+  {
+    "name": "Indexer K FP8 act-quant",
+    "phase": "prefill",
+    "backend": "dsa.act_quant (Triton, block=128)",
+    "shape": "[16384,128] (MQA index-K)",
+    "us": 50.26
+  },
+  {
+    "name": "Indexer Hadamard rotate",
+    "phase": "prefill",
+    "backend": "dsa_indexer.rotate_activation (hadamard_transform)",
+    "shape": "[16384,128]",
+    "us": 57.67
+  },
+  {
+    "name": "Index K-cache FP8 quant",
+    "phase": "prefill",
+    "backend": "dsa.quantize_k_cache_separate (tiled fp8)",
+    "shape": "nope[16384,512] rope[16384,64]",
+    "us": 140.03
+  },
+  {
+    "name": "Indexer Q FP8 act-quant",
+    "phase": "decode",
+    "backend": "dsa.act_quant (Triton, block=128)",
+    "shape": "[16,32x128]",
+    "us": 49.45
+  },
+  {
+    "name": "Indexer K FP8 act-quant",
+    "phase": "decode",
+    "backend": "dsa.act_quant (Triton, block=128)",
+    "shape": "[16,128] (MQA index-K)",
+    "us": 49.0
+  },
+  {
+    "name": "Indexer Hadamard rotate",
+    "phase": "decode",
+    "backend": "dsa_indexer.rotate_activation (hadamard_transform)",
+    "shape": "[16,128]",
+    "us": 49.2
+  },
+  {
+    "name": "Index K-cache FP8 quant",
+    "phase": "decode",
+    "backend": "dsa.quantize_k_cache_separate (tiled fp8)",
+    "shape": "nope[16,512] rope[16,64]",
+    "us": 49.26
+  }
+]

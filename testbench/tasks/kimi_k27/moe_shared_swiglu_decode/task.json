@@ -1,0 +1,31 @@
+{
+  "name": "moe_shared_swiglu_decode",
+  "model": "kimi_k27",
+  "op": "MoE Shared SwiGLU",
+  "phase": "decode",
+  "family": "swiglu",
+  "goal": "Optimize solution.py against SGLang's sgl_kernel.silu_and_mul baseline for MoE Shared SwiGLU decode; beat every token workload and match SGLang output within the declared tolerance.",
+  "I2": 512,
+  "sweep": [
+    1,
+    2,
+    4,
+    8,
+    16,
+    32,
+    64,
+    128,
+    256
+  ],
+  "backend": "sgl_kernel silu_and_mul (blackwell)",
+  "tolerance": {
+    "max_atol": 0.02,
+    "max_rtol": 0.01,
+    "required_matched_ratio": 0.999
+  },
+  "baseline": {
+    "source": "live",
+    "measure": "reference.py timed by the harness CUPTI runtime (median device-kernel us)",
+    "denominator": "the live per-shape reference latency (see .baseline_cache.json)"
+  }
+}

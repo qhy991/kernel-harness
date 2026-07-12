@@ -1,0 +1,164 @@
+[
+  {
+    "op_id": -1,
+    "name": "Q_a+KV_a fused",
+    "phase": "prefill",
+    "backend": "deep_gemm w8a8_block_fp8 (blackwell path)",
+    "shape": "[16384,7168]x[7168,2112] aligned(7168,2176)",
+    "us": 436.81,
+    "TFLOPS": 1170.07
+  },
+  {
+    "op_id": -1,
+    "name": "Q_a+KV_a fused",
+    "phase": "decode",
+    "backend": "deep_gemm w8a8_block_fp8 (blackwell path)",
+    "shape": "[16,7168]x[7168,2112] aligned(7168,2176)",
+    "us": 56.6,
+    "TFLOPS": 8.82
+  },
+  {
+    "op_id": -1,
+    "name": "Q_b",
+    "phase": "prefill",
+    "backend": "deep_gemm w8a8_block_fp8 (blackwell path)",
+    "shape": "[16384,1536]x[1536,1536] aligned(1536,1536)",
+    "us": 77.83,
+    "TFLOPS": 993.29
+  },
+  {
+    "op_id": -1,
+    "name": "Q_b",
+    "phase": "decode",
+    "backend": "deep_gemm w8a8_block_fp8 (blackwell path)",
+    "shape": "[16,1536]x[1536,12288] aligned(1536,12288)",
+    "us": 52.52,
+    "TFLOPS": 11.5
+  },
+  {
+    "op_id": -1,
+    "name": "KV_b",
+    "phase": "prefill",
+    "backend": "deep_gemm w8a8_block_fp8 (blackwell path)",
+    "shape": "[16384,512]x[512,2048] aligned(512,2048)",
+    "us": 73.39,
+    "TFLOPS": 468.19
+  },
+  {
+    "op_id": -1,
+    "name": "O_proj",
+    "phase": "prefill",
+    "backend": "deep_gemm w8a8_block_fp8 (blackwell path)",
+    "shape": "[16384,1024]x[1024,7168] aligned(1024,7168)",
+    "us": 264.18,
+    "TFLOPS": 910.44
+  },
+  {
+    "op_id": -1,
+    "name": "O_proj",
+    "phase": "decode",
+    "backend": "deep_gemm w8a8_block_fp8 (blackwell path)",
+    "shape": "[16,8192]x[8192,7168] aligned(8192,7168)",
+    "us": 57.57,
+    "TFLOPS": 32.64
+  },
+  {
+    "name": "Q_a+KV_a fused (dsv3_fused_a)",
+    "phase": "decode",
+    "backend": "sgl_kernel.dsv3_fused_a_gemm (CUDA, bf16)",
+    "shape": "[16,7168]x[7168,2112]",
+    "us": 54.2,
+    "TFLOPS": 8.94
+  },
+  {
+    "name": "MoE Router",
+    "phase": "prefill",
+    "backend": "F.linear / torch.mm (cuBLAS bf16)",
+    "shape": "[16384,7168]x[7168,384]",
+    "us": 173.43,
+    "TFLOPS": 520.05
+  },
+  {
+    "name": "MoE Router",
+    "phase": "decode",
+    "backend": "sgl_kernel.dsv3_router_gemm (CUDA JIT, out fp32)",
+    "shape": "[16,7168]x[7168,384]",
+    "us": 57.77,
+    "TFLOPS": 1.52
+  },
+  {
+    "op_id": -1,
+    "name": "MoE Down GroupGEMM",
+    "phase": "prefill",
+    "backend": "deep_gemm.m_grouped_fp8_gemm_nt_contiguous",
+    "shape": "384x[512,256]x[256,7168]",
+    "us": 2440.95,
+    "TFLOPS": 295.6
+  },
+  {
+    "name": "MoE GateUp GroupGEMM",
+    "phase": "decode",
+    "backend": "deep_gemm.fp8_m_grouped_gemm_nt_masked",
+    "shape": "8x[16,7168]x[7168,2048] (masked, padded M=128)",
+    "us": 73.53,
+    "TFLOPS": 51.11
+  },
+  {
+    "name": "MoE Down GroupGEMM",
+    "phase": "decode",
+    "backend": "deep_gemm.fp8_m_grouped_gemm_nt_masked",
+    "shape": "8x[16,1024]x[1024,7168] (masked, padded M=128)",
+    "us": 60.97,
+    "TFLOPS": 30.82
+  },
+  {
+    "op_id": -1,
+    "name": "KV_b absorb BMM",
+    "phase": "decode",
+    "backend": "torch.bmm bf16",
+    "shape": "[16,8,128]x[8,128,512]",
+    "us": 49.58,
+    "TFLOPS": 0.34
+  },
+  {
+    "op_id": -1,
+    "name": "V absorb BMM",
+    "phase": "decode",
+    "backend": "torch.bmm bf16",
+    "shape": "[16,8,512]x[8,512,128]",
+    "us": 50.05,
+    "TFLOPS": 0.34
+  },
+  {
+    "name": "MLA Attention core (seq=4096)",
+    "phase": "prefill",
+    "backend": "flashinfer.single_prefill_with_kv_cache (ragged, causal)",
+    "shape": "Q/K:[4096,64,192] V:[4096,64,128] seqlen=4096",
+    "us": 2256.27,
+    "TFLOPS": 152.29
+  },
+  {
+    "name": "MLA Attention decode (seq=4096)",
+    "phase": "decode",
+    "backend": "flashinfer.trtllm_batch_decode_with_kv_cache_mla (sm100)",
+    "shape": "Q:[16,1,64,576] KV:paged(4096,576) v=512",
+    "us": 71.33,
+    "TFLOPS": 127.96
+  },
+  {
+    "name": "MLA Attention core (seq=8192)",
+    "phase": "prefill",
+    "backend": "flashinfer.single_prefill_with_kv_cache (ragged, causal)",
+    "shape": "Q/K:[8192,64,192] V:[8192,64,128] seqlen=8192",
+    "us": 8425.61,
+    "TFLOPS": 163.12
+  },
+  {
+    "name": "MLA Attention decode (seq=8192)",
+    "phase": "decode",
+    "backend": "flashinfer.trtllm_batch_decode_with_kv_cache_mla (sm100)",
+    "shape": "Q:[16,1,64,576] KV:paged(8192,576) v=512",
+    "us": 146.35,
+    "TFLOPS": 124.73
+  }
+]

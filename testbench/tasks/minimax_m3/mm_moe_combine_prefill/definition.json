@@ -1,0 +1,48 @@
+{
+    "name": "minimax_m3_mm_moe_combine_prefill",
+    "hf_id": "MiniMaxAI/MiniMax-M3",
+    "description": "MiniMax-M3 MoE Combine (prefill), sum the top_k=4 expert outputs per token (sgl_kernel.moe_sum, in-place DPS). output[M,6144] = sum(input[M,4,6144], dim=1). INTERFACE-EXACT drop-in. Baseline = sglang production kernel; beat its latency while matching output.",
+    "axes": {
+        "M": {
+            "type": "var",
+            "description": "prefill token count (sweep)"
+        },
+        "top_k": {
+            "type": "const",
+            "value": 4
+        },
+        "H": {
+            "type": "const",
+            "value": 6144,
+            "description": "MiniMax-M3 hidden size"
+        }
+    },
+    "custom_inputs_entrypoint": "get_inputs",
+    "inputs": {
+        "input_tensor": {
+            "shape": [
+                "M",
+                "top_k",
+                "H"
+            ],
+            "dtype": "bfloat16"
+        },
+        "output_tensor": {
+            "shape": [
+                "M",
+                "H"
+            ],
+            "dtype": "bfloat16"
+        }
+    },
+    "outputs": {
+        "combined": {
+            "shape": [
+                "M",
+                "H"
+            ],
+            "dtype": "bfloat16"
+        }
+    },
+    "reference": "\"\"\"MoE Combine \u2014 sglang production baseline (sgl_kernel.moe_sum).\n\nMiniMax-M3 MoE combine (operator 41 in docs/minimax_m3_operators.csv): sums the top_k\nexpert outputs per token into the hidden vector.\n\n  output_tensor[M, H] = sum(input_tensor[M, top_k, H], dim=1)\n\nINTERFACE-EXACT: run(input_tensor, output_tensor) is a verbatim match of the\ndestination-passing moe_sum(input_tensor, output_tensor) \u2014 it writes the sum into\noutput_tensor in place (and also returns it so the harness can score it). reference.py\nIS the correctness oracle AND the latency baseline.\n\ntop_k=4, H=6144 are the MiniMax-M3 MoE config (HF text_config; see\nscripts/bench_minimax_m3.py).\n\"\"\"\n\nimport torch\nfrom sgl_kernel import moe_sum\n\n\ndef get_inputs(axes_and_scalars: dict, device: torch.device) -> dict:\n    M = axes_and_scalars[\"M\"]\n    TOPK = axes_and_scalars[\"top_k\"]\n    H = axes_and_scalars[\"H\"]\n    input_tensor = torch.randn(M, TOPK, H, device=device, dtype=torch.bfloat16)\n    # DPS destination buffer, exactly as sglang passes to moe_sum (overwritten in full).\n    output_tensor = torch.empty(M, H, device=device, dtype=torch.bfloat16)\n    return {\"input_tensor\": input_tensor, \"output_tensor\": output_tensor}\n\n\n@torch.no_grad()\ndef run(input_tensor, output_tensor):\n    moe_sum(input_tensor, output_tensor)\n    return output_tensor\n"
+}

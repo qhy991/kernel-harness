@@ -1,0 +1,118 @@
+{
+    "name": "minimax_m3_mm_dsa_prefill_attn_L2048",
+    "hf_id": "MiniMaxAI/MiniMax-M3",
+    "description": "MiniMax-M3 DSA prefill main sparse attention (prefill, L=2048), flash_prefill_with_gqa_share_sparse (Triton, op33): GQA-share sparse attention over top-16 KV blocks. num_q_heads=64, num_kv_heads=4 (GQA 16:1), head_dim=128, block_size_k=128. B=sweep. Requires amd_add_m3. Baseline = sglang production kernel.",
+    "axes": {
+        "M": {
+            "type": "var",
+            "description": "prefill batch (sweep)"
+        },
+        "L": {
+            "type": "const",
+            "value": 2048,
+            "description": "per-seq context length"
+        },
+        "num_q_heads": {
+            "type": "const",
+            "value": 64
+        },
+        "num_kv_heads": {
+            "type": "const",
+            "value": 4
+        },
+        "head_dim": {
+            "type": "const",
+            "value": 128
+        },
+        "topk_blocks": {
+            "type": "const",
+            "value": 16
+        },
+        "slots": {
+            "type": "expr",
+            "expression": "M*L",
+            "description": "paged KV slots"
+        },
+        "Mp1": {
+            "type": "expr",
+            "expression": "M+1"
+        }
+    },
+    "custom_inputs_entrypoint": "get_inputs",
+    "inputs": {
+        "q": {
+            "shape": [
+                "M",
+                "num_q_heads",
+                "head_dim"
+            ],
+            "dtype": "bfloat16"
+        },
+        "k_cache": {
+            "shape": [
+                "slots",
+                "num_kv_heads",
+                "head_dim"
+            ],
+            "dtype": "bfloat16"
+        },
+        "v_cache": {
+            "shape": [
+                "slots",
+                "num_kv_heads",
+                "head_dim"
+            ],
+            "dtype": "bfloat16"
+        },
+        "req_to_token": {
+            "shape": [
+                "M",
+                "L"
+            ],
+            "dtype": "int32"
+        },
+        "slot_ids": {
+            "shape": [
+                "M"
+            ],
+            "dtype": "int64"
+        },
+        "topk_idx": {
+            "shape": [
+                "num_kv_heads",
+                "M",
+                "topk_blocks"
+            ],
+            "dtype": "int32"
+        },
+        "cu_seqlens": {
+            "shape": [
+                "Mp1"
+            ],
+            "dtype": "int32"
+        },
+        "seq_lens": {
+            "shape": [
+                "M"
+            ],
+            "dtype": "int32"
+        },
+        "prefix_lens": {
+            "shape": [
+                "M"
+            ],
+            "dtype": "int32"
+        }
+    },
+    "outputs": {
+        "o": {
+            "shape": [
+                "M",
+                "num_q_heads",
+                "head_dim"
+            ],
+            "dtype": "bfloat16"
+        }
+    },
+    "reference": "\"\"\"DSA prefill main sparse attention \u2014 sglang baseline (flash_prefill_with_gqa_share_sparse).\n\nMiniMax-M3 DSA prefill main attention (inventory op33, Triton CUDA). GQA-share sparse\nattention over indexer-selected top-k KV blocks. Input contract mirrors the sglang test\ntest_minimax_m3_cuda_config.py::test_m3_prefill_main_sparse exactly (the authoritative\npaged-KV layout): per-batch contiguous paged cache (max_slots = B*L), q one token/seq,\nblock_size_q=1, prefix_lens=L-1. topk_idx is random-but-valid block ids per (kv_head,seq).\n\n  o[B, num_q_heads, head_dim] = sparse_prefill_attn(q, paged k/v_cache, topk_idx)\n\nConfig: num_q_heads=64, num_kv_heads=4 (GQA 16:1), head_dim=128, block_size_k=128,\ntopk_blocks=16. B=sweep, L fixed per task. Runs against the amd_add_m3 sglang build.\nreference.py IS the correctness oracle AND the latency baseline.\n\"\"\"\n\nimport torch\nfrom sglang.srt.layers.attention.minimax_sparse_ops.prefill.topk_sparse import (\n    flash_prefill_with_gqa_share_sparse,\n)\n\nNQ, NKV, HD, BLK_K, TOPK = 64, 4, 128, 128, 16\nBLK_Q = 1  # matches the M3 prefill test (max_seqlen_q=1 decode-shaped prefill)\n\n\ndef get_inputs(axes_and_scalars: dict, device: torch.device) -> dict:\n    B = axes_and_scalars[\"M\"]      # batch (sweep)\n    L = axes_and_scalars[\"L\"]      # per-seq context length\n    max_slots = B * L\n    q = torch.randn(B, NQ, HD, device=device, dtype=torch.bfloat16)\n    k_cache = torch.randn(max_slots, NKV, HD, device=device, dtype=torch.bfloat16)\n    v_cache = torch.randn(max_slots, NKV, HD, device=device, dtype=torch.bfloat16)\n    req_to_token = torch.zeros(B, L, dtype=torch.int32, device=device)\n    slot_ids = torch.zeros(B, dtype=torch.int64, device=device)\n    for i in range(B):\n        base = i * L\n        slot_ids[i] = i\n        req_to_token[i, :L] = torch.arange(base, base + L, device=device)\n    seq_lens = torch.full((B,), L, dtype=torch.int32, device=device)\n    prefix_lens = torch.full((B,), L - 1, dtype=torch.int32, device=device)\n    cu_seqlens = torch.arange(0, B + 1, device=device, dtype=torch.int32)  # 1 query token/seq\n    num_blocks = (L + BLK_K - 1) // BLK_K\n    topk_idx = torch.full((NKV, B, TOPK), -1, dtype=torch.int32, device=device)\n    ak = min(TOPK, num_blocks)\n    for kh in range(NKV):\n        for b in range(B):\n            topk_idx[kh, b, :ak] = torch.randperm(num_blocks, device=device)[:ak].to(torch.int32)\n    return {\"q\": q, \"k_cache\": k_cache, \"v_cache\": v_cache, \"req_to_token\": req_to_token,\n            \"slot_ids\": slot_ids, \"topk_idx\": topk_idx, \"cu_seqlens\": cu_seqlens,\n            \"seq_lens\": seq_lens, \"prefix_lens\": prefix_lens}\n\n\n@torch.no_grad()\ndef run(q, k_cache, v_cache, req_to_token, slot_ids, topk_idx,\n        cu_seqlens, seq_lens, prefix_lens):\n    return flash_prefill_with_gqa_share_sparse(\n        q, k_cache, v_cache, None, req_to_token, slot_ids, topk_idx,\n        BLK_Q, BLK_K, cu_seqlens, seq_lens, prefix_lens, 1)\n"
+}

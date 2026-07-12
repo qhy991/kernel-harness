@@ -1,0 +1,9 @@
+{"uuid": "minimax_m3-mm_act_fp8_quant_decode-00001", "axes": {"M": 1}, "inputs": {"x": {"type": "custom"}}, "tolerance": {"max_atol": 0.1, "max_rtol": 0.05, "required_matched_ratio": 0.999}}
+{"uuid": "minimax_m3-mm_act_fp8_quant_decode-00002", "axes": {"M": 2}, "inputs": {"x": {"type": "custom"}}, "tolerance": {"max_atol": 0.1, "max_rtol": 0.05, "required_matched_ratio": 0.999}}
+{"uuid": "minimax_m3-mm_act_fp8_quant_decode-00004", "axes": {"M": 4}, "inputs": {"x": {"type": "custom"}}, "tolerance": {"max_atol": 0.1, "max_rtol": 0.05, "required_matched_ratio": 0.999}}
+{"uuid": "minimax_m3-mm_act_fp8_quant_decode-00008", "axes": {"M": 8}, "inputs": {"x": {"type": "custom"}}, "tolerance": {"max_atol": 0.1, "max_rtol": 0.05, "required_matched_ratio": 0.999}}
+{"uuid": "minimax_m3-mm_act_fp8_quant_decode-00016", "axes": {"M": 16}, "inputs": {"x": {"type": "custom"}}, "tolerance": {"max_atol": 0.1, "max_rtol": 0.05, "required_matched_ratio": 0.999}}
+{"uuid": "minimax_m3-mm_act_fp8_quant_decode-00032", "axes": {"M": 32}, "inputs": {"x": {"type": "custom"}}, "tolerance": {"max_atol": 0.1, "max_rtol": 0.05, "required_matched_ratio": 0.999}}
+{"uuid": "minimax_m3-mm_act_fp8_quant_decode-00064", "axes": {"M": 64}, "inputs": {"x": {"type": "custom"}}, "tolerance": {"max_atol": 0.1, "max_rtol": 0.05, "required_matched_ratio": 0.999}}
+{"uuid": "minimax_m3-mm_act_fp8_quant_decode-00128", "axes": {"M": 128}, "inputs": {"x": {"type": "custom"}}, "tolerance": {"max_atol": 0.1, "max_rtol": 0.05, "required_matched_ratio": 0.999}}
+{"uuid": "minimax_m3-mm_act_fp8_quant_decode-00256", "axes": {"M": 256}, "inputs": {"x": {"type": "custom"}}, "tolerance": {"max_atol": 0.1, "max_rtol": 0.05, "required_matched_ratio": 0.999}}

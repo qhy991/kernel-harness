@@ -1,0 +1,60 @@
+{
+    "name": "kimi_k27_input_layernorm_fused_prefill",
+    "hf_id": "moonshotai/Kimi-K2.7",
+    "description": "Kimi-K2.7 Input LayerNorm (fused add-RMSNorm) (prefill), fused residual-add + RMSNorm over hidden=7168 (sgl_kernel.fused_add_rmsnorm, in-place). residual_out = x + residual; normed = rmsnorm(residual_out) * weight. INTERFACE-EXACT drop-in. Baseline = sglang production kernel; beat its latency while matching BOTH outputs.",
+    "axes": {
+        "M": {
+            "type": "var",
+            "description": "prefill token count (sweep)"
+        },
+        "H": {
+            "type": "const",
+            "value": 7168,
+            "description": "hidden size"
+        }
+    },
+    "custom_inputs_entrypoint": "get_inputs",
+    "inputs": {
+        "x": {
+            "shape": [
+                "M",
+                "H"
+            ],
+            "dtype": "bfloat16"
+        },
+        "residual": {
+            "shape": [
+                "M",
+                "H"
+            ],
+            "dtype": "bfloat16"
+        },
+        "weight": {
+            "shape": [
+                "H"
+            ],
+            "dtype": "bfloat16"
+        },
+        "eps": {
+            "shape": null,
+            "dtype": "float32"
+        }
+    },
+    "outputs": {
+        "normed": {
+            "shape": [
+                "M",
+                "H"
+            ],
+            "dtype": "bfloat16"
+        },
+        "residual_out": {
+            "shape": [
+                "M",
+                "H"
+            ],
+            "dtype": "bfloat16"
+        }
+    },
+    "reference": "\"\"\"Fused add-RMSNorm \u2014 sglang production baseline (sgl_kernel.fused_add_rmsnorm).\n\nThe Kimi-K2.7 main-path layernorm (input_layernorm / post_attention_layernorm) is\nNEVER a standalone RMSNorm in the hot path: sglang welds the residual add into the\nnorm. RMSNorm.forward_cuda dispatches, in-place, exactly:\n\n    fused_add_rmsnorm(x, residual, weight, eps)      # layernorm.py:327\n    return x, residual                               # x=normed, residual=x+residual\n\nThis task is INTERFACE-EXACT: run()'s signature and in-place/return contract are a\nverbatim copy of that kernel call, so a winning candidate is a symbol-for-symbol\ndrop-in \u2014 integrate.py binds run() to sgl_kernel.fused_add_rmsnorm with an identity\nadapter, and a real sglang forward through it is the machine-check that the interface\nstill matches (the property that lets today's kernel test migrate to e2e later).\n\n  residual_out = x + residual\n  x_out        = rmsnorm(residual_out) * weight        (fp32 accumulate)\n  # both written in place; the module returns (x_out, residual_out).\n\nreference.py IS the correctness oracle AND the latency baseline: an optimized\nsolution.py must match BOTH outputs within tolerance, keep the in-place contract, and\nrun faster.\n\"\"\"\n\nimport torch\nfrom sgl_kernel import fused_add_rmsnorm\n\nEPS = 1e-6  # DeepSeek/Kimi rms_norm_eps\n\n\ndef get_inputs(axes_and_scalars: dict, device: torch.device) -> dict:\n    M = axes_and_scalars[\"M\"]\n    H = axes_and_scalars[\"H\"]\n    x = torch.randn(M, H, device=device, dtype=torch.bfloat16)\n    residual = torch.randn(M, H, device=device, dtype=torch.bfloat16)\n    weight = torch.randn(H, device=device, dtype=torch.bfloat16)\n    # eps is a scalar input so run()'s signature stays a verbatim match of the sglang\n    # kernel: fused_add_rmsnorm(x, residual, weight, eps).\n    return {\"x\": x, \"residual\": residual, \"weight\": weight, \"eps\": EPS}\n\n\n@torch.no_grad()\ndef run(x, residual, weight, eps):\n    # Exact sgl_kernel.fused_add_rmsnorm signature + in-place contract; the module\n    # ignores the return and uses the mutated (x, residual).\n    fused_add_rmsnorm(x, residual, weight, eps)\n    return x, residual\n"
+}

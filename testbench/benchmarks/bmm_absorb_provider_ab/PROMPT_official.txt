@@ -1,0 +1,23 @@
+TASK PROMPT — provider run: official
+(First set the goal with /goal using GOAL.txt but with the task path below, then send this.)
+
+You are optimizing ONE GPU kernel. Work ONLY inside:
+  /home/qinhaiyan/kernel-harness/testbench/benchmarks/bmm_absorb_provider_ab/task_official
+Edit ONLY solution.py (keep `def run(a, b)` returning the output). Do NOT edit
+reference.py / definition.json / workload.jsonl / task.json. Do not hardcode outputs.
+
+The op: Kimi-K2.7 MLA q_nope weight-absorb batched matmul, decode.
+  out[Bh,M,N] = bmm(a[Bh,M,K], b[Bh,K,N]); Bh=64, K=192, N=512, bf16;
+  M sweeps {1,2,4,8,16,32,64,128,256}. sglang baseline = torch.bmm (memory/launch-bound
+  at these tiny per-head shapes — that's your headroom). Triton / torch / CUDA
+  (torch.utils.cpp_extension) / CUTLASS all allowed.
+
+Loop:
+  1. Edit /home/qinhaiyan/kernel-harness/testbench/benchmarks/bmm_absorb_provider_ab/task_official/solution.py
+  2. Run:  python /home/qinhaiyan/kernel-harness/testbench/bin/evaluate.py /home/qinhaiyan/kernel-harness/testbench/benchmarks/bmm_absorb_provider_ab/task_official --repeat 3
+  3. Read the VERDICT_JSON block (correct, win, geomean_speedup,
+     min_speedup_conservative, per-shape sol_us/base_us). Iterate.
+
+Success = correct:true AND win:true (min_speedup_conservative > 1.0). If you can't win
+after your best attempts, stop and report the final verdict JSON + a short reason.
+Work autonomously; don't ask questions mid-run.

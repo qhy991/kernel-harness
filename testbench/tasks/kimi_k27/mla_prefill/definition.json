@@ -1,0 +1,65 @@
+{
+    "name": "kimi_k27_mla_prefill",
+    "hf_id": "moonshotai/Kimi-K2.7",
+    "description": "Kimi-K2.7 MLA prefill attention (prefill), flashinfer BatchPrefillWithRaggedKVCacheWrapper: MHA over full q/k/v (FA3/flash_attn_varlen is not built for B200 sm100, so the ragged flashinfer path is production here). num_heads=64, qk_head_dim=192, v_head_dim=128, causal. seqlen=sweep, single sequence. Wrapper .plan() is untimed setup; only .run() is timed. Baseline = sglang production kernel; beat its latency while matching output.",
+    "axes": {
+        "M": {
+            "type": "var",
+            "description": "prefill sequence length (sweep)"
+        },
+        "num_heads": {
+            "type": "const",
+            "value": 64
+        },
+        "qk_head_dim": {
+            "type": "const",
+            "value": 192
+        },
+        "v_head_dim": {
+            "type": "const",
+            "value": 128
+        }
+    },
+    "custom_inputs_entrypoint": "get_inputs",
+    "inputs": {
+        "q": {
+            "shape": [
+                "M",
+                "num_heads",
+                "qk_head_dim"
+            ],
+            "dtype": "bfloat16"
+        },
+        "k": {
+            "shape": [
+                "M",
+                "num_heads",
+                "qk_head_dim"
+            ],
+            "dtype": "bfloat16"
+        },
+        "v": {
+            "shape": [
+                "M",
+                "num_heads",
+                "v_head_dim"
+            ],
+            "dtype": "bfloat16"
+        },
+        "wrapper": {
+            "shape": null,
+            "dtype": "int32"
+        }
+    },
+    "outputs": {
+        "o": {
+            "shape": [
+                "M",
+                "num_heads",
+                "v_head_dim"
+            ],
+            "dtype": "bfloat16"
+        }
+    },
+    "reference": "\"\"\"MLA prefill attention \u2014 sglang baseline (flashinfer ragged prefill).\n\nKimi-K2.7 core Multi-head Latent Attention on the prefill/extend path. sglang's\nFlashInfer MLA backend runs the \"normal MHA\" prefill over the full q/k/v via\nflashinfer BatchPrefillWithRaggedKVCacheWrapper (FA3/flash_attn_varlen is not built for\nB200 sm100, so the ragged flashinfer path is the production one here).\n\n  o[total_q, num_heads, v_head_dim] = ragged_prefill(q, k, v, causal)\n\nKimi-K2.7: num_heads=64, qk_head_dim=192 (qk_nope; rope concatenated upstream),\nv_head_dim=128. Single sequence; seqlen = sweep. The wrapper .plan() (index/schedule\nsetup) is built untimed in get_inputs; only .run() (the attention kernel) is timed.\nreference.py IS the correctness oracle AND the latency baseline.\n\"\"\"\n\nimport torch\nimport flashinfer\n\nNUM_HEADS, HD_QK, HD_V = 64, 192, 128\n\n\ndef get_inputs(axes_and_scalars: dict, device: torch.device) -> dict:\n    L = axes_and_scalars[\"M\"]      # prefill sequence length (sweep), single seq\n    q = torch.randn(L, NUM_HEADS, HD_QK, device=device, dtype=torch.bfloat16)\n    k = torch.randn(L, NUM_HEADS, HD_QK, device=device, dtype=torch.bfloat16)\n    v = torch.randn(L, NUM_HEADS, HD_V, device=device, dtype=torch.bfloat16)\n    indptr = torch.tensor([0, L], device=device, dtype=torch.int32)\n    # Build + plan the wrapper here (untimed schedule setup, exactly as sglang's backend\n    # does before .run()); pass it through so only .run() (the kernel) is timed.\n    fb = torch.empty(256 * 1024 * 1024, dtype=torch.uint8, device=device)\n    wrapper = flashinfer.BatchPrefillWithRaggedKVCacheWrapper(fb, kv_layout=\"NHD\", backend=\"fa2\")\n    wrapper.plan(indptr, indptr, NUM_HEADS, NUM_HEADS, HD_QK, head_dim_vo=HD_V,\n                 causal=True, q_data_type=torch.bfloat16, kv_data_type=torch.bfloat16)\n    return {\"q\": q, \"k\": k, \"v\": v, \"wrapper\": wrapper}\n\n\n@torch.no_grad()\ndef run(q, k, v, wrapper):\n    return wrapper.run(q, k, v)\n"
+}

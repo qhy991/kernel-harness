@@ -1,0 +1,3 @@
+# The SGLang checkout's python/pyproject.toml is the source of truth for torch,
+# triton, sglang-kernel, deep-gemm, and flashinfer versions.
+cupti-python==13.0.1

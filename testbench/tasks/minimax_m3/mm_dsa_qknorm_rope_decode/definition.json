@@ -1,0 +1,74 @@
+{
+    "name": "minimax_m3_mm_dsa_qknorm_rope_decode",
+    "hf_id": "MiniMaxAI/MiniMax-M3",
+    "description": "MiniMax-M3 DSA fused Gemma-QK-norm + partial RoPE (decode), jit_kernel.minimax_qknorm_rope (fused C++, op29/35): per-head Gemma-RMSNorm of q/k in a packed QKV[T,9216] (nq=64,nk=nv=4, head_dim=128) + partial RoPE (rope_dim=64, theta=5e6). Single-launch, ~2.4x vs two launches. Requires the amd_add_m3 sglang build.",
+    "axes": {
+        "M": {
+            "type": "var",
+            "description": "decode token count (sweep)"
+        },
+        "qkv_dim": {
+            "type": "const",
+            "value": 9216,
+            "description": "(nq+nk+nv)*head_dim"
+        },
+        "head_dim": {
+            "type": "const",
+            "value": 128
+        },
+        "rope_dim": {
+            "type": "const",
+            "value": 64
+        },
+        "max_pos": {
+            "type": "const",
+            "value": 1048576,
+            "description": "M3 max_position_embeddings"
+        }
+    },
+    "custom_inputs_entrypoint": "get_inputs",
+    "inputs": {
+        "qkv": {
+            "shape": [
+                "M",
+                "qkv_dim"
+            ],
+            "dtype": "bfloat16"
+        },
+        "q_weight": {
+            "shape": [
+                "head_dim"
+            ],
+            "dtype": "bfloat16"
+        },
+        "k_weight": {
+            "shape": [
+                "head_dim"
+            ],
+            "dtype": "bfloat16"
+        },
+        "cos_sin_cache": {
+            "shape": [
+                "max_pos",
+                "rope_dim"
+            ],
+            "dtype": "float32"
+        },
+        "positions": {
+            "shape": [
+                "M"
+            ],
+            "dtype": "int64"
+        }
+    },
+    "outputs": {
+        "qkv_out": {
+            "shape": [
+                "M",
+                "qkv_dim"
+            ],
+            "dtype": "bfloat16"
+        }
+    },
+    "reference": "\"\"\"DSA fused Gemma-QK-norm + partial RoPE \u2014 sglang baseline (minimax_qknorm_rope, JIT CUDA).\n\nMiniMax-M3 indexer/main QK path (inventory op29/35): a single-launch fused kernel that\nGemma-RMSNorms the per-head q/k slices of a packed QKV and applies partial RoPE, in the\nDSA layout. sglang dispatches jit_kernel.minimax_qknorm_rope (C++ fused_gemma_qknorm_rope);\nthe inventory measures it 1.64-192.7us, ~2.4x faster than two separate launches.\n\n  qkv[T, (nq+nk+nv)*HD] --(per-head Gemma-RMSNorm on q,k + partial RoPE rope_dim=64)--> qkv_out\n\nConfig: nq=64, nk=nv=4, head_dim=128, rope_dim=64, theta=5e6; norm weights are per-head_dim\n(qk_norm_type=per_head), cos_sin_cache is fp32. Runs against the amd_add_m3 sglang build\n(task.json sglang_dir). reference.py IS the correctness oracle AND the latency baseline.\n\"\"\"\n\nimport torch\nfrom sglang.jit_kernel.minimax_qknorm_rope import minimax_qknorm_rope\n\nNQ, NK, NV, HD, RD, EPS, THETA = 64, 4, 4, 128, 64, 1e-6, 5000000\nMAX_POS = 1048576\n\n\ndef get_inputs(axes_and_scalars: dict, device: torch.device) -> dict:\n    T = axes_and_scalars[\"M\"]\n    qkv = torch.randn(T, (NQ + NK + NV) * HD, device=device, dtype=torch.bfloat16)\n    q_weight = (torch.randn(HD, device=device) * 0.1).to(torch.bfloat16)  # per-head_dim\n    k_weight = (torch.randn(HD, device=device) * 0.1).to(torch.bfloat16)\n    inv = 1.0 / (THETA ** (torch.arange(0, RD, 2, device=device).float() / RD))\n    fr = torch.outer(torch.arange(MAX_POS, device=device).float(), inv)\n    cos_sin_cache = torch.cat([fr.cos(), fr.sin()], dim=-1)  # [MAX_POS, RD] fp32\n    positions = torch.randint(0, MAX_POS, (T,), device=device, dtype=torch.int64)\n    return {\"qkv\": qkv, \"q_weight\": q_weight, \"k_weight\": k_weight,\n            \"cos_sin_cache\": cos_sin_cache, \"positions\": positions}\n\n\n@torch.no_grad()\ndef run(qkv, q_weight, k_weight, cos_sin_cache, positions):\n    return minimax_qknorm_rope(qkv, q_weight, k_weight, cos_sin_cache, positions,\n                               NQ, NK, NV, EPS)\n"
+}

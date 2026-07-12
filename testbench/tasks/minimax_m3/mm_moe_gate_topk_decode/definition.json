@@ -1,0 +1,45 @@
+{
+    "name": "minimax_m3_mm_moe_gate_topk_decode",
+    "hf_id": "MiniMaxAI/MiniMax-M3",
+    "description": "MiniMax-M3 MoE Gate + sigmoid Top-4 (decode), sgl_kernel.topk_sigmoid: sigmoid + correction bias + renormalized top-4 over 128 experts (routed_scaling=2.0). Outputs selected expert INDICES[M,4] (int32); EXACT-match oracle. Baseline = sglang production kernel; beat its latency while matching routing.",
+    "axes": {
+        "M": {
+            "type": "var",
+            "description": "decode token count (sweep)"
+        },
+        "num_experts": {
+            "type": "const",
+            "value": 128
+        },
+        "topk": {
+            "type": "const",
+            "value": 4
+        }
+    },
+    "custom_inputs_entrypoint": "get_inputs",
+    "inputs": {
+        "gating_output": {
+            "shape": [
+                "M",
+                "num_experts"
+            ],
+            "dtype": "float32"
+        },
+        "correction_bias": {
+            "shape": [
+                "num_experts"
+            ],
+            "dtype": "float32"
+        }
+    },
+    "outputs": {
+        "indices": {
+            "shape": [
+                "M",
+                "topk"
+            ],
+            "dtype": "int32"
+        }
+    },
+    "reference": "\"\"\"MoE Gate: sigmoid + biased Top-4 routing \u2014 sglang baseline (sgl_kernel.topk_sigmoid).\n\nMiniMax-M3 routing (inventory op37): scoring_func=sigmoid, top_k=4, routed_scaling=2.0,\nwith a routing correction bias. sglang dispatches sgl_kernel.topk_sigmoid, a DPS kernel\nthat writes topk_ids (int32) and topk_weights. This is the ROUTING oracle: it outputs the\nselected expert INDICES [M, 4] with an EXACT-match tolerance (atol=0, rtol=0, ratio=1.0)\n\u2014 routing is bit-exact, not tolerant. (M3 uses sigmoid, NOT Kimi's biased grouped topk;\ndifferent kernel, different config.)\n\nCaveat: exact-index match assumes no score ties (measure-zero for random inputs); a\nsame-set-different-order result fails by design. reference.py IS the correctness oracle\nAND the latency baseline.\n\"\"\"\n\nimport torch\nfrom sgl_kernel import topk_sigmoid\n\nTOPK = 4\n\n\ndef get_inputs(axes_and_scalars: dict, device: torch.device) -> dict:\n    M = axes_and_scalars[\"M\"]\n    E = axes_and_scalars[\"num_experts\"]\n    gating_output = torch.randn(M, E, device=device, dtype=torch.float32)\n    correction_bias = torch.randn(E, device=device, dtype=torch.float32)\n    return {\"gating_output\": gating_output, \"correction_bias\": correction_bias}\n\n\n@torch.no_grad()\ndef run(gating_output, correction_bias):\n    M = gating_output.shape[0]\n    topk_weights = torch.empty(M, TOPK, device=gating_output.device, dtype=torch.float32)\n    topk_ids = torch.empty(M, TOPK, device=gating_output.device, dtype=torch.int32)\n    topk_sigmoid(topk_weights, topk_ids, gating_output,\n                 renormalize=True, correction_bias=correction_bias)\n    return topk_ids\n"
+}

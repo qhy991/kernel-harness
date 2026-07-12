@@ -1,0 +1,199 @@
+[2026-07-10 11:44:41] WARNING compile_utils.py:131: Entering DeepGEMM JIT Pre-Compile session. It may take a long time (typically 10-20 mins) if you have not run `sglang.compile_deep_gemm`. It is recommended to run `sglang.compile_deep_gemm` with same args as `sglang.launch_server` for pre-compilation to reduce the overhead if you have not run it before. For example: `python3 -m sglang.compile_deep_gemm --model deepseek-ai/DeepSeek-V3 --tp 8 --trust-remote-code`
+[2026-07-10 11:44:41] INFO compile_utils.py:141: Try DeepGEMM JIT Compiling for <GEMM_NT_F8F8BF16> N=2176, K=7168, num_groups=1 with all Ms. It only takes a little time (typically 1 sec) if you have run `python3 -m sglang.compile_deep_gemm`. 
+[2026-07-10 11:44:41] INFO compile_utils.py:183: Required memory for warmup: 0.1903076171875GB, Available memory: 176.4588623046875GB
+# GPU: NVIDIA B200  torch=2.11.0+cu130
+
+### A. Prefill token-count sweep (M) ###
+DeepGEMM warmup:   0%|          | 0/16384 [00:00<?, ?it/s]DeepGEMM warmup:   7%|▋         | 1154/16384 [00:00<00:01, 11538.33it/s]DeepGEMM warmup:  15%|█▌        | 2488/16384 [00:00<00:01, 12594.65it/s]DeepGEMM warmup:  23%|██▎       | 3748/16384 [00:00<00:01, 10373.17it/s]DeepGEMM warmup:  29%|██▉       | 4824/16384 [00:00<00:01, 9118.86it/s] DeepGEMM warmup:  35%|███▌      | 5771/16384 [00:00<00:01, 7751.63it/s]DeepGEMM warmup:  40%|████      | 6587/16384 [00:00<00:01, 7103.92it/s]DeepGEMM warmup:  45%|████▍     | 7324/16384 [00:00<00:01, 6412.26it/s]DeepGEMM warmup:  49%|████▊     | 7985/16384 [00:01<00:01, 5819.25it/s]DeepGEMM warmup:  52%|█████▏    | 8581/16384 [00:01<00:01, 5330.71it/s]DeepGEMM warmup:  56%|█████▌    | 9123/16384 [00:01<00:01, 5036.45it/s]DeepGEMM warmup:  59%|█████▉    | 9630/16384 [00:01<00:01, 4692.67it/s]DeepGEMM warmup:  62%|██████▏   | 10101/16384 [00:01<00:01, 4364.51it/s]DeepGEMM warmup:  64%|██████▍   | 10538/16384 [00:01<00:01, 4143.37it/s]DeepGEMM warmup:  67%|██████▋   | 10951/16384 [00:01<00:01, 3996.43it/s]DeepGEMM warmup:  69%|██████▉   | 11349/16384 [00:01<00:01, 3784.72it/s]DeepGEMM warmup:  72%|███████▏  | 11726/16384 [00:02<00:01, 3614.14it/s]DeepGEMM warmup:  74%|███████▍  | 12086/16384 [00:02<00:01, 3451.16it/s]DeepGEMM warmup:  76%|███████▌  | 12430/16384 [00:02<00:01, 3363.77it/s]DeepGEMM warmup:  78%|███████▊  | 12765/16384 [00:02<00:01, 3246.12it/s]DeepGEMM warmup:  80%|███████▉  | 13088/16384 [00:02<00:01, 3096.20it/s]DeepGEMM warmup:  82%|████████▏ | 13397/16384 [00:02<00:00, 3017.63it/s]DeepGEMM warmup:  84%|████████▎ | 13698/16384 [00:02<00:00, 2948.07it/s]DeepGEMM warmup:  85%|████████▌ | 13992/16384 [00:02<00:00, 2907.01it/s]DeepGEMM warmup:  87%|████████▋ | 14282/16384 [00:02<00:00, 2869.31it/s]DeepGEMM warmup:  89%|████████▉ | 14569/16384 [00:03<00:00, 2806.22it/s]DeepGEMM warmup:  91%|█████████ | 14850/16384 [00:03<00:00, 2701.34it/s]DeepGEMM warmup:  92%|█████████▏| 15121/16384 [00:03<00:00, 2640.98it/s]DeepGEMM warmup:  94%|█████████▍| 15385/16384 [00:03<00:00, 2613.40it/s]DeepGEMM warmup:  96%|█████████▌| 15647/16384 [00:03<00:00, 2579.13it/s]DeepGEMM warmup:  97%|█████████▋| 15905/16384 [00:03<00:00, 2547.60it/s]DeepGEMM warmup:  99%|█████████▊| 16160/16384 [00:03<00:00, 2518.07it/s]DeepGEMM warmup: 100%|██████████| 16384/16384 [00:03<00:00, 4295.77it/s]
+[2026-07-10 11:44:45] WARNING compile_utils.py:131: Entering DeepGEMM JIT Pre-Compile session. It may take a long time (typically 10-20 mins) if you have not run `sglang.compile_deep_gemm`. It is recommended to run `sglang.compile_deep_gemm` with same args as `sglang.launch_server` for pre-compilation to reduce the overhead if you have not run it before. For example: `python3 -m sglang.compile_deep_gemm --model deepseek-ai/DeepSeek-V3 --tp 8 --trust-remote-code`
+[2026-07-10 11:44:45] INFO compile_utils.py:141: Try DeepGEMM JIT Compiling for <GEMM_NT_F8F8BF16> N=7168, K=1024, num_groups=1 with all Ms. It only takes a little time (typically 1 sec) if you have run `python3 -m sglang.compile_deep_gemm`. 
+[2026-07-10 11:44:45] INFO compile_utils.py:183: Required memory for warmup: 0.2412109375GB, Available memory: 176.4881591796875GB
+  Q_a fused (fp8)              | prefill_M     =    512 |     58.42 us |    273.4
+DeepGEMM warmup:   0%|          | 0/16384 [00:00<?, ?it/s]DeepGEMM warmup:   7%|▋         | 1213/16384 [00:00<00:01, 12123.62it/s]DeepGEMM warmup:  17%|█▋        | 2786/16384 [00:00<00:00, 14241.06it/s]DeepGEMM warmup:  26%|██▌       | 4211/16384 [00:00<00:00, 12627.40it/s]DeepGEMM warmup:  34%|███▎      | 5493/16384 [00:00<00:00, 10942.86it/s]DeepGEMM warmup:  40%|████      | 6621/16384 [00:00<00:01, 9681.13it/s] DeepGEMM warmup:  47%|████▋     | 7622/16384 [00:00<00:01, 8592.78it/s]DeepGEMM warmup:  52%|█████▏    | 8511/16384 [00:00<00:01, 7857.46it/s]DeepGEMM warmup:  57%|█████▋    | 9318/16384 [00:01<00:00, 7093.36it/s]DeepGEMM warmup:  61%|██████▏   | 10044/16384 [00:01<00:00, 6630.32it/s]DeepGEMM warmup:  65%|██████▌   | 10717/16384 [00:01<00:00, 6184.28it/s]DeepGEMM warmup:  69%|██████▉   | 11341/16384 [00:01<00:00, 5812.65it/s]DeepGEMM warmup:  73%|███████▎  | 11924/16384 [00:01<00:00, 5406.53it/s]DeepGEMM warmup:  76%|███████▌  | 12466/16384 [00:01<00:00, 5114.38it/s]DeepGEMM warmup:  79%|███████▉  | 12977/16384 [00:01<00:00, 4892.31it/s]DeepGEMM warmup:  82%|████████▏ | 13464/16384 [00:01<00:00, 4678.90it/s]DeepGEMM warmup:  85%|████████▌ | 13930/16384 [00:02<00:00, 4477.31it/s]DeepGEMM warmup:  88%|████████▊ | 14376/16384 [00:02<00:00, 4332.62it/s]DeepGEMM warmup:  90%|█████████ | 14807/16384 [00:02<00:00, 4221.16it/s]DeepGEMM warmup:  93%|█████████▎| 15227/16384 [00:02<00:00, 4126.01it/s]DeepGEMM warmup:  95%|█████████▌| 15638/16384 [00:02<00:00, 3983.66it/s]DeepGEMM warmup:  98%|█████████▊| 16035/16384 [00:02<00:00, 3933.41it/s]DeepGEMM warmup: 100%|██████████| 16384/16384 [00:02<00:00, 6090.20it/s]
+[2026-07-10 11:44:48] WARNING compile_utils.py:131: Entering DeepGEMM JIT Pre-Compile session. It may take a long time (typically 10-20 mins) if you have not run `sglang.compile_deep_gemm`. It is recommended to run `sglang.compile_deep_gemm` with same args as `sglang.launch_server` for pre-compilation to reduce the overhead if you have not run it before. For example: `python3 -m sglang.compile_deep_gemm --model deepseek-ai/DeepSeek-V3 --tp 8 --trust-remote-code`
+[2026-07-10 11:44:48] INFO compile_utils.py:141: Try DeepGEMM JIT Compiling for <GEMM_NT_F8F8BF16> N=4608, K=7168, num_groups=1 with all Ms. It only takes a little time (typically 1 sec) if you have run `python3 -m sglang.compile_deep_gemm`. 
+[2026-07-10 11:44:48] INFO compile_utils.py:183: Required memory for warmup: 0.28076171875GB, Available memory: 176.4256591796875GB
+  O_proj (fp8)                 | prefill_M     =    512 |     54.70 us |   137.41
+DeepGEMM warmup:   0%|          | 0/16384 [00:00<?, ?it/s]DeepGEMM warmup:   7%|▋         | 1153/16384 [00:00<00:01, 11262.30it/s]DeepGEMM warmup:  14%|█▍        | 2280/16384 [00:00<00:01, 10058.09it/s]DeepGEMM warmup:  20%|██        | 3294/16384 [00:00<00:01, 8254.66it/s] DeepGEMM warmup:  25%|██▌       | 4149/16384 [00:00<00:01, 6813.35it/s]DeepGEMM warmup:  30%|██▉       | 4868/16384 [00:00<00:01, 5835.17it/s]DeepGEMM warmup:  33%|███▎      | 5483/16384 [00:00<00:02, 5153.56it/s]DeepGEMM warmup:  37%|███▋      | 6021/16384 [00:01<00:02, 4620.45it/s]DeepGEMM warmup:  40%|███▉      | 6498/16384 [00:01<00:02, 4213.88it/s]DeepGEMM warmup:  42%|████▏     | 6928/16384 [00:01<00:02, 3886.41it/s]DeepGEMM warmup:  45%|████▍     | 7321/16384 [00:01<00:02, 3589.23it/s]DeepGEMM warmup:  47%|████▋     | 7681/16384 [00:01<00:02, 3347.74it/s]DeepGEMM warmup:  49%|████▉     | 8015/16384 [00:01<00:02, 3155.28it/s]DeepGEMM warmup:  51%|█████     | 8329/16384 [00:01<00:02, 3014.61it/s]DeepGEMM warmup:  53%|█████▎    | 8628/16384 [00:01<00:02, 2889.36it/s]DeepGEMM warmup:  54%|█████▍    | 8914/16384 [00:02<00:02, 2817.84it/s]DeepGEMM warmup:  56%|█████▌    | 9193/16384 [00:02<00:02, 2720.94it/s]DeepGEMM warmup:  58%|█████▊    | 9463/16384 [00:02<00:02, 2597.63it/s]DeepGEMM warmup:  59%|█████▉    | 9721/16384 [00:02<00:02, 2504.30it/s]DeepGEMM warmup:  61%|██████    | 9970/16384 [00:02<00:02, 2464.85it/s]DeepGEMM warmup:  62%|██████▏   | 10216/16384 [00:02<00:02, 2385.70it/s]DeepGEMM warmup:  64%|██████▍   | 10454/16384 [00:02<00:02, 2328.53it/s]DeepGEMM warmup:  65%|██████▌   | 10686/16384 [00:02<00:02, 2268.48it/s]DeepGEMM warmup:  67%|██████▋   | 10913/16384 [00:02<00:02, 2244.31it/s]DeepGEMM warmup:  68%|██████▊   | 11137/16384 [00:03<00:02, 2187.88it/s]DeepGEMM warmup:  69%|██████▉   | 11356/16384 [00:03<00:02, 2114.59it/s]DeepGEMM warmup:  71%|███████   | 11568/16384 [00:03<00:02, 2063.64it/s]DeepGEMM warmup:  72%|███████▏  | 11775/16384 [00:03<00:02, 2037.77it/s]DeepGEMM warmup:  73%|███████▎  | 11979/16384 [00:03<00:02, 1995.20it/s]DeepGEMM warmup:  74%|███████▍  | 12179/16384 [00:03<00:02, 1945.59it/s]DeepGEMM warmup:  76%|███████▌  | 12374/16384 [00:03<00:02, 1896.43it/s]DeepGEMM warmup:  77%|███████▋  | 12564/16384 [00:03<00:02, 1856.32it/s]DeepGEMM warmup:  78%|███████▊  | 12750/16384 [00:03<00:01, 1834.11it/s]DeepGEMM warmup:  79%|███████▉  | 12934/16384 [00:04<00:01, 1813.95it/s]DeepGEMM warmup:  80%|████████  | 13116/16384 [00:04<00:01, 1784.64it/s]DeepGEMM warmup:  81%|████████  | 13295/16384 [00:04<00:01, 1744.83it/s]DeepGEMM warmup:  82%|████████▏ | 13470/16384 [00:04<00:01, 1724.01it/s]DeepGEMM warmup:  83%|████████▎ | 13643/16384 [00:04<00:01, 1704.72it/s]DeepGEMM warmup:  84%|████████▍ | 13814/16384 [00:04<00:01, 1689.20it/s]DeepGEMM warmup:  85%|████████▌ | 13983/16384 [00:04<00:01, 1663.60it/s]DeepGEMM warmup:  86%|████████▋ | 14150/16384 [00:04<00:01, 1627.66it/s]DeepGEMM warmup:  87%|████████▋ | 14313/16384 [00:04<00:01, 1622.39it/s]DeepGEMM warmup:  88%|████████▊ | 14476/16384 [00:04<00:01, 1590.04it/s]DeepGEMM warmup:  89%|████████▉ | 14636/16384 [00:05<00:01, 1588.44it/s]DeepGEMM warmup:  90%|█████████ | 14795/16384 [00:05<00:01, 1573.03it/s]DeepGEMM warmup:  91%|█████████▏| 14953/16384 [00:05<00:00, 1552.36it/s]DeepGEMM warmup:  92%|█████████▏| 15109/16384 [00:05<00:00, 1536.42it/s]DeepGEMM warmup:  93%|█████████▎| 15263/16384 [00:05<00:00, 1517.06it/s]DeepGEMM warmup:  94%|█████████▍| 15415/16384 [00:05<00:00, 1502.42it/s]DeepGEMM warmup:  95%|█████████▌| 15566/16384 [00:05<00:00, 1503.44it/s]DeepGEMM warmup:  96%|█████████▌| 15717/16384 [00:05<00:00, 1490.11it/s]DeepGEMM warmup:  97%|█████████▋| 15867/16384 [00:05<00:00, 1471.91it/s]DeepGEMM warmup:  98%|█████████▊| 16015/16384 [00:05<00:00, 1454.62it/s]DeepGEMM warmup:  99%|█████████▊| 16161/16384 [00:06<00:00, 1454.41it/s]DeepGEMM warmup: 100%|█████████▉| 16307/16384 [00:06<00:00, 1438.06it/s]DeepGEMM warmup: 100%|██████████| 16384/16384 [00:06<00:00, 2623.38it/s]
+[2026-07-10 11:44:56] WARNING compile_utils.py:131: Entering DeepGEMM JIT Pre-Compile session. It may take a long time (typically 10-20 mins) if you have not run `sglang.compile_deep_gemm`. It is recommended to run `sglang.compile_deep_gemm` with same args as `sglang.launch_server` for pre-compilation to reduce the overhead if you have not run it before. For example: `python3 -m sglang.compile_deep_gemm --model deepseek-ai/DeepSeek-V3 --tp 8 --trust-remote-code`
+[2026-07-10 11:44:56] INFO compile_utils.py:141: Try DeepGEMM JIT Compiling for <GEMM_NT_F8F8BF16> N=12288, K=1536, num_groups=1 with all Ms. It only takes a little time (typically 1 sec) if you have run `python3 -m sglang.compile_deep_gemm`. 
+[2026-07-10 11:44:56] INFO compile_utils.py:183: Required memory for warmup: 0.416015625GB, Available memory: 176.3201904296875GB
+  Dense GateUp (fp8)           | prefill_M     =    512 |     61.77 us |   547.59
+  MoE Router (cuBLAS)          | prefill_M     =    512 |     55.92 us |    50.41
+  Fused add+RMSNorm            | prefill_M     =    512 |     52.27 us |         
+  SwiGLU dense                 | prefill_M     =    512 |     51.03 us |         
+  Act FP8 quant                | prefill_M     =    512 |     50.58 us |         
+  MoE Combine (moe_sum)        | prefill_M     =    512 |     63.91 us |         
+  Q_a fused (fp8)              | prefill_M     =   1024 |     61.37 us |    520.5
+  O_proj (fp8)                 | prefill_M     =   1024 |     58.84 us |    255.5
+  Dense GateUp (fp8)           | prefill_M     =   1024 |     72.00 us |   939.49
+  MoE Router (cuBLAS)          | prefill_M     =   1024 |     58.93 us |    95.66
+  Fused add+RMSNorm            | prefill_M     =   1024 |     55.32 us |         
+  SwiGLU dense                 | prefill_M     =   1024 |     52.32 us |         
+  Act FP8 quant                | prefill_M     =   1024 |     52.84 us |         
+  MoE Combine (moe_sum)        | prefill_M     =   1024 |     85.38 us |         
+  Q_a fused (fp8)              | prefill_M     =   2048 |     71.86 us |   889.05
+  O_proj (fp8)                 | prefill_M     =   2048 |     65.22 us |   460.96
+  Dense GateUp (fp8)           | prefill_M     =   2048 |    149.28 us |   906.27
+  MoE Router (cuBLAS)          | prefill_M     =   2048 |     60.08 us |   187.66
+  Fused add+RMSNorm            | prefill_M     =   2048 |     61.37 us |         
+  SwiGLU dense                 | prefill_M     =   2048 |     54.99 us |         
+  Act FP8 quant                | prefill_M     =   2048 |     56.67 us |         
+  MoE Combine (moe_sum)        | prefill_M     =   2048 |    168.80 us |         
+  Q_a fused (fp8)              | prefill_M     =   4096 |    150.12 us |   851.15
+  O_proj (fp8)                 | prefill_M     =   4096 |     72.26 us |   832.13
+  Dense GateUp (fp8)           | prefill_M     =   4096 |    247.47 us |  1093.38
+  MoE Router (cuBLAS)          | prefill_M     =   4096 |     65.73 us |   343.05
+  Fused add+RMSNorm            | prefill_M     =   4096 |     84.22 us |         
+  SwiGLU dense                 | prefill_M     =   4096 |     60.31 us |         
+  Act FP8 quant                | prefill_M     =   4096 |     64.15 us |         
+  MoE Combine (moe_sum)        | prefill_M     =   4096 |    336.08 us |         
+  Q_a fused (fp8)              | prefill_M     =   8192 |    248.00 us |  1030.44
+  O_proj (fp8)                 | prefill_M     =   8192 |    156.06 us |   770.59
+  Dense GateUp (fp8)           | prefill_M     =   8192 |    435.06 us |  1243.88
+  MoE Router (cuBLAS)          | prefill_M     =   8192 |     83.80 us |   538.18
+  Fused add+RMSNorm            | prefill_M     =   8192 |    169.13 us |         
+  SwiGLU dense                 | prefill_M     =   8192 |     74.19 us |         
+  Act FP8 quant                | prefill_M     =   8192 |     79.53 us |         
+  MoE Combine (moe_sum)        | prefill_M     =   8192 |    619.28 us |         
+  Q_a fused (fp8)              | prefill_M     =  16384 |    436.44 us |  1171.06
+  O_proj (fp8)                 | prefill_M     =  16384 |    265.21 us |   906.89
+  Dense GateUp (fp8)           | prefill_M     =  16384 |    889.93 us |   1216.2
+  MoE Router (cuBLAS)          | prefill_M     =  16384 |    172.86 us |   521.77
+  Fused add+RMSNorm            | prefill_M     =  16384 |    336.59 us |         
+  SwiGLU dense                 | prefill_M     =  16384 |    148.21 us |         
+  Act FP8 quant                | prefill_M     =  16384 |    159.46 us |         
+  MoE Combine (moe_sum)        | prefill_M     =  16384 |   1235.82 us |         
+  Q_a fused (fp8)              | prefill_M     =  32768 |    877.83 us |  1164.47
+  O_proj (fp8)                 | prefill_M     =  32768 |    533.80 us |   901.16
+  Dense GateUp (fp8)           | prefill_M     =  32768 |   1780.79 us |  1215.56
+  MoE Router (cuBLAS)          | prefill_M     =  32768 |    351.32 us |   513.45
+  Fused add+RMSNorm            | prefill_M     =  32768 |    622.90 us |         
+  SwiGLU dense                 | prefill_M     =  32768 |    244.91 us |         
+  Act FP8 quant                | prefill_M     =  32768 |    268.90 us |         
+  MoE Combine (moe_sum)        | prefill_M     =  32768 |   2778.94 us |         
+
+### B. Decode batch-size sweep (B) ###
+  Q_a fused (fp8)              | decode_B      =      1 |     57.13 us |     0.55
+DeepGEMM warmup:   0%|          | 0/16384 [00:00<?, ?it/s]DeepGEMM warmup:   8%|▊         | 1250/16384 [00:00<00:01, 12497.00it/s]DeepGEMM warmup:  15%|█▌        | 2500/16384 [00:00<00:01, 11347.07it/s]DeepGEMM warmup:  22%|██▏       | 3642/16384 [00:00<00:01, 9195.04it/s] DeepGEMM warmup:  28%|██▊       | 4600/16384 [00:00<00:01, 7805.05it/s]DeepGEMM warmup:  33%|███▎      | 5418/16384 [00:00<00:01, 6856.61it/s]DeepGEMM warmup:  37%|███▋      | 6133/16384 [00:00<00:01, 6202.39it/s]DeepGEMM warmup:  41%|████▏     | 6773/16384 [00:00<00:01, 5577.59it/s]DeepGEMM warmup:  45%|████▍     | 7345/16384 [00:01<00:01, 5061.63it/s]DeepGEMM warmup:  48%|████▊     | 7860/16384 [00:01<00:01, 4717.20it/s]DeepGEMM warmup:  51%|█████     | 8336/16384 [00:01<00:01, 4400.84it/s]DeepGEMM warmup:  54%|█████▎    | 8777/16384 [00:01<00:01, 4130.99it/s]DeepGEMM warmup:  56%|█████▌    | 9189/16384 [00:01<00:01, 3881.73it/s]DeepGEMM warmup:  58%|█████▊    | 9576/16384 [00:01<00:01, 3712.83it/s]DeepGEMM warmup:  61%|██████    | 9945/16384 [00:01<00:01, 3577.35it/s]DeepGEMM warmup:  63%|██████▎   | 10300/16384 [00:01<00:01, 3386.46it/s]DeepGEMM warmup:  65%|██████▍   | 10637/16384 [00:02<00:01, 3266.77it/s]DeepGEMM warmup:  67%|██████▋   | 10962/16384 [00:02<00:01, 3148.96it/s]DeepGEMM warmup:  69%|██████▉   | 11275/16384 [00:02<00:01, 3071.27it/s]DeepGEMM warmup:  71%|███████   | 11581/16384 [00:02<00:01, 2963.52it/s]DeepGEMM warmup:  72%|███████▏  | 11876/16384 [00:02<00:01, 2919.85it/s]DeepGEMM warmup:  74%|███████▍  | 12167/16384 [00:02<00:01, 2843.95it/s]DeepGEMM warmup:  76%|███████▌  | 12451/16384 [00:02<00:01, 2751.24it/s]DeepGEMM warmup:  78%|███████▊  | 12726/16384 [00:02<00:01, 2707.62it/s]DeepGEMM warmup:  79%|███████▉  | 12997/16384 [00:02<00:01, 2615.27it/s]DeepGEMM warmup:  81%|████████  | 13259/16384 [00:03<00:01, 2580.81it/s]DeepGEMM warmup:  83%|████████▎ | 13517/16384 [00:03<00:01, 2517.46it/s]DeepGEMM warmup:  84%|████████▍ | 13769/16384 [00:03<00:01, 2483.26it/s]DeepGEMM warmup:  86%|████████▌ | 14018/16384 [00:03<00:00, 2428.73it/s]DeepGEMM warmup:  87%|████████▋ | 14261/16384 [00:03<00:00, 2368.54it/s]DeepGEMM warmup:  88%|████████▊ | 14498/16384 [00:03<00:00, 2312.62it/s]DeepGEMM warmup:  90%|████████▉ | 14730/16384 [00:03<00:00, 2286.47it/s]DeepGEMM warmup:  91%|█████████▏| 14959/16384 [00:03<00:00, 2260.19it/s]DeepGEMM warmup:  93%|█████████▎| 15185/16384 [00:03<00:00, 2234.53it/s]DeepGEMM warmup:  94%|█████████▍| 15409/16384 [00:04<00:00, 2207.54it/s]DeepGEMM warmup:  95%|█████████▌| 15630/16384 [00:04<00:00, 2182.71it/s]DeepGEMM warmup:  97%|█████████▋| 15849/16384 [00:04<00:00, 2161.22it/s]DeepGEMM warmup:  98%|█████████▊| 16066/16384 [00:04<00:00, 2135.34it/s]DeepGEMM warmup:  99%|█████████▉| 16280/16384 [00:04<00:00, 2087.52it/s]DeepGEMM warmup: 100%|██████████| 16384/16384 [00:04<00:00, 3624.83it/s]
+[2026-07-10 11:45:01] WARNING compile_utils.py:131: Entering DeepGEMM JIT Pre-Compile session. It may take a long time (typically 10-20 mins) if you have not run `sglang.compile_deep_gemm`. It is recommended to run `sglang.compile_deep_gemm` with same args as `sglang.launch_server` for pre-compilation to reduce the overhead if you have not run it before. For example: `python3 -m sglang.compile_deep_gemm --model deepseek-ai/DeepSeek-V3 --tp 8 --trust-remote-code`
+[2026-07-10 11:45:01] INFO compile_utils.py:141: Try DeepGEMM JIT Compiling for <GEMM_NT_F8F8BF16> N=7168, K=8192, num_groups=1 with all Ms. It only takes a little time (typically 1 sec) if you have run `python3 -m sglang.compile_deep_gemm`. 
+[2026-07-10 11:45:01] INFO compile_utils.py:183: Required memory for warmup: 0.3984375GB, Available memory: 176.3319091796875GB
+  Q_b (fp8)                    | decode_B      =      1 |     52.62 us |     0.72
+DeepGEMM warmup:   0%|          | 0/16384 [00:00<?, ?it/s]DeepGEMM warmup:   6%|▌         | 961/16384 [00:00<00:01, 9173.79it/s]DeepGEMM warmup:  11%|█▏        | 1879/16384 [00:00<00:01, 7939.61it/s]DeepGEMM warmup:  16%|█▋        | 2682/16384 [00:00<00:02, 6116.75it/s]DeepGEMM warmup:  20%|██        | 3331/16384 [00:00<00:02, 5082.01it/s]DeepGEMM warmup:  24%|██▎       | 3872/16384 [00:00<00:02, 4336.17it/s]DeepGEMM warmup:  26%|██▋       | 4332/16384 [00:00<00:03, 3820.15it/s]DeepGEMM warmup:  29%|██▉       | 4732/16384 [00:01<00:03, 3462.70it/s]DeepGEMM warmup:  31%|███       | 5089/16384 [00:01<00:03, 3162.69it/s]DeepGEMM warmup:  33%|███▎      | 5411/16384 [00:01<00:03, 2931.71it/s]DeepGEMM warmup:  35%|███▍      | 5706/16384 [00:01<00:03, 2730.20it/s]DeepGEMM warmup:  36%|███▋      | 5979/16384 [00:01<00:04, 2546.00it/s]DeepGEMM warmup:  38%|███▊      | 6232/16384 [00:01<00:04, 2389.13it/s]DeepGEMM warmup:  39%|███▉      | 6469/16384 [00:01<00:04, 2283.34it/s]DeepGEMM warmup:  41%|████      | 6695/16384 [00:01<00:04, 2183.09it/s]DeepGEMM warmup:  42%|████▏     | 6911/16384 [00:02<00:04, 2081.09it/s]DeepGEMM warmup:  43%|████▎     | 7117/16384 [00:02<00:04, 2025.42it/s]DeepGEMM warmup:  45%|████▍     | 7318/16384 [00:02<00:04, 1937.65it/s]DeepGEMM warmup:  46%|████▌     | 7511/16384 [00:02<00:04, 1867.49it/s]DeepGEMM warmup:  47%|████▋     | 7697/16384 [00:02<00:04, 1821.60it/s]DeepGEMM warmup:  48%|████▊     | 7878/16384 [00:02<00:04, 1734.14it/s]DeepGEMM warmup:  49%|████▉     | 8051/16384 [00:02<00:04, 1688.24it/s]DeepGEMM warmup:  50%|█████     | 8220/16384 [00:02<00:04, 1648.41it/s]DeepGEMM warmup:  51%|█████     | 8385/16384 [00:02<00:04, 1614.05it/s]DeepGEMM warmup:  52%|█████▏    | 8546/16384 [00:03<00:04, 1589.83it/s]DeepGEMM warmup:  53%|█████▎    | 8705/16384 [00:03<00:04, 1552.09it/s]DeepGEMM warmup:  54%|█████▍    | 8860/16384 [00:03<00:04, 1533.14it/s]DeepGEMM warmup:  55%|█████▌    | 9014/16384 [00:03<00:04, 1516.74it/s]DeepGEMM warmup:  56%|█████▌    | 9166/16384 [00:03<00:04, 1498.25it/s]DeepGEMM warmup:  57%|█████▋    | 9316/16384 [00:03<00:04, 1466.80it/s]DeepGEMM warmup:  58%|█████▊    | 9463/16384 [00:03<00:04, 1447.77it/s]DeepGEMM warmup:  59%|█████▊    | 9608/16384 [00:03<00:04, 1399.76it/s]DeepGEMM warmup:  60%|█████▉    | 9749/16384 [00:03<00:04, 1381.60it/s]DeepGEMM warmup:  60%|██████    | 9888/16384 [00:04<00:04, 1356.62it/s]DeepGEMM warmup:  61%|██████    | 10024/16384 [00:04<00:04, 1342.20it/s]DeepGEMM warmup:  62%|██████▏   | 10159/16384 [00:04<00:04, 1341.69it/s]DeepGEMM warmup:  63%|██████▎   | 10294/16384 [00:04<00:04, 1326.82it/s]DeepGEMM warmup:  64%|██████▎   | 10427/16384 [00:04<00:04, 1297.37it/s]DeepGEMM warmup:  64%|██████▍   | 10557/16384 [00:04<00:04, 1281.58it/s]DeepGEMM warmup:  65%|██████▌   | 10686/16384 [00:04<00:04, 1270.12it/s]DeepGEMM warmup:  66%|██████▌   | 10814/16384 [00:04<00:04, 1244.07it/s]DeepGEMM warmup:  67%|██████▋   | 10939/16384 [00:04<00:04, 1230.42it/s]DeepGEMM warmup:  68%|██████▊   | 11063/16384 [00:04<00:04, 1217.35it/s]DeepGEMM warmup:  68%|██████▊   | 11185/16384 [00:05<00:04, 1205.27it/s]DeepGEMM warmup:  69%|██████▉   | 11306/16384 [00:05<00:04, 1194.98it/s]DeepGEMM warmup:  70%|██████▉   | 11426/16384 [00:05<00:04, 1193.60it/s]DeepGEMM warmup:  70%|███████   | 11546/16384 [00:05<00:04, 1168.45it/s]DeepGEMM warmup:  71%|███████   | 11663/16384 [00:05<00:04, 1153.67it/s]DeepGEMM warmup:  72%|███████▏  | 11779/16384 [00:05<00:04, 1141.14it/s]DeepGEMM warmup:  73%|███████▎  | 11894/16384 [00:05<00:03, 1130.51it/s]DeepGEMM warmup:  73%|███████▎  | 12008/16384 [00:05<00:03, 1122.25it/s]DeepGEMM warmup:  74%|███████▍  | 12121/16384 [00:05<00:03, 1113.49it/s]DeepGEMM warmup:  75%|███████▍  | 12233/16384 [00:06<00:03, 1111.27it/s]DeepGEMM warmup:  75%|███████▌  | 12345/16384 [00:06<00:03, 1091.64it/s]DeepGEMM warmup:  76%|███████▌  | 12455/16384 [00:06<00:03, 1081.33it/s]DeepGEMM warmup:  77%|███████▋  | 12564/16384 [00:06<00:03, 1082.73it/s]DeepGEMM warmup:  77%|███████▋  | 12673/16384 [00:06<00:03, 1073.32it/s]DeepGEMM warmup:  78%|███████▊  | 12781/16384 [00:06<00:03, 1060.91it/s]DeepGEMM warmup:  79%|███████▊  | 12888/16384 [00:06<00:03, 1049.91it/s]DeepGEMM warmup:  79%|███████▉  | 12994/16384 [00:06<00:03, 1040.56it/s]DeepGEMM warmup:  80%|███████▉  | 13099/16384 [00:06<00:03, 1031.11it/s]DeepGEMM warmup:  81%|████████  | 13203/16384 [00:06<00:03, 1024.63it/s]DeepGEMM warmup:  81%|████████  | 13307/16384 [00:07<00:02, 1028.46it/s]DeepGEMM warmup:  82%|████████▏ | 13410/16384 [00:07<00:02, 1017.76it/s]DeepGEMM warmup:  82%|████████▏ | 13512/16384 [00:07<00:02, 1004.87it/s]DeepGEMM warmup:  83%|████████▎ | 13613/16384 [00:07<00:02, 996.01it/s] DeepGEMM warmup:  84%|████████▎ | 13713/16384 [00:07<00:02, 985.22it/s]DeepGEMM warmup:  84%|████████▍ | 13812/16384 [00:07<00:02, 975.15it/s]DeepGEMM warmup:  85%|████████▍ | 13910/16384 [00:07<00:02, 974.86it/s]DeepGEMM warmup:  85%|████████▌ | 14008/16384 [00:07<00:02, 965.66it/s]DeepGEMM warmup:  86%|████████▌ | 14106/16384 [00:07<00:02, 969.16it/s]DeepGEMM warmup:  87%|████████▋ | 14203/16384 [00:07<00:02, 955.77it/s]DeepGEMM warmup:  87%|████████▋ | 14299/16384 [00:08<00:02, 945.69it/s]DeepGEMM warmup:  88%|████████▊ | 14394/16384 [00:08<00:02, 936.46it/s]DeepGEMM warmup:  88%|████████▊ | 14488/16384 [00:08<00:02, 936.24it/s]DeepGEMM warmup:  89%|████████▉ | 14582/16384 [00:08<00:01, 926.90it/s]DeepGEMM warmup:  90%|████████▉ | 14675/16384 [00:08<00:01, 915.48it/s]DeepGEMM warmup:  90%|█████████ | 14767/16384 [00:08<00:01, 905.42it/s]DeepGEMM warmup:  91%|█████████ | 14858/16384 [00:08<00:01, 903.91it/s]DeepGEMM warmup:  91%|█████████ | 14949/16384 [00:08<00:01, 895.22it/s]DeepGEMM warmup:  92%|█████████▏| 15039/16384 [00:08<00:01, 887.35it/s]DeepGEMM warmup:  92%|█████████▏| 15128/16384 [00:09<00:01, 887.17it/s]DeepGEMM warmup:  93%|█████████▎| 15217/16384 [00:09<00:01, 886.89it/s]DeepGEMM warmup:  93%|█████████▎| 15306/16384 [00:09<00:01, 887.14it/s]DeepGEMM warmup:  94%|█████████▍| 15395/16384 [00:09<00:01, 877.41it/s]DeepGEMM warmup:  95%|█████████▍| 15483/16384 [00:09<00:01, 868.71it/s]DeepGEMM warmup:  95%|█████████▌| 15570/16384 [00:09<00:00, 868.05it/s]DeepGEMM warmup:  96%|█████████▌| 15657/16384 [00:09<00:00, 859.12it/s]DeepGEMM warmup:  96%|█████████▌| 15743/16384 [00:09<00:00, 858.89it/s]DeepGEMM warmup:  97%|█████████▋| 15829/16384 [00:09<00:00, 858.88it/s]DeepGEMM warmup:  97%|█████████▋| 15915/16384 [00:09<00:00, 850.86it/s]DeepGEMM warmup:  98%|█████████▊| 16001/16384 [00:10<00:00, 852.86it/s]DeepGEMM warmup:  98%|█████████▊| 16087/16384 [00:10<00:00, 843.79it/s]DeepGEMM warmup:  99%|█████████▊| 16172/16384 [00:10<00:00, 842.85it/s]DeepGEMM warmup:  99%|█████████▉| 16257/16384 [00:10<00:00, 835.40it/s]DeepGEMM warmup: 100%|█████████▉| 16341/16384 [00:10<00:00, 827.52it/s]DeepGEMM warmup: 100%|██████████| 16384/16384 [00:10<00:00, 1560.67it/s]
+  O_proj (fp8)                 | decode_B      =      1 |     57.30 us |     2.05
+  MoE Router (cuBLAS)          | decode_B      =      1 |     53.43 us |      0.1
+  MoE Router (dsv3_router_gemm) | decode_B      =      1 |     50.15 us |     0.11
+  KV_b absorb BMM H=64         | decode_B      =      1 |     50.25 us |     0.17
+  MoE Gate (fused)             | decode_B      =      1 |     51.81 us |         
+  Fused add+RMSNorm            | decode_B      =      1 |     49.24 us |         
+  Q_a fused (fp8)              | decode_B      =      2 |     57.61 us |     1.08
+  Q_b (fp8)                    | decode_B      =      2 |     52.68 us |     1.43
+  O_proj (fp8)                 | decode_B      =      2 |     57.27 us |      4.1
+  MoE Router (cuBLAS)          | decode_B      =      2 |     53.59 us |     0.21
+  MoE Router (dsv3_router_gemm) | decode_B      =      2 |     50.55 us |     0.22
+  KV_b absorb BMM H=64         | decode_B      =      2 |     50.30 us |     0.33
+  MoE Gate (fused)             | decode_B      =      2 |     51.87 us |         
+  Fused add+RMSNorm            | decode_B      =      2 |     49.75 us |         
+  Q_a fused (fp8)              | decode_B      =      4 |     57.25 us |     2.18
+  Q_b (fp8)                    | decode_B      =      4 |     52.63 us |     2.87
+  O_proj (fp8)                 | decode_B      =      4 |     57.15 us |     8.22
+  MoE Router (cuBLAS)          | decode_B      =      4 |     53.51 us |     0.41
+  MoE Router (dsv3_router_gemm) | decode_B      =      4 |     51.28 us |     0.43
+  KV_b absorb BMM H=64         | decode_B      =      4 |     50.31 us |     0.67
+  MoE Gate (fused)             | decode_B      =      4 |     51.86 us |         
+  Fused add+RMSNorm            | decode_B      =      4 |     49.63 us |         
+  Q_a fused (fp8)              | decode_B      =      8 |     56.86 us |     4.39
+  Q_b (fp8)                    | decode_B      =      8 |     52.58 us |     5.74
+  O_proj (fp8)                 | decode_B      =      8 |     57.28 us |     16.4
+  MoE Router (cuBLAS)          | decode_B      =      8 |     53.51 us |     0.82
+  MoE Router (dsv3_router_gemm) | decode_B      =      8 |     52.66 us |     0.84
+  KV_b absorb BMM H=64         | decode_B      =      8 |     50.18 us |     1.34
+  MoE Gate (fused)             | decode_B      =      8 |     51.84 us |         
+  Fused add+RMSNorm            | decode_B      =      8 |     49.58 us |         
+  Q_a fused (fp8)              | decode_B      =     16 |     56.53 us |     8.83
+  Q_b (fp8)                    | decode_B      =     16 |     52.66 us |    11.47
+  O_proj (fp8)                 | decode_B      =     16 |     57.36 us |    32.76
+  MoE Router (cuBLAS)          | decode_B      =     16 |     53.43 us |     1.65
+  MoE Router (dsv3_router_gemm) | decode_B      =     16 |     57.79 us |     1.52
+  KV_b absorb BMM H=64         | decode_B      =     16 |     50.41 us |     2.66
+  MoE Gate (fused)             | decode_B      =     16 |     52.18 us |         
+  Fused add+RMSNorm            | decode_B      =     16 |     49.97 us |         
+  Q_a fused (fp8)              | decode_B      =     32 |     56.17 us |    17.77
+  Q_b (fp8)                    | decode_B      =     32 |     52.91 us |    22.83
+  O_proj (fp8)                 | decode_B      =     32 |     57.90 us |     64.9
+  MoE Router (cuBLAS)          | decode_B      =     32 |     53.50 us |     3.29
+  KV_b absorb BMM H=64         | decode_B      =     32 |     51.07 us |     5.26
+  MoE Gate (fused)             | decode_B      =     32 |     52.11 us |         
+  Fused add+RMSNorm            | decode_B      =     32 |     49.99 us |         
+  Q_a fused (fp8)              | decode_B      =     64 |     57.05 us |     35.0
+  Q_b (fp8)                    | decode_B      =     64 |     53.19 us |    45.42
+  O_proj (fp8)                 | decode_B      =     64 |     59.11 us |   127.16
+  MoE Router (cuBLAS)          | decode_B      =     64 |     53.58 us |     6.58
+  KV_b absorb BMM H=64         | decode_B      =     64 |     50.80 us |    10.57
+  MoE Gate (fused)             | decode_B      =     64 |     52.25 us |         
+  Fused add+RMSNorm            | decode_B      =     64 |     50.03 us |         
+  Q_a fused (fp8)              | decode_B      =    128 |     56.96 us |     70.1
+  Q_b (fp8)                    | decode_B      =    128 |     54.43 us |    88.77
+  O_proj (fp8)                 | decode_B      =    128 |     60.02 us |   250.46
+  MoE Router (cuBLAS)          | decode_B      =    128 |     54.81 us |    12.86
+  KV_b absorb BMM H=64         | decode_B      =    128 |     51.69 us |    20.77
+  MoE Gate (fused)             | decode_B      =    128 |     52.25 us |         
+  Fused add+RMSNorm            | decode_B      =    128 |     49.60 us |         
+  Q_a fused (fp8)              | decode_B      =    256 |     57.46 us |   138.98
+  Q_b (fp8)                    | decode_B      =    256 |     55.31 us |   174.73
+  O_proj (fp8)                 | decode_B      =    256 |     62.41 us |   481.76
+  MoE Router (cuBLAS)          | decode_B      =    256 |     56.29 us |    25.03
+  KV_b absorb BMM H=64         | decode_B      =    256 |     53.50 us |    40.14
+  MoE Gate (fused)             | decode_B      =    256 |     52.79 us |         
+  Fused add+RMSNorm            | decode_B      =    256 |     50.84 us |         
+
+### C. Per-expert token sweep — contiguous grouped (prefill) ###
+  MoE GateUp grouped (contig)  | tokens_per_expert=     16 |    587.77 us |    306.9
+  MoE GateUp grouped (contig)  | tokens_per_expert=     32 |    589.66 us |   305.92
+  MoE GateUp grouped (contig)  | tokens_per_expert=     64 |    586.92 us |   307.35
+  MoE GateUp grouped (contig)  | tokens_per_expert=    128 |    587.08 us |   307.27
+  MoE GateUp grouped (contig)  | tokens_per_expert=    256 |    661.08 us |   545.74
+  MoE GateUp grouped (contig)  | tokens_per_expert=    341 |    876.49 us |   617.42
+  MoE GateUp grouped (contig)  | tokens_per_expert=    512 |   1071.89 us |   673.16
+  MoE GateUp grouped (contig)  | tokens_per_expert=   1024 |   1807.35 us |   798.47
+  MoE GateUp grouped (contig)  | tokens_per_expert=routed_M4096 |    588.12 us |   306.72
+  MoE GateUp grouped (contig)  | tokens_per_expert=routed_M16384 |    874.94 us |   620.13
+
+### D. masked_m sweep — masked grouped (decode) ###
+  MoE GateUp masked            | masked_m      =      1 |     73.23 us |     3.21
+  MoE GateUp masked            | masked_m      =      2 |     73.24 us |     6.41
+  MoE GateUp masked            | masked_m      =      4 |     73.30 us |    12.82
+  MoE GateUp masked            | masked_m      =      8 |     73.26 us |    25.65
+  MoE GateUp masked            | masked_m      =     16 |     73.02 us |    51.47
+  MoE GateUp masked            | masked_m      =     32 |     73.64 us |   102.07
+  MoE GateUp masked            | masked_m      =     64 |     73.16 us |   205.48
+  MoE GateUp masked            | masked_m      =    128 |     73.12 us |   411.15
+  MoE GateUp masked            | masked_m      =  skew8 |     73.34 us |   102.09
+  MoE GateUp masked            | masked_m      =   ep12 |     86.66 us |    65.05
+
+### E. Attention prefill seqlen sweep ###
+  MLA attention prefill        | prefill_seqlen=   1024 |    343.34 us |    62.55
+  MLA attention prefill        | prefill_seqlen=   2048 |    787.00 us |   109.15
+  MLA attention prefill        | prefill_seqlen=   4096 |   2254.20 us |   152.43
+  MLA attention prefill        | prefill_seqlen=   8192 |   8448.71 us |   162.67
+  MLA attention prefill        | prefill_seqlen=  16384 |  31559.71 us |    174.2
+
+### F. Attention decode sweep (KV len @B=16, then batch @seq=4096) ###
+  MLA attention decode         | decode_kvlen  =   1024 |     64.54 us |    35.35
+  MLA attention decode         | decode_kvlen  =   2048 |     72.36 us |    63.07
+  MLA attention decode         | decode_kvlen  =   4096 |     71.28 us |   128.04
+  MLA attention decode         | decode_kvlen  =   8192 |    146.44 us |   124.65
+  MLA attention decode         | decode_kvlen  =  16384 |    172.69 us |    211.4
+  MLA attention decode         | decode_kvlen  =  32768 |    334.04 us |   218.58
+  MLA attention decode         | decode_B      =      1 |     59.85 us |     9.53
+  MLA attention decode         | decode_B      =      2 |     60.90 us |    18.73
+  MLA attention decode         | decode_B      =      4 |     62.73 us |    36.37
+  MLA attention decode         | decode_B      =      8 |     71.15 us |    64.14
+  MLA attention decode         | decode_B      =     16 |     71.37 us |   127.89
+  MLA attention decode         | decode_B      =     32 |    145.44 us |   125.51
+  MLA attention decode         | decode_B      =     64 |    174.20 us |   209.57
+  MLA attention decode         | decode_B      =    128 |    333.49 us |   218.94
+  MLA attention decode         | decode_B      =    256 |    615.16 us |   237.38
+
+# wrote logs/kimi_minimax_20260710-070816/kimi_sweeps.json and logs/kimi_minimax_20260710-070816/kimi_k27_sweeps.csv (164/164 ok)

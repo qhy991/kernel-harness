@@ -1,0 +1,153 @@
+[
+  {
+    "name": "MoE Gate (fused topk)",
+    "phase": "prefill",
+    "backend": "sgl_kernel.kimi_k2_moe_fused_gate",
+    "shape": "[16384,384] topk=8",
+    "us": 79.08
+  },
+  {
+    "name": "MoE Gate (fused topk)",
+    "phase": "decode",
+    "backend": "sgl_kernel.kimi_k2_moe_fused_gate",
+    "shape": "[16,384] topk=8",
+    "us": 52.19
+  },
+  {
+    "name": "SwiGLU act (dense)",
+    "phase": "prefill",
+    "backend": "sgl_kernel.silu_and_mul",
+    "shape": "[16384,4608]->[16384,2304]",
+    "us": 146.58
+  },
+  {
+    "name": "SwiGLU act (dense)",
+    "phase": "decode",
+    "backend": "sgl_kernel.silu_and_mul",
+    "shape": "[16,4608]->[16,2304]",
+    "us": 49.89
+  },
+  {
+    "name": "SwiGLU act (moe grouped)",
+    "phase": "prefill",
+    "backend": "sgl_kernel.silu_and_mul",
+    "shape": "[196608,512]->[196608,256]",
+    "us": 445.74
+  },
+  {
+    "name": "SwiGLU act (moe masked)",
+    "phase": "decode",
+    "backend": "sgl_kernel.silu_and_mul",
+    "shape": "[1024,2048]->[1024,1024]",
+    "us": 50.86
+  },
+  {
+    "name": "Act FP8 quant (hidden)",
+    "phase": "prefill",
+    "backend": "sglang_per_token_group_quant_fp8 (UE8M0)",
+    "shape": "[16384,7168] group=128",
+    "us": 158.04
+  },
+  {
+    "name": "Act FP8 quant (hidden)",
+    "phase": "decode",
+    "backend": "sglang_per_token_group_quant_fp8 (UE8M0)",
+    "shape": "[16,7168] group=128",
+    "us": 48.99
+  },
+  {
+    "name": "Act FP8 quant (dense-down-in)",
+    "phase": "decode",
+    "backend": "sglang_per_token_group_quant_fp8 (UE8M0)",
+    "shape": "[16,2304] group=128",
+    "us": 48.99
+  },
+  {
+    "name": "Fused add+RMSNorm",
+    "phase": "prefill",
+    "backend": "sgl_kernel.fused_add_rmsnorm",
+    "shape": "[16384,7168]",
+    "us": 336.24
+  },
+  {
+    "name": "Fused add+RMSNorm",
+    "phase": "decode",
+    "backend": "sgl_kernel.fused_add_rmsnorm",
+    "shape": "[16,7168]",
+    "us": 49.77
+  },
+  {
+    "backend": "sgl_kernel.rmsnorm",
+    "shape": "[16384,1536]",
+    "us": 62.02,
+    "name": "q_a_layernorm",
+    "phase": "prefill"
+  },
+  {
+    "backend": "sgl_kernel.rmsnorm",
+    "shape": "[16384,512]",
+    "us": 53.93,
+    "name": "kv_a_layernorm",
+    "phase": "prefill"
+  },
+  {
+    "backend": "sgl_kernel.rmsnorm",
+    "shape": "[16,1536]",
+    "us": 49.15,
+    "name": "q_a_layernorm",
+    "phase": "decode"
+  },
+  {
+    "backend": "sgl_kernel.rmsnorm",
+    "shape": "[16,512]",
+    "us": 48.64,
+    "name": "kv_a_layernorm",
+    "phase": "decode"
+  },
+  {
+    "name": "RoPE (q+k)",
+    "phase": "prefill",
+    "backend": "sglang.jit_kernel.rope apply_rope_with_cos_sin_cache_inplace",
+    "shape": "q:[16384,64,64] k:[16384,1,64]",
+    "us": 144.22
+  },
+  {
+    "name": "RoPE (q+k)",
+    "phase": "decode",
+    "backend": "sglang.jit_kernel.rope apply_rope_with_cos_sin_cache_inplace",
+    "shape": "q:[16,64,64] k:[16,1,64]",
+    "us": 48.77
+  },
+  {
+    "name": "MoE Combine (moe_sum)",
+    "phase": "prefill",
+    "backend": "sgl_kernel.moe_sum",
+    "shape": "[16384,8,7168]->[16384,7168]",
+    "us": 1233.41
+  },
+  {
+    "name": "MoE Combine (moe_sum)",
+    "phase": "decode",
+    "backend": "sgl_kernel.moe_sum",
+    "shape": "[16,8,7168]->[16,7168]",
+    "us": 50.86
+  },
+  {
+    "op_id": -1,
+    "name": "KV_b absorb BMM (H=64)",
+    "phase": "decode",
+    "backend": "torch.bmm bf16",
+    "shape": "[16,64,128]x[64,128,512]",
+    "us": 50.25,
+    "TFLOPS": 2.67
+  },
+  {
+    "op_id": -1,
+    "name": "V absorb BMM (H=64)",
+    "phase": "decode",
+    "backend": "torch.bmm bf16",
+    "shape": "[16,64,512]x[64,512,128]",
+    "us": 50.29,
+    "TFLOPS": 2.67
+  }
+]

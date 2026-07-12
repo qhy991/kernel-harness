@@ -1,0 +1,42 @@
+{
+    "name": "kimi_k27_q_a_layernorm_decode",
+    "hf_id": "moonshotai/Kimi-K2.7",
+    "description": "Kimi-K2.7 Q_a LayerNorm (RMSNorm) (decode), standalone RMSNorm over hidden=1536 (sgl_kernel.rmsnorm). out[M,1536] = x * rsqrt(mean(x^2,-1)+eps) * weight. Baseline = sglang production kernel; beat its latency while matching output.",
+    "axes": {
+        "M": {
+            "type": "var",
+            "description": "decode token count (sweep)"
+        },
+        "H": {
+            "type": "const",
+            "value": 1536,
+            "description": "hidden size"
+        }
+    },
+    "custom_inputs_entrypoint": "get_inputs",
+    "inputs": {
+        "x": {
+            "shape": [
+                "M",
+                "H"
+            ],
+            "dtype": "bfloat16"
+        },
+        "weight": {
+            "shape": [
+                "H"
+            ],
+            "dtype": "bfloat16"
+        }
+    },
+    "outputs": {
+        "output": {
+            "shape": [
+                "M",
+                "H"
+            ],
+            "dtype": "bfloat16"
+        }
+    },
+    "reference": "\"\"\"RMSNorm \u2014 sglang production baseline (sgl_kernel.rmsnorm).\n\nStandalone Kimi-K2.7 RMSNorm on the no-residual path (q_a_layernorm / kv_a_layernorm):\nthe exact kernel sglang dispatches in RMSNorm.forward_cuda when residual is None\n(python/sglang/srt/layers/layernorm.py:329 -> sgl_kernel.rmsnorm). This file reads\nthe (M, H) axes from definition.json and calls that kernel. `reference.py` IS the\ncorrectness oracle AND the latency baseline: an optimized solution.py must match this\noutput within the per-workload tolerance and run faster.\n\n  out[M, H] = x[M, H] * rsqrt(mean(x**2, dim=-1) + eps) * weight,  fp32 accumulate.\n\nMemory-bound elementwise op: reads x[M,H] + weight[H], writes out[M,H]. Only the\nkernel is timed (inputs are generated untimed by get_inputs), matching the\nkernel-harness measurement contract.\n\"\"\"\n\nimport torch\nfrom sgl_kernel import rmsnorm\n\nEPS = 1e-6  # DeepSeek/Kimi rms_norm_eps\n\n\ndef get_inputs(axes_and_scalars: dict, device: torch.device) -> dict:\n    \"\"\"Generate bf16 hidden states + norm weight in the exact sgl_kernel layout.\"\"\"\n    M = axes_and_scalars[\"M\"]\n    H = axes_and_scalars[\"H\"]\n    x = torch.randn(M, H, device=device, dtype=torch.bfloat16)\n    weight = torch.randn(H, device=device, dtype=torch.bfloat16)\n    return {\"x\": x, \"weight\": weight}\n\n\n@torch.no_grad()\ndef run(x, weight):\n    return rmsnorm(x, weight, EPS)\n"
+}

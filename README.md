@@ -1,5 +1,34 @@
 # kernel-harness
 
+## Agent kernel-optimization testbench (primary)
+
+The production-aligned agent tasks are in [`testbench/`](testbench/README.md). Each
+task compares an editable `solution.py` against the real SGLang kernel in
+`reference.py`, across a declared shape sweep. The evaluator, correctness checks,
+CUPTI timing, anti-gaming guards, and integration gate all live in this repository.
+
+```bash
+git clone git@github.com:qhy991/kernel-harness.git
+cd kernel-harness
+cp testbench/harness.env.example testbench/harness.env  # edit only if checkouts differ
+./testbench/setup_env.sh
+.venv/bin/python testbench/bin/check_env.py
+.venv/bin/python testbench/bin/evaluate.py \
+  testbench/tasks/kimi_k27/input_embedding_decode --max-workloads 1 --no-baseline
+```
+
+Agents should read [`AGENTS.md`](AGENTS.md) first. The only supported environment is
+the repo-local `.venv`, created and managed by `uv`. The SGLang checkout's
+`python/pyproject.toml` supplies the matching torch, Triton, SGLang-kernel, DeepGEMM,
+and FlashInfer versions.
+
+## Legacy proxy-baseline catalogue
+
+The material below documents the original framework-light proxy microbenchmarks. It
+is useful for shape inspection and rough sanity checks, but it is not the
+agent-optimization oracle and its proxy timings are not valid SGLang speedup
+denominators.
+
 Reproducible per-operator microbenchmarks for the hot kernels that SGLang uses when
 serving **DeepSeek V3.2 / Kimi K2.x (K2, K2.5, K2.6, K2.7) / MiniMax-M3** style
 Multi-head Latent Attention (MLA) + Deep Sparse Attention (DSA) MoE models.
@@ -62,25 +91,25 @@ kernel-harness/
     └── results_h800_extra.json              # extra sparse-topk + fp8 proxy runs
 ```
 
-## Quick start — baseline (no sgl-kernel needed)
+## Legacy quick start — proxy baseline
 
 ```bash
 git clone git@github.com:qhy991/kernel-harness.git
 cd kernel-harness
 
-# Any Python 3.10+ venv with torch that matches your CUDA driver.
-# The env that shipped this harness's baseline: torch 2.5.1+cu124 + flashinfer 0.6.12 + flash_attn 2.7.4
-python -m pip install -r requirements.txt
+# Reuse the same repo-local uv-managed environment.
+./testbench/setup_env.sh
+uv pip install --python .venv/bin/python -r requirements.txt
 
 # Run everything and dump results to ./logs/{results.json, results.csv}
-python run_all.py
+.venv/bin/python run_all.py
 
 # Or run just one family:
-python run_all.py --only linear
-python run_all.py --only grouped
-python run_all.py --only bmm
-python run_all.py --only indexer
-python run_all.py --only attention
+.venv/bin/python run_all.py --only linear
+.venv/bin/python run_all.py --only grouped
+.venv/bin/python run_all.py --only bmm
+.venv/bin/python run_all.py --only indexer
+.venv/bin/python run_all.py --only attention
 ```
 
 Sample line from `run_all.py` output (H800 SM 9.0, torch 2.5.1+cu124):

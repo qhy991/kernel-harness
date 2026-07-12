@@ -1,0 +1,30 @@
+{
+  "name": "mm_moe_router_prefill",
+  "model": "minimax_m3",
+  "op": "MoE Router GEMM",
+  "phase": "prefill",
+  "family": "router-gemm",
+  "goal": "Optimize solution.py against SGLang's FP32 cuBLAS baseline for MiniMax-M3 MoE Router GEMM prefill; beat the full sweep and match SGLang output within the declared tolerance.",
+  "H": 6144,
+  "E": 128,
+  "sweep": [
+    512,
+    1024,
+    2048,
+    4096,
+    8192,
+    16384,
+    32768
+  ],
+  "backend": "cuBLAS fp32 GEMM (blackwell)",
+  "tolerance": {
+    "max_atol": 0.02,
+    "max_rtol": 0.01,
+    "required_matched_ratio": 0.999
+  },
+  "baseline": {
+    "source": "live",
+    "measure": "reference.py timed by the harness CUPTI runtime (median device-kernel us)",
+    "denominator": "the live per-shape reference latency (see .baseline_cache.json)"
+  }
+}

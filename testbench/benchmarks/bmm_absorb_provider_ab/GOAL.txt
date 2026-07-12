@@ -1,0 +1,9 @@
+GOAL (paste after `/goal`, then send the task message below in the same session):
+
+Optimize the CUDA/GPU kernel in
+/home/qinhaiyan/kernel-harness/testbench/tasks/kimi_k27/q_nope_absorb_bmm_decode/solution.py
+so it is CORRECT and FASTER than the sglang baseline across every shape in the sweep.
+Do not stop until `python /home/qinhaiyan/kernel-harness/testbench/bin/evaluate.py
+tasks/kimi_k27/q_nope_absorb_bmm_decode --repeat 3` reports "correct": true AND
+"win": true (min_speedup_conservative > 1.0), or until you have exhausted your best
+approaches and clearly report the final verdict JSON with the reason you could not win.

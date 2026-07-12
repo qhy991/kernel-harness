@@ -1,0 +1,11 @@
+  (MISSING bench: test/registered/jit/benchmark/minimax/bench_minimax_qknorm_rope.py)
+  (MISSING bench: test/registered/jit/benchmark/minimax/bench_minimax_decode_topk.py)
+  (MISSING bench: test/registered/jit/benchmark/minimax/bench_minimax_store_kv_index.py)
+  (MISSING test: test/registered/jit/minimax/test_minimax_qknorm_rope.py)
+  (MISSING test: test/registered/jit/minimax/test_minimax_decode_topk.py)
+  (MISSING test: test/registered/jit/minimax/test_minimax_store_kv_index.py)
+  (MISSING test: test/registered/jit/minimax/test_minimax_decode_topk_page_table.py)
+  (MISSING test: python/sglang/srt/layers/attention/minimax_sparse_ops/tests/test_sparse_gqa.py)
+  (MISSING test: python/sglang/srt/layers/attention/minimax_sparse_ops/tests/test_flash_with_topk_idx.py)
+NOTE: this sglang checkout has no MiniMax-M3 JIT/sparse_ops sources.
+      M3 ops 28-43 in docs/kernel_api_mapping.csv are external EntryClass.

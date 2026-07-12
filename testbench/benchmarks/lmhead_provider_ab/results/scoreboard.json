@@ -1,0 +1,378 @@
+[
+  {
+    "task": "scored_infini",
+    "solution": "solution.py",
+    "repeat": 5,
+    "correct": true,
+    "win": false,
+    "geomean_speedup": 1.0807,
+    "min_speedup": 1.0001,
+    "geomean_speedup_conservative": 1.0783,
+    "min_speedup_conservative": 0.9979,
+    "geomean_speedup_optimistic": 1.0823,
+    "num_shapes": 9,
+    "per_shape": [
+      {
+        "axes": {
+          "M": 1
+        },
+        "passed": true,
+        "status": "PASSED",
+        "runs": 5,
+        "passed_runs": 5,
+        "max_abs_err": 0.015625,
+        "max_rel_err": 0.007751937955617905,
+        "sol_us": 346.26,
+        "sol_us_lo": 346.03,
+        "sol_us_hi": 346.32,
+        "base_us": 375.33,
+        "speedup": 1.084,
+        "speedup_conservative": 1.083,
+        "speedup_optimistic": 1.085,
+        "log": ""
+      },
+      {
+        "axes": {
+          "M": 2
+        },
+        "passed": true,
+        "status": "PASSED",
+        "runs": 5,
+        "passed_runs": 5,
+        "max_abs_err": 0.0,
+        "max_rel_err": 0.0,
+        "sol_us": 347.43,
+        "sol_us_lo": 347.36,
+        "sol_us_hi": 347.76,
+        "base_us": 394.38,
+        "speedup": 1.135,
+        "speedup_conservative": 1.131,
+        "speedup_optimistic": 1.136,
+        "log": ""
+      },
+      {
+        "axes": {
+          "M": 4
+        },
+        "passed": true,
+        "status": "PASSED",
+        "runs": 5,
+        "passed_runs": 5,
+        "max_abs_err": 0.0,
+        "max_rel_err": 0.0,
+        "sol_us": 348.62,
+        "sol_us_lo": 348.38,
+        "sol_us_hi": 348.98,
+        "base_us": 394.56,
+        "speedup": 1.132,
+        "speedup_conservative": 1.128,
+        "speedup_optimistic": 1.134,
+        "log": ""
+      },
+      {
+        "axes": {
+          "M": 8
+        },
+        "passed": true,
+        "status": "PASSED",
+        "runs": 5,
+        "passed_runs": 5,
+        "max_abs_err": 0.0,
+        "max_rel_err": 0.0,
+        "sol_us": 350.45,
+        "sol_us_lo": 350.26,
+        "sol_us_hi": 350.54,
+        "base_us": 395.99,
+        "speedup": 1.13,
+        "speedup_conservative": 1.128,
+        "speedup_optimistic": 1.133,
+        "log": ""
+      },
+      {
+        "axes": {
+          "M": 16
+        },
+        "passed": true,
+        "status": "PASSED",
+        "runs": 5,
+        "passed_runs": 5,
+        "max_abs_err": 0.0,
+        "max_rel_err": 0.0,
+        "sol_us": 352.88,
+        "sol_us_lo": 352.85,
+        "sol_us_hi": 353.25,
+        "base_us": 398.16,
+        "speedup": 1.128,
+        "speedup_conservative": 1.126,
+        "speedup_optimistic": 1.13,
+        "log": ""
+      },
+      {
+        "axes": {
+          "M": 32
+        },
+        "passed": true,
+        "status": "PASSED",
+        "runs": 5,
+        "passed_runs": 5,
+        "max_abs_err": 0.0,
+        "max_rel_err": 0.0,
+        "sol_us": 379.5,
+        "sol_us_lo": 379.23,
+        "sol_us_hi": 379.6,
+        "base_us": 401.46,
+        "speedup": 1.058,
+        "speedup_conservative": 1.055,
+        "speedup_optimistic": 1.06,
+        "log": ""
+      },
+      {
+        "axes": {
+          "M": 64
+        },
+        "passed": true,
+        "status": "PASSED",
+        "runs": 5,
+        "passed_runs": 5,
+        "max_abs_err": 0.0,
+        "max_rel_err": 0.0,
+        "sol_us": 385.62,
+        "sol_us_lo": 385.57,
+        "sol_us_hi": 385.82,
+        "base_us": 409.06,
+        "speedup": 1.061,
+        "speedup_conservative": 1.058,
+        "speedup_optimistic": 1.062,
+        "log": ""
+      },
+      {
+        "axes": {
+          "M": 128
+        },
+        "passed": true,
+        "status": "PASSED",
+        "runs": 5,
+        "passed_runs": 5,
+        "max_abs_err": 0.0,
+        "max_rel_err": 0.0,
+        "sol_us": 427.12,
+        "sol_us_lo": 426.75,
+        "sol_us_hi": 427.26,
+        "base_us": 430.9,
+        "speedup": 1.009,
+        "speedup_conservative": 1.008,
+        "speedup_optimistic": 1.011,
+        "log": ""
+      },
+      {
+        "axes": {
+          "M": 256
+        },
+        "passed": true,
+        "status": "PASSED",
+        "runs": 5,
+        "passed_runs": 5,
+        "max_abs_err": 0.0,
+        "max_rel_err": 0.0,
+        "sol_us": 472.45,
+        "sol_us_lo": 471.99,
+        "sol_us_hi": 473.22,
+        "base_us": 472.48,
+        "speedup": 1.0,
+        "speedup_conservative": 0.998,
+        "speedup_optimistic": 1.002,
+        "log": ""
+      }
+    ],
+    "provider": "infini",
+    "tampered_oracle_files": []
+  },
+  {
+    "task": "scored_official",
+    "solution": "solution.py",
+    "repeat": 5,
+    "correct": true,
+    "win": true,
+    "geomean_speedup": 1.0909,
+    "min_speedup": 1.0256,
+    "geomean_speedup_conservative": 1.0894,
+    "min_speedup_conservative": 1.0252,
+    "geomean_speedup_optimistic": 1.0925,
+    "num_shapes": 9,
+    "per_shape": [
+      {
+        "axes": {
+          "M": 1
+        },
+        "passed": true,
+        "status": "PASSED",
+        "runs": 5,
+        "passed_runs": 5,
+        "max_abs_err": 0.015625,
+        "max_rel_err": 0.007751937955617905,
+        "sol_us": 346.64,
+        "sol_us_lo": 346.61,
+        "sol_us_hi": 346.75,
+        "base_us": 375.39,
+        "speedup": 1.083,
+        "speedup_conservative": 1.082,
+        "speedup_optimistic": 1.083,
+        "log": ""
+      },
+      {
+        "axes": {
+          "M": 2
+        },
+        "passed": true,
+        "status": "PASSED",
+        "runs": 5,
+        "passed_runs": 5,
+        "max_abs_err": 0.0,
+        "max_rel_err": 0.0,
+        "sol_us": 347.92,
+        "sol_us_lo": 347.58,
+        "sol_us_hi": 347.92,
+        "base_us": 393.68,
+        "speedup": 1.132,
+        "speedup_conservative": 1.13,
+        "speedup_optimistic": 1.136,
+        "log": ""
+      },
+      {
+        "axes": {
+          "M": 4
+        },
+        "passed": true,
+        "status": "PASSED",
+        "runs": 5,
+        "passed_runs": 5,
+        "max_abs_err": 0.0,
+        "max_rel_err": 0.0,
+        "sol_us": 349.04,
+        "sol_us_lo": 348.96,
+        "sol_us_hi": 349.18,
+        "base_us": 394.54,
+        "speedup": 1.13,
+        "speedup_conservative": 1.13,
+        "speedup_optimistic": 1.131,
+        "log": ""
+      },
+      {
+        "axes": {
+          "M": 8
+        },
+        "passed": true,
+        "status": "PASSED",
+        "runs": 5,
+        "passed_runs": 5,
+        "max_abs_err": 0.0,
+        "max_rel_err": 0.0,
+        "sol_us": 350.87,
+        "sol_us_lo": 350.69,
+        "sol_us_hi": 351.04,
+        "base_us": 396.02,
+        "speedup": 1.129,
+        "speedup_conservative": 1.126,
+        "speedup_optimistic": 1.13,
+        "log": ""
+      },
+      {
+        "axes": {
+          "M": 16
+        },
+        "passed": true,
+        "status": "PASSED",
+        "runs": 5,
+        "passed_runs": 5,
+        "max_abs_err": 0.0,
+        "max_rel_err": 0.0,
+        "sol_us": 353.54,
+        "sol_us_lo": 353.23,
+        "sol_us_hi": 353.7,
+        "base_us": 398.59,
+        "speedup": 1.127,
+        "speedup_conservative": 1.126,
+        "speedup_optimistic": 1.13,
+        "log": ""
+      },
+      {
+        "axes": {
+          "M": 32
+        },
+        "passed": true,
+        "status": "PASSED",
+        "runs": 5,
+        "passed_runs": 5,
+        "max_abs_err": 0.0,
+        "max_rel_err": 0.0,
+        "sol_us": 380.75,
+        "sol_us_lo": 380.64,
+        "sol_us_hi": 381.07,
+        "base_us": 401.14,
+        "speedup": 1.054,
+        "speedup_conservative": 1.051,
+        "speedup_optimistic": 1.055,
+        "log": ""
+      },
+      {
+        "axes": {
+          "M": 64
+        },
+        "passed": true,
+        "status": "PASSED",
+        "runs": 5,
+        "passed_runs": 5,
+        "max_abs_err": 0.0,
+        "max_rel_err": 0.0,
+        "sol_us": 388.32,
+        "sol_us_lo": 387.98,
+        "sol_us_hi": 389.02,
+        "base_us": 408.8,
+        "speedup": 1.053,
+        "speedup_conservative": 1.05,
+        "speedup_optimistic": 1.054,
+        "log": ""
+      },
+      {
+        "axes": {
+          "M": 128
+        },
+        "passed": true,
+        "status": "PASSED",
+        "runs": 5,
+        "passed_runs": 5,
+        "max_abs_err": 0.0,
+        "max_rel_err": 0.0,
+        "sol_us": 420.14,
+        "sol_us_lo": 419.79,
+        "sol_us_hi": 420.22,
+        "base_us": 430.9,
+        "speedup": 1.026,
+        "speedup_conservative": 1.025,
+        "speedup_optimistic": 1.027,
+        "log": ""
+      },
+      {
+        "axes": {
+          "M": 256
+        },
+        "passed": true,
+        "status": "PASSED",
+        "runs": 5,
+        "passed_runs": 5,
+        "max_abs_err": 0.0,
+        "max_rel_err": 0.0,
+        "sol_us": 432.95,
+        "sol_us_lo": 432.62,
+        "sol_us_hi": 433.25,
+        "base_us": 472.51,
+        "speedup": 1.091,
+        "speedup_conservative": 1.091,
+        "speedup_optimistic": 1.093,
+        "log": ""
+      }
+    ],
+    "provider": "official",
+    "tampered_oracle_files": []
+  }
+]

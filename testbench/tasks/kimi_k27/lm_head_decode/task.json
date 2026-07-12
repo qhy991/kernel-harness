@@ -1,0 +1,32 @@
+{
+  "name": "lm_head_decode",
+  "model": "kimi_k27",
+  "op": "LM-head logits GEMM",
+  "phase": "decode",
+  "family": "lm-head",
+  "goal": "Optimize solution.py against SGLang's torch.matmul LM-head baseline for Kimi-K2.7 decode; beat the full sweep and match SGLang output within the declared tolerance.",
+  "H": 7168,
+  "V": 163840,
+  "sweep": [
+    1,
+    2,
+    4,
+    8,
+    16,
+    32,
+    64,
+    128,
+    256
+  ],
+  "backend": "torch.matmul bf16 (blackwell)",
+  "tolerance": {
+    "max_atol": 0.02,
+    "max_rtol": 0.01,
+    "required_matched_ratio": 0.999
+  },
+  "baseline": {
+    "source": "live",
+    "measure": "reference.py timed by the harness CUPTI runtime (median device-kernel us)",
+    "denominator": "the live per-shape reference latency (see .baseline_cache.json)"
+  }
+}

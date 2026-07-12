@@ -1,0 +1,102 @@
+{
+    "name": "minimax_m3_mm_dsa_decode_attn_ctx4096",
+    "hf_id": "MiniMaxAI/MiniMax-M3",
+    "description": "MiniMax-M3 DSA decode main sparse attention (decode, ctx=4096), flash_decode_with_gqa_share_sparse (Triton, op34): GQA-share sparse attention over the top-16 KV blocks. num_q_heads=64, num_kv_heads=4 (GQA 16:1), head_dim=128, block_size=128. Batch=sweep, paged KV. Requires amd_add_m3. Baseline = sglang production kernel.",
+    "axes": {
+        "M": {
+            "type": "var",
+            "description": "decode batch (sweep)"
+        },
+        "ctx": {
+            "type": "const",
+            "value": 4096,
+            "description": "context length"
+        },
+        "num_q_heads": {
+            "type": "const",
+            "value": 64
+        },
+        "num_kv_heads": {
+            "type": "const",
+            "value": 4
+        },
+        "head_dim": {
+            "type": "const",
+            "value": 128
+        },
+        "topk_blocks": {
+            "type": "const",
+            "value": 16
+        },
+        "slots": {
+            "type": "expr",
+            "expression": "M*ctx",
+            "description": "paged KV slots"
+        }
+    },
+    "custom_inputs_entrypoint": "get_inputs",
+    "inputs": {
+        "q": {
+            "shape": [
+                "M",
+                "num_q_heads",
+                "head_dim"
+            ],
+            "dtype": "bfloat16"
+        },
+        "k_cache": {
+            "shape": [
+                "slots",
+                "num_kv_heads",
+                "head_dim"
+            ],
+            "dtype": "bfloat16"
+        },
+        "v_cache": {
+            "shape": [
+                "slots",
+                "num_kv_heads",
+                "head_dim"
+            ],
+            "dtype": "bfloat16"
+        },
+        "req_to_token": {
+            "shape": [
+                "M",
+                "ctx"
+            ],
+            "dtype": "int32"
+        },
+        "seq_lens": {
+            "shape": [
+                "M"
+            ],
+            "dtype": "int32"
+        },
+        "slot_ids": {
+            "shape": [
+                "M"
+            ],
+            "dtype": "int64"
+        },
+        "topk_idx": {
+            "shape": [
+                "num_kv_heads",
+                "M",
+                "topk_blocks"
+            ],
+            "dtype": "int32"
+        }
+    },
+    "outputs": {
+        "o": {
+            "shape": [
+                "M",
+                "num_q_heads",
+                "head_dim"
+            ],
+            "dtype": "bfloat16"
+        }
+    },
+    "reference": "\"\"\"DSA decode main sparse attention \u2014 sglang baseline (flash_decode_with_gqa_share_sparse).\n\nMiniMax-M3 Deep-Sparse-Attention decode main attention (inventory op34): GQA-share sparse\nattention that, per (kv_head, seq), attends only to the top-k KV blocks selected by the\nindexer. sglang dispatches the Triton flash_decode_with_gqa_share_sparse kernel (the B200\nfmha_sm100 fast path needs an external package not installed; this benchmarks the Triton\nproduction fallback, which its own unit tests cover).\n\n  o[batch, num_q_heads, head_dim] = sparse_attn(q, paged k/v_cache, req_to_token, topk_idx)\n\nConfig: num_q_heads=64, num_kv_heads=4 (GQA 16:1), head_dim=128, block_size=128,\ntopk_blocks=16. Batch = sweep; ctx fixed per task. paged KV via randperm req_to_token.\nRuns against the amd_add_m3 sglang build. reference.py IS the oracle AND baseline.\n\"\"\"\n\nimport torch\nfrom sglang.srt.layers.attention.minimax_sparse_ops.decode.topk_sparse import (\n    flash_decode_with_gqa_share_sparse,\n)\n\nNQ, NKV, HD, BLOCK, TOPK = 64, 4, 128, 128, 16\n\n\ndef get_inputs(axes_and_scalars: dict, device: torch.device) -> dict:\n    B = axes_and_scalars[\"M\"]       # decode batch (sweep)\n    ctx = axes_and_scalars[\"ctx\"]\n    max_kv_len = ctx\n    max_slots = B * max_kv_len\n    q = torch.randn(B, NQ, HD, device=device, dtype=torch.bfloat16)\n    k_cache = torch.randn(max_slots, NKV, HD, device=device, dtype=torch.bfloat16)\n    v_cache = torch.randn(max_slots, NKV, HD, device=device, dtype=torch.bfloat16)\n    req_to_token = torch.zeros(B, max_kv_len, dtype=torch.int32, device=device)\n    slot_ids = torch.zeros(B, dtype=torch.int64, device=device)\n    seq_lens = torch.full((B,), ctx, dtype=torch.int32, device=device)\n    for i in range(B):\n        base = i * max_kv_len\n        slot_ids[i] = i\n        req_to_token[i, :max_kv_len] = torch.randperm(max_kv_len, device=device) + base\n    num_blocks = (ctx + BLOCK - 1) // BLOCK\n    topk_idx = torch.zeros(NKV, B, TOPK, dtype=torch.int32, device=device)\n    for kh in range(NKV):\n        for b in range(B):\n            ak = min(TOPK, num_blocks)\n            topk_idx[kh, b, :ak] = torch.randperm(num_blocks, device=device)[:ak].to(torch.int32)\n            if ak < TOPK:\n                topk_idx[kh, b, ak:] = -1\n    return {\"q\": q, \"k_cache\": k_cache, \"v_cache\": v_cache, \"req_to_token\": req_to_token,\n            \"seq_lens\": seq_lens, \"slot_ids\": slot_ids, \"topk_idx\": topk_idx}\n\n\n@torch.no_grad()\ndef run(q, k_cache, v_cache, req_to_token, seq_lens, slot_ids, topk_idx):\n    return flash_decode_with_gqa_share_sparse(\n        q, None, k_cache, v_cache, req_to_token, seq_lens, slot_ids, BLOCK, topk_idx)\n"
+}

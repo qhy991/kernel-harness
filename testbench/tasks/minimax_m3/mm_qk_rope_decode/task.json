@@ -1,0 +1,34 @@
+{
+  "name": "mm_qk_rope_decode",
+  "model": "minimax_m3",
+  "op": "GQA q/k RoPE",
+  "phase": "decode",
+  "family": "rope",
+  "goal": "Optimize solution.py against SGLang's apply_rope_with_cos_sin_cache_inplace baseline for MiniMax-M3 GQA q/k RoPE decode; beat every token workload while preserving the exact SGLang interface and matching both outputs.",
+  "num_heads": 64,
+  "kv_heads": 4,
+  "rope_dim": 64,
+  "interface_exact": true,
+  "sweep": [
+    1,
+    2,
+    4,
+    8,
+    16,
+    32,
+    64,
+    128,
+    256
+  ],
+  "backend": "apply_rope_with_cos_sin_cache_inplace (blackwell)",
+  "tolerance": {
+    "max_atol": 0.02,
+    "max_rtol": 0.01,
+    "required_matched_ratio": 0.999
+  },
+  "baseline": {
+    "source": "live",
+    "measure": "reference.py timed by the harness CUPTI runtime (median device-kernel us)",
+    "denominator": "the live per-shape reference latency (see .baseline_cache.json)"
+  }
+}

@@ -1,0 +1,106 @@
+{
+    "name": "minimax_m3_mm_dsa_prefill_topk_L2048",
+    "hf_id": "MiniMaxAI/MiniMax-M3",
+    "description": "MiniMax-M3 DSA prefill Indexer score + top-k (prefill, L=2048), flash_prefill_with_topk_index (single-launch Triton, op31): per-block index score + top-16 in one kernel. num_index_heads=4, idx_dim=128, block_size=128. EXACT-index oracle. B=sweep. Requires amd_add_m3.",
+    "axes": {
+        "M": {
+            "type": "var",
+            "description": "prefill batch (sweep)"
+        },
+        "L": {
+            "type": "const",
+            "value": 2048,
+            "description": "per-seq context length"
+        },
+        "index_heads": {
+            "type": "const",
+            "value": 4
+        },
+        "idx_dim": {
+            "type": "const",
+            "value": 128
+        },
+        "topk_blocks": {
+            "type": "const",
+            "value": 16
+        },
+        "slots": {
+            "type": "expr",
+            "expression": "M*L",
+            "description": "paged index cache slots"
+        },
+        "one": {
+            "type": "const",
+            "value": 1
+        },
+        "Mp1": {
+            "type": "expr",
+            "expression": "M+1"
+        }
+    },
+    "custom_inputs_entrypoint": "get_inputs",
+    "inputs": {
+        "idx_q": {
+            "shape": [
+                "M",
+                "index_heads",
+                "idx_dim"
+            ],
+            "dtype": "bfloat16"
+        },
+        "idx_k": {
+            "shape": [
+                "slots",
+                "one",
+                "idx_dim"
+            ],
+            "dtype": "bfloat16"
+        },
+        "req_to_token": {
+            "shape": [
+                "M",
+                "L"
+            ],
+            "dtype": "int32"
+        },
+        "slot_ids": {
+            "shape": [
+                "M"
+            ],
+            "dtype": "int64"
+        },
+        "cu_seqlens": {
+            "shape": [
+                "Mp1"
+            ],
+            "dtype": "int32"
+        },
+        "seq_lens": {
+            "shape": [
+                "M"
+            ],
+            "dtype": "int32"
+        },
+        "prefix_lens": {
+            "shape": [
+                "M"
+            ],
+            "dtype": "int32"
+        },
+        "seqlen": {
+            "shape": null,
+            "dtype": "int32"
+        }
+    },
+    "outputs": {
+        "topk_idx": {
+            "shape": [
+                "index_heads",
+                "M",
+                "topk_blocks"
+            ],
+            "dtype": "int32"
+        }
+    },
+    "reference": "\"\"\"DSA prefill Indexer score + top-k \u2014 sglang baseline (flash_prefill_with_topk_index).\n\nMiniMax-M3 DSA prefill indexer (inventory op31, single-launch Triton CUDA): computes\nper-block index scores from idx_q x idx_k_cache and selects the top-k blocks in one\nkernel. Input contract mirrors the sglang test\ntest_minimax_m3_cuda_config.py::test_m3_prefill_score_topk (max_seqlen_q=1, block_size_q=1,\nprefix_lens=L-1, per-batch paged index cache).\n\n  (score, topk_idx[num_index_heads, B, topk]) = index_score_topk(idx_q, idx_k_cache)\n\nConfig: num_index_heads=4, idx_head_dim=128, block_size=128, topk_blocks=16,\ndisable_index_value=True (M3 sparse_disable_index_value). Returns the integer topk_idx\n(EXACT-index oracle). Runs against the amd_add_m3 sglang build. reference.py IS the\ncorrectness oracle AND the latency baseline.\n\"\"\"\n\nimport torch\nfrom sglang.srt.layers.attention.minimax_sparse_ops.prefill.flash_with_topk_idx import (\n    flash_prefill_with_topk_index,\n)\n\nIDX_HEADS, IDX_DIM, BLK_K, TOPK = 4, 128, 128, 16\n\n\ndef get_inputs(axes_and_scalars: dict, device: torch.device) -> dict:\n    B = axes_and_scalars[\"M\"]      # batch (sweep)\n    L = axes_and_scalars[\"L\"]      # per-seq context length\n    max_slots = B * L\n    idx_q = torch.randn(B, IDX_HEADS, IDX_DIM, device=device, dtype=torch.bfloat16)\n    idx_k = torch.randn(max_slots, 1, IDX_DIM, device=device, dtype=torch.bfloat16)\n    req_to_token = torch.zeros(B, L, dtype=torch.int32, device=device)\n    slot_ids = torch.zeros(B, dtype=torch.int64, device=device)\n    for i in range(B):\n        base = i * L\n        slot_ids[i] = i\n        req_to_token[i, :L] = torch.arange(base, base + L, device=device)\n    seq_lens = torch.full((B,), L, dtype=torch.int32, device=device)\n    prefix_lens = torch.full((B,), L - 1, dtype=torch.int32, device=device)\n    cu_seqlens = torch.arange(0, B + 1, device=device, dtype=torch.int32)\n    return {\"idx_q\": idx_q, \"idx_k\": idx_k, \"req_to_token\": req_to_token,\n            \"slot_ids\": slot_ids, \"cu_seqlens\": cu_seqlens, \"seq_lens\": seq_lens,\n            \"prefix_lens\": prefix_lens, \"seqlen\": L}\n\n\n@torch.no_grad()\ndef run(idx_q, idx_k, req_to_token, slot_ids, cu_seqlens, seq_lens, prefix_lens, seqlen):\n    _score, topk_idx = flash_prefill_with_topk_index(\n        idx_q, idx_k, None, None, req_to_token, slot_ids, cu_seqlens, seq_lens,\n        prefix_lens, 1, seqlen, 1, BLK_K, TOPK, disable_index_value=True)\n    return topk_idx\n"
+}

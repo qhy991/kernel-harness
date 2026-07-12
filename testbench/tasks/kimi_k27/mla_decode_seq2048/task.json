@@ -1,0 +1,33 @@
+{
+  "name": "mla_decode_seq2048",
+  "model": "kimi_k27",
+  "op": "MLA decode attention",
+  "phase": "decode",
+  "family": "mla-attention",
+  "goal": "Optimize solution.py against SGLang's sgl_kernel.cutlass_mla_decode baseline for MLA decode at sequence length 2048; beat every batch workload and match SGLang output within the declared tolerance.",
+  "num_heads": 64,
+  "kv_lora": 512,
+  "seq_len": 2048,
+  "sweep": [
+    1,
+    2,
+    4,
+    8,
+    16,
+    32,
+    64,
+    128,
+    256
+  ],
+  "backend": "sgl_kernel cutlass_mla_decode (blackwell)",
+  "tolerance": {
+    "max_atol": 0.03,
+    "max_rtol": 0.02,
+    "required_matched_ratio": 0.999
+  },
+  "baseline": {
+    "source": "live",
+    "measure": "reference.py timed by the harness CUPTI runtime (median device-kernel us)",
+    "denominator": "the live per-shape reference latency (see .baseline_cache.json)"
+  }
+}
