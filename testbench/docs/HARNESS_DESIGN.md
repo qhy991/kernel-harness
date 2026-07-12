@@ -19,7 +19,7 @@ replaces the other.
 
 | | **Fast (advisory)** | **Slow (authoritative)** |
 |---|---|---|
-| Entry | `harness/profile.py` (in-process API + `python -m harness.profile`) | `bin/evaluate.py` (and each task's `run.sh`) |
+| Entry | `harness/profile.py` (in-process API + `PYTHONPATH=testbench python -m harness.profile`) | `bin/evaluate.py` (and each task's `run.sh`) |
 | Timer | CUDA events, warm L2, ~20 reps | CUPTI device-kernel, cold L2, ≥50 reps, subprocess |
 | Correctness | none | allclose/matched-ratio per shape |
 | Cost | milliseconds | seconds+ |
@@ -208,15 +208,16 @@ matches the fingerprint AND covers the full sweep. Hard-won invariants (each gua
 ## 6. How an agent uses it
 
 ```bash
-# Explore cheaply while iterating (advisory, ms):
-python -m harness.profile tasks/kimi_k27/o_proj_decode --shape 64
+# From the repository root. Explore cheaply while iterating (advisory, ms):
+PYTHONPATH=testbench .venv/bin/python -m harness.profile \
+  testbench/tasks/kimi_k27/o_proj_decode --shape 64
 
-# Authoritative verdict (seconds), from anywhere:
-python bin/evaluate.py tasks/kimi_k27/o_proj_decode
-#   ...or self-contained:  cd tasks/kimi_k27/o_proj_decode && ./run.sh
+# Authoritative verdict (seconds):
+.venv/bin/python testbench/bin/evaluate.py testbench/tasks/kimi_k27/o_proj_decode
+#   ...or self-contained:  cd testbench/tasks/kimi_k27/o_proj_decode && ./run.sh
 
 # Noise-aware gate for a marginal win:
-python bin/evaluate.py <task> --repeat 3
+.venv/bin/python testbench/bin/evaluate.py <task> --repeat 3
 
 # Useful flags: --solution NAME  --iterations N  --max-workloads N
 #               --refresh-baseline  --no-baseline (correctness only)
@@ -233,8 +234,8 @@ In-process, low-overhead, **never the verdict** — a compass for the inner loop
   CUDA events. Lowest overhead; for an agent's Python loop.
 - `profile_task(task_dir, solution, shape=None, ...)` → loads the recipe once, profiles one shape's
   `run()`, returns latency + a roofline hint.
-- `python -m harness.profile <task_dir> [--shape M] [--reps N] [--cold-l2] [--sglang-python DIR]`
-  for manual probes.
+- `PYTHONPATH=testbench .venv/bin/python -m harness.profile <task_dir> [--shape M] [--reps N] [--cold-l2] [--sglang-python DIR]`
+  for manual probes (must set `PYTHONPATH=testbench` from the repo root).
 
 **Roofline hint.** From the actual tensor traffic (input reads + output writes) and the measured
 latency: achieved GB/s vs B200 HBM peak (~8 TB/s). With an optional `flops_expr` in
