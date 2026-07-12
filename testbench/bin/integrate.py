@@ -812,7 +812,10 @@ def main():
     meta = json.loads((task_dir / "task.json").read_text())
     meta["_task_dir"] = task_dir   # recipes that reuse the task's own get_inputs need it
     family = meta.get("family")
-    model = meta.get("model")      # None => kimi_k27 default; drives per-model recipe
+    # Model drives per-model recipe selection. The task.json 'model' field is not always
+    # populated, so fall back to the parent directory (tasks/<model>/<name>), which is
+    # the reliable signal.
+    model = meta.get("model") or task_dir.parent.name
     tol = meta.get("tolerance", {"max_atol": 0.1, "max_rtol": 0.05, "required_matched_ratio": 0.98})
 
     # A task may pin its own sglang build (DSA needs the sglang-m3 tree). Prepend it to

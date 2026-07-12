@@ -96,6 +96,19 @@ MIGRATE_MAP = {
         "    idx = _cand(inp, bias)\n"
         "    return None, idx\n",   # (weights, indices) tuple; index oracle
     ),
+    # DSA (sglang-m3) interface-exact JIT ops — rebind the jit_kernel module symbol.
+    "dsa-qknorm-rope": (
+        "sglang.jit_kernel.minimax_qknorm_rope", "minimax_qknorm_rope",
+        "def _sgl(*a, **k):\n    return _cand(*a, **k)\n",
+    ),
+    "dsa-decode-topk": (
+        "sglang.jit_kernel.minimax_decode_topk", "minimax_decode_topk",
+        "def _sgl(*a, **k):\n    return _cand(*a, **k)\n",
+    ),
+    "dsa-store-kv-index": (
+        "sglang.jit_kernel.minimax_store_kv_index", "store_kv_index",
+        "def _sgl(*a, **k):\n    return _cand(*a, **k)\n",
+    ),
 }
 
 # families with no rebindable module-level symbol to patch in source
@@ -147,13 +160,13 @@ def _resolve_migrate(family, model):
     return None, None
 
 
-def _module_file(module: str) -> Path:
-    """Resolve a dotted module to its source .py (via the resolved sglang install)."""
+def _module_file(module: str, sglang_dir: str) -> Path:
+    """Resolve a dotted module to its source .py (in the given sglang build)."""
     out = subprocess.run(
         [str(VENV / "bin" / "python"), "-c",
          f"import importlib; m=importlib.import_module('{module}'); print(m.__file__)"],
         capture_output=True, text=True,
-        env={"PYTHONPATH": f"{SGLANG_DIR}/python", "PATH": f"{VENV}/bin"},
+        env={"PYTHONPATH": f"{sglang_dir}/python", "PATH": f"{VENV}/bin"},
     )
     if out.returncode != 0:
         raise RuntimeError(f"cannot resolve module {module}: {out.stderr.strip()}")
@@ -235,9 +248,10 @@ def main():
     task_dir = args.task_dir.resolve()
     meta = json.loads((task_dir / "task.json").read_text())
     family = meta.get("family")
-    model = meta.get("model")      # None => kimi_k27 default
+    model = meta.get("model") or task_dir.parent.name   # dir is the reliable model signal
     task = meta.get("name", task_dir.name)
     sol_path = task_dir / args.solution
+    sglang_dir = meta.get("sglang_dir") or SGLANG_DIR   # DSA tasks pin the sglang-m3 build
 
     entry, no_source = _resolve_migrate(family, model)
     if entry is None and no_source is not None:
@@ -271,7 +285,7 @@ def main():
           f"match={verdict.get('match_ratio')}, restored={verdict.get('restored')})")
 
     module, symbol, adapter = entry
-    src = _module_file(module)
+    src = _module_file(module, sglang_dir)
     original = src.read_text()
     block = _block(task, family, module, symbol, adapter, sol_path)
     patched = original + block
@@ -285,7 +299,7 @@ def main():
         import difflib
         # repo-relative path so `git apply` works from the sglang root
         try:
-            rel = str(Path(path).resolve().relative_to(Path(SGLANG_DIR).resolve()))
+            rel = str(Path(path).resolve().relative_to(Path(sglang_dir).resolve()))
         except ValueError:
             rel = str(path)
         return "".join(difflib.unified_diff(
@@ -303,7 +317,7 @@ def main():
              f"import importlib; m=importlib.import_module('{module}'); "
              f"print(getattr(m,'{symbol}').__name__)"],
             capture_output=True, text=True,
-            env={"PYTHONPATH": f"{SGLANG_DIR}/python", "PATH": f"{VENV}/bin"},
+            env={"PYTHONPATH": f"{sglang_dir}/python", "PATH": f"{VENV}/bin"},
         )
         routed = "_sgl" in check.stdout
         src.write_text(original)   # revert
@@ -315,8 +329,8 @@ def main():
             sys.exit(1)
 
     print(f"\nwrote {fwd}\nwrote {rev}")
-    print(f"\nApply with:   (cd {SGLANG_DIR} && git apply {fwd})")
-    print(f"Revert with:  (cd {SGLANG_DIR} && git apply {rev})")
+    print(f"\nApply with:   (cd {sglang_dir} && git apply {fwd})")
+    print(f"Revert with:  (cd {sglang_dir} && git apply {rev})")
     print("\nMIGRATE READY — remaining deployment gates this patch does NOT clear:")
     for g in REMAINING_GATES:
         print(f"  [ ] {g}")

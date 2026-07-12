@@ -3,6 +3,12 @@
 Standalone per-kernel optimization tasks for the Kimi-K2.7 / MiniMax-M3 / DeepSeek-V3.2
 inventory (`../logs/kimi_minimax_20260710-070816/all_models_kernel_inventory.csv`).
 
+**Inventory:** 79 tasks across 23 families (Kimi-K2.7 36 + MiniMax-M3 43, incl. 6 DSA
+sparse-attention families on the `sglang-m3` build). `bin/integrate.py` has a drop-in
+recipe for every family with a single rebindable sglang dispatch symbol; the fused
+sparse-attention families (`dsa-decode-attn`, `dsa-prefill-attn`, `dsa-prefill-topk`)
+have no isolated symbol and report `SKIP` rather than a faked recipe.
+
 Each **task** is one `(op, phase)` kernel with its whole shape sweep bundled. An agent
 optimizes `solution.py` to **match the sglang production kernel's output** (within a
 per-shape tolerance) and **beat its latency** across the sweep.
@@ -116,6 +122,24 @@ Consequences:
   **not** prove the candidate can replace sglang's kernel in place. That is what
   `bin/integrate.py` checks (below).
 
+### Anti-cheat guards (what stops a fake WIN)
+
+- **Input-aliasing**: for in-place / DPS ops (fused-add-rmsnorm, rope, moe-combine) the
+  reference runs on a **clone** of the inputs (SOL-ExecBench `eval_driver.py`), so a
+  candidate can't return the reference-mutated buffer and pass at zero cost.
+  `evaluate.py` adds an **independent second-layer probe** (`_alias_probe`): it runs
+  reference and candidate on isolated clones of identical inputs and compares, catching
+  aliasing even if the harness patch is ever lost.
+- **Workload completeness**: on a full run (no `--max-workloads`) the candidate must be
+  evaluated on the **entire** `workload.jsonl` sweep; a partial run (harness crash mid-
+  sweep) is reported `INCOMPLETE` and is neither `correct` nor a `win`.
+- **Baseline cache fingerprint**: `.baseline_cache.json` is keyed on
+  `iters;ref.py-hash;sglang-commit` and only reused if it covers the full sweep — a
+  stale/partial cache can't silently shrink or poison the denominator.
+- **Migration double-gate**: `bin/migrate.py` refuses unless the candidate is BOTH an
+  `evaluate.py` **WIN** (correct + faster on every shape) AND `integrate.py` green.
+
+
 ## Drop-in integration (`bin/integrate.py`)
 
 `evaluate.py` compares two `run()` shims. But the candidate's interface is a benchmark
@@ -138,7 +162,7 @@ invoked inside sglang's own code path, **(b)** the real-forward output matches t
 unpatched sglang output within the task tolerance, **(c)** the swap is fully reversible.
 A green result is the deployable form of an `evaluate.py` win.
 
-Recipes now cover **every task family** (all 17). Standalone call sites
+Recipes now cover **every non-fused task family**. Standalone call sites
 (`fp8-linear-gemm`, `bf16-linear`, `rmsnorm`, `swiglu`, `embedding`, `router-gemm`,
 `lm-head`, `act-fp8-quant`, `moe-gate`, `moe-combine`, `grouped-moe` masked +
 contiguous) drive a real sglang module/kernel; fused-in-place ops
