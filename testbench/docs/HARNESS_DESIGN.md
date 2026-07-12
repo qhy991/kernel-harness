@@ -116,11 +116,11 @@ returns the median in ms.
 
 ### 3.3 Reward-hack defenses (`reward_hack.py` + driver + evaluate)
 
-Four independent layers, because a "faster" number is worthless if it was faked:
+Five independent layers, because a "faster" number is worthless if it was faked:
 
 1. **Timer-patch detection.** `id(torch.cuda.Event.elapsed_time)` is captured at module load
-   (before any candidate code) and re-checked before running the candidate. A monkey-patched
-   timer is rejected.
+   (before any candidate code) and re-checked before running the candidate AND again after
+   timing — a patch installed inside `run()` itself is also rejected.
 2. **Lazy/proxy-output rejection.** Outputs must be exact `torch.Tensor` (strict `type()` check),
    so a FakeTensor/lazy proxy that defers the actual compute past the timed region is rejected.
 3. **Input-aliasing defense — layer 1 (driver).** The reference runs on a *private clone* of the
@@ -130,6 +130,10 @@ Four independent layers, because a "faster" number is worthless if it was faked:
    re-derives one input set, runs reference and candidate each on their own isolated clone, and
    compares — a redundant second check for in-place / interface-exact families. No false positives
    (unlike a magnitude heuristic, which would flag legitimate residual-add/rope outputs).
+5. **Post-timing re-verification (driver).** The timed iterations are not output-checked, so
+   after timing the driver runs the candidate once more on a fresh clone and re-compares against
+   the oracle. A stateful candidate that computes honestly while checked but returns garbage
+   fast while timed (e.g. by counting invocations) is rejected as a reward hack.
 
 ### 3.4 Driver flow (`driver.py`, per workload)
 
@@ -141,6 +145,8 @@ resolve axes → build_inputs (via reference.get_inputs)
   → normalize_outputs + check_lazy_outputs
   → per-output shape + count check, then compute_error_stats vs tolerance
   → if correct: time_runnable(candidate) with a fresh clone per iteration
+  → post-timing: check_monkey_patch() again + one more candidate run re-compared
+    against the oracle (rejects timers patched inside run() and go-lazy-under-timing)
   → emit trace {status, correctness, performance.latency_ms, log}
 ```
 Status is one of `PASSED / INCORRECT / RUNTIME_ERROR / REWARD_HACK`. All exceptions are caught
@@ -252,8 +258,10 @@ fine differences with `evaluate.py`.
 
 ## 8. Portability
 
-External locations (`SGLANG_DIR`, `CUDA_HOME`, `MM_M3_SGLANG_DIR`, `VENV`) resolve through
-`bin/config.py`: **env var → `testbench/harness.env` → built-in default**. A checkout on a new
-machine needs only env vars or a one-line `harness.env` — no source edits. The harness runtime is
+External locations (`SGLANG_DIR`, `CUDA_HOME`, `MM_M3_SGLANG_DIR`) resolve through
+`bin/config.py`: **env var → `testbench/harness.env` → built-in default**. The venv is
+always the repo-local `.venv` (exported by `config.py` but deliberately not overridable —
+one supported environment). A checkout on a new machine needs only env vars or a one-line
+`harness.env` — no source edits. The harness runtime is
 shared (not copied per task); "self-contained" means the evaluator, timing, input construction,
 and correctness logic are owned here, and each task exposes its own `run.sh`.

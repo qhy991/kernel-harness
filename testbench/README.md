@@ -116,8 +116,9 @@ against the sglang kernel's output; efficiency against its measured latency.
 
 All external locations (`SGLANG_DIR`, `CUDA_HOME`, `MM_M3_SGLANG_DIR`)
 resolve through `bin/config.py`: **env var → `testbench/harness.env` → built-in default**.
-`evaluate.py`, `run.sh`, `report.py`, and `gen_tasks.py` all import it, so a checkout on
-a new machine only needs env vars (or a one-line `harness.env`) — no source edits.
+`evaluate.py`, `integrate.py`, `migrate.py`, `emit_sglang.py`, `check_env.py`, and
+`run.sh` all resolve paths through it, so a checkout on a new machine only needs env
+vars (or a one-line `harness.env`) — no source edits.
 
 The harness is deliberately **shared, not copied** per task. "Self-contained" means
 the evaluator, timing, input construction, and correctness logic are owned here, while
@@ -127,6 +128,9 @@ each task exposes its own `run.sh` entrypoint.
 
 - **Low-level:** `bin/run.sh <task> <solution.py|reference.py> <out> <iters>` runs one
   file through the harness; `bin/report.py <sol_out> <base_out>` diffs two runs.
+- **Pre-flight:** `python3 bin/selftest.py [task_dir]` — stdlib-only structural check of
+  the task dirs (contract files, embedded-reference identity, `run()` presence,
+  workload/tolerance schema). Runs anywhere: no GPU, no venv.
 
 ## Timing & trustworthiness (read before believing a speedup)
 
@@ -134,7 +138,7 @@ The harness times with **CUPTI** (what `nsys` uses): the **median device-side ke
 duration** over N reps, with the **L2 cache cleared between iterations**, args cloned,
 and all tensors pre-allocated (no `cudaMalloc` in the timed region). It **excludes CPU
 launch overhead**. Config: `warmup=10`, `iterations` (default 50, set via
-`--iterations`), `lock_clocks=false`.
+`--iterations`); the harness does not lock GPU clocks.
 
 Consequences:
 - The baseline is **measured live** each run (reference.py = the sglang kernel) and
@@ -321,7 +325,7 @@ are not replaced with proxy baselines when it is absent.
   float weights. Verified with a negative test (rerouting one expert per token fails).
   Assumes no score ties (measure-zero for random floats); a same-set-different-order
   result fails by design.
-- **Single canonical Kimi-K2.7 config** (one source of truth in `gen_tasks.py`):
+- **Single canonical Kimi-K2.7 config** (one source of truth in `taskgen/config.py`):
   hidden=7168, q_lora=1536, kv_lora=512, num_heads=64, qk_nope=192, v_head=128,
   qk_rope=64, dense_inter/TP=2304, moe_inter/TP=256, vocab=163840, and MoE
   **n_routed_experts=384, topk=6, routed_scaling=2.872**. Both `router-gemm` (N=384)

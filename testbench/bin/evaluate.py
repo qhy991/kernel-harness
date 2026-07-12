@@ -360,7 +360,7 @@ def main():
             s_cons = b_lo / c_hi           # candidate worst vs baseline best
             s_opt = b_hi / c_lo
             sp_med.append(s_med); sp_cons.append(s_cons); sp_opt.append(s_opt)
-        rows.append({"axes": json.loads(ax), "passed": ok, "status": r["log"] and "FAIL" or "PASSED",
+        rows.append({"axes": json.loads(ax), "passed": ok, "status": "PASSED" if ok else "FAIL",
                      "runs": r["runs"], "passed_runs": r["passed_runs"],
                      "max_abs_err": r["max_abs_err"], "max_rel_err": r["max_rel_err"],
                      "sol_us": round(c_med * 1e3, 2) if c_med else None,

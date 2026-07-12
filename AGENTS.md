@@ -13,6 +13,7 @@ Optimize **one task per session**. All commands are run from the repo root.
 - Use only the repo-local `.venv` (`./testbench/setup_env.sh`).
 - Set checkout paths via env vars or `testbench/harness.env` — never hardcode machine paths.
 - Verify once before testing: `.venv/bin/python testbench/bin/check_env.py`.
+- Structural pre-flight runs anywhere, no GPU/venv needed: `python3 testbench/bin/selftest.py`.
 
 ## Optimization loop
 

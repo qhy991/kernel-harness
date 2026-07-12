@@ -5,7 +5,7 @@ reference's get_inputs, runs the reference (oracle) and the candidate on indepen
 clones, checks correctness, times the candidate (median device-kernel ms), and writes
 traces.json in the shape evaluate.py consumes. Depends only on torch (+ optional cupti).
 
-    python -m testbench.harness.driver <task_dir> --solution-name solution.py -o OUT [--iterations N] [--max-workloads N]
+    python testbench/harness/driver.py <task_dir> --solution-name solution.py -o OUT [--iterations N] [--max-workloads N]
 """
 from __future__ import annotations
 
@@ -84,6 +84,28 @@ def _eval_workload(defn, wl, get_inputs, ref_run, cand_run, device, iters):
     # Correct -> time the candidate (median device-kernel ms), fresh clone per iteration.
     latency = time_runnable(fn=lambda a: cand_run(*a),
                             setup=lambda: clone_args(inputs), rep=iters)
+
+    # Post-timing guards. The timed calls above are not output-checked, so (a) re-verify
+    # one fresh call against the oracle — a stateful candidate that computes honestly
+    # while checked but goes lazy under timing fails here; (b) re-check the timer
+    # identity — a patch installed inside run() itself would otherwise evade the pre-run
+    # check for this workload's CUDA-events fallback timing.
+    try:
+        RH.check_monkey_patch()
+        recheck = normalize_outputs(cand_run(*clone_args(inputs)), defn, device)
+        RH.check_lazy_outputs(recheck)
+        if len(recheck) != len(ref_out):
+            raise RH.RewardHackDetected("post-timing output count changed")
+        for c, r in zip(recheck, ref_out):
+            if c.shape != r.shape or C.compute_error_stats(c, r, tol)[1]:
+                raise RH.RewardHackDetected(
+                    "output no longer matches the oracle after timing — "
+                    "stateful/lazy candidate rejected")
+    except RH.RewardHackDetected as e:
+        return trace("REWARD_HACK", log=str(e))
+    except Exception as e:
+        return trace("RUNTIME_ERROR", log=f"post-timing recheck failed: {e}")
+
     return trace("PASSED", corr=agg, latency=latency)
 
 

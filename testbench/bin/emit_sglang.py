@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Emit SGLang-native test + benchmark files for a testbench task.
 
-`evaluate.py` scores a candidate through NVIDIA SOL-ExecBench (a fast inner loop).
+`evaluate.py` scores a candidate through the repo's own harness (`testbench/harness/`).
 This tool makes the SAME kernel comparable inside SGLang's OWN harness: it writes a
 `test_<name>.py` (pytest, `torch.testing.assert_close`) and a `bench_<name>.py`
 (`triton.testing.perf_report` + `do_bench_cudagraph`, IS_CI-gated, with a speedup
