@@ -1,0 +1,165 @@
+op,phase,axis,axis_value,latency_us,TFLOPS,shape,backend
+Q_a fused (fp8),prefill,prefill_M,512,58.42,273.4,"[512,7168]x[7168,2112] aligned(7168,2176)",deep_gemm w8a8_block_fp8 (blackwell path)
+O_proj (fp8),prefill,prefill_M,512,54.7,137.41,"[512,1024]x[1024,7168] aligned(1024,7168)",deep_gemm w8a8_block_fp8 (blackwell path)
+Dense GateUp (fp8),prefill,prefill_M,512,61.77,547.59,"[512,7168]x[7168,4608] aligned(7168,4608)",deep_gemm w8a8_block_fp8 (blackwell path)
+MoE Router (cuBLAS),prefill,prefill_M,512,55.92,50.41,"[512,7168]x[7168,384]",F.linear / torch.mm (cuBLAS bf16)
+Fused add+RMSNorm,prefill,prefill_M,512,52.27,,"[512,7168]",sgl_kernel.fused_add_rmsnorm
+SwiGLU dense,prefill,prefill_M,512,51.03,,"[512,4608]->[512,2304]",sgl_kernel.silu_and_mul
+Act FP8 quant,prefill,prefill_M,512,50.58,,"[512,7168] group=128",sglang_per_token_group_quant_fp8 (UE8M0)
+MoE Combine (moe_sum),prefill,prefill_M,512,63.91,,"[512,8,7168]->[512,7168]",sgl_kernel.moe_sum
+Q_a fused (fp8),prefill,prefill_M,1024,61.37,520.5,"[1024,7168]x[7168,2112] aligned(7168,2176)",deep_gemm w8a8_block_fp8 (blackwell path)
+O_proj (fp8),prefill,prefill_M,1024,58.84,255.5,"[1024,1024]x[1024,7168] aligned(1024,7168)",deep_gemm w8a8_block_fp8 (blackwell path)
+Dense GateUp (fp8),prefill,prefill_M,1024,72.0,939.49,"[1024,7168]x[7168,4608] aligned(7168,4608)",deep_gemm w8a8_block_fp8 (blackwell path)
+MoE Router (cuBLAS),prefill,prefill_M,1024,58.93,95.66,"[1024,7168]x[7168,384]",F.linear / torch.mm (cuBLAS bf16)
+Fused add+RMSNorm,prefill,prefill_M,1024,55.32,,"[1024,7168]",sgl_kernel.fused_add_rmsnorm
+SwiGLU dense,prefill,prefill_M,1024,52.32,,"[1024,4608]->[1024,2304]",sgl_kernel.silu_and_mul
+Act FP8 quant,prefill,prefill_M,1024,52.84,,"[1024,7168] group=128",sglang_per_token_group_quant_fp8 (UE8M0)
+MoE Combine (moe_sum),prefill,prefill_M,1024,85.38,,"[1024,8,7168]->[1024,7168]",sgl_kernel.moe_sum
+Q_a fused (fp8),prefill,prefill_M,2048,71.86,889.05,"[2048,7168]x[7168,2112] aligned(7168,2176)",deep_gemm w8a8_block_fp8 (blackwell path)
+O_proj (fp8),prefill,prefill_M,2048,65.22,460.96,"[2048,1024]x[1024,7168] aligned(1024,7168)",deep_gemm w8a8_block_fp8 (blackwell path)
+Dense GateUp (fp8),prefill,prefill_M,2048,149.28,906.27,"[2048,7168]x[7168,4608] aligned(7168,4608)",deep_gemm w8a8_block_fp8 (blackwell path)
+MoE Router (cuBLAS),prefill,prefill_M,2048,60.08,187.66,"[2048,7168]x[7168,384]",F.linear / torch.mm (cuBLAS bf16)
+Fused add+RMSNorm,prefill,prefill_M,2048,61.37,,"[2048,7168]",sgl_kernel.fused_add_rmsnorm
+SwiGLU dense,prefill,prefill_M,2048,54.99,,"[2048,4608]->[2048,2304]",sgl_kernel.silu_and_mul
+Act FP8 quant,prefill,prefill_M,2048,56.67,,"[2048,7168] group=128",sglang_per_token_group_quant_fp8 (UE8M0)
+MoE Combine (moe_sum),prefill,prefill_M,2048,168.8,,"[2048,8,7168]->[2048,7168]",sgl_kernel.moe_sum
+Q_a fused (fp8),prefill,prefill_M,4096,150.12,851.15,"[4096,7168]x[7168,2112] aligned(7168,2176)",deep_gemm w8a8_block_fp8 (blackwell path)
+O_proj (fp8),prefill,prefill_M,4096,72.26,832.13,"[4096,1024]x[1024,7168] aligned(1024,7168)",deep_gemm w8a8_block_fp8 (blackwell path)
+Dense GateUp (fp8),prefill,prefill_M,4096,247.47,1093.38,"[4096,7168]x[7168,4608] aligned(7168,4608)",deep_gemm w8a8_block_fp8 (blackwell path)
+MoE Router (cuBLAS),prefill,prefill_M,4096,65.73,343.05,"[4096,7168]x[7168,384]",F.linear / torch.mm (cuBLAS bf16)
+Fused add+RMSNorm,prefill,prefill_M,4096,84.22,,"[4096,7168]",sgl_kernel.fused_add_rmsnorm
+SwiGLU dense,prefill,prefill_M,4096,60.31,,"[4096,4608]->[4096,2304]",sgl_kernel.silu_and_mul
+Act FP8 quant,prefill,prefill_M,4096,64.15,,"[4096,7168] group=128",sglang_per_token_group_quant_fp8 (UE8M0)
+MoE Combine (moe_sum),prefill,prefill_M,4096,336.08,,"[4096,8,7168]->[4096,7168]",sgl_kernel.moe_sum
+Q_a fused (fp8),prefill,prefill_M,8192,248.0,1030.44,"[8192,7168]x[7168,2112] aligned(7168,2176)",deep_gemm w8a8_block_fp8 (blackwell path)
+O_proj (fp8),prefill,prefill_M,8192,156.06,770.59,"[8192,1024]x[1024,7168] aligned(1024,7168)",deep_gemm w8a8_block_fp8 (blackwell path)
+Dense GateUp (fp8),prefill,prefill_M,8192,435.06,1243.88,"[8192,7168]x[7168,4608] aligned(7168,4608)",deep_gemm w8a8_block_fp8 (blackwell path)
+MoE Router (cuBLAS),prefill,prefill_M,8192,83.8,538.18,"[8192,7168]x[7168,384]",F.linear / torch.mm (cuBLAS bf16)
+Fused add+RMSNorm,prefill,prefill_M,8192,169.13,,"[8192,7168]",sgl_kernel.fused_add_rmsnorm
+SwiGLU dense,prefill,prefill_M,8192,74.19,,"[8192,4608]->[8192,2304]",sgl_kernel.silu_and_mul
+Act FP8 quant,prefill,prefill_M,8192,79.53,,"[8192,7168] group=128",sglang_per_token_group_quant_fp8 (UE8M0)
+MoE Combine (moe_sum),prefill,prefill_M,8192,619.28,,"[8192,8,7168]->[8192,7168]",sgl_kernel.moe_sum
+Q_a fused (fp8),prefill,prefill_M,16384,436.44,1171.06,"[16384,7168]x[7168,2112] aligned(7168,2176)",deep_gemm w8a8_block_fp8 (blackwell path)
+O_proj (fp8),prefill,prefill_M,16384,265.21,906.89,"[16384,1024]x[1024,7168] aligned(1024,7168)",deep_gemm w8a8_block_fp8 (blackwell path)
+Dense GateUp (fp8),prefill,prefill_M,16384,889.93,1216.2,"[16384,7168]x[7168,4608] aligned(7168,4608)",deep_gemm w8a8_block_fp8 (blackwell path)
+MoE Router (cuBLAS),prefill,prefill_M,16384,172.86,521.77,"[16384,7168]x[7168,384]",F.linear / torch.mm (cuBLAS bf16)
+Fused add+RMSNorm,prefill,prefill_M,16384,336.59,,"[16384,7168]",sgl_kernel.fused_add_rmsnorm
+SwiGLU dense,prefill,prefill_M,16384,148.21,,"[16384,4608]->[16384,2304]",sgl_kernel.silu_and_mul
+Act FP8 quant,prefill,prefill_M,16384,159.46,,"[16384,7168] group=128",sglang_per_token_group_quant_fp8 (UE8M0)
+MoE Combine (moe_sum),prefill,prefill_M,16384,1235.82,,"[16384,8,7168]->[16384,7168]",sgl_kernel.moe_sum
+Q_a fused (fp8),prefill,prefill_M,32768,877.83,1164.47,"[32768,7168]x[7168,2112] aligned(7168,2176)",deep_gemm w8a8_block_fp8 (blackwell path)
+O_proj (fp8),prefill,prefill_M,32768,533.8,901.16,"[32768,1024]x[1024,7168] aligned(1024,7168)",deep_gemm w8a8_block_fp8 (blackwell path)
+Dense GateUp (fp8),prefill,prefill_M,32768,1780.79,1215.56,"[32768,7168]x[7168,4608] aligned(7168,4608)",deep_gemm w8a8_block_fp8 (blackwell path)
+MoE Router (cuBLAS),prefill,prefill_M,32768,351.32,513.45,"[32768,7168]x[7168,384]",F.linear / torch.mm (cuBLAS bf16)
+Fused add+RMSNorm,prefill,prefill_M,32768,622.9,,"[32768,7168]",sgl_kernel.fused_add_rmsnorm
+SwiGLU dense,prefill,prefill_M,32768,244.91,,"[32768,4608]->[32768,2304]",sgl_kernel.silu_and_mul
+Act FP8 quant,prefill,prefill_M,32768,268.9,,"[32768,7168] group=128",sglang_per_token_group_quant_fp8 (UE8M0)
+MoE Combine (moe_sum),prefill,prefill_M,32768,2778.94,,"[32768,8,7168]->[32768,7168]",sgl_kernel.moe_sum
+Q_a fused (fp8),decode,decode_B,1,57.13,0.55,"[1,7168]x[7168,2112] aligned(7168,2176)",deep_gemm w8a8_block_fp8 (blackwell path)
+Q_b (fp8),decode,decode_B,1,52.62,0.72,"[1,1536]x[1536,12288] aligned(1536,12288)",deep_gemm w8a8_block_fp8 (blackwell path)
+O_proj (fp8),decode,decode_B,1,57.3,2.05,"[1,8192]x[8192,7168] aligned(8192,7168)",deep_gemm w8a8_block_fp8 (blackwell path)
+MoE Router (cuBLAS),prefill,decode_B,1,53.43,0.1,"[1,7168]x[7168,384]",F.linear / torch.mm (cuBLAS bf16)
+MoE Router (dsv3_router_gemm),decode,decode_B,1,50.15,0.11,"[1,7168]x[7168,384]","sgl_kernel.dsv3_router_gemm (CUDA JIT, out fp32)"
+KV_b absorb BMM H=64,decode,decode_B,1,50.25,0.17,"[1,64,128]x[64,128,512]",torch.bmm bf16
+MoE Gate (fused),decode,decode_B,1,51.81,,"[1,384] topk=8",sgl_kernel.kimi_k2_moe_fused_gate
+Fused add+RMSNorm,decode,decode_B,1,49.24,,"[1,7168]",sgl_kernel.fused_add_rmsnorm
+Q_a fused (fp8),decode,decode_B,2,57.61,1.08,"[2,7168]x[7168,2112] aligned(7168,2176)",deep_gemm w8a8_block_fp8 (blackwell path)
+Q_b (fp8),decode,decode_B,2,52.68,1.43,"[2,1536]x[1536,12288] aligned(1536,12288)",deep_gemm w8a8_block_fp8 (blackwell path)
+O_proj (fp8),decode,decode_B,2,57.27,4.1,"[2,8192]x[8192,7168] aligned(8192,7168)",deep_gemm w8a8_block_fp8 (blackwell path)
+MoE Router (cuBLAS),prefill,decode_B,2,53.59,0.21,"[2,7168]x[7168,384]",F.linear / torch.mm (cuBLAS bf16)
+MoE Router (dsv3_router_gemm),decode,decode_B,2,50.55,0.22,"[2,7168]x[7168,384]","sgl_kernel.dsv3_router_gemm (CUDA JIT, out fp32)"
+KV_b absorb BMM H=64,decode,decode_B,2,50.3,0.33,"[2,64,128]x[64,128,512]",torch.bmm bf16
+MoE Gate (fused),decode,decode_B,2,51.87,,"[2,384] topk=8",sgl_kernel.kimi_k2_moe_fused_gate
+Fused add+RMSNorm,decode,decode_B,2,49.75,,"[2,7168]",sgl_kernel.fused_add_rmsnorm
+Q_a fused (fp8),decode,decode_B,4,57.25,2.18,"[4,7168]x[7168,2112] aligned(7168,2176)",deep_gemm w8a8_block_fp8 (blackwell path)
+Q_b (fp8),decode,decode_B,4,52.63,2.87,"[4,1536]x[1536,12288] aligned(1536,12288)",deep_gemm w8a8_block_fp8 (blackwell path)
+O_proj (fp8),decode,decode_B,4,57.15,8.22,"[4,8192]x[8192,7168] aligned(8192,7168)",deep_gemm w8a8_block_fp8 (blackwell path)
+MoE Router (cuBLAS),prefill,decode_B,4,53.51,0.41,"[4,7168]x[7168,384]",F.linear / torch.mm (cuBLAS bf16)
+MoE Router (dsv3_router_gemm),decode,decode_B,4,51.28,0.43,"[4,7168]x[7168,384]","sgl_kernel.dsv3_router_gemm (CUDA JIT, out fp32)"
+KV_b absorb BMM H=64,decode,decode_B,4,50.31,0.67,"[4,64,128]x[64,128,512]",torch.bmm bf16
+MoE Gate (fused),decode,decode_B,4,51.86,,"[4,384] topk=8",sgl_kernel.kimi_k2_moe_fused_gate
+Fused add+RMSNorm,decode,decode_B,4,49.63,,"[4,7168]",sgl_kernel.fused_add_rmsnorm
+Q_a fused (fp8),decode,decode_B,8,56.86,4.39,"[8,7168]x[7168,2112] aligned(7168,2176)",deep_gemm w8a8_block_fp8 (blackwell path)
+Q_b (fp8),decode,decode_B,8,52.58,5.74,"[8,1536]x[1536,12288] aligned(1536,12288)",deep_gemm w8a8_block_fp8 (blackwell path)
+O_proj (fp8),decode,decode_B,8,57.28,16.4,"[8,8192]x[8192,7168] aligned(8192,7168)",deep_gemm w8a8_block_fp8 (blackwell path)
+MoE Router (cuBLAS),prefill,decode_B,8,53.51,0.82,"[8,7168]x[7168,384]",F.linear / torch.mm (cuBLAS bf16)
+MoE Router (dsv3_router_gemm),decode,decode_B,8,52.66,0.84,"[8,7168]x[7168,384]","sgl_kernel.dsv3_router_gemm (CUDA JIT, out fp32)"
+KV_b absorb BMM H=64,decode,decode_B,8,50.18,1.34,"[8,64,128]x[64,128,512]",torch.bmm bf16
+MoE Gate (fused),decode,decode_B,8,51.84,,"[8,384] topk=8",sgl_kernel.kimi_k2_moe_fused_gate
+Fused add+RMSNorm,decode,decode_B,8,49.58,,"[8,7168]",sgl_kernel.fused_add_rmsnorm
+Q_a fused (fp8),decode,decode_B,16,56.53,8.83,"[16,7168]x[7168,2112] aligned(7168,2176)",deep_gemm w8a8_block_fp8 (blackwell path)
+Q_b (fp8),decode,decode_B,16,52.66,11.47,"[16,1536]x[1536,12288] aligned(1536,12288)",deep_gemm w8a8_block_fp8 (blackwell path)
+O_proj (fp8),decode,decode_B,16,57.36,32.76,"[16,8192]x[8192,7168] aligned(8192,7168)",deep_gemm w8a8_block_fp8 (blackwell path)
+MoE Router (cuBLAS),prefill,decode_B,16,53.43,1.65,"[16,7168]x[7168,384]",F.linear / torch.mm (cuBLAS bf16)
+MoE Router (dsv3_router_gemm),decode,decode_B,16,57.79,1.52,"[16,7168]x[7168,384]","sgl_kernel.dsv3_router_gemm (CUDA JIT, out fp32)"
+KV_b absorb BMM H=64,decode,decode_B,16,50.41,2.66,"[16,64,128]x[64,128,512]",torch.bmm bf16
+MoE Gate (fused),decode,decode_B,16,52.18,,"[16,384] topk=8",sgl_kernel.kimi_k2_moe_fused_gate
+Fused add+RMSNorm,decode,decode_B,16,49.97,,"[16,7168]",sgl_kernel.fused_add_rmsnorm
+Q_a fused (fp8),decode,decode_B,32,56.17,17.77,"[32,7168]x[7168,2112] aligned(7168,2176)",deep_gemm w8a8_block_fp8 (blackwell path)
+Q_b (fp8),decode,decode_B,32,52.91,22.83,"[32,1536]x[1536,12288] aligned(1536,12288)",deep_gemm w8a8_block_fp8 (blackwell path)
+O_proj (fp8),decode,decode_B,32,57.9,64.9,"[32,8192]x[8192,7168] aligned(8192,7168)",deep_gemm w8a8_block_fp8 (blackwell path)
+MoE Router (cuBLAS),prefill,decode_B,32,53.5,3.29,"[32,7168]x[7168,384]",F.linear / torch.mm (cuBLAS bf16)
+KV_b absorb BMM H=64,decode,decode_B,32,51.07,5.26,"[32,64,128]x[64,128,512]",torch.bmm bf16
+MoE Gate (fused),decode,decode_B,32,52.11,,"[32,384] topk=8",sgl_kernel.kimi_k2_moe_fused_gate
+Fused add+RMSNorm,decode,decode_B,32,49.99,,"[32,7168]",sgl_kernel.fused_add_rmsnorm
+Q_a fused (fp8),decode,decode_B,64,57.05,35.0,"[64,7168]x[7168,2112] aligned(7168,2176)",deep_gemm w8a8_block_fp8 (blackwell path)
+Q_b (fp8),decode,decode_B,64,53.19,45.42,"[64,1536]x[1536,12288] aligned(1536,12288)",deep_gemm w8a8_block_fp8 (blackwell path)
+O_proj (fp8),decode,decode_B,64,59.11,127.16,"[64,8192]x[8192,7168] aligned(8192,7168)",deep_gemm w8a8_block_fp8 (blackwell path)
+MoE Router (cuBLAS),prefill,decode_B,64,53.58,6.58,"[64,7168]x[7168,384]",F.linear / torch.mm (cuBLAS bf16)
+KV_b absorb BMM H=64,decode,decode_B,64,50.8,10.57,"[64,64,128]x[64,128,512]",torch.bmm bf16
+MoE Gate (fused),decode,decode_B,64,52.25,,"[64,384] topk=8",sgl_kernel.kimi_k2_moe_fused_gate
+Fused add+RMSNorm,decode,decode_B,64,50.03,,"[64,7168]",sgl_kernel.fused_add_rmsnorm
+Q_a fused (fp8),decode,decode_B,128,56.96,70.1,"[128,7168]x[7168,2112] aligned(7168,2176)",deep_gemm w8a8_block_fp8 (blackwell path)
+Q_b (fp8),decode,decode_B,128,54.43,88.77,"[128,1536]x[1536,12288] aligned(1536,12288)",deep_gemm w8a8_block_fp8 (blackwell path)
+O_proj (fp8),decode,decode_B,128,60.02,250.46,"[128,8192]x[8192,7168] aligned(8192,7168)",deep_gemm w8a8_block_fp8 (blackwell path)
+MoE Router (cuBLAS),prefill,decode_B,128,54.81,12.86,"[128,7168]x[7168,384]",F.linear / torch.mm (cuBLAS bf16)
+KV_b absorb BMM H=64,decode,decode_B,128,51.69,20.77,"[128,64,128]x[64,128,512]",torch.bmm bf16
+MoE Gate (fused),decode,decode_B,128,52.25,,"[128,384] topk=8",sgl_kernel.kimi_k2_moe_fused_gate
+Fused add+RMSNorm,decode,decode_B,128,49.6,,"[128,7168]",sgl_kernel.fused_add_rmsnorm
+Q_a fused (fp8),decode,decode_B,256,57.46,138.98,"[256,7168]x[7168,2112] aligned(7168,2176)",deep_gemm w8a8_block_fp8 (blackwell path)
+Q_b (fp8),decode,decode_B,256,55.31,174.73,"[256,1536]x[1536,12288] aligned(1536,12288)",deep_gemm w8a8_block_fp8 (blackwell path)
+O_proj (fp8),decode,decode_B,256,62.41,481.76,"[256,8192]x[8192,7168] aligned(8192,7168)",deep_gemm w8a8_block_fp8 (blackwell path)
+MoE Router (cuBLAS),prefill,decode_B,256,56.29,25.03,"[256,7168]x[7168,384]",F.linear / torch.mm (cuBLAS bf16)
+KV_b absorb BMM H=64,decode,decode_B,256,53.5,40.14,"[256,64,128]x[64,128,512]",torch.bmm bf16
+MoE Gate (fused),decode,decode_B,256,52.79,,"[256,384] topk=8",sgl_kernel.kimi_k2_moe_fused_gate
+Fused add+RMSNorm,decode,decode_B,256,50.84,,"[256,7168]",sgl_kernel.fused_add_rmsnorm
+MoE GateUp grouped (contig),prefill,tokens_per_expert,16,587.77,306.9,E=384 m_sum=49152 K=7168 N=256 (uniform=16),deep_gemm contiguous (non-uniform)
+MoE GateUp grouped (contig),prefill,tokens_per_expert,32,589.66,305.92,E=384 m_sum=49152 K=7168 N=256 (uniform=32),deep_gemm contiguous (non-uniform)
+MoE GateUp grouped (contig),prefill,tokens_per_expert,64,586.92,307.35,E=384 m_sum=49152 K=7168 N=256 (uniform=64),deep_gemm contiguous (non-uniform)
+MoE GateUp grouped (contig),prefill,tokens_per_expert,128,587.08,307.27,E=384 m_sum=49152 K=7168 N=256 (uniform=128),deep_gemm contiguous (non-uniform)
+MoE GateUp grouped (contig),prefill,tokens_per_expert,256,661.08,545.74,E=384 m_sum=98304 K=7168 N=256 (uniform=256),deep_gemm contiguous (non-uniform)
+MoE GateUp grouped (contig),prefill,tokens_per_expert,341,876.49,617.42,E=384 m_sum=147456 K=7168 N=256 (uniform=341),deep_gemm contiguous (non-uniform)
+MoE GateUp grouped (contig),prefill,tokens_per_expert,512,1071.89,673.16,E=384 m_sum=196608 K=7168 N=256 (uniform=512),deep_gemm contiguous (non-uniform)
+MoE GateUp grouped (contig),prefill,tokens_per_expert,1024,1807.35,798.47,E=384 m_sum=393216 K=7168 N=256 (uniform=1024),deep_gemm contiguous (non-uniform)
+MoE GateUp grouped (contig),prefill,tokens_per_expert,routed_M4096,588.12,306.72,E=384 m_sum=49152 K=7168 N=256 (routed M=4096 min55/max114),deep_gemm contiguous (non-uniform)
+MoE GateUp grouped (contig),prefill,tokens_per_expert,routed_M16384,874.94,620.13,E=384 m_sum=147840 K=7168 N=256 (routed M=16384 min288/max400),deep_gemm contiguous (non-uniform)
+MoE GateUp masked,decode,masked_m,1,73.23,3.21,"8x[1,7168]x[7168,2048] (masked, padded M=128)",deep_gemm.fp8_m_grouped_gemm_nt_masked
+MoE GateUp masked,decode,masked_m,2,73.24,6.41,"8x[2,7168]x[7168,2048] (masked, padded M=128)",deep_gemm.fp8_m_grouped_gemm_nt_masked
+MoE GateUp masked,decode,masked_m,4,73.3,12.82,"8x[4,7168]x[7168,2048] (masked, padded M=128)",deep_gemm.fp8_m_grouped_gemm_nt_masked
+MoE GateUp masked,decode,masked_m,8,73.26,25.65,"8x[8,7168]x[7168,2048] (masked, padded M=128)",deep_gemm.fp8_m_grouped_gemm_nt_masked
+MoE GateUp masked,decode,masked_m,16,73.02,51.47,"8x[16,7168]x[7168,2048] (masked, padded M=128)",deep_gemm.fp8_m_grouped_gemm_nt_masked
+MoE GateUp masked,decode,masked_m,32,73.64,102.07,"8x[32,7168]x[7168,2048] (masked, padded M=128)",deep_gemm.fp8_m_grouped_gemm_nt_masked
+MoE GateUp masked,decode,masked_m,64,73.16,205.48,"8x[64,7168]x[7168,2048] (masked, padded M=128)",deep_gemm.fp8_m_grouped_gemm_nt_masked
+MoE GateUp masked,decode,masked_m,128,73.12,411.15,"8x[128,7168]x[7168,2048] (masked, padded M=128)",deep_gemm.fp8_m_grouped_gemm_nt_masked
+MoE GateUp masked,decode,masked_m,skew8,73.34,102.09,E=8 masked_m=skew8 K=7168 N=2048,deep_gemm masked (non-uniform)
+MoE GateUp masked,decode,masked_m,ep12,86.66,65.05,E=12 masked_m=ep12 K=7168 N=2048,deep_gemm masked (non-uniform)
+MLA attention prefill,prefill,prefill_seqlen,1024,343.34,62.55,"Q/K:[1024,64,192] V:[1024,64,128] seqlen=1024","flashinfer.single_prefill_with_kv_cache (ragged, causal)"
+MLA attention prefill,prefill,prefill_seqlen,2048,787.0,109.15,"Q/K:[2048,64,192] V:[2048,64,128] seqlen=2048","flashinfer.single_prefill_with_kv_cache (ragged, causal)"
+MLA attention prefill,prefill,prefill_seqlen,4096,2254.2,152.43,"Q/K:[4096,64,192] V:[4096,64,128] seqlen=4096","flashinfer.single_prefill_with_kv_cache (ragged, causal)"
+MLA attention prefill,prefill,prefill_seqlen,8192,8448.71,162.67,"Q/K:[8192,64,192] V:[8192,64,128] seqlen=8192","flashinfer.single_prefill_with_kv_cache (ragged, causal)"
+MLA attention prefill,prefill,prefill_seqlen,16384,31559.71,174.2,"Q/K:[16384,64,192] V:[16384,64,128] seqlen=16384","flashinfer.single_prefill_with_kv_cache (ragged, causal)"
+MLA attention decode,decode,decode_kvlen,1024,64.54,35.35,"Q:[16,1,64,576] KV:paged(1024,576) v=512",flashinfer.trtllm_batch_decode_with_kv_cache_mla (sm100)
+MLA attention decode,decode,decode_kvlen,2048,72.36,63.07,"Q:[16,1,64,576] KV:paged(2048,576) v=512",flashinfer.trtllm_batch_decode_with_kv_cache_mla (sm100)
+MLA attention decode,decode,decode_kvlen,4096,71.28,128.04,"Q:[16,1,64,576] KV:paged(4096,576) v=512",flashinfer.trtllm_batch_decode_with_kv_cache_mla (sm100)
+MLA attention decode,decode,decode_kvlen,8192,146.44,124.65,"Q:[16,1,64,576] KV:paged(8192,576) v=512",flashinfer.trtllm_batch_decode_with_kv_cache_mla (sm100)
+MLA attention decode,decode,decode_kvlen,16384,172.69,211.4,"Q:[16,1,64,576] KV:paged(16384,576) v=512",flashinfer.trtllm_batch_decode_with_kv_cache_mla (sm100)
+MLA attention decode,decode,decode_kvlen,32768,334.04,218.58,"Q:[16,1,64,576] KV:paged(32768,576) v=512",flashinfer.trtllm_batch_decode_with_kv_cache_mla (sm100)
+MLA attention decode,decode,decode_B,1,59.85,9.53,"Q:[1,1,64,576] KV:paged(4096,576) v=512",flashinfer.trtllm_batch_decode_with_kv_cache_mla (sm100)
+MLA attention decode,decode,decode_B,2,60.9,18.73,"Q:[2,1,64,576] KV:paged(4096,576) v=512",flashinfer.trtllm_batch_decode_with_kv_cache_mla (sm100)
+MLA attention decode,decode,decode_B,4,62.73,36.37,"Q:[4,1,64,576] KV:paged(4096,576) v=512",flashinfer.trtllm_batch_decode_with_kv_cache_mla (sm100)
+MLA attention decode,decode,decode_B,8,71.15,64.14,"Q:[8,1,64,576] KV:paged(4096,576) v=512",flashinfer.trtllm_batch_decode_with_kv_cache_mla (sm100)
+MLA attention decode,decode,decode_B,16,71.37,127.89,"Q:[16,1,64,576] KV:paged(4096,576) v=512",flashinfer.trtllm_batch_decode_with_kv_cache_mla (sm100)
+MLA attention decode,decode,decode_B,32,145.44,125.51,"Q:[32,1,64,576] KV:paged(4096,576) v=512",flashinfer.trtllm_batch_decode_with_kv_cache_mla (sm100)
+MLA attention decode,decode,decode_B,64,174.2,209.57,"Q:[64,1,64,576] KV:paged(4096,576) v=512",flashinfer.trtllm_batch_decode_with_kv_cache_mla (sm100)
+MLA attention decode,decode,decode_B,128,333.49,218.94,"Q:[128,1,64,576] KV:paged(4096,576) v=512",flashinfer.trtllm_batch_decode_with_kv_cache_mla (sm100)
+MLA attention decode,decode,decode_B,256,615.16,237.38,"Q:[256,1,64,576] KV:paged(4096,576) v=512",flashinfer.trtllm_batch_decode_with_kv_cache_mla (sm100)

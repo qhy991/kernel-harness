@@ -1,0 +1,31 @@
+{
+  "name": "mm_moe_gate_topk_decode",
+  "op": "MoE Gate + sigmoid Top-4 (routing)",
+  "phase": "decode",
+  "family": "moe-gate",
+  "num_experts": 128,
+  "topk": 4,
+  "oracle": "exact-index",
+  "sweep": [
+    1,
+    2,
+    4,
+    8,
+    16,
+    32,
+    64,
+    128,
+    256
+  ],
+  "backend": "sgl_kernel topk_sigmoid (blackwell)",
+  "tolerance": {
+    "max_atol": 0.0,
+    "max_rtol": 0.0,
+    "required_matched_ratio": 1.0
+  },
+  "baseline": {
+    "source": "live",
+    "measure": "reference.py timed by sol-execbench CUPTI (median device-kernel us)",
+    "denominator": "the live per-shape reference latency (see .baseline_cache.json)"
+  }
+}

@@ -72,10 +72,11 @@ case "$SUITE" in
 esac
 
 echo "# Running $SUITE: ${#TESTS[@]} test files under $SGLANG_DIR"
+PYTHON="${PYTHON:-python3}"
 for t in "${TESTS[@]}"; do
     if [[ -f "$t" ]]; then
-        echo -e "\n>>> pytest $t"
-        pytest -q "$t" || echo "  (FAILED: $t)"
+        echo -e "\n>>> $PYTHON -m pytest $t"
+        "$PYTHON" -m pytest -q "$t" || echo "  (FAILED: $t)"
     else
         echo "  (MISSING: $t)"
     fi

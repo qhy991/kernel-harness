@@ -1,0 +1,41 @@
+{
+    "name": "kimi_k27_dense_ffn_swiglu_decode",
+    "hf_id": "moonshotai/Kimi-K2.7",
+    "description": "Kimi-K2.7 Dense FFN SwiGLU (decode), SiLU-and-mul (sgl_kernel.silu_and_mul). out[M,2304] = silu(x[:, :2304]) * x[:, 2304:], x is the [M,4608] gate|up projection. Baseline = sglang production kernel; beat its latency while matching output.",
+    "axes": {
+        "M": {
+            "type": "var",
+            "description": "decode token count (sweep)"
+        },
+        "I2": {
+            "type": "const",
+            "value": 4608,
+            "description": "gate|up width = 2 * intermediate/TP"
+        },
+        "I": {
+            "type": "expr",
+            "expression": "I2//2",
+            "description": "output width = intermediate/TP"
+        }
+    },
+    "custom_inputs_entrypoint": "get_inputs",
+    "inputs": {
+        "x": {
+            "shape": [
+                "M",
+                "I2"
+            ],
+            "dtype": "bfloat16"
+        }
+    },
+    "outputs": {
+        "output": {
+            "shape": [
+                "M",
+                "I"
+            ],
+            "dtype": "bfloat16"
+        }
+    },
+    "reference": "\"\"\"SwiGLU (SiLU-and-mul) \u2014 sglang production baseline (sgl_kernel.silu_and_mul).\n\nKimi-K2.7 FFN activation: the exact kernel sglang dispatches in\nSiluAndMul.forward_cuda (python/sglang/srt/layers/activation.py:102). Splits the\ngate/up projection output [M, 2I] into gate|up along the last dim and computes\nsilu(gate) * up -> [M, I]. `reference.py` IS the correctness oracle AND the latency\nbaseline: an optimized solution.py must match this output within tolerance and run\nfaster.\n\n  out[M, I] = silu(x[:, :I]) * x[:, I:],  I = (2I)//2.  Memory-bound elementwise.\n\nOnly the kernel is timed; the (untimed) get_inputs generates the gate|up tensor.\nThe output buffer is allocated inside run(), exactly as sglang's forward_cuda does.\n\"\"\"\n\nimport torch\nfrom sgl_kernel import silu_and_mul\n\n\ndef get_inputs(axes_and_scalars: dict, device: torch.device) -> dict:\n    M = axes_and_scalars[\"M\"]\n    I2 = axes_and_scalars[\"I2\"]  # 2 * intermediate/TP (gate|up concatenated)\n    x = torch.randn(M, I2, device=device, dtype=torch.bfloat16)\n    return {\"x\": x}\n\n\n@torch.no_grad()\ndef run(x):\n    d = x.shape[-1] // 2\n    out = torch.empty(x.shape[:-1] + (d,), dtype=x.dtype, device=x.device)\n    silu_and_mul(x, out)\n    return out\n"
+}

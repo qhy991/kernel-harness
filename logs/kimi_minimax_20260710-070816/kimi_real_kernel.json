@@ -1,0 +1,227 @@
+[
+  {
+    "op_id": 1,
+    "name": "Q_a (fused w/ KV_a)",
+    "phase": "prefill",
+    "backend": "deep_gemm w8a8_block_fp8 (blackwell path)",
+    "shape": "[16384,6144]x[6144,2624] aligned(6144,2688)",
+    "us": 444.3,
+    "TFLOPS": 1218.01
+  },
+  {
+    "op_id": 2,
+    "name": "Q_b",
+    "phase": "prefill",
+    "backend": "deep_gemm w8a8_block_fp8 (blackwell path)",
+    "shape": "[16384,2048]x[2048,2048] aligned(2048,2048)",
+    "us": 151.8,
+    "TFLOPS": 905.37
+  },
+  {
+    "op_id": 4,
+    "name": "KV_b",
+    "phase": "prefill",
+    "backend": "deep_gemm w8a8_block_fp8 (blackwell path)",
+    "shape": "[16384,512]x[512,3584] aligned(512,3584)",
+    "us": 149.03,
+    "TFLOPS": 403.46
+  },
+  {
+    "op_id": 5,
+    "name": "O_proj",
+    "phase": "prefill",
+    "backend": "deep_gemm w8a8_block_fp8 (blackwell path)",
+    "shape": "[16384,2048]x[2048,6144] aligned(2048,6144)",
+    "us": 354.61,
+    "TFLOPS": 1162.75
+  },
+  {
+    "op_id": 6,
+    "name": "Index_Q",
+    "phase": "prefill",
+    "backend": "deep_gemm w8a8_block_fp8 (blackwell path)",
+    "shape": "[16384,6144]x[6144,4096] aligned(6144,4096)",
+    "us": 693.66,
+    "TFLOPS": 1188.82
+  },
+  {
+    "op_id": 7,
+    "name": "Index_K",
+    "phase": "prefill",
+    "backend": "deep_gemm w8a8_block_fp8 (blackwell path)",
+    "shape": "[16384,6144]x[6144,128] aligned(6144,128)",
+    "us": 66.54,
+    "TFLOPS": 387.29
+  },
+  {
+    "op_id": 8,
+    "name": "Index_Score (ragged prefill)",
+    "phase": "prefill",
+    "backend": "deep_gemm.fp8_mqa_logits",
+    "shape": "Q:[16384,32,128] K:[16384,128] topk=2048",
+    "us": 2668.81,
+    "TFLOPS": 823.97
+  },
+  {
+    "op_id": 9,
+    "name": "Dense GateUp",
+    "phase": "prefill",
+    "backend": "deep_gemm w8a8_block_fp8 (blackwell path)",
+    "shape": "[16384,6144]x[6144,6144] aligned(6144,6144)",
+    "us": 996.2,
+    "TFLOPS": 1241.67
+  },
+  {
+    "op_id": 10,
+    "name": "Dense Down",
+    "phase": "prefill",
+    "backend": "deep_gemm w8a8_block_fp8 (blackwell path)",
+    "shape": "[16384,1536]x[1536,6144] aligned(1536,6144)",
+    "us": 327.85,
+    "TFLOPS": 943.22
+  },
+  {
+    "op_id": 11,
+    "name": "MoE Router",
+    "phase": "prefill",
+    "backend": "deep_gemm w8a8_block_fp8 (blackwell path)",
+    "shape": "[16384,6144]x[6144,256] aligned(6144,256)",
+    "us": 72.48,
+    "TFLOPS": 711.05
+  },
+  {
+    "op_id": 12,
+    "name": "MoE GateUp GroupGEMM",
+    "phase": "prefill",
+    "backend": "deep_gemm.m_grouped_fp8_gemm_nt_contiguous",
+    "shape": "256x[512,6144]x[6144,512]",
+    "us": 902.02,
+    "TFLOPS": 914.2
+  },
+  {
+    "op_id": 13,
+    "name": "MoE Down GroupGEMM",
+    "phase": "prefill",
+    "backend": "deep_gemm.m_grouped_fp8_gemm_nt_contiguous",
+    "shape": "256x[512,256]x[256,6144]",
+    "us": 1546.81,
+    "TFLOPS": 266.56
+  },
+  {
+    "op_id": 14,
+    "name": "Q_a (fused w/ KV_a)",
+    "phase": "decode",
+    "backend": "deep_gemm w8a8_block_fp8 (blackwell path)",
+    "shape": "[16,6144]x[6144,2624] aligned(6144,2688)",
+    "us": 55.54,
+    "TFLOPS": 9.51
+  },
+  {
+    "op_id": 15,
+    "name": "Q_b",
+    "phase": "decode",
+    "backend": "deep_gemm w8a8_block_fp8 (blackwell path)",
+    "shape": "[16,2048]x[2048,16384] aligned(2048,16384)",
+    "us": 53.7,
+    "TFLOPS": 19.99
+  },
+  {
+    "op_id": 17,
+    "name": "q_nope absorb BMM",
+    "phase": "decode",
+    "backend": "torch.bmm bf16",
+    "shape": "[16,64,192]x[64,192,512]",
+    "us": 50.23,
+    "TFLOPS": 4.01
+  },
+  {
+    "op_id": 18,
+    "name": "v absorb BMM",
+    "phase": "decode",
+    "backend": "torch.bmm bf16",
+    "shape": "[16,64,512]x[64,512,256]",
+    "us": 50.77,
+    "TFLOPS": 5.29
+  },
+  {
+    "op_id": 19,
+    "name": "O_proj",
+    "phase": "decode",
+    "backend": "deep_gemm w8a8_block_fp8 (blackwell path)",
+    "shape": "[16,16384]x[16384,6144] aligned(16384,6144)",
+    "us": 67.89,
+    "TFLOPS": 47.45
+  },
+  {
+    "op_id": 20,
+    "name": "Index_Q",
+    "phase": "decode",
+    "backend": "deep_gemm w8a8_block_fp8 (blackwell path)",
+    "shape": "[16,6144]x[6144,4096] aligned(6144,4096)",
+    "us": 55.57,
+    "TFLOPS": 14.49
+  },
+  {
+    "op_id": 21,
+    "name": "Index_K",
+    "phase": "decode",
+    "backend": "deep_gemm w8a8_block_fp8 (blackwell path)",
+    "shape": "[16,6144]x[6144,128] aligned(6144,128)",
+    "us": 54.88,
+    "TFLOPS": 0.46
+  },
+  {
+    "op_id": 22,
+    "name": "Index_Score (paged decode)",
+    "phase": "decode",
+    "backend": "deep_gemm.fp8_mqa_logits",
+    "shape": "Q:[16,32,128] K:[2048,128] topk=2048",
+    "us": 125.21,
+    "TFLOPS": 2.14
+  },
+  {
+    "op_id": 23,
+    "name": "MoE Router",
+    "phase": "decode",
+    "backend": "deep_gemm w8a8_block_fp8 (blackwell path)",
+    "shape": "[16,6144]x[6144,256] aligned(6144,256)",
+    "us": 55.22,
+    "TFLOPS": 0.91
+  },
+  {
+    "op_id": 24,
+    "name": "MoE GateUp GroupGEMM",
+    "phase": "decode",
+    "backend": "deep_gemm.m_grouped_fp8_gemm_nt_contiguous",
+    "shape": "8x[16,6144]x[6144,4096]",
+    "us": 147.48,
+    "TFLOPS": 43.69
+  },
+  {
+    "op_id": 25,
+    "name": "MoE Down GroupGEMM",
+    "phase": "decode",
+    "backend": "deep_gemm.m_grouped_fp8_gemm_nt_contiguous",
+    "shape": "8x[16,2048]x[2048,6144]",
+    "us": 140.92,
+    "TFLOPS": 22.86
+  },
+  {
+    "op_id": 26,
+    "name": "Flash Decoding MLA sparse MQA",
+    "phase": "decode",
+    "backend": "sgl_kernel.flash_mla_sparse_fwd",
+    "shape": "Q:[16,64,512] KV:[8192,1,512] topk=2048",
+    "us": 157.57
+  },
+  {
+    "op_id": 27,
+    "name": "FlashAttn causal MHA (prefill)",
+    "phase": "prefill",
+    "backend": "flash_attn.flash_attn_func",
+    "shape": "Q/K/V:[1,8,16384,256] causal=True",
+    "us": 7172.26,
+    "TFLOPS": 153.3,
+    "note": "also flashinfer: 7952us/138TFLOPS"
+  }
+]

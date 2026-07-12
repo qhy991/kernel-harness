@@ -1,0 +1,37 @@
+TASK PROMPT (send this as your first message right after setting /goal):
+
+You are optimizing one GPU kernel. Work only inside this task directory:
+  /home/qinhaiyan/kernel-harness/testbench/tasks/kimi_k27/q_nope_absorb_bmm_decode
+
+The op: Kimi-K2.7 MLA q_nope weight-absorb batched matmul, decode phase.
+  out[Bh, M, N] = bmm(a[Bh, M, K], b[Bh, K, N]),  Bh=64 heads, K=192, N=512,
+  a,b are bfloat16. M sweeps {1,2,4,8,16,32,64,128,256} (decode batch).
+The sglang production baseline is torch.bmm (bf16). It is memory/launch-bound at
+these tiny per-head shapes — that is the headroom you are attacking.
+
+Rules (a fair, verifiable contract — do not break them):
+- Edit ONLY solution.py. It must keep the signature `def run(a, b)` returning the
+  output tensor. get_inputs stays as-is; you may use Triton, torch, CUDA via
+  torch.utils.cpp_extension, CUTLASS/CuTe — anything importable in the venv.
+- reference.py is the correctness oracle AND the latency baseline. Do NOT edit
+  reference.py, definition.json, workload.jsonl, or task.json. Do not special-case
+  or hardcode outputs; the kernel must compute the real bmm.
+- Correctness is judged against the sglang output per shape within the tolerance in
+  workload.jsonl (atol 0.1 / rtol 0.05 / 98% matched). Efficiency is CUPTI
+  device-kernel time; you win only if you are faster on EVERY shape.
+
+Your loop each iteration:
+  1. Edit solution.py.
+  2. Run:
+     cd /home/qinhaiyan/sol-execbench 2>/dev/null; \
+     python /home/qinhaiyan/kernel-harness/testbench/bin/evaluate.py \
+       tasks/kimi_k27/q_nope_absorb_bmm_decode --repeat 3
+     (run it from /home/qinhaiyan/kernel-harness/testbench so the relative task path
+      resolves; the evaluator sets its own PATH/PYTHONPATH internally.)
+  3. Read the VERDICT_JSON block: correct, win, geomean_speedup,
+     min_speedup_conservative, and per-shape sol_us/base_us. Iterate.
+
+Success = correct:true AND win:true (min_speedup_conservative > 1.0). If you cannot
+win after your best attempts, stop and report the final verdict JSON plus a short
+diagnosis of why (e.g. launch-bound floor, bf16 accuracy, no headroom vs cuBLAS bmm).
+Keep going autonomously; do not ask me questions mid-run.

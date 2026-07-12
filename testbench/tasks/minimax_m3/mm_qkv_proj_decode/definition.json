@@ -1,0 +1,46 @@
+{
+    "name": "minimax_m3_mm_qkv_proj_decode",
+    "hf_id": "MiniMaxAI/MiniMax-M3",
+    "description": "MiniMax-M3 Main Q/K/V proj (GQA) (decode), bf16 cuBLAS GEMM (base checkpoint; inventory op28 standard Linear). out[M,9216] = x[M,6144] @ weight[9216,6144].T. Baseline = sglang production path; beat its latency across the sweep while matching output. (-MXFP8 checkpoint would use deep_gemm/flashinfer \u2014 separate.)",
+    "axes": {
+        "M": {
+            "type": "var",
+            "description": "decode token count (sweep)"
+        },
+        "K": {
+            "type": "const",
+            "value": 6144
+        },
+        "N": {
+            "type": "const",
+            "value": 9216
+        }
+    },
+    "custom_inputs_entrypoint": "get_inputs",
+    "inputs": {
+        "x": {
+            "shape": [
+                "M",
+                "K"
+            ],
+            "dtype": "bfloat16"
+        },
+        "weight": {
+            "shape": [
+                "N",
+                "K"
+            ],
+            "dtype": "bfloat16"
+        }
+    },
+    "outputs": {
+        "output": {
+            "shape": [
+                "M",
+                "N"
+            ],
+            "dtype": "bfloat16"
+        }
+    },
+    "reference": "\"\"\"BF16 linear GEMM \u2014 sglang baseline (torch.matmul / cuBLAS).\n\nThe standard non-quantized projection sglang dispatches on B200 for the base\nMiniMax-M3 checkpoint: LinearBase -> cuBLAS bf16 GEMM (see the M3 backend inventory,\nop28 \"Main Q/K/V \u6295\u5f71\"). Covers the dense-FFN GateUp/Down, main QKV/O projections,\nand shared-expert GEMMs \u2014 all of which are plain bf16 GEMMs on this checkpoint (the\n-MXFP8 checkpoint would instead use deep_gemm/flashinfer, tracked separately).\n\n  out[M, N] = x[M, K] @ weight[N, K].T   (bf16)\n\nreference.py IS the correctness oracle AND the latency baseline. Weight is generated\nuntimed in get_inputs; only the GEMM is timed.\n\"\"\"\n\nimport torch\n\n\ndef get_inputs(axes_and_scalars: dict, device: torch.device) -> dict:\n    M = axes_and_scalars[\"M\"]\n    K = axes_and_scalars[\"K\"]\n    N = axes_and_scalars[\"N\"]\n    x = torch.randn(M, K, device=device, dtype=torch.bfloat16)\n    weight = torch.randn(N, K, device=device, dtype=torch.bfloat16) * (K ** -0.5)\n    return {\"x\": x, \"weight\": weight}\n\n\n@torch.no_grad()\ndef run(x, weight):\n    return torch.matmul(x, weight.T)\n"
+}

@@ -1,0 +1,278 @@
+{
+  "linear": [
+    {
+      "op_id": 1,
+      "name": "Q_a (fused w/ KV_a)",
+      "phase": "prefill",
+      "shape": "[16384,6144]x[6144,2624]",
+      "attr": "fused_qkv_a_proj_with_mqa",
+      "bf16_us": 2694.98,
+      "bf16_TFLOPS": 196.02,
+      "bf16_GBs": 118.57,
+      "fp8_us": 2542.39,
+      "fp8_TFLOPS": 207.79
+    },
+    {
+      "op_id": 14,
+      "name": "Q_a (fused w/ KV_a)",
+      "phase": "decode",
+      "shape": "[16,6144]x[6144,2624]",
+      "attr": "fused_qkv_a_proj_with_mqa",
+      "bf16_us": 2388.68,
+      "bf16_TFLOPS": 0.22,
+      "bf16_GBs": 13.62,
+      "fp8_us": 2385.36,
+      "fp8_TFLOPS": 0.22
+    },
+    {
+      "op_id": 2,
+      "name": "Q_b",
+      "phase": "prefill",
+      "shape": "[16384,2048]x[2048,2048]",
+      "attr": "q_b_proj",
+      "bf16_us": 2465.24,
+      "bf16_TFLOPS": 55.75,
+      "bf16_GBs": 57.85,
+      "fp8_us": 2427.0,
+      "fp8_TFLOPS": 56.63
+    },
+    {
+      "op_id": 15,
+      "name": "Q_b",
+      "phase": "decode",
+      "shape": "[16,2048]x[2048,16384]",
+      "attr": "q_b_proj",
+      "bf16_us": 2394.57,
+      "bf16_TFLOPS": 0.45,
+      "bf16_GBs": 28.27,
+      "fp8_us": 2386.2,
+      "fp8_TFLOPS": 0.45
+    },
+    {
+      "op_id": 4,
+      "name": "KV_b",
+      "phase": "prefill",
+      "shape": "[16384,512]x[512,3584]",
+      "attr": "kv_b_proj",
+      "bf16_us": 2427.45,
+      "bf16_TFLOPS": 24.77,
+      "bf16_GBs": 56.8,
+      "fp8_us": 2414.93,
+      "fp8_TFLOPS": 24.9
+    },
+    {
+      "op_id": 5,
+      "name": "O_proj",
+      "phase": "prefill",
+      "shape": "[16384,2048]x[2048,6144]",
+      "attr": "o_proj",
+      "bf16_us": 2622.16,
+      "bf16_TFLOPS": 157.24,
+      "bf16_GBs": 111.97,
+      "fp8_us": 2507.14,
+      "fp8_TFLOPS": 164.46
+    },
+    {
+      "op_id": 19,
+      "name": "O_proj",
+      "phase": "decode",
+      "shape": "[16,16384]x[16384,6144]",
+      "attr": "o_proj",
+      "bf16_us": 2425.1,
+      "bf16_TFLOPS": 1.33,
+      "bf16_GBs": 83.32,
+      "fp8_us": 2403.82,
+      "fp8_TFLOPS": 1.34
+    },
+    {
+      "op_id": 6,
+      "name": "Index_Q",
+      "phase": "prefill",
+      "shape": "[16384,6144]x[6144,4096]",
+      "attr": "Indexer.wq_b",
+      "bf16_us": 2870.27,
+      "bf16_TFLOPS": 287.3,
+      "bf16_GBs": 134.44,
+      "fp8_us": 2627.52,
+      "fp8_TFLOPS": 313.85
+    },
+    {
+      "op_id": 20,
+      "name": "Index_Q",
+      "phase": "decode",
+      "shape": "[16,6144]x[6144,4096]",
+      "attr": "Indexer.wq_b",
+      "bf16_us": 2393.93,
+      "bf16_TFLOPS": 0.34,
+      "bf16_GBs": 21.16,
+      "fp8_us": 2387.69,
+      "fp8_TFLOPS": 0.34
+    },
+    {
+      "op_id": 7,
+      "name": "Index_K",
+      "phase": "prefill",
+      "shape": "[16384,6144]x[6144,128]",
+      "attr": "Indexer.wk",
+      "bf16_us": 2425.8,
+      "bf16_TFLOPS": 10.62,
+      "bf16_GBs": 85.37,
+      "fp8_us": 2403.17,
+      "fp8_TFLOPS": 10.72
+    },
+    {
+      "op_id": 21,
+      "name": "Index_K",
+      "phase": "decode",
+      "shape": "[16,6144]x[6144,128]",
+      "attr": "Indexer.wk",
+      "bf16_us": 2383.03,
+      "bf16_TFLOPS": 0.01,
+      "bf16_GBs": 0.74,
+      "fp8_us": 2382.68,
+      "fp8_TFLOPS": 0.01
+    },
+    {
+      "op_id": 9,
+      "name": "Dense GateUp",
+      "phase": "prefill",
+      "shape": "[16384,6144]x[6144,6144]",
+      "attr": "shared_experts.gate_up_proj",
+      "bf16_us": 3112.15,
+      "bf16_TFLOPS": 397.46,
+      "bf16_GBs": 153.64,
+      "fp8_us": 2751.08,
+      "fp8_TFLOPS": 449.62
+    },
+    {
+      "op_id": 10,
+      "name": "Dense Down",
+      "phase": "prefill",
+      "shape": "[16384,1536]x[1536,6144]",
+      "attr": "shared_experts.down_proj",
+      "bf16_us": 2563.76,
+      "bf16_TFLOPS": 120.62,
+      "bf16_GBs": 105.52,
+      "fp8_us": 2478.16,
+      "fp8_TFLOPS": 124.79
+    },
+    {
+      "op_id": 11,
+      "name": "MoE Router",
+      "phase": "prefill",
+      "shape": "[16384,6144]x[6144,256]",
+      "attr": "mlp.gate (MoEGate)",
+      "bf16_us": 2429.6,
+      "bf16_TFLOPS": 21.21,
+      "bf16_GBs": 87.61,
+      "fp8_us": 2406.54,
+      "fp8_TFLOPS": 21.42
+    },
+    {
+      "op_id": 23,
+      "name": "MoE Router",
+      "phase": "decode",
+      "shape": "[16,6144]x[6144,256]",
+      "attr": "mlp.gate (MoEGate)",
+      "bf16_us": 2376.53,
+      "bf16_TFLOPS": 0.02,
+      "bf16_GBs": 1.41,
+      "fp8_us": 2376.59,
+      "fp8_TFLOPS": 0.02
+    }
+  ],
+  "grouped": [
+    {
+      "op_id": 12,
+      "name": "MoE GateUp GroupGEMM",
+      "phase": "prefill",
+      "shape": "256x[512,6144]x[6144,512]",
+      "bf16_us": 2978.42,
+      "bf16_TFLOPS": 276.87
+    },
+    {
+      "op_id": 13,
+      "name": "MoE Down GroupGEMM",
+      "phase": "prefill",
+      "shape": "256x[512,256]x[256,6144]",
+      "bf16_us": 2781.19,
+      "bf16_TFLOPS": 148.25
+    },
+    {
+      "op_id": 24,
+      "name": "MoE GateUp GroupGEMM",
+      "phase": "decode",
+      "shape": "8x[16,6144]x[6144,4096]",
+      "bf16_us": 2447.97,
+      "bf16_TFLOPS": 2.63
+    },
+    {
+      "op_id": 25,
+      "name": "MoE Down GroupGEMM",
+      "phase": "decode",
+      "shape": "8x[16,2048]x[2048,6144]",
+      "bf16_us": 2413.87,
+      "bf16_TFLOPS": 1.33
+    }
+  ],
+  "bmm": [
+    {
+      "op_id": 17,
+      "name": "q_nope absorb BMM",
+      "phase": "decode",
+      "shape": "[16,64,192]x[64,192,512]",
+      "bf16_us": 2375.21,
+      "bf16_TFLOPS": 0.08,
+      "note": "w_kc precomputed from kv_b_proj; torch.bmm is the actual path (bf16)"
+    },
+    {
+      "op_id": 18,
+      "name": "v absorb BMM",
+      "phase": "decode",
+      "shape": "[16,64,512]x[64,512,256]",
+      "bf16_us": 2376.92,
+      "bf16_TFLOPS": 0.11,
+      "note": "w_vc precomputed from kv_b_proj"
+    }
+  ],
+  "indexer": [
+    {
+      "op_id": 8,
+      "name": "Index_Score (ragged prefill)",
+      "phase": "prefill",
+      "shape": "Q:[16384,32,128] K:[16384,128] topk=2048",
+      "score_us": 89389.92,
+      "topk_us": 7328.44,
+      "total_us": 96718.36,
+      "score_TFLOPS": 24.6,
+      "topk_eff": 2048,
+      "note": "deep_gemm.fp8_mqa_logits + topk_transform"
+    },
+    {
+      "op_id": 22,
+      "name": "Index_Score (paged decode)",
+      "phase": "decode",
+      "shape": "Q:[16,32,128] K:[2048,128] topk=2048",
+      "score_us": 2397.76,
+      "topk_us": 2401.18,
+      "total_us": 4798.95,
+      "score_TFLOPS": 0.11,
+      "topk_eff": 2048,
+      "note": "deep_gemm.fp8_paged_mqa_logits + topk"
+    }
+  ],
+  "attention": [
+    {
+      "op_id": 26,
+      "name": "Flash Decoding MLA sparse MQA",
+      "phase": "decode",
+      "shape": "Q:[1,64,16,512] KV[1,1,8192,512] topk=2048",
+      "sparse_us": 2786.2,
+      "sparse_TFLOPS": 1.54,
+      "dense_us": 3197.81,
+      "dense_TFLOPS": 5.37,
+      "backend": "torch SDPA fp16 (proxy for flashmla_sparse_fwd)",
+      "note": "q_absorbed [B,H_q,T_q,D]; MQA (1 KV head); topk=2048 out of T_kv_full"
+    }
+  ]
+}

@@ -1,0 +1,60 @@
+{
+    "name": "minimax_m3_mm_gemma_fused_add_rmsnorm_prefill",
+    "hf_id": "MiniMaxAI/MiniMax-M3",
+    "description": "MiniMax-M3 Gemma fused add-RMSNorm (prefill), fused residual-add + Gemma-RMSNorm over hidden=6144 (sgl_kernel.gemma_fused_add_rmsnorm, in-place). residual_out = x + residual; normed = rmsnorm(residual_out) * (1 + weight). INTERFACE-EXACT drop-in. Baseline = sglang production kernel; beat its latency while matching BOTH outputs.",
+    "axes": {
+        "M": {
+            "type": "var",
+            "description": "prefill token count (sweep)"
+        },
+        "H": {
+            "type": "const",
+            "value": 6144,
+            "description": "MiniMax-M3 hidden size"
+        }
+    },
+    "custom_inputs_entrypoint": "get_inputs",
+    "inputs": {
+        "x": {
+            "shape": [
+                "M",
+                "H"
+            ],
+            "dtype": "bfloat16"
+        },
+        "residual": {
+            "shape": [
+                "M",
+                "H"
+            ],
+            "dtype": "bfloat16"
+        },
+        "weight": {
+            "shape": [
+                "H"
+            ],
+            "dtype": "bfloat16"
+        },
+        "eps": {
+            "shape": null,
+            "dtype": "float32"
+        }
+    },
+    "outputs": {
+        "normed": {
+            "shape": [
+                "M",
+                "H"
+            ],
+            "dtype": "bfloat16"
+        },
+        "residual_out": {
+            "shape": [
+                "M",
+                "H"
+            ],
+            "dtype": "bfloat16"
+        }
+    },
+    "reference": "\"\"\"Fused add-Gemma-RMSNorm \u2014 sglang baseline (sgl_kernel.gemma_fused_add_rmsnorm).\n\nMiniMax-M3 main-path Gemma layernorm, welded with the residual add. GemmaRMSNorm\ndispatches, in-place (layernorm.py, GemmaRMSNorm._forward_impl):\n\n    gemma_fused_add_rmsnorm(x, residual, weight, eps)\n    return x, residual          # x = normed, residual = x + residual\n\nINTERFACE-EXACT: run(x, residual, weight, eps) is a verbatim copy of that kernel, same\nin-place contract, same (normed, residual) return (eps is a scalar input). Gemma variant\nscales by (1 + weight):\n\n  residual_out = x + residual\n  x_out        = rmsnorm(residual_out) * (1 + weight)      (fp32 accumulate)\n\nreference.py IS the correctness oracle AND the latency baseline. H=6144 (MiniMax-M3).\n\"\"\"\n\nimport torch\nfrom sgl_kernel import gemma_fused_add_rmsnorm\n\nEPS = 1e-6\n\n\ndef get_inputs(axes_and_scalars: dict, device: torch.device) -> dict:\n    M = axes_and_scalars[\"M\"]\n    H = axes_and_scalars[\"H\"]\n    x = torch.randn(M, H, device=device, dtype=torch.bfloat16)\n    residual = torch.randn(M, H, device=device, dtype=torch.bfloat16)\n    weight = torch.randn(H, device=device, dtype=torch.bfloat16)\n    return {\"x\": x, \"residual\": residual, \"weight\": weight, \"eps\": EPS}\n\n\n@torch.no_grad()\ndef run(x, residual, weight, eps):\n    gemma_fused_add_rmsnorm(x, residual, weight, eps)\n    return x, residual\n"
+}

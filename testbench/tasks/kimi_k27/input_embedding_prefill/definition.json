@@ -1,0 +1,47 @@
+{
+    "name": "kimi_k27_input_embedding_prefill",
+    "hf_id": "moonshotai/Kimi-K2.7",
+    "description": "Kimi-K2.7 Input Embedding (prefill), vocab gather (F.embedding, unquantized VocabParallelEmbedding path). out[M,7168] = weight[input_ids], vocab=163840. Baseline = sglang production op; beat its latency while matching output.",
+    "axes": {
+        "M": {
+            "type": "var",
+            "description": "prefill token count (sweep)"
+        },
+        "V": {
+            "type": "const",
+            "value": 163840,
+            "description": "vocab size"
+        },
+        "H": {
+            "type": "const",
+            "value": 7168,
+            "description": "hidden size"
+        }
+    },
+    "custom_inputs_entrypoint": "get_inputs",
+    "inputs": {
+        "input_ids": {
+            "shape": [
+                "M"
+            ],
+            "dtype": "int64"
+        },
+        "weight": {
+            "shape": [
+                "V",
+                "H"
+            ],
+            "dtype": "bfloat16"
+        }
+    },
+    "outputs": {
+        "output": {
+            "shape": [
+                "M",
+                "H"
+            ],
+            "dtype": "bfloat16"
+        }
+    },
+    "reference": "\"\"\"Vocab embedding gather \u2014 sglang production baseline (F.embedding).\n\nKimi-K2.7 input embedding: the operation sglang dispatches on the unquantized\nVocabParallelEmbedding path (python/sglang/srt/layers/vocab_parallel_embedding.py:518\n-> F.embedding). Gathers rows of the embedding table by token id. `reference.py` IS\nthe correctness oracle AND the latency baseline: an optimized solution.py must match\nthis output within tolerance and run faster.\n\n  out[M, H] = weight[input_ids]   (pure gather).  Bandwidth-bound.\n\nOnly the gather is timed; the (untimed) get_inputs allocates the vocab table and ids.\n\"\"\"\n\nimport torch\nimport torch.nn.functional as F\n\n\ndef get_inputs(axes_and_scalars: dict, device: torch.device) -> dict:\n    M = axes_and_scalars[\"M\"]\n    V = axes_and_scalars[\"V\"]\n    H = axes_and_scalars[\"H\"]\n    input_ids = torch.randint(0, V, (M,), device=device, dtype=torch.long)\n    weight = torch.randn(V, H, device=device, dtype=torch.bfloat16)\n    return {\"input_ids\": input_ids, \"weight\": weight}\n\n\n@torch.no_grad()\ndef run(input_ids, weight):\n    return F.embedding(input_ids, weight)\n"
+}

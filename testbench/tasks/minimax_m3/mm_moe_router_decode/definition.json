@@ -1,0 +1,48 @@
+{
+    "name": "minimax_m3_mm_moe_router_decode",
+    "hf_id": "MiniMaxAI/MiniMax-M3",
+    "description": "MiniMax-M3 MoE Router GEMM (decode), fp32 cuBLAS matmul (inventory op37): logits[M,128] = hidden[M,6144] @ gate_w[128,6144].T. Baseline = sglang production path; beat its latency while matching output.",
+    "axes": {
+        "M": {
+            "type": "var",
+            "description": "decode token count (sweep)"
+        },
+        "H": {
+            "type": "const",
+            "value": 6144,
+            "description": "hidden size"
+        },
+        "E": {
+            "type": "const",
+            "value": 128,
+            "description": "n_routed_experts"
+        }
+    },
+    "custom_inputs_entrypoint": "get_inputs",
+    "inputs": {
+        "hidden_states": {
+            "shape": [
+                "M",
+                "H"
+            ],
+            "dtype": "float32"
+        },
+        "gate_weight": {
+            "shape": [
+                "E",
+                "H"
+            ],
+            "dtype": "float32"
+        }
+    },
+    "outputs": {
+        "logits": {
+            "shape": [
+                "M",
+                "E"
+            ],
+            "dtype": "float32"
+        }
+    },
+    "reference": "\"\"\"MoE Router GEMM \u2014 sglang baseline (fp32 cuBLAS matmul).\n\nMiniMax-M3 MoE router (inventory op37). The gate is a ReplicatedLinear with fp32\nparams, called on hidden.to(fp32) (minimax_m2.py: self.gate(hidden_states.to(fp32))),\nso it is a plain fp32 matmul -> logits. Unlike Kimi, dsv3_router_gemm does NOT apply\n(that kernel is compiled for hidden=7168; M3 hidden=6144, 128 experts -> falls to the\nstandard Linear path).\n\n  logits[M, 128] = hidden[M, 6144] @ gate_weight[128, 6144].T   (fp32)\n\nreference.py IS the correctness oracle AND the latency baseline.\n\"\"\"\n\nimport torch\n\n\ndef get_inputs(axes_and_scalars: dict, device: torch.device) -> dict:\n    M = axes_and_scalars[\"M\"]\n    H = axes_and_scalars[\"H\"]\n    E = axes_and_scalars[\"E\"]\n    hidden_states = torch.randn(M, H, device=device, dtype=torch.float32)\n    gate_weight = torch.randn(E, H, device=device, dtype=torch.float32) * (H ** -0.5)\n    return {\"hidden_states\": hidden_states, \"gate_weight\": gate_weight}\n\n\n@torch.no_grad()\ndef run(hidden_states, gate_weight):\n    return torch.matmul(hidden_states, gate_weight.T)\n"
+}

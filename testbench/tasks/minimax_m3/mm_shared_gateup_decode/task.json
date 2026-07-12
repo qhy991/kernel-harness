@@ -1,0 +1,30 @@
+{
+  "name": "mm_shared_gateup_decode",
+  "op": "Shared expert GateUp",
+  "phase": "decode",
+  "family": "bf16-linear",
+  "K": 6144,
+  "N": 6144,
+  "sweep": [
+    1,
+    2,
+    4,
+    8,
+    16,
+    32,
+    64,
+    128,
+    256
+  ],
+  "backend": "cuBLAS bf16 GEMM (blackwell)",
+  "tolerance": {
+    "max_atol": 0.1,
+    "max_rtol": 0.05,
+    "required_matched_ratio": 0.98
+  },
+  "baseline": {
+    "source": "live",
+    "measure": "reference.py timed by sol-execbench CUPTI (median device-kernel us)",
+    "denominator": "the live per-shape reference latency (see .baseline_cache.json)"
+  }
+}

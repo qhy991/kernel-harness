@@ -1,0 +1,31 @@
+{
+  "name": "mm_dsa_prefill_topk_L8192",
+  "op": "DSA prefill Indexer score + top-k",
+  "phase": "prefill",
+  "family": "dsa-prefill-topk",
+  "L": 8192,
+  "oracle": "exact-index",
+  "sweep": [
+    1,
+    2,
+    4,
+    8,
+    16,
+    32,
+    64,
+    128,
+    256
+  ],
+  "backend": "flash_prefill_with_topk_index Triton (blackwell)",
+  "tolerance": {
+    "max_atol": 0.0,
+    "max_rtol": 0.0,
+    "required_matched_ratio": 1.0
+  },
+  "baseline": {
+    "source": "live",
+    "measure": "reference.py timed by sol-execbench CUPTI (median device-kernel us)",
+    "denominator": "the live per-shape reference latency (see .baseline_cache.json)"
+  },
+  "sglang_dir": "/home/qinhaiyan/sglang-m3"
+}

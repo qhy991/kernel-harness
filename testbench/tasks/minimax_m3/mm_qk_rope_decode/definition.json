@@ -1,0 +1,83 @@
+{
+    "name": "minimax_m3_mm_qk_rope_decode",
+    "hf_id": "MiniMaxAI/MiniMax-M3",
+    "description": "MiniMax-M3 GQA q/k RoPE (decode), in-place RoPE on the rope slice (apply_rope_with_cos_sin_cache_inplace). Rotates q[M,64,64] and k[M,4,64] by cos/sin at `positions`. INTERFACE-EXACT drop-in. Baseline = sglang production kernel; beat its latency while matching BOTH outputs.",
+    "axes": {
+        "M": {
+            "type": "var",
+            "description": "decode token count (sweep)"
+        },
+        "num_heads": {
+            "type": "const",
+            "value": 64
+        },
+        "kv_heads": {
+            "type": "const",
+            "value": 4
+        },
+        "rope_dim": {
+            "type": "const",
+            "value": 64,
+            "description": "rope_dim"
+        },
+        "max_pos": {
+            "type": "const",
+            "value": 1048576
+        },
+        "rope_theta": {
+            "type": "const",
+            "value": 5000000
+        }
+    },
+    "custom_inputs_entrypoint": "get_inputs",
+    "inputs": {
+        "q": {
+            "shape": [
+                "M",
+                "num_heads",
+                "rope_dim"
+            ],
+            "dtype": "bfloat16"
+        },
+        "k": {
+            "shape": [
+                "M",
+                "kv_heads",
+                "rope_dim"
+            ],
+            "dtype": "bfloat16"
+        },
+        "cos_sin_cache": {
+            "shape": [
+                "max_pos",
+                "rope_dim"
+            ],
+            "dtype": "float32"
+        },
+        "positions": {
+            "shape": [
+                "M"
+            ],
+            "dtype": "int64"
+        }
+    },
+    "outputs": {
+        "q_out": {
+            "shape": [
+                "M",
+                "num_heads",
+                "rope_dim"
+            ],
+            "dtype": "bfloat16"
+        },
+        "k_out": {
+            "shape": [
+                "M",
+                "kv_heads",
+                "rope_dim"
+            ],
+            "dtype": "bfloat16"
+        }
+    },
+    "reference": "\"\"\"RoPE (rotary embedding, in-place) \u2014 sglang baseline (apply_rope_with_cos_sin_cache_inplace).\n\nShared by every model that applies partial RoPE to the q/k rope slice (Kimi-K2.7 MLA,\nMiniMax-M3 GQA, DeepSeek-V3.2). RotaryEmbedding.forward_cuda dispatches, in-place\n(rotary_embedding/base.py:379):\n\n    apply_rope_with_cos_sin_cache_inplace(\n        q, k, cos_sin_cache, positions, is_neox=..., fused_args=None)\n\nINTERFACE-EXACT: run()'s signature is a verbatim copy of that kernel \u2014 q/k/cos_sin_cache/\npositions positional, is_neox/rope_dim/fused_args keyword-only \u2014 so a winning candidate\nis a symbol-for-symbol drop-in (integrate.py binds run() at that symbol with an identity\nadapter and drives a real RotaryEmbedding forward).\n\n  q,k rope portions rotated in place by cos/sin at `positions`; module returns (q, k).\n\nreference.py IS the correctness oracle AND the latency baseline: an optimized solution.py\nmust match BOTH outputs within tolerance, keep the in-place contract, and run faster. The\ncos_sin_cache is built (untimed) by get_inputs from a real get_rope module.\n\"\"\"\n\nimport torch\nfrom sglang.jit_kernel.rope import apply_rope_with_cos_sin_cache_inplace\n\nIS_NEOX = True\n\n\ndef _cos_sin_cache(D: int, max_pos: int, base: float, device) -> torch.Tensor:\n    # [max_pos, D] = concat(cos, sin); bit-identical to sglang get_rope's cache.\n    inv_freq = 1.0 / (base ** (torch.arange(0, D, 2, device=device).float() / D))\n    freqs = torch.outer(torch.arange(max_pos, device=device).float(), inv_freq)\n    return torch.cat([freqs.cos(), freqs.sin()], dim=-1)  # float32\n\n\ndef get_inputs(axes_and_scalars: dict, device: torch.device) -> dict:\n    M = axes_and_scalars[\"M\"]\n    nH = axes_and_scalars[\"num_heads\"]\n    kvH = axes_and_scalars[\"kv_heads\"]\n    D = axes_and_scalars[\"rope_dim\"]\n    max_pos = axes_and_scalars[\"max_pos\"]      # model max_position_embeddings (real)\n    base = axes_and_scalars[\"rope_theta\"]      # model rope_theta (real)\n    q = torch.randn(M, nH, D, device=device, dtype=torch.bfloat16)\n    k = torch.randn(M, kvH, D, device=device, dtype=torch.bfloat16)\n    cos_sin_cache = _cos_sin_cache(D, max_pos, base, device)\n    positions = torch.randint(0, max_pos, (M,), device=device, dtype=torch.int64)\n    return {\"q\": q, \"k\": k, \"cos_sin_cache\": cos_sin_cache, \"positions\": positions}\n\n\n@torch.no_grad()\ndef run(q, k, cos_sin_cache, positions, *, is_neox=IS_NEOX, rope_dim=0, fused_args=None):\n    # Exact apply_rope_with_cos_sin_cache_inplace signature + in-place contract.\n    apply_rope_with_cos_sin_cache_inplace(\n        q, k, cos_sin_cache, positions,\n        is_neox=is_neox, rope_dim=rope_dim, fused_args=fused_args,\n    )\n    return q, k\n"
+}

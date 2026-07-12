@@ -1,0 +1,33 @@
+{
+  "name": "mm_dsa_decode_topk_ctx4096",
+  "op": "DSA decode Indexer top-k blocks",
+  "phase": "decode",
+  "family": "dsa-decode-topk",
+  "index_heads": 4,
+  "block_size": 128,
+  "ctx": 4096,
+  "oracle": "exact-index",
+  "sweep": [
+    1,
+    2,
+    4,
+    8,
+    16,
+    32,
+    64,
+    128,
+    256
+  ],
+  "backend": "minimax_decode_topk JIT radix (blackwell)",
+  "tolerance": {
+    "max_atol": 0.0,
+    "max_rtol": 0.0,
+    "required_matched_ratio": 1.0
+  },
+  "baseline": {
+    "source": "live",
+    "measure": "reference.py timed by sol-execbench CUPTI (median device-kernel us)",
+    "denominator": "the live per-shape reference latency (see .baseline_cache.json)"
+  },
+  "sglang_dir": "/home/qinhaiyan/sglang-m3"
+}

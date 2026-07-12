@@ -1,0 +1,30 @@
+{
+  "name": "mm_dense_ffn_down_decode",
+  "op": "Dense FFN Down (layers 0-2)",
+  "phase": "decode",
+  "family": "bf16-linear",
+  "K": 12288,
+  "N": 6144,
+  "sweep": [
+    1,
+    2,
+    4,
+    8,
+    16,
+    32,
+    64,
+    128,
+    256
+  ],
+  "backend": "cuBLAS bf16 GEMM (blackwell)",
+  "tolerance": {
+    "max_atol": 0.1,
+    "max_rtol": 0.05,
+    "required_matched_ratio": 0.98
+  },
+  "baseline": {
+    "source": "live",
+    "measure": "reference.py timed by sol-execbench CUPTI (median device-kernel us)",
+    "denominator": "the live per-shape reference latency (see .baseline_cache.json)"
+  }
+}

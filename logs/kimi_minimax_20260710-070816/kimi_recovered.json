@@ -1,0 +1,72 @@
+[
+  {
+    "name": "KV-cache store (MLA)",
+    "phase": "prefill",
+    "backend": "set_mla_kv_buffer_triton [JIT CUDA (n>=768)]",
+    "shape": "n_loc=16384 row=512+64",
+    "us": 51.69
+  },
+  {
+    "name": "KV-cache store (MLA)",
+    "phase": "decode",
+    "backend": "set_mla_kv_buffer_triton [Triton]",
+    "shape": "n_loc=16 row=512+64",
+    "us": 51.33
+  },
+  {
+    "name": "MoE scale TMA-align",
+    "phase": "prefill",
+    "backend": "tma_align_input_scale (Triton)",
+    "shape": "[16384,56]",
+    "us": 100.9
+  },
+  {
+    "name": "MoE scale TMA-align",
+    "phase": "decode",
+    "backend": "tma_align_input_scale (Triton)",
+    "shape": "[16,56]",
+    "us": 52.17
+  },
+  {
+    "name": "Sampler softmax",
+    "phase": "decode",
+    "backend": "torch.softmax",
+    "shape": "[16,163840]",
+    "us": 154.39
+  },
+  {
+    "name": "Sampler greedy (argmax)",
+    "phase": "decode",
+    "backend": "torch.argmax",
+    "shape": "[16,163840]",
+    "us": 106.89
+  },
+  {
+    "name": "Sampler top_k_top_p",
+    "phase": "decode",
+    "backend": "flashinfer.top_k_top_p_sampling_from_probs",
+    "shape": "[16,163840] k=50 p=0.9",
+    "us": 245.94
+  },
+  {
+    "name": "Sampler softmax",
+    "phase": "decode",
+    "backend": "torch.softmax",
+    "shape": "[256,163840]",
+    "us": 269.08
+  },
+  {
+    "name": "Sampler greedy (argmax)",
+    "phase": "decode",
+    "backend": "torch.argmax",
+    "shape": "[256,163840]",
+    "us": 154.94
+  },
+  {
+    "name": "Sampler top_k_top_p",
+    "phase": "decode",
+    "backend": "flashinfer.top_k_top_p_sampling_from_probs",
+    "shape": "[256,163840] k=50 p=0.9",
+    "us": 907.26
+  }
+]

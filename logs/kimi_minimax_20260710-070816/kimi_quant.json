@@ -1,0 +1,30 @@
+[
+  {
+    "name": "KV-cache FP8 quant",
+    "phase": "prefill",
+    "backend": "scaled_fp8_quant (per-tensor)",
+    "shape": "[16384,576]",
+    "us": 53.81
+  },
+  {
+    "name": "KV-cache FP8 quant",
+    "phase": "decode",
+    "backend": "scaled_fp8_quant (per-tensor)",
+    "shape": "[16,576]",
+    "us": 49.1
+  },
+  {
+    "name": "MoE masked 8bit quant (fused silu+quant)",
+    "phase": "decode",
+    "backend": "sglang_per_token_group_quant_8bit",
+    "shape": "[8,128,2048] masked_m=16",
+    "us": 49.4
+  },
+  {
+    "name": "MoE masked 8bit quant (quant only)",
+    "phase": "decode",
+    "backend": "sglang_per_token_group_quant_8bit",
+    "shape": "[8,128,2048] masked_m=16",
+    "us": 49.99
+  }
+]

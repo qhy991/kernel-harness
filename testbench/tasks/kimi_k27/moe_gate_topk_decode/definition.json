@@ -1,0 +1,45 @@
+{
+    "name": "kimi_k27_moe_gate_topk_decode",
+    "hf_id": "moonshotai/Kimi-K2.7",
+    "description": "Kimi-K2.7 MoE Gate + biased TopK (decode), sgl_kernel.kimi_k2_moe_fused_gate: bias + renormalized top-6 selection over 384 experts. Outputs the selected expert INDICES[M,6] (int32); EXACT-match oracle (atol=0,rtol=0,ratio=1.0). Baseline = sglang production kernel; beat its latency while matching routing exactly.",
+    "axes": {
+        "M": {
+            "type": "var",
+            "description": "decode token count (sweep)"
+        },
+        "num_experts": {
+            "type": "const",
+            "value": 384
+        },
+        "topk": {
+            "type": "const",
+            "value": 6
+        }
+    },
+    "custom_inputs_entrypoint": "get_inputs",
+    "inputs": {
+        "input_tensor": {
+            "shape": [
+                "M",
+                "num_experts"
+            ],
+            "dtype": "float32"
+        },
+        "bias": {
+            "shape": [
+                "num_experts"
+            ],
+            "dtype": "float32"
+        }
+    },
+    "outputs": {
+        "indices": {
+            "shape": [
+                "M",
+                "topk"
+            ],
+            "dtype": "int32"
+        }
+    },
+    "reference": "\"\"\"MoE Gate + biased TopK routing \u2014 sglang baseline (sgl_kernel.kimi_k2_moe_fused_gate).\n\nKimi K2 fused gate: bias + renormalized top-k expert selection, producing routing\nweights AND the selected expert indices in one kernel. This task is the ROUTING oracle:\nit outputs the selected expert INDICES [M, topk] (int32) and requires an EXACT match\n(atol=0, rtol=0, matched_ratio=1.0). Routing correctness is bit-exact, not tolerant \u2014\nand because the harness applies ONE tolerance per workload, int-exact indices can't be\nco-judged with the float weights, so indices are the faithful single output here.\n\nConfig (authoritative, sgl-kernel test_kimi_k2_moe_fused_gate \"Kimi K2\"):\nnum_experts=384, topk=6, routed_scaling_factor=2.872.\n\nCaveat: exact-index match assumes no score ties (measure-zero for random float inputs);\na candidate returning the same expert SET in a different order would (correctly, per the\nkernel's ordering contract) fail. reference.py IS the correctness oracle AND the\nlatency baseline.\n\"\"\"\n\nimport torch\nfrom sgl_kernel import kimi_k2_moe_fused_gate\n\nTOPK = 6\nSCALING = 2.872\n\n\ndef get_inputs(axes_and_scalars: dict, device: torch.device) -> dict:\n    M = axes_and_scalars[\"M\"]\n    E = axes_and_scalars[\"num_experts\"]\n    input_tensor = torch.rand(M, E, device=device, dtype=torch.float32)\n    bias = torch.rand(E, device=device, dtype=torch.float32)\n    return {\"input_tensor\": input_tensor, \"bias\": bias}\n\n\n@torch.no_grad()\ndef run(input_tensor, bias):\n    _weights, indices = kimi_k2_moe_fused_gate(\n        input_tensor, bias, topk=TOPK, renormalize=True, routed_scaling_factor=SCALING\n    )\n    return indices\n"
+}

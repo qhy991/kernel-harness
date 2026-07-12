@@ -1,0 +1,112 @@
+{
+    "name": "kimi_k27_mla_decode_seq32768",
+    "hf_id": "moonshotai/Kimi-K2.7",
+    "description": "Kimi-K2.7 MLA decode attention (decode, seq_len=32768), sgl_kernel.cutlass_mla_decode: Multi-head Latent Attention over the compressed latent KV cache. num_heads=64, kv_lora_rank=512, qk_rope=64 -> head_dim=576, block_size=128. batch=sweep, paged latent KV. Baseline = sglang production kernel; beat its latency while matching output.",
+    "axes": {
+        "M": {
+            "type": "var",
+            "description": "decode batch (sweep)"
+        },
+        "seq_len": {
+            "type": "const",
+            "value": 32768,
+            "description": "KV context length"
+        },
+        "num_heads": {
+            "type": "const",
+            "value": 64
+        },
+        "kv_lora": {
+            "type": "const",
+            "value": 512
+        },
+        "qk_rope": {
+            "type": "const",
+            "value": 64
+        },
+        "block_size": {
+            "type": "const",
+            "value": 128
+        },
+        "head_dim": {
+            "type": "const",
+            "value": 576
+        },
+        "block_num": {
+            "type": "const",
+            "value": 256,
+            "description": "blocks per seq"
+        },
+        "blocks": {
+            "type": "expr",
+            "expression": "M*block_num",
+            "description": "total paged blocks"
+        },
+        "ws": {
+            "type": "const",
+            "value": 1,
+            "description": "workspace bytes (custom, sized in get_inputs)"
+        }
+    },
+    "custom_inputs_entrypoint": "get_inputs",
+    "inputs": {
+        "q_nope": {
+            "shape": [
+                "M",
+                "num_heads",
+                "kv_lora"
+            ],
+            "dtype": "bfloat16"
+        },
+        "q_pe": {
+            "shape": [
+                "M",
+                "num_heads",
+                "qk_rope"
+            ],
+            "dtype": "bfloat16"
+        },
+        "kv_cache": {
+            "shape": [
+                "blocks",
+                "block_size",
+                "head_dim"
+            ],
+            "dtype": "bfloat16"
+        },
+        "seq_lens": {
+            "shape": [
+                "M"
+            ],
+            "dtype": "int32"
+        },
+        "block_table": {
+            "shape": [
+                "M",
+                "block_num"
+            ],
+            "dtype": "int32"
+        },
+        "workspace": {
+            "shape": [
+                "ws"
+            ],
+            "dtype": "int8"
+        },
+        "scale": {
+            "shape": null,
+            "dtype": "float32"
+        }
+    },
+    "outputs": {
+        "o": {
+            "shape": [
+                "M",
+                "num_heads",
+                "kv_lora"
+            ],
+            "dtype": "bfloat16"
+        }
+    },
+    "reference": "\"\"\"MLA decode attention \u2014 sglang baseline (sgl_kernel.cutlass_mla_decode).\n\nKimi-K2.7 core Multi-head Latent Attention on the decode path. sglang's CutlassMLABackend\ndispatches sgl_kernel.cutlass_mla_decode over the compressed latent KV cache (kv_lora_rank\n+ qk_rope_head_dim). Input contract mirrors sgl-kernel/tests/test_cutlass_mla.py.\n\n  o[bs, num_heads, kv_lora] = cutlass_mla_decode(q_nope, q_pe, kv_c_and_k_pe_cache,\n                                                 seq_lens, block_table, workspace, scale)\n\nKimi-K2.7: num_heads=64, kv_lora_rank=512 (=dv), qk_rope_head_dim=64 -> head_dim d=576,\nblock_size=128. batch = sweep; seq_len fixed per task (paged latent KV). Only the MLA\nkernel is timed (workspace + caches built untimed in get_inputs). reference.py IS the\ncorrectness oracle AND the latency baseline.\n\"\"\"\n\nimport torch\nfrom sgl_kernel import cutlass_mla_decode, cutlass_mla_get_workspace_size\n\nNUM_HEADS, KV_LORA, QK_ROPE = 64, 512, 64\nD = KV_LORA + QK_ROPE       # 576 (latent head dim)\nDV = KV_LORA                # 512 (value / q_nope dim)\nBLOCK_SIZE = 128\nNUM_KV_SPLITS = 1\n\n\ndef get_inputs(axes_and_scalars: dict, device: torch.device) -> dict:\n    bs = axes_and_scalars[\"M\"]         # decode batch (sweep)\n    seq_len = axes_and_scalars[\"seq_len\"]\n    scale = D ** -0.5\n    block_num = (seq_len + BLOCK_SIZE - 1) // BLOCK_SIZE\n    pack = 128 // BLOCK_SIZE\n    block_num = ((block_num + pack - 1) // pack) * pack\n\n    q = torch.randn(bs, NUM_HEADS, D, device=device, dtype=torch.bfloat16)\n    q_nope = torch.empty((NUM_HEADS, bs, DV), device=device, dtype=torch.bfloat16).transpose(0, 1)\n    q_nope.copy_(q[:, :, :DV])\n    q_pe = q[:, :, DV:].clone()\n    block_table = torch.randint(0, bs * block_num, (bs, block_num), dtype=torch.int32, device=device)\n    kv_cache = torch.randn(block_table.numel(), BLOCK_SIZE, D, device=device, dtype=torch.bfloat16)\n    seq_lens = torch.full((bs,), seq_len, dtype=torch.int32, device=device)\n    ws = cutlass_mla_get_workspace_size(block_num * BLOCK_SIZE, bs, num_kv_splits=NUM_KV_SPLITS)\n    workspace = torch.empty(ws, device=device, dtype=torch.uint8)\n    return {\"q_nope\": q_nope, \"q_pe\": q_pe, \"kv_cache\": kv_cache,\n            \"seq_lens\": seq_lens, \"block_table\": block_table, \"workspace\": workspace,\n            \"scale\": scale}\n\n\n@torch.no_grad()\ndef run(q_nope, q_pe, kv_cache, seq_lens, block_table, workspace, scale):\n    return cutlass_mla_decode(q_nope, q_pe, kv_cache, seq_lens, block_table,\n                              workspace, scale, NUM_KV_SPLITS)\n"
+}

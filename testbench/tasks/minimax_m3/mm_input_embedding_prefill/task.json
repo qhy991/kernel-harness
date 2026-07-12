@@ -1,0 +1,28 @@
+{
+  "name": "mm_input_embedding_prefill",
+  "op": "Input Embedding",
+  "phase": "prefill",
+  "family": "embedding",
+  "V": 200064,
+  "H": 6144,
+  "sweep": [
+    512,
+    1024,
+    2048,
+    4096,
+    8192,
+    16384,
+    32768
+  ],
+  "backend": "torch F.embedding (blackwell)",
+  "tolerance": {
+    "max_atol": 0.1,
+    "max_rtol": 0.05,
+    "required_matched_ratio": 0.98
+  },
+  "baseline": {
+    "source": "live",
+    "measure": "reference.py timed by sol-execbench CUPTI (median device-kernel us)",
+    "denominator": "the live per-shape reference latency (see .baseline_cache.json)"
+  }
+}

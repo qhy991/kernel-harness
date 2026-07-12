@@ -1,0 +1,54 @@
+{
+    "name": "kimi_k27_q_nope_absorb_bmm_decode",
+    "hf_id": "moonshotai/Kimi-K2.7",
+    "description": "Kimi-K2.7 q_nope-absorb BMM (decode), MLA weight-absorb batched matmul (torch.bmm, bf16 default). out[64,M,512] = bmm(a[64,M,192], b[64,192,512]), Bh=num_heads. Baseline = sglang production op; beat its latency across the token sweep while matching its output.",
+    "axes": {
+        "M": {
+            "type": "var",
+            "description": "decode token count (sweep)"
+        },
+        "Bh": {
+            "type": "const",
+            "value": 64,
+            "description": "num_heads (batch)"
+        },
+        "K": {
+            "type": "const",
+            "value": 192
+        },
+        "N": {
+            "type": "const",
+            "value": 512
+        }
+    },
+    "custom_inputs_entrypoint": "get_inputs",
+    "inputs": {
+        "a": {
+            "shape": [
+                "Bh",
+                "M",
+                "K"
+            ],
+            "dtype": "bfloat16"
+        },
+        "b": {
+            "shape": [
+                "Bh",
+                "K",
+                "N"
+            ],
+            "dtype": "bfloat16"
+        }
+    },
+    "outputs": {
+        "output": {
+            "shape": [
+                "Bh",
+                "M",
+                "N"
+            ],
+            "dtype": "bfloat16"
+        }
+    },
+    "reference": "\"\"\"MLA weight-absorb BMM \u2014 sglang production baseline (torch.bmm).\n\nKimi-K2.7 MLA decode weight-absorb GEMMs (q_nope-absorb / v-absorb): a batched\nmatmul over attention heads with the absorbed projection weights. The CUDA bf16\ndefault path sglang dispatches is torch.bmm (see kernel_api_mapping op 17/18).\n`reference.py` IS the correctness oracle AND the latency baseline: an optimized\nsolution.py must match this output within tolerance and run faster.\n\n  out[Bh, M, N] = bmm(a[Bh, M, K], b[Bh, K, N]),  Bh = num_heads.\n\nOnly the bmm is timed; the (untimed) get_inputs generates the per-head operands.\n\"\"\"\n\nimport torch\n\n\ndef get_inputs(axes_and_scalars: dict, device: torch.device) -> dict:\n    M = axes_and_scalars[\"M\"]\n    Bh = axes_and_scalars[\"Bh\"]\n    K = axes_and_scalars[\"K\"]\n    N = axes_and_scalars[\"N\"]\n    a = torch.randn(Bh, M, K, device=device, dtype=torch.bfloat16)\n    b = torch.randn(Bh, K, N, device=device, dtype=torch.bfloat16)\n    return {\"a\": a, \"b\": b}\n\n\n@torch.no_grad()\ndef run(a, b):\n    return torch.bmm(a, b)\n"
+}

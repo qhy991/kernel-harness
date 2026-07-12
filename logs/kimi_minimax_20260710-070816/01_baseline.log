@@ -1,0 +1,50 @@
+# GPU: NVIDIA B200  Cap: (10, 0)  torch=2.11.0+cu130  cuda=13.0
+
+
+### linear ########################################################################################################################################
+# GPU: NVIDIA B200  Cap: (10, 0)  torch=2.11.0+cu130  cuda=13.0
+#--------------------------------------------------------------------------------------------------------------------------------------------
+   1 | Q_a (fused w/ KV_a)                | prefill  | F.linear bf16+fp8                | [16384,6144]x[6144,2624]                     |    2694.98 us | TFLOPS_bf16=196.02 GB/s=118.57 fp8_TFLOPS=207.79
+  14 | Q_a (fused w/ KV_a)                | decode   | F.linear bf16+fp8                | [16,6144]x[6144,2624]                        |    2388.68 us | TFLOPS_bf16=0.22 GB/s=13.62 fp8_TFLOPS=0.22
+   2 | Q_b                                | prefill  | F.linear bf16+fp8                | [16384,2048]x[2048,2048]                     |    2465.24 us | TFLOPS_bf16=55.75 GB/s=57.85 fp8_TFLOPS=56.63
+  15 | Q_b                                | decode   | F.linear bf16+fp8                | [16,2048]x[2048,16384]                       |    2394.57 us | TFLOPS_bf16=0.45 GB/s=28.27 fp8_TFLOPS=0.45
+   4 | KV_b                               | prefill  | F.linear bf16+fp8                | [16384,512]x[512,3584]                       |    2427.45 us | TFLOPS_bf16=24.77 GB/s=56.8 fp8_TFLOPS=24.9
+   5 | O_proj                             | prefill  | F.linear bf16+fp8                | [16384,2048]x[2048,6144]                     |    2622.16 us | TFLOPS_bf16=157.24 GB/s=111.97 fp8_TFLOPS=164.46
+  19 | O_proj                             | decode   | F.linear bf16+fp8                | [16,16384]x[16384,6144]                      |    2425.10 us | TFLOPS_bf16=1.33 GB/s=83.32 fp8_TFLOPS=1.34
+   6 | Index_Q                            | prefill  | F.linear bf16+fp8                | [16384,6144]x[6144,4096]                     |    2870.27 us | TFLOPS_bf16=287.3 GB/s=134.44 fp8_TFLOPS=313.85
+  20 | Index_Q                            | decode   | F.linear bf16+fp8                | [16,6144]x[6144,4096]                        |    2393.93 us | TFLOPS_bf16=0.34 GB/s=21.16 fp8_TFLOPS=0.34
+   7 | Index_K                            | prefill  | F.linear bf16+fp8                | [16384,6144]x[6144,128]                      |    2425.80 us | TFLOPS_bf16=10.62 GB/s=85.37 fp8_TFLOPS=10.72
+  21 | Index_K                            | decode   | F.linear bf16+fp8                | [16,6144]x[6144,128]                         |    2383.03 us | TFLOPS_bf16=0.01 GB/s=0.74 fp8_TFLOPS=0.01
+   9 | Dense GateUp                       | prefill  | F.linear bf16+fp8                | [16384,6144]x[6144,6144]                     |    3112.15 us | TFLOPS_bf16=397.46 GB/s=153.64 fp8_TFLOPS=449.62
+  10 | Dense Down                         | prefill  | F.linear bf16+fp8                | [16384,1536]x[1536,6144]                     |    2563.76 us | TFLOPS_bf16=120.62 GB/s=105.52 fp8_TFLOPS=124.79
+  11 | MoE Router                         | prefill  | F.linear bf16+fp8                | [16384,6144]x[6144,256]                      |    2429.60 us | TFLOPS_bf16=21.21 GB/s=87.61 fp8_TFLOPS=21.42
+  23 | MoE Router                         | decode   | F.linear bf16+fp8                | [16,6144]x[6144,256]                         |    2376.53 us | TFLOPS_bf16=0.02 GB/s=1.41 fp8_TFLOPS=0.02
+
+### grouped #######################################################################################################################################
+# GPU: NVIDIA B200  Cap: (10, 0)  torch=2.11.0+cu130  cuda=13.0
+#--------------------------------------------------------------------------------------------------------------------------------------------
+  12 | MoE GateUp GroupGEMM               | prefill  | torch.bmm bf16 (proxy)           | 256x[512,6144]x[6144,512]                    |    2978.42 us | TFLOPS_bf16=276.87
+  13 | MoE Down GroupGEMM                 | prefill  | torch.bmm bf16 (proxy)           | 256x[512,256]x[256,6144]                     |    2781.19 us | TFLOPS_bf16=148.25
+  24 | MoE GateUp GroupGEMM               | decode   | torch.bmm bf16 (proxy)           | 8x[16,6144]x[6144,4096]                      |    2447.97 us | TFLOPS_bf16=2.63
+  25 | MoE Down GroupGEMM                 | decode   | torch.bmm bf16 (proxy)           | 8x[16,2048]x[2048,6144]                      |    2413.87 us | TFLOPS_bf16=1.33
+
+### bmm ###########################################################################################################################################
+# GPU: NVIDIA B200  Cap: (10, 0)  torch=2.11.0+cu130  cuda=13.0
+#--------------------------------------------------------------------------------------------------------------------------------------------
+  17 | q_nope absorb BMM                  | decode   | torch.bmm bf16 (ACTUAL path)     | [16,64,192]x[64,192,512]                     |    2375.21 us | TFLOPS_bf16=0.08
+  18 | v absorb BMM                       | decode   | torch.bmm bf16 (ACTUAL path)     | [16,64,512]x[64,512,256]                     |    2376.92 us | TFLOPS_bf16=0.11
+
+### indexer #######################################################################################################################################
+# GPU: NVIDIA B200  Cap: (10, 0)  torch=2.11.0+cu130  cuda=13.0
+#--------------------------------------------------------------------------------------------------------------------------------------------
+   8 | Index_Score (ragged prefill)       | prefill  | torch fp16 (naive; real kernel m | Q:[16384,32,128] K:[16384,128] topk=2048     |   96718.36 us | score_us=89389.92 topk_us=7328.44 TFLOPS_fp16=24.6
+  22 | Index_Score (paged decode)         | decode   | torch fp16 (naive; real kernel m | Q:[16,32,128] K:[2048,128] topk=2048         |    4798.95 us | score_us=2397.76 topk_us=2401.18 TFLOPS_fp16=0.11
+
+### attention #####################################################################################################################################
+# GPU: NVIDIA B200  Cap: (10, 0)  torch=2.11.0+cu130  cuda=13.0
+#--------------------------------------------------------------------------------------------------------------------------------------------
+  27 | FlashAttn causal MHA (prefill)     | prefill  | flash_attn N/A                   | H=8 T=16384 D=256                            |      -1.00 us | note=flash_attn not installed
+  26 | Flash Decoding MLA sparse MQA (spa | decode   | torch SDPA fp16 (proxy for flash | Q:[1,64,16,512] KV[1,1,8192,512] topk=2048   |    2786.20 us | TFLOPS_fp16=1.54 dense_us=3197.81
+
+# JSON: /home/qinhaiyan/kernel-harness/logs/kimi_minimax_20260710-070816/baseline/results.json
+# CSV:  /home/qinhaiyan/kernel-harness/logs/kimi_minimax_20260710-070816/baseline/results.csv

@@ -1,0 +1,10 @@
+
+==========================================================================
+provider    correct   win   geomean  min_cons  tampered
+--------------------------------------------------------------------------
+infini         True False    1.0807    0.9979     False
+official       True  True    1.0909    1.0252     False
+==========================================================================
+WINNER (correct + best worst-case speedup): official  min_speedup_conservative=1.0252
+
+scoreboard.json -> /home/qinhaiyan/kernel-harness/testbench/benchmarks/lmhead_provider_ab/results/scoreboard.json

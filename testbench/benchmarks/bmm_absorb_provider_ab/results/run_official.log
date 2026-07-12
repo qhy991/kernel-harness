@@ -1,0 +1,19 @@
+I've made my best genuine attempts and cannot achieve `win:true`. Stopping per instructions with the final verdict and diagnosis.
+
+## FINAL VERDICT
+
+```
+VERDICT_JSON
+{"task": "task_official", "correct": true, "win": false,
+ "geomean_speedup": 0.9785, "min_speedup": 0.8172,
+ "geomean_speedup_conservative": 0.9722, "min_speedup_conservative": 0.8136,
+ "per_shape": {
+   "M=1": 1.005, "M=2": 1.038, "M=4": 1.044, "M=8": 1.041, "M=16": 1.066,   // WIN
+   "M=32": 0.951, "M=64": 0.919, "M=128": 0.901, "M=256": 0.814             // LOSE
+ }}
+```
+
+## Diagnosis
+
+The win is achievable at small M but not at large M, and the success gate requires *every* shape > 1.0. The 12.6MB `b` operand dominates traffic and both cuBLAS and my Triton kernel read it at only ~2 TB/s (well below B200's ~7 TB/s), so at small M (1–16) the op is a flat launch/b-read floor with a small overhead margin that my lightweight streaming kernel captures (1.005–1.066× conservative). But as M grows, `b` fits entirely in the 126MB L2 and the incremental a-read/compute/output-write become the cost — a regime where cuBLAS's Blackwell GEMM is already highly tuned (~3.6 TB/s effective at M=256, 8–20% of compute peak but well-scheduled). I exhaustively tried to match it — simple tiling (best), persistent kernels, device-side TMA descriptors, full-width BN=512 coalesced reads, BM=16 fine tiling, split-K, and torch.compile max-autotune — and every variant topped out at 0.95 (M=32) down to 0.78 (M=256), a real 5–22% kernel-quality gap versus cuBLAS, not measurement noise. FP8 (the only path that reduces `b` traffic and doubles throughput) fails correctness hard — 60% element match vs the required 98% under the rtol=0.05 tolerance — so it's not usable. Conclusion: the task's headroom lives only at the "tiny per-head" small-M shapes as the prompt hints; the large-M shapes sit at cuBLAS efficiency with no exploitable margin, making an all-shapes win unattainable with legitimate bf16 computation on this hardware/toolchain.
+OFFICIAL_DONE_EXIT=

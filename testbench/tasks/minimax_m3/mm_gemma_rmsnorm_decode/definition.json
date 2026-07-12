@@ -1,0 +1,46 @@
+{
+    "name": "minimax_m3_mm_gemma_rmsnorm_decode",
+    "hf_id": "MiniMaxAI/MiniMax-M3",
+    "description": "MiniMax-M3 Gemma-RMSNorm (decode), Gemma-RMSNorm over hidden=6144 (sgl_kernel.gemma_rmsnorm; scales by 1+weight). out[M,6144] = x * rsqrt(mean(x^2,-1)+eps) * (1 + weight). INTERFACE-EXACT drop-in. Baseline = sglang production kernel; beat its latency while matching output.",
+    "axes": {
+        "M": {
+            "type": "var",
+            "description": "decode token count (sweep)"
+        },
+        "H": {
+            "type": "const",
+            "value": 6144,
+            "description": "MiniMax-M3 hidden size"
+        }
+    },
+    "custom_inputs_entrypoint": "get_inputs",
+    "inputs": {
+        "x": {
+            "shape": [
+                "M",
+                "H"
+            ],
+            "dtype": "bfloat16"
+        },
+        "weight": {
+            "shape": [
+                "H"
+            ],
+            "dtype": "bfloat16"
+        },
+        "eps": {
+            "shape": null,
+            "dtype": "float32"
+        }
+    },
+    "outputs": {
+        "output": {
+            "shape": [
+                "M",
+                "H"
+            ],
+            "dtype": "bfloat16"
+        }
+    },
+    "reference": "\"\"\"Gemma-RMSNorm \u2014 sglang production baseline (sgl_kernel.gemma_rmsnorm).\n\nMiniMax-M3 standalone Gemma-RMSNorm (operator 36 in docs/minimax_m3_operators.csv).\nThe Gemma variant scales the normalized activation by (1 + weight), not weight:\n\n  out[M, H] = x * rsqrt(mean(x**2, -1) + eps) * (1 + weight)    (fp32 accumulate)\n\nINTERFACE-EXACT: run(x, weight, eps) is a verbatim match of sgl_kernel.gemma_rmsnorm\n(eps is a scalar input), so a candidate is a symbol-for-symbol drop-in. reference.py IS\nthe correctness oracle AND the latency baseline: an optimized solution.py must match\nthis output within tolerance and run faster.\n\nH=6144 is the MiniMax-M3 hidden size (HF text_config; see scripts/bench_minimax_m3.py).\n\"\"\"\n\nimport torch\nfrom sgl_kernel import gemma_rmsnorm\n\nEPS = 1e-6\n\n\ndef get_inputs(axes_and_scalars: dict, device: torch.device) -> dict:\n    M = axes_and_scalars[\"M\"]\n    H = axes_and_scalars[\"H\"]\n    x = torch.randn(M, H, device=device, dtype=torch.bfloat16)\n    weight = torch.randn(H, device=device, dtype=torch.bfloat16)\n    return {\"x\": x, \"weight\": weight, \"eps\": EPS}\n\n\n@torch.no_grad()\ndef run(x, weight, eps):\n    return gemma_rmsnorm(x, weight, eps)\n"
+}

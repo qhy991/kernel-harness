@@ -29,22 +29,36 @@ DEVICE = "cuda"
 
 
 def _run_prefill_mha(op) -> dict | None:
-    try:
-        from flash_attn import flash_attn_func  # type: ignore
-    except ImportError:
-        return None
-    q = torch.randn(op.B, op.T_q, op.H_q, op.D_qk, device=DEVICE, dtype=torch.float16)
-    k = torch.randn(op.B, op.T_kv, op.H_kv, op.D_qk, device=DEVICE, dtype=torch.float16)
-    v = torch.randn(op.B, op.T_kv, op.H_kv, op.D_v, device=DEVICE, dtype=torch.float16)
-    try:
-        us = bench(lambda: flash_attn_func(q, k, v, causal=op.causal),
-                   warmup=3, iters=10)
-    except Exception as e:
-        return {"error": f"{type(e).__name__}: {str(e)[:80]}"}
     causal_factor = 0.5 if op.causal else 1.0
     flops = 4 * op.B * op.H_q * op.T_q * op.T_kv * op.D_qk * causal_factor
-    return {"us": round(us, 2), "TFLOPS_fp16": round(flops / (us * 1e-6) / 1e12, 2),
-            "backend": "flash_attn 2.x (proxy for FA3)"}
+
+    # Prefer Dao flash_attn; on B200 fall back to flashinfer (SM100 DSA path).
+    try:
+        from flash_attn import flash_attn_func  # type: ignore
+
+        q = torch.randn(op.B, op.T_q, op.H_q, op.D_qk, device=DEVICE, dtype=torch.bfloat16)
+        k = torch.randn(op.B, op.T_kv, op.H_kv, op.D_qk, device=DEVICE, dtype=torch.bfloat16)
+        v = torch.randn(op.B, op.T_kv, op.H_kv, op.D_v, device=DEVICE, dtype=torch.bfloat16)
+        us = bench(lambda: flash_attn_func(q, k, v, causal=op.causal),
+                   warmup=3, iters=10)
+        return {"us": round(us, 2), "TFLOPS_fp16": round(flops / (us * 1e-6) / 1e12, 2),
+                "backend": "flash_attn 2.x"}
+    except Exception as e_fa:
+        try:
+            import flashinfer
+
+            q = torch.randn(op.T_q, op.H_q, op.D_qk, device=DEVICE, dtype=torch.bfloat16)
+            k = torch.randn(op.T_kv, op.H_kv, op.D_qk, device=DEVICE, dtype=torch.bfloat16)
+            v = torch.randn(op.T_kv, op.H_kv, op.D_v, device=DEVICE, dtype=torch.bfloat16)
+            us = bench(
+                lambda: flashinfer.single_prefill_with_kv_cache(q, k, v, causal=op.causal),
+                warmup=3, iters=10,
+            )
+            return {"us": round(us, 2), "TFLOPS_fp16": round(flops / (us * 1e-6) / 1e12, 2),
+                    "backend": "flashinfer.single_prefill_with_kv_cache"}
+        except Exception as e_fi:
+            return {"error": f"flash_attn={type(e_fa).__name__}: {str(e_fa)[:60]}; "
+                             f"flashinfer={type(e_fi).__name__}: {str(e_fi)[:60]}"}
 
 
 def _run_decode_mla_sparse(op) -> dict:
@@ -94,12 +108,13 @@ def run() -> list[dict]:
     for op in ATTENTION_OPS:
         if op.phase == "prefill":
             r = _run_prefill_mha(op)
-            if r is None:
+            if r is None or ("error" in r and "us" not in r and "backend" not in r):
+                err = (r or {}).get("error", "flash_attn not installed")
                 print_row(op.op_id, op.name, op.phase, "flash_attn N/A",
                           f"H={op.H_q} T={op.T_q} D={op.D_qk}", -1,
-                          {"note": "flash_attn not installed"})
+                          {"note": err})
                 continue
-            if "error" in r:
+            if "error" in r and "us" not in r:
                 print_row(op.op_id, op.name, op.phase, "flash_attn",
                           f"H={op.H_q} T={op.T_q} D={op.D_qk}", -1, {"error": r["error"]})
                 results.append({"op_id": op.op_id, "phase": op.phase, **r})

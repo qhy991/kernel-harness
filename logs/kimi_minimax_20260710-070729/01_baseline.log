@@ -1,0 +1,13 @@
+# GPU: NVIDIA B200  Cap: (10, 0)  torch=2.11.0+cu130  cuda=13.0
+
+
+### linear ########################################################################################################################################
+# GPU: NVIDIA B200  Cap: (10, 0)  torch=2.11.0+cu130  cuda=13.0
+#--------------------------------------------------------------------------------------------------------------------------------------------
+   1 | Q_a (fused w/ KV_a)                | prefill  | F.linear bf16+fp8                | [16384,6144]x[6144,2624]                     |    2696.43 us | TFLOPS_bf16=195.92 GB/s=118.51 fp8_TFLOPS=207.75
+  14 | Q_a (fused w/ KV_a)                | decode   | F.linear bf16+fp8                | [16,6144]x[6144,2624]                        |    2389.25 us | TFLOPS_bf16=0.22 GB/s=13.61 fp8_TFLOPS=0.22
+   2 | Q_b                                | prefill  | F.linear bf16+fp8                | [16384,2048]x[2048,2048]                     |    2466.09 us | TFLOPS_bf16=55.73 GB/s=57.83 fp8_TFLOPS=56.62
+  15 | Q_b                                | decode   | F.linear bf16+fp8                | [16,2048]x[2048,16384]                       |    2394.65 us | TFLOPS_bf16=0.45 GB/s=28.27 fp8_TFLOPS=0.45
+   4 | KV_b                               | prefill  | F.linear bf16+fp8                | [16384,512]x[512,3584]                       |    2427.14 us | TFLOPS_bf16=24.77 GB/s=56.81 fp8_TFLOPS=24.9
+   5 | O_proj                             | prefill  | F.linear bf16+fp8                | [16384,2048]x[2048,6144]                     |    2623.00 us | TFLOPS_bf16=157.19 GB/s=111.93 fp8_TFLOPS=164.41
+  19 | O_proj                             | decode   | F.linear bf16+fp8                | [16,16384]x[16384,6144]                      |    2425.84 us | TFLOPS_bf16=1.33 GB/s=83.29 fp8_TFLOPS=1.34

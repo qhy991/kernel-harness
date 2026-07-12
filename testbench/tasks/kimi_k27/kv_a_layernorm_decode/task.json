@@ -1,0 +1,29 @@
+{
+  "name": "kv_a_layernorm_decode",
+  "op": "KV_a LayerNorm (RMSNorm)",
+  "phase": "decode",
+  "family": "rmsnorm",
+  "H": 512,
+  "sweep": [
+    1,
+    2,
+    4,
+    8,
+    16,
+    32,
+    64,
+    128,
+    256
+  ],
+  "backend": "sgl_kernel rmsnorm (blackwell)",
+  "tolerance": {
+    "max_atol": 0.1,
+    "max_rtol": 0.05,
+    "required_matched_ratio": 0.98
+  },
+  "baseline": {
+    "source": "live",
+    "measure": "reference.py timed by sol-execbench CUPTI (median device-kernel us)",
+    "denominator": "the live per-shape reference latency (see .baseline_cache.json)"
+  }
+}

@@ -1,0 +1,27 @@
+## WIN — solved
+
+**Final VERDICT_JSON:** `correct: true, win: true, geomean_speedup: 1.0925, min_speedup_conservative: 1.0262` — all 9 shapes beat the cuBLAS baseline.
+
+| M | sol_us | base_us | speedup |
+|---|--------|---------|---------|
+| 1 | 346.8 | 375.2 | 1.081 |
+| 2 | 347.5 | 395.1 | 1.136 |
+| 4 | 348.9 | 395.2 | 1.132 |
+| 8 | 350.6 | 396.1 | 1.128 |
+| 16 | 353.2 | 398.4 | 1.127 |
+| 32 | 380.8 | 402.9 | 1.056 |
+| 64 | 389.3 | 410.1 | 1.049 |
+| 128 | 419.0 | 430.9 | 1.026 |
+| 256 | 433.0 | 471.9 | 1.088 |
+
+### What made it win
+
+The op is bandwidth-bound (2.35 GB bf16 weight read once; cuBLAS at M=1 hits ~6.2 TB/s ≈ 78% of B200's ~8 TB/s peak). Two complementary techniques:
+
+1. **M ≤ 128 — custom Triton kernel** (`solution.py`). One program per N-slab (grid over N only ⇒ weight read exactly once), with the decisive knob being **`BLOCK_K=128`** — large K-blocks maximize HBM streaming throughput (took M=1 from 0.95× to 1.12×). Per-M-regime tuning of BLOCK_N / warps / pipeline depth (e.g. `num_stages=6` to make M=128 win at 1.026×).
+
+2. **M = 256 — cuBLAS orientation flip.** Triton loses here (the 256-row fp32 accumulator starves occupancy, ~0.76×). Instead I compute the *other orientation* `torch.matmul(lm_head_weight, hidden_states.T)` → `[V, M]` and return its transpose **view** (bit-identical values, zero copy). cuBLAS tiles the large output dimension of `[163840, 256]` far better than `[256, 163840]`, yielding 1.09× for free.
+
+### Process note
+Local CUDA-event timing was corrupted ~2.5× by an intermittent HBM-hogging background process from another user (couldn't kill it; left the user's own `mini_engine.gate` untouched). I built a **min-of-N-launches** proxy that reproduces evaluate's numbers for small M, but confirmed all final verdicts — especially M=256 — with the authoritative CUPTI-based `evaluate.py`, since the proxy mis-ranked the M=256 ratio. Recipe saved to memory.
+OFFICIAL_DONE_EXIT=0

@@ -1,0 +1,48 @@
+{
+    "name": "kimi_k27_lm_head_decode_official",
+    "hf_id": "moonshotai/Kimi-K2.7",
+    "description": "Kimi-K2.7 LM-head logits GEMM (decode), torch.matmul bf16: out[M,163840] = hidden[M,7168] @ lm_head_w[163840,7168].T. Bandwidth-bound (2.35 GB weight). Baseline = sglang production path; beat its latency across the sweep while matching its output.",
+    "axes": {
+        "M": {
+            "type": "var",
+            "description": "sampled positions (decode, sweep)"
+        },
+        "H": {
+            "type": "const",
+            "value": 7168,
+            "description": "hidden size"
+        },
+        "V": {
+            "type": "const",
+            "value": 163840,
+            "description": "vocab size"
+        }
+    },
+    "custom_inputs_entrypoint": "get_inputs",
+    "inputs": {
+        "hidden_states": {
+            "shape": [
+                "M",
+                "H"
+            ],
+            "dtype": "bfloat16"
+        },
+        "lm_head_weight": {
+            "shape": [
+                "V",
+                "H"
+            ],
+            "dtype": "bfloat16"
+        }
+    },
+    "outputs": {
+        "logits": {
+            "shape": [
+                "M",
+                "V"
+            ],
+            "dtype": "bfloat16"
+        }
+    },
+    "reference": "\"\"\"LM-head logits GEMM \u2014 sglang baseline (torch.matmul, bf16).\n\nKimi-K2.7 final logits projection. On CUDA/B200 the default path\n(logits_processor.py:_compute_lm_head) is:\n\n    logits = torch.matmul(hidden_states.bfloat16(), lm_head.weight.T.bfloat16())\n\n  out[M, vocab] = hidden_states[M, hidden] @ lm_head_weight[vocab, hidden].T   (bf16)\n\nCanonical Kimi-K2.7: hidden=7168, vocab=163840 (the 2.35 GB weight makes this a\nbandwidth-bound GEMM). Decode computes logits only for the sampled positions, so the\nM-sweep is small. reference.py IS the correctness oracle AND the latency baseline.\n\"\"\"\n\nimport torch\n\n\ndef get_inputs(axes_and_scalars: dict, device: torch.device) -> dict:\n    M = axes_and_scalars[\"M\"]\n    H = axes_and_scalars[\"H\"]\n    V = axes_and_scalars[\"V\"]\n    hidden_states = torch.randn(M, H, device=device, dtype=torch.bfloat16)\n    lm_head_weight = torch.randn(V, H, device=device, dtype=torch.bfloat16) * (H ** -0.5)\n    return {\"hidden_states\": hidden_states, \"lm_head_weight\": lm_head_weight}\n\n\n@torch.no_grad()\ndef run(hidden_states, lm_head_weight):\n    return torch.matmul(hidden_states.bfloat16(), lm_head_weight.T.bfloat16())\n"
+}

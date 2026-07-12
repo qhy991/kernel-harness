@@ -1,0 +1,249 @@
+"""GEMM / quant families: fp8-linear, bf16-linear, router, lm-head, grouped-MoE, act-quant."""
+from ..config import KIMI as K, MM, recipe
+from ..spec import (TaskSpec, DECODE_SWEEP, PREFILL_SWEEP, ROUTER_SWEEP, MASKED_SWEEP,
+                    EXACT_TOL, sweep_for, var, const, expr, tensor)
+
+# fp8-linear-gemm: (name, op, phase, K, N, csv_wallclock_us)
+FP8_LINEAR = [
+    ("dense_ffn_gateup_prefill",  "Dense FFN GateUp",  "prefill", 7168, 4608, 1044.69),
+    ("dense_ffn_gateup_decode",   "Dense FFN GateUp",  "decode",  7168, 4608,   56.50),
+    ("dense_ffn_down_prefill",    "Dense FFN Down",    "prefill", 2304, 7168,  451.28),
+    ("dense_ffn_down_decode",     "Dense FFN Down",    "decode",  2304, 7168,   52.92),
+    ("qa_kva_fused_prefill",      "Q_a+KV_a fused",    "prefill", 7168, 2176,  436.81),
+    ("qa_kva_fused_decode",       "Q_a+KV_a fused",    "decode",  7168, 2176,   56.60),
+    ("q_b_prefill",               "Q_b",               "prefill", 1536, 1536,   77.83),
+    ("q_b_decode",                "Q_b",               "decode",  1536, 12288,  52.52),
+    ("kv_b_prefill",              "KV_b",              "prefill",  512, 2048,   73.39),
+    ("o_proj_prefill",            "O_proj",            "prefill", 1024, 7168,  264.18),
+    ("o_proj_decode",             "O_proj",            "decode",  8192, 7168,   57.57),
+    ("moe_shared_gateup_prefill", "MoE Shared GateUp", "prefill", 7168,  512,  148.43),
+    ("moe_shared_gateup_decode",  "MoE Shared GateUp", "decode",  7168,  512,   55.77),
+    ("moe_shared_down_prefill",   "MoE Shared Down",   "prefill",  256, 7168,  240.41),
+    ("moe_shared_down_decode",    "MoE Shared Down",   "decode",   256, 7168,   51.12),
+]
+
+# minimax bf16-linear (inventory op28): (name, op, phase, K, N)
+MM_BF16_LINEAR = [
+    ("mm_dense_ffn_gateup_prefill", "Dense FFN GateUp (layers 0-2)", "prefill", MM.hidden, 2 * MM.dense_inter),
+    ("mm_dense_ffn_gateup_decode",  "Dense FFN GateUp (layers 0-2)", "decode",  MM.hidden, 2 * MM.dense_inter),
+    ("mm_dense_ffn_down_prefill",   "Dense FFN Down (layers 0-2)",   "prefill", MM.dense_inter, MM.hidden),
+    ("mm_dense_ffn_down_decode",    "Dense FFN Down (layers 0-2)",   "decode",  MM.dense_inter, MM.hidden),
+    ("mm_qkv_proj_prefill",         "Main Q/K/V proj (GQA)",         "prefill", MM.hidden, MM.qkv_out),
+    ("mm_qkv_proj_decode",          "Main Q/K/V proj (GQA)",         "decode",  MM.hidden, MM.qkv_out),
+    ("mm_o_proj_prefill",           "Attention O_proj",              "prefill", MM.o_in, MM.hidden),
+    ("mm_o_proj_decode",            "Attention O_proj",              "decode",  MM.o_in, MM.hidden),
+    ("mm_shared_gateup_decode",     "Shared expert GateUp",          "decode",  MM.hidden, 2 * MM.shared_inter),
+    ("mm_shared_down_decode",       "Shared expert Down",            "decode",  MM.shared_inter, MM.hidden),
+    ("mm_shared_gateup_prefill",    "Shared expert GateUp",          "prefill", MM.hidden, 2 * MM.shared_inter),
+    ("mm_shared_down_prefill",      "Shared expert Down",            "prefill", MM.shared_inter, MM.hidden),
+]
+
+
+def _fp8_linear():
+    r = recipe("fp8_linear_gemm.py")
+    for name, op, phase, kk, nn, base_us in FP8_LINEAR:
+        yield TaskSpec(
+            model=K.model, name=name, op=op, family="fp8-linear-gemm", phase=phase,
+            hf_id=K.hf_id, recipe=r, sweep=sweep_for(phase), baseline_us=base_us,
+            backend="deep_gemm w8a8_block_fp8 (blackwell)",
+            description=(
+                f"Kimi-K2.7 {op} ({phase}), FP8 blockwise GEMM "
+                f"(deep_gemm w8a8_block_fp8, Blackwell). out[M,{nn}] = x_fp8[M,{kk}] @ "
+                f"w_fp8[{nn},{kk}].T with 1x128 act / 128x128 weight scales. Baseline = "
+                f"sglang production kernel (~{base_us:.1f}us at canonical shape); beat its "
+                f"latency across the sweep while matching its output."),
+            goal=(f"优化 solution.py 相对 sglang deep_gemm w8a8_block_fp8 基线（{op} {phase}）"
+                  " 的 FP8 GEMM 延迟，跨全部 shape sweep 领先；正确性对齐 sglang 输出（见 tolerance）"),
+            axes={"M": var(f"{phase} token count (sweep)"), "K": const(kk), "N": const(nn),
+                  "K_scale_blocks": expr("K//512", "ue8m0-packed K scale blocks (K/128/4)")},
+            inputs={"x_fp8": tensor(["M", "K"], "float8_e4m3fn"),
+                    "x_scale": tensor(["M", "K_scale_blocks"], "int32"),
+                    "w_fp8": tensor(["N", "K"], "float8_e4m3fn"),
+                    "w_scale": tensor(["N", "K_scale_blocks"], "int32")},
+            outputs={"output": tensor(["M", "N"], "bfloat16")},
+            meta={"K": kk, "N": nn})
+
+
+def _bf16_linear():
+    r = recipe("bf16_linear.py")
+    for name, op, phase, kk, nn in MM_BF16_LINEAR:
+        yield TaskSpec(
+            model=MM.model, name=name, op=op, family="bf16-linear", phase=phase,
+            hf_id=MM.hf_id, recipe=r, sweep=sweep_for(phase),
+            backend="cuBLAS bf16 GEMM (blackwell)",
+            description=(
+                f"MiniMax-M3 {op} ({phase}), bf16 cuBLAS GEMM (base checkpoint; "
+                f"inventory op28 standard Linear). out[M,{nn}] = x[M,{kk}] @ weight[{nn},{kk}].T. "
+                f"Baseline = sglang production path; beat its latency across the sweep while "
+                f"matching output. (-MXFP8 checkpoint would use deep_gemm/flashinfer — separate.)"),
+            goal=(f"优化 solution.py 相对 sglang cuBLAS bf16 GEMM 基线（MiniMax-M3 {op} {phase}）"
+                  " 的 GEMM 延迟，跨全部 sweep 领先；正确性对齐 sglang 输出（见 tolerance）"),
+            axes={"M": var(f"{phase} token count (sweep)"), "K": const(kk), "N": const(nn)},
+            inputs={"x": tensor(["M", "K"], "bfloat16"), "weight": tensor(["N", "K"], "bfloat16")},
+            outputs={"output": tensor(["M", "N"], "bfloat16")},
+            meta={"K": kk, "N": nn})
+
+
+def _router():
+    # Kimi: dsv3_router_gemm (M<=16, N=384, fp32 out)
+    yield TaskSpec(
+        model=K.model, name="moe_router_gemm_decode", op="MoE Router GEMM",
+        family="router-gemm", phase="decode", hf_id=K.hf_id, recipe=recipe("kimi_router_gemm.py"),
+        sweep=ROUTER_SWEEP, backend="sgl_kernel dsv3_router_gemm (blackwell)",
+        description=(
+            f"Kimi-K2.7 MoE Router GEMM (decode), sgl_kernel.dsv3_router_gemm: "
+            f"out[M,{K.n_routed_experts}] = hidden[M,{K.hidden}] @ router_w[{K.n_routed_experts},{K.hidden}].T in fp32. "
+            f"Kernel requires num_tokens<=16 (DP32xEP32 M_local=16), so the sweep is "
+            f"architecture-true M in {ROUTER_SWEEP}. Baseline = sglang production kernel; "
+            f"beat its latency across the sweep while matching its output."),
+        goal=("优化 solution.py 相对 sglang sgl_kernel.dsv3_router_gemm 基线（MoE Router GEMM decode, M<=16）"
+              " 的 router GEMM 延迟，跨全部 shape sweep 领先；正确性对齐 sglang 输出（见 tolerance）"),
+        axes={"M": var("decode token count (<=16, sweep)"), "H": const(K.hidden, "hidden size"),
+              "N": const(K.n_routed_experts, "n_routed_experts")},
+        inputs={"hidden_states": tensor(["M", "H"], "bfloat16"),
+                "router_weights": tensor(["N", "H"], "bfloat16")},
+        outputs={"logits": tensor(["M", "N"], "float32")},
+        meta={"H": K.hidden, "N": K.n_routed_experts})
+    # MiniMax: fp32 cuBLAS matmul (prefill + decode)
+    r = recipe("minimax_router.py")
+    for name, phase in [("mm_moe_router_prefill", "prefill"), ("mm_moe_router_decode", "decode")]:
+        yield TaskSpec(
+            model=MM.model, name=name, op="MoE Router GEMM", family="router-gemm", phase=phase,
+            hf_id=MM.hf_id, recipe=r, sweep=sweep_for(phase), backend="cuBLAS fp32 GEMM (blackwell)",
+            description=(
+                f"MiniMax-M3 MoE Router GEMM ({phase}), fp32 cuBLAS matmul (inventory op37): "
+                f"logits[M,{MM.experts}] = hidden[M,{MM.hidden}] @ gate_w[{MM.experts},{MM.hidden}].T. "
+                f"Baseline = sglang production path; beat its latency while matching output."),
+            goal=(f"优化 solution.py 相对 sglang fp32 cuBLAS 基线（MiniMax-M3 MoE Router GEMM {phase}）"
+                  " 的 router GEMM 延迟，跨全部 sweep 领先；正确性对齐 sglang 输出（见 tolerance）"),
+            axes={"M": var(f"{phase} token count (sweep)"), "H": const(MM.hidden, "hidden size"),
+                  "E": const(MM.experts, "n_routed_experts")},
+            inputs={"hidden_states": tensor(["M", "H"], "float32"),
+                    "gate_weight": tensor(["E", "H"], "float32")},
+            outputs={"logits": tensor(["M", "E"], "float32")},
+            meta={"H": MM.hidden, "E": MM.experts})
+
+
+def _lm_head():
+    for cfg, name in [(K, "lm_head_decode"), (MM, "mm_lm_head_decode")]:
+        label = "Kimi-K2.7" if cfg is K else "MiniMax-M3"
+        yield TaskSpec(
+            model=cfg.model, name=name, op="LM-head logits GEMM", family="lm-head", phase="decode",
+            hf_id=cfg.hf_id, recipe=recipe("kimi_lm_head.py"), sweep=DECODE_SWEEP,
+            backend="torch.matmul bf16 (blackwell)",
+            description=(
+                f"{label} LM-head logits GEMM (decode), torch.matmul bf16: "
+                f"out[M,{cfg.vocab}] = hidden[M,{cfg.hidden}] @ lm_head_w[{cfg.vocab},{cfg.hidden}].T. "
+                f"Bandwidth-bound. Baseline = sglang production path; beat its latency while matching output."),
+            goal=(f"优化 solution.py 相对 sglang torch.matmul LM-head 基线（{label} LM-head decode）"
+                  " 的 logits GEMM 延迟，跨全部 sweep 领先；正确性对齐 sglang 输出（见 tolerance）"),
+            axes={"M": var("sampled positions (decode, sweep)"), "H": const(cfg.hidden, "hidden size"),
+                  "V": const(cfg.vocab, "vocab size")},
+            inputs={"hidden_states": tensor(["M", "H"], "bfloat16"),
+                    "lm_head_weight": tensor(["V", "H"], "bfloat16")},
+            outputs={"logits": tensor(["M", "V"], "bfloat16")},
+            meta={"H": cfg.hidden, "V": cfg.vocab})
+
+
+def _grouped_moe_masked():
+    r = recipe("grouped_moe_masked.py")
+    kimi = [("moe_gateup_grouped_decode", "MoE GateUp GroupGEMM (masked)", K.hidden, 2 * K.moe_inter_full),
+            ("moe_down_grouped_decode",   "MoE Down GroupGEMM (masked)",   K.moe_inter_full, K.hidden)]
+    for name, op, kk, nn in kimi:
+        yield TaskSpec(
+            model=K.model, name=name, op=op, family="grouped-moe", phase="decode",
+            hf_id=K.hf_id, recipe=r, sweep=MASKED_SWEEP,
+            backend="deep_gemm fp8_m_grouped_gemm_nt_masked (blackwell)",
+            description=(
+                f"Kimi-K2.7 {op} (decode), deep_gemm.fp8_m_grouped_gemm_nt_masked over "
+                f"E={K.ep_local_experts} local experts (EP32 of 384 routed), K={kk}, N={nn}. Sweep "
+                f"= tokens/expert (masked). FP8 blockwise (per-token act, per-block weight, "
+                f"UE8M0), quant done offline in get_inputs; only the grouped GEMM is timed. "
+                f"Baseline = sglang production kernel; beat its latency while matching output."),
+            goal=(f"优化 solution.py 相对 sglang deep_gemm.fp8_m_grouped_gemm_nt_masked 基线（{op} decode）"
+                  " 的 grouped MoE GEMM 延迟，跨全部 tokens/expert sweep 领先；正确性对齐 sglang 输出（见 tolerance）"),
+            axes={"M": var("tokens per expert (masked, sweep)"),
+                  "E": const(K.ep_local_experts, "local experts (EP32)"), "K": const(kk), "N": const(nn)},
+            inputs={"a_fp8": tensor(["E", "M", "K"], "float8_e4m3fn"), "a_s": tensor(["E", "M", "K"], "int32"),
+                    "b_fp8": tensor(["E", "N", "K"], "float8_e4m3fn"), "b_s": tensor(["E", "N", "K"], "int32"),
+                    "out": tensor(["E", "M", "N"], "bfloat16"), "masked_m": tensor(["E"], "int32"),
+                    "expected_m": tensor(None, "int32")},
+            outputs={"grouped_out": tensor(["E", "M", "N"], "bfloat16")},
+            meta={"E": K.ep_local_experts, "K": kk, "N": nn})
+    mm = [("mm_moe_gateup_grouped_decode", "MoE GateUp GroupGEMM (masked)", MM.hidden, 2 * MM.inter),
+          ("mm_moe_down_grouped_decode",   "MoE Down GroupGEMM (masked)",   MM.inter, MM.hidden)]
+    for name, op, kk, nn in mm:
+        yield TaskSpec(
+            model=MM.model, name=name, op=op, family="grouped-moe", phase="decode",
+            hf_id=MM.hf_id, recipe=r, sweep=MASKED_SWEEP,
+            backend="deep_gemm fp8_m_grouped_gemm_nt_masked (blackwell)",
+            description=(
+                f"MiniMax-M3 {op} (decode), deep_gemm.fp8_m_grouped_gemm_nt_masked over "
+                f"E={MM.ep_local} local experts (128 routed / EP8), K={kk}, N={nn}. Sweep = "
+                f"tokens/expert (masked). FP8 blockwise (per-token act, per-block weight, UE8M0), "
+                f"quant offline in get_inputs; only the grouped GEMM is timed. Baseline = sglang "
+                f"production kernel; beat its latency while matching output."),
+            goal=(f"优化 solution.py 相对 sglang deep_gemm.fp8_m_grouped_gemm_nt_masked 基线（MiniMax-M3 {op} decode）"
+                  " 的 grouped MoE GEMM 延迟，跨全部 tokens/expert sweep 领先；正确性对齐 sglang 输出（见 tolerance）"),
+            axes={"M": var("tokens per expert (masked, sweep)"),
+                  "E": const(MM.ep_local, "local experts (EP8 of 128)"), "K": const(kk), "N": const(nn)},
+            inputs={"a_fp8": tensor(["E", "M", "K"], "float8_e4m3fn"), "a_s": tensor(["E", "M", "K"], "int32"),
+                    "b_fp8": tensor(["E", "N", "K"], "float8_e4m3fn"), "b_s": tensor(["E", "N", "K"], "int32"),
+                    "out": tensor(["E", "M", "N"], "bfloat16"), "masked_m": tensor(["E"], "int32"),
+                    "expected_m": tensor(None, "int32")},
+            outputs={"grouped_out": tensor(["E", "M", "N"], "bfloat16")},
+            meta={"E": MM.ep_local, "K": kk, "N": nn})
+
+
+def _grouped_moe_contiguous():
+    r = recipe("grouped_moe_contiguous.py")
+    for name, op, kk, nn in [("mm_moe_gateup_grouped_prefill", "MoE GateUp GroupGEMM (contiguous)", MM.hidden, 2 * MM.inter),
+                             ("mm_moe_down_grouped_prefill",   "MoE Down GroupGEMM (contiguous)",   MM.inter, MM.hidden)]:
+        yield TaskSpec(
+            model=MM.model, name=name, op=op, family="grouped-moe-contiguous", phase="prefill",
+            hf_id=MM.hf_id, recipe=r, sweep=MASKED_SWEEP,
+            backend="deep_gemm m_grouped_fp8_gemm_nt_contiguous (blackwell)",
+            description=(
+                f"MiniMax-M3 {op} (prefill), deep_gemm.m_grouped_fp8_gemm_nt_contiguous over "
+                f"E={MM.ep_local} local experts, K={kk}, N={nn}. Sweep = tokens/expert (contiguous "
+                f"layout, m_indices routing). FP8 blockwise, quant offline in get_inputs; only the "
+                f"grouped GEMM is timed. Baseline = sglang production kernel; beat its latency."),
+            goal=(f"优化 solution.py 相对 sglang deep_gemm.m_grouped_fp8_gemm_nt_contiguous 基线（MiniMax-M3 {op} prefill）"
+                  " 的 grouped MoE GEMM 延迟，跨全部 tokens/expert sweep 领先；正确性对齐 sglang 输出"),
+            axes={"M": var("tokens per expert (contiguous, sweep)"),
+                  "E": const(MM.ep_local, "local experts"), "EM": expr("E*M", "E*M flattened rows"),
+                  "K": const(kk), "N": const(nn)},
+            inputs={"a_fp8": tensor(["EM", "K"], "float8_e4m3fn"), "a_s": tensor(["EM", "K"], "int32"),
+                    "b_fp8": tensor(["E", "N", "K"], "float8_e4m3fn"), "b_s": tensor(["E", "N", "K"], "int32"),
+                    "out": tensor(["EM", "N"], "bfloat16"), "m_indices": tensor(["EM"], "int32")},
+            outputs={"grouped_out": tensor(["EM", "N"], "bfloat16")},
+            meta={"E": MM.ep_local, "K": kk, "N": nn})
+
+
+def _act_quant():
+    r = recipe("minimax_act_quant.py")
+    for name, phase in [("mm_act_fp8_quant_prefill", "prefill"), ("mm_act_fp8_quant_decode", "decode")]:
+        yield TaskSpec(
+            model=MM.model, name=name, op="Act FP8 quant (per-token)", family="act-fp8-quant", phase=phase,
+            hf_id=MM.hf_id, recipe=r, sweep=sweep_for(phase),
+            backend="sglang_per_token_group_quant_fp8 (blackwell)",
+            description=(
+                f"MiniMax-M3 Act FP8 quant (per-token) ({phase}), sglang_per_token_group_quant_fp8: bf16 "
+                f"activation[M,{MM.hidden}] -> fp8_e4m3 + 1x128 ue8m0/tma-aligned scales. The "
+                f"quant that precedes every block-FP8 GEMM. Baseline = sglang production kernel; "
+                f"beat its latency while matching output."),
+            goal=(f"优化 solution.py 相对 sglang sglang_per_token_group_quant_fp8 基线（MiniMax-M3 Act FP8 quant (per-token) {phase}）"
+                  " 的 act-quant 延迟，跨全部 sweep 领先；正确性对齐 sglang 两路输出（见 tolerance）"),
+            axes={"M": var(f"{phase} token count (sweep)"), "K": const(MM.hidden, "hidden size"),
+                  "K_scale": expr("K//512", "ue8m0 scale blocks")},
+            inputs={"x": tensor(["M", "K"], "bfloat16")},
+            outputs={"q_fp8": tensor(["M", "K"], "float8_e4m3fn"), "scale": tensor(["M", "K_scale"], "int32")},
+            meta={"K": MM.hidden})
+
+
+def specs():
+    out = []
+    for gen in (_fp8_linear, _bf16_linear, _router, _lm_head,
+                _grouped_moe_masked, _grouped_moe_contiguous, _act_quant):
+        out.extend(gen())
+    return out

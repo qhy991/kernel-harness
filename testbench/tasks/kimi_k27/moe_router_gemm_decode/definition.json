@@ -1,0 +1,48 @@
+{
+    "name": "kimi_k27_moe_router_gemm_decode",
+    "hf_id": "moonshotai/Kimi-K2.7",
+    "description": "Kimi-K2.7 MoE Router GEMM (decode), sgl_kernel.dsv3_router_gemm: out[M,384] = hidden[M,7168] @ router_w[384,7168].T in fp32. Kernel requires num_tokens<=16 (DP32xEP32 M_local=16), so the sweep is architecture-true M in [1, 2, 4, 8, 16]. Baseline = sglang production kernel; beat its latency across the sweep while matching its output.",
+    "axes": {
+        "M": {
+            "type": "var",
+            "description": "decode token count (<=16, sweep)"
+        },
+        "H": {
+            "type": "const",
+            "value": 7168,
+            "description": "hidden size"
+        },
+        "N": {
+            "type": "const",
+            "value": 384,
+            "description": "n_routed_experts"
+        }
+    },
+    "custom_inputs_entrypoint": "get_inputs",
+    "inputs": {
+        "hidden_states": {
+            "shape": [
+                "M",
+                "H"
+            ],
+            "dtype": "bfloat16"
+        },
+        "router_weights": {
+            "shape": [
+                "N",
+                "H"
+            ],
+            "dtype": "bfloat16"
+        }
+    },
+    "outputs": {
+        "logits": {
+            "shape": [
+                "M",
+                "N"
+            ],
+            "dtype": "float32"
+        }
+    },
+    "reference": "\"\"\"MoE Router GEMM (decode) \u2014 sglang baseline (sgl_kernel.dsv3_router_gemm).\n\nKimi-K2.7 MoE router logits on the decode fast path (deepseek_v2.py:599):\n\n    logits = dsv3_router_gemm(hidden_states, router_weights, out_dtype=torch.float32)\n\nThe kernel is dispatched (deepseek_v2.py:585) when hidden==7168, num_tokens<=16, and\nn_routed_experts in {256, 384}; canonical Kimi-K2.7 uses N = n_routed_experts = 384. It\nREQUIRES num_tokens <= 16 (raises otherwise) \u2014 matching the DP32xEP32 decode regime\n(M_local = 16). So this task's sweep is architecture-true: M in {1,2,4,8,16}.\n\n  out[M, N] = (hidden_states @ router_weights.T)  in float32.\n\nreference.py IS the correctness oracle AND the latency baseline: an optimized\nsolution.py must match this output within tolerance and run faster.\n\"\"\"\n\nimport torch\nfrom sgl_kernel import dsv3_router_gemm\n\n\ndef get_inputs(axes_and_scalars: dict, device: torch.device) -> dict:\n    M = axes_and_scalars[\"M\"]\n    H = axes_and_scalars[\"H\"]\n    N = axes_and_scalars[\"N\"]\n    hidden_states = torch.randn(M, H, device=device, dtype=torch.bfloat16)\n    router_weights = torch.randn(N, H, device=device, dtype=torch.bfloat16)\n    return {\"hidden_states\": hidden_states, \"router_weights\": router_weights}\n\n\n@torch.no_grad()\ndef run(hidden_states, router_weights):\n    return dsv3_router_gemm(hidden_states, router_weights, out_dtype=torch.float32)\n"
+}
