@@ -22,9 +22,9 @@ RUN_SH = (
     "# Self-contained entrypoint: evaluate THIS task folder against the sglang\n"
     "# baseline. Forwards args to bin/evaluate.py (e.g. ./run.sh --repeat 3).\n"
     "#\n"
-    "# This is the AUTHORITATIVE test (CUPTI cold-L2 100-rep + correctness) — the\n"
-    "# WIN/lose gate. For a fast, no-verdict probe while iterating, use the harness\n"
-    "# profiler:  python3 -m harness.profile <this-dir> --shape M   (advisory only).\n"
+    "# This is the AUTHORITATIVE test (CUPTI cold-L2 + correctness) — the WIN/lose\n"
+    "# gate. For a fast advisory probe from the repo root:\n"
+    "#   PYTHONPATH=testbench .venv/bin/python -m harness.profile \"$HERE\" --shape M\n"
     "set -euo pipefail\n"
     'HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"\n'
     'exec python3 "$HERE/../../../bin/evaluate.py" "$HERE" "$@"\n'

@@ -93,7 +93,8 @@ tight inner loop there's a **fast, in-process advisory** profiler that answers "
 rewrite move the needle, and which way should I push?" in milliseconds:
 
 ```bash
-python -m harness.profile testbench/tasks/kimi_k27/o_proj_decode --shape 64
+PYTHONPATH=testbench .venv/bin/python -m harness.profile \
+  testbench/tasks/kimi_k27/o_proj_decode --shape 64
 #   latency: median 7.25 us   min 5.86 us
 #   roofline: 508 GB/s (6.4% HBM)  bound=... (memory vs compute)
 ```
