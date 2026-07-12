@@ -1,8 +1,10 @@
 {
   "name": "mm_dsa_decode_topk_ctx32768",
+  "model": "minimax_m3",
   "op": "DSA decode Indexer top-k blocks",
   "phase": "decode",
   "family": "dsa-decode-topk",
+  "goal": "Optimize solution.py against SGLang's minimax_decode_topk baseline for DSA decode Indexer top-k blocks at context length 32768; beat every batch workload and match block indices exactly (atol=0).",
   "index_heads": 4,
   "block_size": 128,
   "ctx": 32768,
@@ -26,8 +28,8 @@
   },
   "baseline": {
     "source": "live",
-    "measure": "reference.py timed by sol-execbench CUPTI (median device-kernel us)",
+    "measure": "reference.py timed by the harness CUPTI runtime (median device-kernel us)",
     "denominator": "the live per-shape reference latency (see .baseline_cache.json)"
   },
-  "sglang_dir": "/home/qinhaiyan/sglang-m3"
+  "sglang_dir": "MM_M3_SGLANG_DIR"
 }

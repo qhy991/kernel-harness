@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Generate standalone FlashInfer-Bench-format testbench tasks (Kimi-K2.7 + MiniMax-M3).
+"""Generate standalone kernel-harness tasks for Kimi-K2.7 and MiniMax-M3.
 
 Thin runner over the `taskgen` package: every kernel task is a declarative `TaskSpec`
 (taskgen/families/*.py, grouped by kernel family) written by one canonical writer
@@ -13,7 +13,7 @@ from collections import Counter
 from pathlib import Path
 
 from taskgen import all_specs, write_task
-from taskgen.config import SOLEXEC
+
 
 ROOT = Path(__file__).resolve().parent
 
@@ -21,6 +21,10 @@ RUN_SH = (
     "#!/usr/bin/env bash\n"
     "# Self-contained entrypoint: evaluate THIS task folder against the sglang\n"
     "# baseline. Forwards args to bin/evaluate.py (e.g. ./run.sh --repeat 3).\n"
+    "#\n"
+    "# This is the AUTHORITATIVE test (CUPTI cold-L2 100-rep + correctness) — the\n"
+    "# WIN/lose gate. For a fast, no-verdict probe while iterating, use the harness\n"
+    "# profiler:  python3 -m harness.profile <this-dir> --shape M   (advisory only).\n"
     "set -euo pipefail\n"
     'HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"\n'
     'exec python3 "$HERE/../../../bin/evaluate.py" "$HERE" "$@"\n'
@@ -37,7 +41,7 @@ def main():
     specs = all_specs()
     per_family = Counter()
     for spec in specs:
-        write_task(spec, tasks_root, SOLEXEC)
+        write_task(spec, tasks_root)
         per_family[(spec.model, spec.family)] += 1
 
     for (model, family), n in sorted(per_family.items()):

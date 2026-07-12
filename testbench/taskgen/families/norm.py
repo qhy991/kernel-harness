@@ -21,8 +21,9 @@ def _kimi_rmsnorm():
                 f"Kimi-K2.7 {op} ({phase}), standalone RMSNorm over hidden={h} "
                 f"(sgl_kernel.rmsnorm). out[M,{h}] = x * rsqrt(mean(x^2,-1)+eps) * weight. "
                 f"Baseline = sglang production kernel; beat its latency while matching output."),
-            goal=(f"优化 solution.py 相对 sglang sgl_kernel.rmsnorm 基线（{op} {phase}）"
-                  " 的 RMSNorm 延迟，跨全部 token sweep 领先；正确性对齐 sglang 输出（见 tolerance）"),
+            goal=(f"Optimize solution.py against SGLang's sgl_kernel.rmsnorm baseline "
+                  f"for {op} {phase}; beat every token workload and match SGLang output "
+                  "within the declared tolerance."),
             axes={"M": var(f"{phase} token count (sweep)"), "H": const(h, "hidden size")},
             inputs={"x": tensor(["M", "H"], "bfloat16"), "weight": tensor(["H"], "bfloat16")},
             outputs={"output": tensor(["M", "H"], "bfloat16")},
@@ -42,8 +43,9 @@ def _kimi_fused_add_rmsnorm():
                 f"(sgl_kernel.fused_add_rmsnorm, in-place). residual_out = x + residual; "
                 f"normed = rmsnorm(residual_out) * weight. INTERFACE-EXACT drop-in. Baseline = "
                 f"sglang production kernel; beat its latency while matching BOTH outputs."),
-            goal=(f"优化 solution.py 相对 sglang sgl_kernel.fused_add_rmsnorm 基线（{op} {phase}）"
-                  " 的 fused add-RMSNorm 延迟，跨全部 token sweep 领先；接口与 sglang 完全一致，正确性对齐两路输出"),
+            goal=(f"Optimize solution.py against SGLang's "
+                  f"sgl_kernel.fused_add_rmsnorm baseline for {op} {phase}; beat every "
+                  "token workload while preserving the exact interface and both outputs."),
             axes={"M": var(f"{phase} token count (sweep)"), "H": const(K.hidden, "hidden size")},
             inputs={"x": tensor(["M", "H"], "bfloat16"), "residual": tensor(["M", "H"], "bfloat16"),
                     "weight": tensor(["H"], "bfloat16"), "eps": tensor(None, "float32")},
@@ -62,8 +64,9 @@ def _mm_gemma_rmsnorm():
                 f"MiniMax-M3 {op} ({phase}), Gemma-RMSNorm over hidden={h} (sgl_kernel.gemma_rmsnorm; "
                 f"scales by 1+weight). out[M,{h}] = x * rsqrt(mean(x^2,-1)+eps) * (1 + weight). "
                 f"INTERFACE-EXACT drop-in. Baseline = sglang production kernel; beat its latency while matching output."),
-            goal=(f"优化 solution.py 相对 sglang sgl_kernel.gemma_rmsnorm 基线（MiniMax-M3 {op} {phase}）"
-                  " 的 Gemma-RMSNorm 延迟，跨全部 token sweep 领先；接口与 sglang 完全一致，正确性对齐输出"),
+            goal=(f"Optimize solution.py against SGLang's sgl_kernel.gemma_rmsnorm "
+                  f"baseline for MiniMax-M3 {op} {phase}; beat every token workload "
+                  "while preserving the exact interface and matching output."),
             axes={"M": var(f"{phase} token count (sweep)"), "H": const(h, "MiniMax-M3 hidden size")},
             inputs={"x": tensor(["M", "H"], "bfloat16"), "weight": tensor(["H"], "bfloat16"),
                     "eps": tensor(None, "float32")},
@@ -83,8 +86,10 @@ def _mm_gemma_fused_add():
                 f"(sgl_kernel.gemma_fused_add_rmsnorm, in-place). residual_out = x + residual; "
                 f"normed = rmsnorm(residual_out) * (1 + weight). INTERFACE-EXACT drop-in. Baseline = "
                 f"sglang production kernel; beat its latency while matching BOTH outputs."),
-            goal=(f"优化 solution.py 相对 sglang sgl_kernel.gemma_fused_add_rmsnorm 基线（MiniMax-M3 {op} {phase}）"
-                  " 的 fused Gemma add-RMSNorm 延迟，跨全部 token sweep 领先；接口与 sglang 完全一致，正确性对齐两路输出"),
+            goal=(f"Optimize solution.py against SGLang's "
+                  f"sgl_kernel.gemma_fused_add_rmsnorm baseline for MiniMax-M3 {op} "
+                  f"{phase}; beat every token workload while preserving the exact "
+                  "interface and both outputs."),
             axes={"M": var(f"{phase} token count (sweep)"), "H": const(h, "MiniMax-M3 hidden size")},
             inputs={"x": tensor(["M", "H"], "bfloat16"), "residual": tensor(["M", "H"], "bfloat16"),
                     "weight": tensor(["H"], "bfloat16"), "eps": tensor(None, "float32")},

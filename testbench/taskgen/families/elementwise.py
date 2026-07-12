@@ -33,8 +33,9 @@ def _swiglu():
                 f"Kimi-K2.7 {op} ({phase}), SiLU-and-mul (sgl_kernel.silu_and_mul). "
                 f"out[M,{i}] = silu(x[:, :{i}]) * x[:, {i}:], x is the [M,{i2}] gate|up projection. "
                 f"Baseline = sglang production kernel; beat its latency while matching output."),
-            goal=(f"优化 solution.py 相对 sglang sgl_kernel.silu_and_mul 基线（{op} {phase}）"
-                  " 的 SwiGLU 延迟，跨全部 token sweep 领先；正确性对齐 sglang 输出（见 tolerance）"),
+            goal=(f"Optimize solution.py against SGLang's sgl_kernel.silu_and_mul "
+                  f"baseline for {op} {phase}; beat every token workload and match "
+                  "SGLang output within the declared tolerance."),
             axes={"M": var(f"{phase} token count (sweep)"),
                   "I2": const(i2, "gate|up width = 2 * intermediate/TP"),
                   "I": expr("I2//2", "output width = intermediate/TP")},
@@ -55,8 +56,10 @@ def _rope_for(cfg, table, nH, kvH, D, max_pos, theta):
                 f"(apply_rope_with_cos_sin_cache_inplace). Rotates q[M,{nH},{D}] and k[M,{kvH},{D}] "
                 f"by cos/sin at `positions`. INTERFACE-EXACT drop-in. Baseline = sglang production "
                 f"kernel; beat its latency while matching BOTH outputs."),
-            goal=(f"优化 solution.py 相对 sglang apply_rope_with_cos_sin_cache_inplace 基线（{label} {op} {phase}）"
-                  " 的 RoPE 延迟，跨全部 token sweep 领先；接口与 sglang 完全一致，正确性对齐两路输出"),
+            goal=(f"Optimize solution.py against SGLang's "
+                  f"apply_rope_with_cos_sin_cache_inplace baseline for {label} {op} "
+                  f"{phase}; beat every token workload while preserving the exact "
+                  "SGLang interface and matching both outputs."),
             axes={"M": var(f"{phase} token count (sweep)"), "num_heads": const(nH),
                   "kv_heads": const(kvH), "rope_dim": const(D, "rope_dim"),
                   "max_pos": const(max_pos), "rope_theta": const(theta)},
@@ -80,8 +83,9 @@ def _embedding_for(cfg, names):
                 f"{label} Input Embedding ({phase}), vocab gather (F.embedding, unquantized "
                 f"VocabParallelEmbedding path). out[M,{cfg.hidden}] = weight[input_ids], vocab={cfg.vocab}. "
                 f"Baseline = sglang production op; beat its latency while matching output."),
-            goal=(f"优化 solution.py 相对 sglang F.embedding 基线（{label} Input Embedding {phase}）"
-                  " 的 embedding gather 延迟，跨全部 token sweep 领先；正确性对齐 sglang 输出（见 tolerance）"),
+            goal=(f"Optimize solution.py against SGLang's F.embedding baseline for "
+                  f"{label} Input Embedding {phase}; beat every token workload and "
+                  "match SGLang output within the declared tolerance."),
             axes={"M": var(f"{phase} token count (sweep)"), "V": const(cfg.vocab, "vocab size"),
                   "H": const(cfg.hidden, "hidden size")},
             inputs={"input_ids": tensor(["M"], "int64"), "weight": tensor(["V", "H"], "bfloat16")},
@@ -99,8 +103,9 @@ def _bmm():
                 f"Kimi-K2.7 {op} (decode), MLA weight-absorb batched matmul (torch.bmm, bf16 default). "
                 f"out[{bh},M,{nn}] = bmm(a[{bh},M,{kk}], b[{bh},{kk},{nn}]), Bh=num_heads. "
                 f"Baseline = sglang production op; beat its latency while matching output."),
-            goal=(f"优化 solution.py 相对 sglang torch.bmm 基线（{op} decode）"
-                  " 的 MLA absorb BMM 延迟，跨全部 token sweep 领先；正确性对齐 sglang 输出（见 tolerance）"),
+            goal=(f"Optimize solution.py against SGLang's torch.bmm baseline for "
+                  f"{op} decode; beat every token workload and match SGLang output "
+                  "within the declared tolerance."),
             axes={"M": var("decode token count (sweep)"), "Bh": const(bh, "num_heads (batch)"),
                   "K": const(kk), "N": const(nn)},
             inputs={"a": tensor(["Bh", "M", "K"], "bfloat16"), "b": tensor(["Bh", "K", "N"], "bfloat16")},
@@ -120,8 +125,9 @@ def _moe_combine():
                 f"(sgl_kernel.moe_sum, in-place DPS). output[M,{MM.hidden}] = "
                 f"sum(input[M,{MM.topk},{MM.hidden}], dim=1). INTERFACE-EXACT drop-in. Baseline = "
                 f"sglang production kernel; beat its latency while matching output."),
-            goal=(f"优化 solution.py 相对 sglang sgl_kernel.moe_sum 基线（MiniMax-M3 {op} {phase}）"
-                  " 的 MoE combine 延迟，跨全部 token sweep 领先；接口与 sglang 完全一致，正确性对齐输出"),
+            goal=(f"Optimize solution.py against SGLang's sgl_kernel.moe_sum baseline "
+                  f"for MiniMax-M3 {op} {phase}; beat every token workload while "
+                  "preserving the exact SGLang interface and matching output."),
             axes={"M": var(f"{phase} token count (sweep)"), "top_k": const(MM.topk),
                   "H": const(MM.hidden, "MiniMax-M3 hidden size")},
             inputs={"input_tensor": tensor(["M", "top_k", "H"], "bfloat16"),

@@ -35,6 +35,8 @@ from pathlib import Path
 
 import torch
 
+from config import resolve_sglang_dir
+
 BLOCK = 128
 
 
@@ -821,7 +823,7 @@ def main():
     # A task may pin its own sglang build (DSA needs the sglang-m3 tree). Prepend it to
     # sys.path BEFORE any sglang import so `import sglang` resolves to the right build,
     # keeping the per-task loop self-sufficient (no caller PYTHONPATH juggling).
-    _pinned = meta.get("sglang_dir")
+    _pinned = resolve_sglang_dir(meta.get("sglang_dir"))
     if _pinned:
         _py = str(Path(_pinned) / "python")
         if _py not in sys.path:

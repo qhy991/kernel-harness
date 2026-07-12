@@ -33,7 +33,7 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from config import SGLANG_DIR, VENV, CUDA_HOME
+from config import SGLANG_DIR, VENV, CUDA_HOME, resolve_sglang_dir
 
 BIN = Path(__file__).resolve().parent
 
@@ -215,7 +215,7 @@ def _block(task, family, module, symbol, adapter, sol_path):
         f"# Verified drop-in from kernel-harness (integrate.py green). Reversible: strip\n"
         f"# this block (bin/migrate.py writes results/revert.patch) to restore the kernel.\n"
         f"import importlib.util as _ilu\n"
-        f"_spec = _ilu.spec_from_file_location('_kersor_{task}', r'{sol_path}')\n"
+        f"_spec = _ilu.spec_from_file_location('_kernel_harness_{task}', r'{sol_path}')\n"
         f"_mod = _ilu.module_from_spec(_spec); _spec.loader.exec_module(_mod)\n"
         f"_cand = _mod.run\n"
         f"{adapter}"
@@ -251,7 +251,7 @@ def main():
     model = meta.get("model") or task_dir.parent.name   # dir is the reliable model signal
     task = meta.get("name", task_dir.name)
     sol_path = task_dir / args.solution
-    sglang_dir = meta.get("sglang_dir") or SGLANG_DIR   # DSA tasks pin the sglang-m3 build
+    sglang_dir = resolve_sglang_dir(meta.get("sglang_dir"))
 
     entry, no_source = _resolve_migrate(family, model)
     if entry is None and no_source is not None:

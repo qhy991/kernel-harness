@@ -52,8 +52,9 @@ def _fp8_linear():
                 f"w_fp8[{nn},{kk}].T with 1x128 act / 128x128 weight scales. Baseline = "
                 f"sglang production kernel (~{base_us:.1f}us at canonical shape); beat its "
                 f"latency across the sweep while matching its output."),
-            goal=(f"优化 solution.py 相对 sglang deep_gemm w8a8_block_fp8 基线（{op} {phase}）"
-                  " 的 FP8 GEMM 延迟，跨全部 shape sweep 领先；正确性对齐 sglang 输出（见 tolerance）"),
+            goal=(f"Optimize solution.py against SGLang's DeepGEMM w8a8_block_fp8 "
+                  f"baseline for {op} {phase}; beat every shape in the sweep and match "
+                  "SGLang output within the declared tolerance."),
             axes={"M": var(f"{phase} token count (sweep)"), "K": const(kk), "N": const(nn),
                   "K_scale_blocks": expr("K//512", "ue8m0-packed K scale blocks (K/128/4)")},
             inputs={"x_fp8": tensor(["M", "K"], "float8_e4m3fn"),
@@ -76,8 +77,9 @@ def _bf16_linear():
                 f"inventory op28 standard Linear). out[M,{nn}] = x[M,{kk}] @ weight[{nn},{kk}].T. "
                 f"Baseline = sglang production path; beat its latency across the sweep while "
                 f"matching output. (-MXFP8 checkpoint would use deep_gemm/flashinfer — separate.)"),
-            goal=(f"优化 solution.py 相对 sglang cuBLAS bf16 GEMM 基线（MiniMax-M3 {op} {phase}）"
-                  " 的 GEMM 延迟，跨全部 sweep 领先；正确性对齐 sglang 输出（见 tolerance）"),
+            goal=(f"Optimize solution.py against SGLang's cuBLAS BF16 GEMM baseline "
+                  f"for MiniMax-M3 {op} {phase}; beat the full sweep and match SGLang "
+                  "output within the declared tolerance."),
             axes={"M": var(f"{phase} token count (sweep)"), "K": const(kk), "N": const(nn)},
             inputs={"x": tensor(["M", "K"], "bfloat16"), "weight": tensor(["N", "K"], "bfloat16")},
             outputs={"output": tensor(["M", "N"], "bfloat16")},
@@ -96,8 +98,9 @@ def _router():
             f"Kernel requires num_tokens<=16 (DP32xEP32 M_local=16), so the sweep is "
             f"architecture-true M in {ROUTER_SWEEP}. Baseline = sglang production kernel; "
             f"beat its latency across the sweep while matching its output."),
-        goal=("优化 solution.py 相对 sglang sgl_kernel.dsv3_router_gemm 基线（MoE Router GEMM decode, M<=16）"
-              " 的 router GEMM 延迟，跨全部 shape sweep 领先；正确性对齐 sglang 输出（见 tolerance）"),
+        goal=("Optimize solution.py against SGLang's sgl_kernel.dsv3_router_gemm "
+              "baseline for MoE Router GEMM decode (M<=16); beat every shape and match "
+              "SGLang output within the declared tolerance."),
         axes={"M": var("decode token count (<=16, sweep)"), "H": const(K.hidden, "hidden size"),
               "N": const(K.n_routed_experts, "n_routed_experts")},
         inputs={"hidden_states": tensor(["M", "H"], "bfloat16"),
@@ -114,8 +117,9 @@ def _router():
                 f"MiniMax-M3 MoE Router GEMM ({phase}), fp32 cuBLAS matmul (inventory op37): "
                 f"logits[M,{MM.experts}] = hidden[M,{MM.hidden}] @ gate_w[{MM.experts},{MM.hidden}].T. "
                 f"Baseline = sglang production path; beat its latency while matching output."),
-            goal=(f"优化 solution.py 相对 sglang fp32 cuBLAS 基线（MiniMax-M3 MoE Router GEMM {phase}）"
-                  " 的 router GEMM 延迟，跨全部 sweep 领先；正确性对齐 sglang 输出（见 tolerance）"),
+            goal=(f"Optimize solution.py against SGLang's FP32 cuBLAS baseline for "
+                  f"MiniMax-M3 MoE Router GEMM {phase}; beat the full sweep and match "
+                  "SGLang output within the declared tolerance."),
             axes={"M": var(f"{phase} token count (sweep)"), "H": const(MM.hidden, "hidden size"),
                   "E": const(MM.experts, "n_routed_experts")},
             inputs={"hidden_states": tensor(["M", "H"], "float32"),
@@ -135,8 +139,9 @@ def _lm_head():
                 f"{label} LM-head logits GEMM (decode), torch.matmul bf16: "
                 f"out[M,{cfg.vocab}] = hidden[M,{cfg.hidden}] @ lm_head_w[{cfg.vocab},{cfg.hidden}].T. "
                 f"Bandwidth-bound. Baseline = sglang production path; beat its latency while matching output."),
-            goal=(f"优化 solution.py 相对 sglang torch.matmul LM-head 基线（{label} LM-head decode）"
-                  " 的 logits GEMM 延迟，跨全部 sweep 领先；正确性对齐 sglang 输出（见 tolerance）"),
+            goal=(f"Optimize solution.py against SGLang's torch.matmul LM-head "
+                  f"baseline for {label} decode; beat the full sweep and match SGLang "
+                  "output within the declared tolerance."),
             axes={"M": var("sampled positions (decode, sweep)"), "H": const(cfg.hidden, "hidden size"),
                   "V": const(cfg.vocab, "vocab size")},
             inputs={"hidden_states": tensor(["M", "H"], "bfloat16"),
@@ -160,8 +165,9 @@ def _grouped_moe_masked():
                 f"= tokens/expert (masked). FP8 blockwise (per-token act, per-block weight, "
                 f"UE8M0), quant done offline in get_inputs; only the grouped GEMM is timed. "
                 f"Baseline = sglang production kernel; beat its latency while matching output."),
-            goal=(f"优化 solution.py 相对 sglang deep_gemm.fp8_m_grouped_gemm_nt_masked 基线（{op} decode）"
-                  " 的 grouped MoE GEMM 延迟，跨全部 tokens/expert sweep 领先；正确性对齐 sglang 输出（见 tolerance）"),
+            goal=(f"Optimize solution.py against SGLang's "
+                  f"deep_gemm.fp8_m_grouped_gemm_nt_masked baseline for {op} decode; "
+                  "beat every tokens-per-expert workload and match SGLang output."),
             axes={"M": var("tokens per expert (masked, sweep)"),
                   "E": const(K.ep_local_experts, "local experts (EP32)"), "K": const(kk), "N": const(nn)},
             inputs={"a_fp8": tensor(["E", "M", "K"], "float8_e4m3fn"), "a_s": tensor(["E", "M", "K"], "int32"),
@@ -183,8 +189,9 @@ def _grouped_moe_masked():
                 f"tokens/expert (masked). FP8 blockwise (per-token act, per-block weight, UE8M0), "
                 f"quant offline in get_inputs; only the grouped GEMM is timed. Baseline = sglang "
                 f"production kernel; beat its latency while matching output."),
-            goal=(f"优化 solution.py 相对 sglang deep_gemm.fp8_m_grouped_gemm_nt_masked 基线（MiniMax-M3 {op} decode）"
-                  " 的 grouped MoE GEMM 延迟，跨全部 tokens/expert sweep 领先；正确性对齐 sglang 输出（见 tolerance）"),
+            goal=(f"Optimize solution.py against SGLang's "
+                  f"deep_gemm.fp8_m_grouped_gemm_nt_masked baseline for MiniMax-M3 "
+                  f"{op} decode; beat every tokens-per-expert workload and match output."),
             axes={"M": var("tokens per expert (masked, sweep)"),
                   "E": const(MM.ep_local, "local experts (EP8 of 128)"), "K": const(kk), "N": const(nn)},
             inputs={"a_fp8": tensor(["E", "M", "K"], "float8_e4m3fn"), "a_s": tensor(["E", "M", "K"], "int32"),
@@ -208,8 +215,9 @@ def _grouped_moe_contiguous():
                 f"E={MM.ep_local} local experts, K={kk}, N={nn}. Sweep = tokens/expert (contiguous "
                 f"layout, m_indices routing). FP8 blockwise, quant offline in get_inputs; only the "
                 f"grouped GEMM is timed. Baseline = sglang production kernel; beat its latency."),
-            goal=(f"优化 solution.py 相对 sglang deep_gemm.m_grouped_fp8_gemm_nt_contiguous 基线（MiniMax-M3 {op} prefill）"
-                  " 的 grouped MoE GEMM 延迟，跨全部 tokens/expert sweep 领先；正确性对齐 sglang 输出"),
+            goal=(f"Optimize solution.py against SGLang's "
+                  f"deep_gemm.m_grouped_fp8_gemm_nt_contiguous baseline for MiniMax-M3 "
+                  f"{op} prefill; beat every tokens-per-expert workload and match output."),
             axes={"M": var("tokens per expert (contiguous, sweep)"),
                   "E": const(MM.ep_local, "local experts"), "EM": expr("E*M", "E*M flattened rows"),
                   "K": const(kk), "N": const(nn)},
@@ -232,8 +240,10 @@ def _act_quant():
                 f"activation[M,{MM.hidden}] -> fp8_e4m3 + 1x128 ue8m0/tma-aligned scales. The "
                 f"quant that precedes every block-FP8 GEMM. Baseline = sglang production kernel; "
                 f"beat its latency while matching output."),
-            goal=(f"优化 solution.py 相对 sglang sglang_per_token_group_quant_fp8 基线（MiniMax-M3 Act FP8 quant (per-token) {phase}）"
-                  " 的 act-quant 延迟，跨全部 sweep 领先；正确性对齐 sglang 两路输出（见 tolerance）"),
+            goal=(f"Optimize solution.py against SGLang's "
+                  f"sglang_per_token_group_quant_fp8 baseline for MiniMax-M3 per-token "
+                  f"FP8 activation quantization {phase}; beat the full sweep and match "
+                  "both SGLang outputs."),
             axes={"M": var(f"{phase} token count (sweep)"), "K": const(MM.hidden, "hidden size"),
                   "K_scale": expr("K//512", "ue8m0 scale blocks")},
             inputs={"x": tensor(["M", "K"], "bfloat16")},

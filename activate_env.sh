@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
-# Source before running kernel-harness or official sglang tests:
-#   source /home/qinhaiyan/kernel-harness/activate_env.sh
+# Source after running ./testbench/setup_env.sh.
 
-export SGLANG_DIR="${SGLANG_DIR:-/home/qinhaiyan/sglang}"
-export CUDA_HOME="${CUDA_HOME:-/usr/local/cuda-13.0}"
-export PATH="${CUDA_HOME}/bin:${PATH}"
-export VIRTUAL_ENV="/home/qinhaiyan/sglang-exp/glm52-kernel-opt/.venv"
-export PYTHON="${VIRTUAL_ENV}/bin/python3.12"
-export PATH="${VIRTUAL_ENV}/bin:${PATH}"
+_KH_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+eval "$(python3 "$_KH_ROOT/testbench/bin/config.py")"
+export VIRTUAL_ENV="$VENV"
+export SGLANG_DIR CUDA_HOME
+export PYTHON="$VIRTUAL_ENV/bin/python"
+export PATH="$VIRTUAL_ENV/bin:$CUDA_HOME/bin:$PATH"
 export PYTHONPATH="${SGLANG_DIR}/python:${PYTHONPATH:-}"
+unset _KH_ROOT VENV MM_M3_SGLANG_DIR

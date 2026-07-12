@@ -17,17 +17,15 @@ Rules (a fair, verifiable contract — do not break them):
   reference.py, definition.json, workload.jsonl, or task.json. Do not special-case
   or hardcode outputs; the kernel must compute the real bmm.
 - Correctness is judged against the sglang output per shape within the tolerance in
-  workload.jsonl (atol 0.1 / rtol 0.05 / 98% matched). Efficiency is CUPTI
+  workload.jsonl (use the task's family-specific tolerance). Efficiency is CUPTI
   device-kernel time; you win only if you are faster on EVERY shape.
 
 Your loop each iteration:
   1. Edit solution.py.
   2. Run:
-     cd /home/qinhaiyan/sol-execbench 2>/dev/null; \
-     python /home/qinhaiyan/kernel-harness/testbench/bin/evaluate.py \
-       tasks/kimi_k27/q_nope_absorb_bmm_decode --repeat 3
-     (run it from /home/qinhaiyan/kernel-harness/testbench so the relative task path
-      resolves; the evaluator sets its own PATH/PYTHONPATH internally.)
+     .venv/bin/python testbench/bin/evaluate.py \
+       testbench/tasks/kimi_k27/q_nope_absorb_bmm_decode --repeat 3
+     (run it from the kernel-harness repository root.)
   3. Read the VERDICT_JSON block: correct, win, geomean_speedup,
      min_speedup_conservative, and per-shape sol_us/base_us. Iterate.
 

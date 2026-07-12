@@ -1,8 +1,10 @@
 {
   "name": "mm_dense_ffn_gateup_decode",
+  "model": "minimax_m3",
   "op": "Dense FFN GateUp (layers 0-2)",
   "phase": "decode",
   "family": "bf16-linear",
+  "goal": "Optimize solution.py against SGLang's cuBLAS BF16 GEMM baseline for MiniMax-M3 Dense FFN GateUp (layers 0-2) decode; beat the full sweep and match SGLang output within the declared tolerance.",
   "K": 6144,
   "N": 24576,
   "sweep": [
@@ -18,13 +20,13 @@
   ],
   "backend": "cuBLAS bf16 GEMM (blackwell)",
   "tolerance": {
-    "max_atol": 0.1,
-    "max_rtol": 0.05,
-    "required_matched_ratio": 0.98
+    "max_atol": 0.02,
+    "max_rtol": 0.01,
+    "required_matched_ratio": 0.999
   },
   "baseline": {
     "source": "live",
-    "measure": "reference.py timed by sol-execbench CUPTI (median device-kernel us)",
+    "measure": "reference.py timed by the harness CUPTI runtime (median device-kernel us)",
     "denominator": "the live per-shape reference latency (see .baseline_cache.json)"
   }
 }

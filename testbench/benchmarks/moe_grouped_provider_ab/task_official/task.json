@@ -24,7 +24,7 @@
   },
   "baseline": {
     "source": "live",
-    "measure": "reference.py timed by sol-execbench CUPTI (median device-kernel us)",
+    "measure": "reference.py timed by kernel-harness CUPTI (median device-kernel us)",
     "denominator": "the live per-shape reference latency (see .baseline_cache.json)"
   }
 }

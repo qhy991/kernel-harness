@@ -17,8 +17,10 @@ def _mla_decode():
                 f"Multi-head Latent Attention over the compressed latent KV cache. num_heads={K.num_heads}, "
                 f"kv_lora_rank={K.kv_lora}, qk_rope={K.qk_rope} -> head_dim=576, block_size=128. batch=sweep, "
                 f"paged latent KV. Baseline = sglang production kernel; beat its latency while matching output."),
-            goal=(f"优化 solution.py 相对 sglang sgl_kernel.cutlass_mla_decode 基线（MLA decode seq={seq_len}）"
-                  " 的 MLA 注意力延迟，跨全部 batch sweep 领先；正确性对齐 sglang 输出（见 tolerance）"),
+            goal=(f"Optimize solution.py against SGLang's "
+                  f"sgl_kernel.cutlass_mla_decode baseline for MLA decode at "
+                  f"sequence length {seq_len}; beat every batch workload and match "
+                  "SGLang output within the declared tolerance."),
             axes={"M": var("decode batch (sweep)"), "seq_len": const(seq_len, "KV context length"),
                   "num_heads": const(K.num_heads), "kv_lora": const(K.kv_lora),
                   "qk_rope": const(K.qk_rope), "block_size": const(128),
@@ -47,8 +49,9 @@ def _mla_prefill():
             f"flashinfer path is production here). num_heads={K.num_heads}, qk_head_dim=192, v_head_dim=128, "
             f"causal. seqlen=sweep, single sequence. Wrapper .plan() is untimed setup; only .run() is timed. "
             f"Baseline = sglang production kernel; beat its latency while matching output."),
-        goal=("优化 solution.py 相对 sglang flashinfer ragged prefill 基线（MLA prefill）"
-              " 的 MLA 注意力延迟，跨全部 seqlen sweep 领先；正确性对齐 sglang 输出（见 tolerance）"),
+        goal=("Optimize solution.py against SGLang's FlashInfer ragged-prefill "
+              "baseline for MLA prefill; beat every sequence-length workload and "
+              "match SGLang output within the declared tolerance."),
         axes={"M": var("prefill sequence length (sweep)"), "num_heads": const(K.num_heads),
               "qk_head_dim": const(192), "v_head_dim": const(128)},
         inputs={"q": tensor(["M", "num_heads", "qk_head_dim"], "bfloat16"),

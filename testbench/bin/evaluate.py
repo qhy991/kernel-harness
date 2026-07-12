@@ -35,7 +35,7 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from config import VENV, SOLEXEC, SGLANG_DIR as SGLANG, CUDA_HOME
+from config import VENV, SGLANG_DIR as SGLANG, CUDA_HOME, resolve_sglang_dir
 
 
 def _env(sglang_dir=None):
@@ -51,9 +51,9 @@ def _sglang_dir_for(task_dir: Path):
     via task.json 'sglang_dir'. Falls back to SGLANG_DIR / the default checkout."""
     tj = task_dir / "task.json"
     if tj.exists():
-        d = json.loads(tj.read_text()).get("sglang_dir")
-        if d:
-            return d
+        pinned = json.loads(tj.read_text()).get("sglang_dir")
+        if pinned:
+            return resolve_sglang_dir(pinned)
     return SGLANG
 
 
@@ -68,19 +68,21 @@ def _tmp_base(task_dir: Path) -> str:
     that cross-task leak.
     """
     h = hashlib.sha1(str(task_dir.resolve()).encode()).hexdigest()[:8]
-    return f"/tmp/kersor-tb/{task_dir.name}-{h}"
+    return f"/tmp/kernel-harness/{task_dir.name}-{h}"
+
+
+_DRIVER = Path(__file__).resolve().parent.parent / "harness" / "driver.py"
 
 
 def _run(task_dir: Path, solution: str, out: Path, iterations: int, max_workloads):
     out.mkdir(parents=True, exist_ok=True)
     cmd = [
-        "python", "scripts/run_dataset.py", str(task_dir),
-        "--solution-name", solution, "--iterations", str(iterations),
-        "--rerun", "-o", str(out),
+        str(VENV / "bin" / "python"), str(_DRIVER), str(task_dir),
+        "--solution-name", solution, "--iterations", str(iterations), "-o", str(out),
     ]
     if max_workloads:
         cmd += ["--max-workloads", str(max_workloads)]
-    proc = subprocess.run(cmd, cwd=SOLEXEC, env=_env(_sglang_dir_for(task_dir)), check=False)
+    proc = subprocess.run(cmd, env=_env(_sglang_dir_for(task_dir)), check=False)
     traces = {}
     for f in glob.glob(f"{out}/**/traces.json", recursive=True):
         for t in json.load(open(f)):
@@ -100,7 +102,7 @@ def _run(task_dir: Path, solution: str, out: Path, iterations: int, max_workload
     # Surface a non-zero harness exit when it produced NO traces at all — a silent
     # crash (import error, OOM) otherwise looks like "0 shapes evaluated" downstream.
     if proc.returncode != 0 and not traces:
-        print(f"warning: run_dataset.py exited {proc.returncode} with no traces "
+        print(f"warning: harness driver exited {proc.returncode} with no traces "
               f"({solution})", file=sys.stderr)
     return traces
 
@@ -172,7 +174,7 @@ def _geo(xs):
 def _run_samples(task_dir, solution, tag, iterations, max_workloads, repeat):
     """Run *solution* `repeat` times as independent processes; aggregate per shape.
 
-    Each run is a fresh sol-execbench invocation (its own CUPTI median over
+    Each run is a fresh harness-driver invocation (its own CUPTI median over
     `iterations` iters), so the samples capture process-level noise the within-run
     median cannot. A shape counts as correct only if it PASSED on every run.
     """
@@ -202,9 +204,9 @@ def _run_samples(task_dir, solution, tag, iterations, max_workloads, repeat):
 def _alias_probe(task_dir: Path, solution: str):
     """Independent second-layer defense against the input-aliasing reward hack.
 
-    The primary fix lives in SOL-ExecBench's eval_driver (reference runs on a clone,
-    so the candidate never sees reference-mutated inputs). This probe re-checks that
-    guarantee locally — in case the harness is upgraded and the patch is lost — for
+    The primary fix lives in the harness driver (testbench/harness/driver.py: the
+    reference runs on a clone, so the candidate never sees reference-mutated inputs).
+    This probe re-checks that guarantee locally — a redundant second layer — for
     in-place / interface-exact families where a candidate could return an input buffer
     instead of computing.
 
@@ -270,7 +272,7 @@ for a, b in zip(r, c):
         ok = ok and bool((a == b).all().item())
 print("ALIAS_PROBE:" + ("OK" if ok else "ALIASED"))
 '''
-    r = subprocess.run(["python", "-c", probe_src], cwd=SOLEXEC,
+    r = subprocess.run([str(VENV / "bin" / "python"), "-c", probe_src],
                        env=_env(_sglang_dir_for(task_dir)),
                        capture_output=True, text=True)
     if "ALIAS_PROBE:OK" in r.stdout:

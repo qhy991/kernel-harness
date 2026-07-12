@@ -5,6 +5,7 @@ __pycache__/
 .venv
 venv/
 .env
+testbench/harness.env
 .DS_Store
 .pytest_cache/
 .mypy_cache/

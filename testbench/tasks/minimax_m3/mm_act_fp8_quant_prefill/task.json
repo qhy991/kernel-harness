@@ -1,8 +1,10 @@
 {
   "name": "mm_act_fp8_quant_prefill",
+  "model": "minimax_m3",
   "op": "Act FP8 quant (per-token)",
   "phase": "prefill",
   "family": "act-fp8-quant",
+  "goal": "Optimize solution.py against SGLang's sglang_per_token_group_quant_fp8 baseline for MiniMax-M3 per-token FP8 activation quantization prefill; beat the full sweep and match both SGLang outputs.",
   "K": 6144,
   "sweep": [
     512,
@@ -17,11 +19,11 @@
   "tolerance": {
     "max_atol": 0.1,
     "max_rtol": 0.05,
-    "required_matched_ratio": 0.98
+    "required_matched_ratio": 0.999
   },
   "baseline": {
     "source": "live",
-    "measure": "reference.py timed by sol-execbench CUPTI (median device-kernel us)",
+    "measure": "reference.py timed by the harness CUPTI runtime (median device-kernel us)",
     "denominator": "the live per-shape reference latency (see .baseline_cache.json)"
   }
 }

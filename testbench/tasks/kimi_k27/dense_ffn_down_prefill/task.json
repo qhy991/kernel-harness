@@ -1,8 +1,10 @@
 {
   "name": "dense_ffn_down_prefill",
+  "model": "kimi_k27",
   "op": "Dense FFN Down",
   "phase": "prefill",
   "family": "fp8-linear-gemm",
+  "goal": "Optimize solution.py against SGLang's DeepGEMM w8a8_block_fp8 baseline for Dense FFN Down prefill; beat every shape in the sweep and match SGLang output within the declared tolerance.",
   "K": 2304,
   "N": 7168,
   "sweep": [
@@ -18,11 +20,11 @@
   "tolerance": {
     "max_atol": 0.1,
     "max_rtol": 0.05,
-    "required_matched_ratio": 0.98
+    "required_matched_ratio": 0.999
   },
   "baseline": {
     "source": "live",
-    "measure": "reference.py timed by sol-execbench CUPTI (median device-kernel us)",
+    "measure": "reference.py timed by the harness CUPTI runtime (median device-kernel us)",
     "denominator": "the live per-shape reference latency (see .baseline_cache.json)"
   },
   "csv_wallclock_us_reference": 451.28

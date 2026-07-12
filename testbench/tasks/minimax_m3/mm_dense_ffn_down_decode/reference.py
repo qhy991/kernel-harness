@@ -2,7 +2,7 @@
 
 The standard non-quantized projection sglang dispatches on B200 for the base
 MiniMax-M3 checkpoint: LinearBase -> cuBLAS bf16 GEMM (see the M3 backend inventory,
-op28 "Main Q/K/V 投影"). Covers the dense-FFN GateUp/Down, main QKV/O projections,
+op28 "Main Q/K/V projection"). Covers the dense-FFN GateUp/Down, main QKV/O projections,
 and shared-expert GEMMs — all of which are plain bf16 GEMMs on this checkpoint (the
 -MXFP8 checkpoint would instead use deep_gemm/flashinfer, tracked separately).
 

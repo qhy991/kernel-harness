@@ -15,8 +15,9 @@ def _kimi_gate():
             f"renormalized top-{K.moe_topk} selection over {K.n_routed_experts} experts. Outputs the "
             f"selected expert INDICES[M,{K.moe_topk}] (int32); EXACT-match oracle (atol=0,rtol=0,ratio=1.0). "
             f"Baseline = sglang production kernel; beat its latency while matching routing exactly."),
-        goal=("优化 solution.py 相对 sglang sgl_kernel.kimi_k2_moe_fused_gate 基线（MoE Gate decode）"
-              " 的 gate+topk 延迟，跨全部 sweep 领先；路由 INDEX 必须 EXACT 对齐 sglang（atol=0）"),
+        goal=("Optimize solution.py against SGLang's "
+              "sgl_kernel.kimi_k2_moe_fused_gate baseline for MoE Gate decode; beat "
+              "the full sweep and match SGLang routing indices exactly (atol=0)."),
         axes={"M": var("decode token count (sweep)"), "num_experts": const(K.n_routed_experts),
               "topk": const(K.moe_topk)},
         inputs={"input_tensor": tensor(["M", "num_experts"], "float32"),
@@ -36,8 +37,9 @@ def _mm_gate():
             f"correction bias + renormalized top-{MM.topk} over {MM.experts} experts "
             f"(routed_scaling={MM.routed_scaling}). Outputs selected expert INDICES[M,{MM.topk}] (int32); "
             f"EXACT-match oracle. Baseline = sglang production kernel; beat its latency while matching routing."),
-        goal=("优化 solution.py 相对 sglang sgl_kernel.topk_sigmoid 基线（MiniMax-M3 MoE Gate decode）"
-              " 的 gate+topk 延迟，跨全部 sweep 领先；路由 INDEX 必须 EXACT 对齐 sglang（atol=0）"),
+        goal=("Optimize solution.py against SGLang's sgl_kernel.topk_sigmoid baseline "
+              "for MiniMax-M3 MoE Gate decode; beat the full sweep and match SGLang "
+              "routing indices exactly (atol=0)."),
         axes={"M": var("decode token count (sweep)"), "num_experts": const(MM.experts),
               "topk": const(MM.topk)},
         inputs={"gating_output": tensor(["M", "num_experts"], "float32"),

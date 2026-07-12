@@ -3,7 +3,7 @@
 Standalone per-kernel optimization tasks for the Kimi-K2.7 / MiniMax-M3 / DeepSeek-V3.2
 inventory (`../logs/kimi_minimax_20260710-070816/all_models_kernel_inventory.csv`).
 
-**Inventory:** 79 tasks across 23 families (Kimi-K2.7 36 + MiniMax-M3 43, incl. 6 DSA
+**Inventory:** 82 tasks across 24 families (Kimi-K2.7 39 + MiniMax-M3 43, incl. 6 DSA
 sparse-attention families on the `sglang-m3` build). `bin/integrate.py` has a drop-in
 recipe for every family with a single rebindable sglang dispatch symbol; the fused
 sparse-attention families (`dsa-decode-attn`, `dsa-prefill-attn`, `dsa-prefill-topk`)
@@ -13,7 +13,7 @@ Each **task** is one `(op, phase)` kernel with its whole shape sweep bundled. An
 optimizes `solution.py` to **match the sglang production kernel's output** (within a
 per-shape tolerance) and **beat its latency** across the sweep.
 
-## The contract (FlashInfer-Bench / sol-execbench format)
+## Task contract
 
 ```
 tasks/kimi_k27/<name>/
@@ -23,7 +23,6 @@ tasks/kimi_k27/<name>/
   solution.py       # starts identical to reference.py — the file an agent edits
   workload.jsonl    # one line per shape in the sweep + tolerance {atol, rtol, ratio}
   task.json         # metadata: op, phase, K, N, sweep, baseline_us, backend, tolerance
-  kersor-note.txt   # ready-to-paste KerSor drive command (Correctness/Benchmark/Baseline)
 ```
 
 - **Oracle = the sglang kernel itself.** `reference.py` builds pre-quantized fp8 inputs
@@ -35,9 +34,19 @@ tasks/kimi_k27/<name>/
 
 ## Environment
 
-Everything runs in the **unified sglang venv** `../.venv` (torch 2.11, full sglang +
-sgl_kernel + deep_gemm + flashinfer) into which `sol-execbench` was installed
-`--no-deps` (plus `cupti-python`). `bin/run.sh` sets `PATH`/`PYTHONPATH` for you.
+The one supported environment is the repository-local **`.venv` managed by `uv`**.
+The selected SGLang checkout's `python/pyproject.toml` supplies matching torch, Triton,
+SGLang-kernel, DeepGEMM, and FlashInfer versions.
+
+```bash
+cp testbench/harness.env.example testbench/harness.env  # optional path overrides
+./testbench/setup_env.sh
+.venv/bin/python testbench/bin/check_env.py
+```
+
+The setup script installs the selected local SGLang checkout and the standalone CUPTI
+package. Do not reuse an unrelated conda/venv: native-package ABI mismatches can
+invalidate correctness and timing.
 
 ## Agent contract (framework-neutral)
 
@@ -51,7 +60,7 @@ Any agent optimizes a kernel in **one loop**:
 2. Evaluate and read the feedback:
 
 ```bash
-python testbench/bin/evaluate.py tasks/kimi_k27/o_proj_decode
+.venv/bin/python testbench/bin/evaluate.py testbench/tasks/kimi_k27/o_proj_decode
 ```
 
 Output = a per-shape table (correctness, sol_us, base_us, speedup, max_rel_err) plus
@@ -72,27 +81,47 @@ is measured once and cached in `<task>/.baseline_cache.json` (use
 Each task dir also ships a **self-contained `run.sh`**: `cd <task> && ./run.sh [flags]`
 evaluates that folder without the caller knowing `bin/` (it forwards to `evaluate.py`).
 
-That's the whole contract — no KerSor, no framework lock-in. Correctness is judged
+### Fast probe while iterating (advisory, not the verdict)
+
+`evaluate.py` above is the **authoritative** test — CUPTI, cold-L2, 100 reps, correctness,
+reward-hack defenses — and the only thing that decides WIN/lose. It costs seconds. For the
+tight inner loop there's a **fast, in-process advisory** profiler that answers "did that
+rewrite move the needle, and which way should I push?" in milliseconds:
+
+```bash
+python -m harness.profile testbench/tasks/kimi_k27/o_proj_decode --shape 64
+#   latency: median 7.25 us   min 5.86 us
+#   roofline: 508 GB/s (6.4% HBM)  bound=... (memory vs compute)
+```
+
+```python
+from harness.profile import quick_latency, profile_task
+profile_task(task_dir, "solution.py", shape=64)   # {'median_us','min_us','roofline':{...}}
+quick_latency(fn, setup)                           # lowest overhead, for an agent loop
+```
+
+It uses CUDA events (warm L2, ~20 reps) so it runs a few µs **above** the CUPTI number and
+its noise floor swamps small deltas — **trust it for direction and large wins, use
+`evaluate.py` to confirm anything fine.** It never gates a result.
+
+That's the whole contract — no optimization-framework lock-in. Correctness is judged
 against the sglang kernel's output; efficiency against its measured latency.
 
 ## Portability (no hardcoded paths)
 
-All external locations (`VENV`, `SOLEXEC`, `SGLANG_DIR`, `CUDA_HOME`, `MM_M3_SGLANG_DIR`)
+All external locations (`SGLANG_DIR`, `CUDA_HOME`, `MM_M3_SGLANG_DIR`)
 resolve through `bin/config.py`: **env var → `testbench/harness.env` → built-in default**.
 `evaluate.py`, `run.sh`, `report.py`, and `gen_tasks.py` all import it, so a checkout on
 a new machine only needs env vars (or a one-line `harness.env`) — no source edits.
 
-Note: the harness is deliberately **shared, not vendored** per folder. "Self-contained"
-means each task dir declares its own `run.sh` entrypoint and resolves the shared drivers
-in `bin/` — not that it copies SOL-ExecBench 68×. One driver set, many self-describing tasks.
+The harness is deliberately **shared, not copied** per task. "Self-contained" means
+the evaluator, timing, input construction, and correctness logic are owned here, while
+each task exposes its own `run.sh` entrypoint.
 
 ## Optional drivers
 
 - **Low-level:** `bin/run.sh <task> <solution.py|reference.py> <out> <iters>` runs one
   file through the harness; `bin/report.py <sol_out> <base_out>` diffs two runs.
-- **KerSor:** each task ships a `kersor-note.txt` for
-  `/kersor:optimize <task_dir> --note "$(cat <task_dir>/kersor-note.txt)"`. Entirely
-  optional — the task dirs and `evaluate.py` don't depend on it.
 
 ## Timing & trustworthiness (read before believing a speedup)
 
@@ -108,13 +137,17 @@ Consequences:
 - The `csv_wallclock_us_reference` in `task.json` (e.g. 57.6µs for O_proj decode) is a
   **launch-bound wall-clock** figure from the original microbench — for decode it is
   ~6× the real kernel time (~9µs). **Do not use it as the comparison denominator.**
-- You are beating **deep_gemm**, a heavily hand-tuned Blackwell FP8 GEMM, not a
-  strawman. Treat a "win" as a *candidate*:
+- For FP8 GEMM tasks you are beating **DeepGEMM**, a heavily hand-tuned Blackwell
+  kernel, not a strawman. These are intentionally difficult targets. Start autonomous
+  searches with memory-bound or fused families such as RMSNorm, RoPE, embedding,
+  MoE-combine, gate/top-k, or absorb BMM, where launch/fusion opportunities are larger.
+  Treat every "win" as a candidate:
   - clocks are **not** locked by default → a few-% margin can be boost/thermal noise.
     Repeat the eval and require the margin to survive; consider locking clocks
     (needs node privileges) before trusting sub-10% wins.
-  - correctness here is loose (atol 0.1 / rtol 0.05 / 98% on random inputs) — tighten
-    per-op and add real-model accuracy before proposing anything for sglang.
+  - tolerances are family-specific: exact for index/gather outputs; 99.9% matched with
+    BF16, FP8, or attention-specific error bounds for floating outputs. Add real-model
+    accuracy before proposing anything for SGLang.
   - these are fixed `(K,N)` + sampled `M`; a kernel that special-cases the sweep may
     lose on the broader shape space sglang dispatches. Validate wider before adoption.
 - A fast + output-matching result from `evaluate.py` is **necessary, not sufficient**
@@ -125,7 +158,7 @@ Consequences:
 ### Anti-cheat guards (what stops a fake WIN)
 
 - **Input-aliasing**: for in-place / DPS ops (fused-add-rmsnorm, rope, moe-combine) the
-  reference runs on a **clone** of the inputs (SOL-ExecBench `eval_driver.py`), so a
+  reference runs on a **clone** of the inputs (`harness/driver.py`), so a
   candidate can't return the reference-mutated buffer and pass at zero cost.
   `evaluate.py` adds an **independent second-layer probe** (`_alias_probe`): it runs
   reference and candidate on isolated clones of identical inputs and compares, catching
@@ -205,7 +238,7 @@ AOT/JIT build + non-Blackwell fallback.
 
 ## SGLang-native test + benchmark (`bin/emit_sglang.py`)
 
-`evaluate.py` scores through NVIDIA SOL-ExecBench (fast inner loop). To make the **same
+`evaluate.py` scores through the harness's own CUPTI runtime (fast inner loop). To make the **same
 kernel comparable inside SGLang's own harness**, generate SGLang-native files:
 
 ```
@@ -245,74 +278,38 @@ as **no clean source site** rather than faked.
 
 ## Regenerate / extend
 
-`python gen_tasks.py` regenerates every family for both models from its
-`recipes/<family>.py`, writing Kimi tasks to `tasks/kimi_k27/` and MiniMax tasks to
-`tasks/minimax_m3/`. Each family is a table + an `emit_*()` in `gen_tasks.py`, keyed by
-`(model, family)`; the fp8 tasks are byte-stable across regeneration. Workloads are
-grounded in each model's real config (Kimi from the repo's fp8 shapes; MiniMax-M3 from
-the HF `text_config` via `bench_minimax_m3.py`) — new ops are added one at a time,
-API-verified on-GPU before the recipe is written.
+From the repository root, `.venv/bin/python testbench/gen_tasks.py` regenerates both
+models from declarative `TaskSpec`s in `taskgen/families/` and kernel sources in
+`recipes/`. It writes Kimi tasks to `tasks/kimi_k27/` and MiniMax tasks to
+`tasks/minimax_m3/`. Workloads are grounded in each model's canonical config; new ops
+are added one at a time and API-verified on GPU before their recipe is accepted.
 
 ## Coverage
 
-Kimi-K2.7 coverage (tasks generated + evaluate-passed):
+The task directories and `task.json` files are authoritative; the README intentionally
+does not maintain a second hand-edited family-status table. Print the live inventory:
 
-"Done" = tasks generated + smoke-passed via `evaluate.py`. "drop-in" = has a verified
-`bin/integrate.py` recipe (candidate replaces the real sglang kernel in a live forward).
+```bash
+.venv/bin/python testbench/bin/inventory.py
+```
 
-| family | tasks | recipe | evaluate | drop-in |
-|---|---|---|---|---|
-| fp8-linear-gemm | 15 | `recipes/fp8_linear_gemm.py` (deep_gemm w8a8_block_fp8) | **✅** | **✅** |
-| rmsnorm | 4 | `recipes/rmsnorm.py` (sgl_kernel.rmsnorm) | **✅** | **✅** |
-| fused-add-rmsnorm | 2 | `recipes/fused_add_rmsnorm.py` (sgl_kernel.fused_add_rmsnorm) | **✅** | **✅ interface-exact** |
-| rope | 2 | `recipes/rope.py` (apply_rope_with_cos_sin_cache_inplace) | **✅** | **✅ interface-exact** |
-| swiglu | 4 | `recipes/swiglu.py` (sgl_kernel.silu_and_mul) | **✅** | **✅** |
-| embedding | 2 | `recipes/embedding.py` (F.embedding) | **✅** | **✅** (scoped `quant_method.embedding`) |
-| router-gemm (decode) | 1 | `recipes/kimi_router_gemm.py` (sgl_kernel.dsv3_router_gemm, M≤16, N=256) | **✅** | todo (needs MoE-gate driver) |
-| moe-gate (routing) | 1 | `recipes/kimi_moe_gate.py` (sgl_kernel.kimi_k2_moe_fused_gate, **exact-index oracle**) | **✅** | todo (needs topk driver) |
-| grouped-moe (masked decode) | 2 | `recipes/kimi_grouped_moe_masked.py` (deep_gemm.fp8_m_grouped_gemm_nt_masked, E=12) | **✅** | todo (needs fused-MoE driver) |
-| lm-head | 1 | `recipes/kimi_lm_head.py` (torch.matmul bf16, vocab=163840) | **✅** | todo (needs logits-proc driver) |
-| bmm-absorb | 2 | `recipes/bmm.py` (torch.bmm) | **✅** | n/a (global symbol) |
-| prefill router / grouped-moe contiguous | — | F.linear / m_grouped_fp8_gemm_nt_contiguous | todo | todo |
-| attention (MLA) | 2 | flashinfer trtllm / flash_mla | todo | todo |
-| moe-gate | 2 | sgl_kernel.kimi_k2_moe_fused_gate | todo | todo |
-| moe-combine | 2 | sgl_kernel.moe_sum | todo | todo |
+Current generated snapshot:
+- Kimi-K2.7: 39 tasks in 12 families, including three MLA-attention tasks
+  (`mla_prefill`, `mla_decode_seq2048`, `mla_decode_seq32768`).
+- MiniMax-M3: 43 tasks in 18 families, including 11 tasks across six DSA families.
+- Combined: 82 tasks across 24 unique family names.
 
-### MiniMax-M3 (`tasks/minimax_m3/`)
-
-**Authoritative** config from the live HF `text_config` of `MiniMaxAI/MiniMax-M3`
-(`MiniMaxM3SparseForConditionalGeneration`, `model_type=minimax_m3_vl` — a DSA
-sparse-attention + MoE **vision-language** model): hidden=6144; GQA 64q/4kv, head_dim=128,
-rotary_dim=64 (partial 0.5); MoE **128 experts / top-4**, moe_inter=3072, 1 shared expert;
-scoring=sigmoid, routed_scaling=2.0; **use_gemma_norm=True**, qk_norm=per_head;
-hidden_act=**swigluoai**; vocab=200064; DSA: index_dim=128, 4 index heads, topk_blocks=16,
-block=128. (Distinct from MiniMax-M2/M2.5/M2.7, which are hidden=3072 / 256 experts / top-8.)
-
-| family | tasks | recipe | evaluate | drop-in |
-|---|---|---|---|---|
-| gemma-rmsnorm | 2 | `recipes/minimax_gemma_rmsnorm.py` (sgl_kernel.gemma_rmsnorm, ×(1+w)) | **✅** | **✅ interface-exact** |
-| gemma-fused-add-rmsnorm | 2 | `recipes/minimax_gemma_fused_add_rmsnorm.py` (sgl_kernel.gemma_fused_add_rmsnorm) | **✅** | **✅ interface-exact** |
-| bf16-linear | 12 | `recipes/bf16_linear.py` (cuBLAS bf16: Dense FFN, QKV, O_proj, shared expert pre/dec) | **✅** | todo |
-| router-gemm | 2 | `recipes/minimax_router.py` (fp32 cuBLAS, 6144→128; dsv3_router_gemm rejects N=128) | **✅** | todo |
-| moe-gate (routing) | 1 | `recipes/minimax_moe_gate.py` (sgl_kernel.topk_sigmoid, **exact-index oracle**) | **✅** | todo |
-| grouped-moe (masked decode) | 2 | `recipes/grouped_moe_masked.py` (deep_gemm masked, E=16) | **✅** | todo |
-| grouped-moe (contiguous prefill) | 2 | `recipes/grouped_moe_contiguous.py` (deep_gemm contiguous, E=16) | **✅** | todo |
-| moe-combine | 2 | `recipes/minimax_moe_combine.py` (sgl_kernel.moe_sum, DPS) | **✅** | todo |
-| rope (partial 64/128) | 2 | `recipes/rope.py` (real max_pos=1,048,576, theta=5e6) | **✅** | **✅ interface-exact** |
-| embedding | 2 | `recipes/embedding.py` (F.embedding, vocab=200064) | **✅** | **✅** scoped |
-| lm-head | 1 | `recipes/kimi_lm_head.py` (torch.matmul bf16, vocab=200064) | **✅** | todo |
-| **P1: fp8-linear (MXFP8 proxy)** | — | deep_gemm w8a8_block_fp8 for QKV/O/expert; act-quant `sglang_per_token_group_quant_fp8` | todo | — |
-| swiglu-oai | — | fused into MoE runner / ROCm-only Triton — no clean CUDA standalone; silu_and_mul is a proxy | n/a | n/a |
-| **P2: DSA sparse stack (op29-34)** | — | `minimax_qknorm_rope`, `minimax_decode_topk`, `store_kv_index`, `minimax_sparse_ops`, `fmha_sm100` | **blocked** | — |
-
-**Blocked-on-sglang-version:** the M3-specific DSA kernels (op29-34) and `mega_moe` (op38 whole-op) are **absent from this sglang checkout** (predates M3 DSA support; the inventory CSV was built against a newer build / `amd_add_m3` worktree). Building them here would mean inventing a baseline that doesn't exist — deferred rather than proxied. `fmha_sm100` is present but its `minimax_sparse_ops` caller is not.
+MiniMax DSA tasks pin `MM_M3_SGLANG_DIR` because they need a checkout containing the
+M3 sparse stack. They are available when that checkout passes `bin/check_env.py`; they
+are not replaced with proxy baselines when it is absent.
 
 ### Known caveats
 - `qa_kva_fused_*` uses the generic w8a8_block_fp8 path. sglang also has a
   `dsv3_fused_a_gemm` fused fast path for M≤16 (fuses act-quant+GEMM) that could be a
   separate, more faithful decode baseline later.
-- Tolerance defaults (`atol=0.1, rtol=0.05, ratio=0.98`) are set for fp8-GEMM bf16
-  output at 1/sqrt(K) weight scale; tighten per-op if an agent games the tolerance.
+- Floating tolerances are assigned by family in `taskgen/spec.py`: BF16
+  `(0.02, 0.01, 0.999)`, FP8 `(0.1, 0.05, 0.999)`, and attention
+  `(0.03, 0.02, 0.999)` as `(atol, rtol, matched_ratio)`.
 - **Index-producing / routing ops** (`moe-gate`) use an **exact-index oracle**
   (`atol=0, rtol=0, matched_ratio=1.0`) and output the integer indices only — the
   harness applies one tolerance per workload, so int-exact ids can't be co-judged with

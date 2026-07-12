@@ -8,7 +8,7 @@ scoring tamper-proof.
 
 ## Isolation (so the runs can't contaminate each other)
 - `task_infini/` and `task_official/` — separate working copies, **distinct dir names**
-  → distinct `/tmp/kersor-tb/<name>-*` outputs and separate `.baseline_cache.json`.
+  → distinct `/tmp/kernel-harness/<name>-*` outputs and separate `.baseline_cache.json`.
   (Distinct names matter: `evaluate.py` keys its temp dirs on the task dir *name*, so
   same-named copies — even in different worktrees — would collide in `/tmp`.)
 - `_pristine/` — the canonical oracle (never edited); scoring copies from it.

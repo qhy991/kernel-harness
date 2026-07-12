@@ -3,16 +3,9 @@
 Each config is grounded in the model's authoritative source (see per-field notes).
 Family builders read these; nothing hardcodes a dim twice.
 """
-import sys
 from pathlib import Path
 
-# reuse the repo's path resolver (bin/config.py)
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "bin"))
-import config as _paths  # noqa: E402
-
 RECIPES_DIR = Path(__file__).resolve().parent.parent / "recipes"
-SOLEXEC = str(_paths.SOLEXEC)
-MM_M3_SGLANG_DIR = _paths.resolve("MM_M3_SGLANG_DIR")
 
 
 def recipe(name: str) -> str:
@@ -68,4 +61,4 @@ class MM:
     qkv_out = (nq + 2 * nkv) * hd         # 9216
     o_in = nq * hd                        # 8192
     ep_local = 16                         # 128 routed / EP8
-    sglang_dir = MM_M3_SGLANG_DIR         # DSA tasks pin the amd_add_m3 build
+    sglang_dir = "MM_M3_SGLANG_DIR"       # symbolic; resolved by bin/config.py at runtime
