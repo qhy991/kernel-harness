@@ -13,6 +13,10 @@ Each **task** is one `(op, phase)` kernel with its whole shape sweep bundled. An
 optimizes `solution.py` to **match the sglang production kernel's output** (within a
 per-shape tolerance) and **beat its latency** across the sweep.
 
+> **Harness design & invariants:** [`docs/HARNESS_DESIGN.md`](docs/HARNESS_DESIGN.md) —
+> the full contract (two-tier fast/authoritative testing, correctness & timing models,
+> reward-hack defenses, the conservative win gate). Read it before changing the harness.
+
 ## Task contract
 
 ```
