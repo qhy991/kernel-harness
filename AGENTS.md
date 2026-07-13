@@ -19,6 +19,8 @@ Optimize **one task per session**. All commands are run from the repo root.
 
 1. Choose one directory `testbench/tasks/<model>/<task>/` (see starter tasks below).
 2. Read its `task.json`, `definition.json`, `reference.py`, and the full `workload.jsonl` sweep.
+   Then check prior recipes: `python3 testbench/bin/knowledge.py query --task <model>/<task>`
+   (broaden with `--family` / `--op` / `--bottleneck`; dead ends recorded there are real).
 3. Edit **only** that task's `solution.py`. It must define `run(<input names>)` with the same
    signature as `reference.py`'s `run`, returning the same output tensor(s). Import anything
    in the venv (Triton, CUDA/cpp_extension, CUTLASS, a different deep_gemm config, a fused path).
@@ -30,6 +32,7 @@ Optimize **one task per session**. All commands are run from the repo root.
    shape), **1 = correct, not faster**, **2 = incorrect / error / incomplete**.
 7. On a WIN, verify it is a real SGLang drop-in:
    `.venv/bin/python testbench/bin/integrate.py <task>` (exit 0 = verified).
+8. **Win or not**, end the session by recording one knowledge-base entry (next section).
 
 ## Fast probe vs. authoritative verdict
 
@@ -54,12 +57,28 @@ DeepGEMM GEMMs — they beat a hand-tuned Blackwell kernel and are intentionally
 
 List everything with `.venv/bin/python testbench/bin/inventory.py`.
 
+## Knowledge base (recipes)
+
+`testbench/knowledge/` accumulates one structured entry per completed session: the
+bottleneck diagnosis (with evidence), every approach tried — failures included, each
+with a one-sentence "why" — the final measured result, and a transferable lesson.
+Schema and honesty rules: [`testbench/knowledge/README.md`](testbench/knowledge/README.md).
+
+- Query it before editing (loop step 2); write one entry when the session ends (step 8):
+  draft the JSON, then `python3 testbench/bin/knowledge.py add <file>` (validates, installs).
+- Every number must come from the final `evaluate.py` `VERDICT_JSON` — never from
+  `harness.profile` or an estimate. Copy `hardware`/`stack` facts from `check_env.py`.
+- Entries are append-only. Never edit or delete an existing entry; supersede it by
+  adding a new one. A `no-win` entry with honest "why" lines is a valuable result.
+
 ## Do not edit (forbidden)
 
 - `reference.py` — it is the oracle and the baseline.
 - `workload.jsonl` tolerances or the shape sweep.
 - `bin/evaluate.py`, `harness/` timing/correctness code, or `task.json`.
-- Anything outside the chosen task's `solution.py`.
+- Existing files under `testbench/knowledge/entries/` — append new entries only, via
+  `knowledge.py add`.
+- Anything else outside the chosen task's `solution.py`.
 
 Do not game tolerances, timing, or reward-hack the evaluator (input aliasing, monkey-patched
 timers, lazy outputs are all detected and rejected). Prefer real algorithmic/kernel wins.

@@ -131,6 +131,9 @@ each task exposes its own `run.sh` entrypoint.
 - **Pre-flight:** `python3 bin/selftest.py [task_dir]` — stdlib-only structural check of
   the task dirs (contract files, embedded-reference identity, `run()` presence,
   workload/tolerance schema). Runs anywhere: no GPU, no venv.
+- **Knowledge base:** `python3 bin/knowledge.py {query,add,lint}` — structured
+  optimization recipes accumulated one entry per session (bottleneck, approaches tried,
+  measured outcome, transferable lesson). Contract: [`knowledge/README.md`](knowledge/README.md).
 
 ## Timing & trustworthiness (read before believing a speedup)
 
