@@ -16,6 +16,11 @@ import torch
 GROUP_SIZE = 16
 ROUTING_METHOD_DEEPSEEK_V3 = 2
 ACTIVATION_SWIGLU = 3
+NUM_EXPERTS = 256
+TOP_K = 8
+LOCAL_EXPERT_OFFSET = 0
+LOCAL_NUM_EXPERTS = 32
+INTERMEDIATE_SIZE = 2048
 
 
 def _next_power_of_2(x: int) -> int:
@@ -140,19 +145,22 @@ def run(topk_ids, topk_weights, hidden_states, hidden_states_scale,
         output1_scale_scalar=output1_scale_scalar,
         output1_scale_gate_scalar=output1_scale_gate_scalar,
         output2_scale_scalar=output2_scale_scalar,
-        num_experts=int(num_experts.item()),
-        top_k=int(top_k.item()),
-        n_group=None,
-        topk_group=None,
-        intermediate_size=int(intermediate_size.item()),
-        local_expert_offset=int(local_expert_offset.item()),
-        local_num_experts=int(local_num_experts.item()),
-        routed_scaling_factor=float(routed_scaling_factor.item()),
+        # These are fixed by the GLM-5.2 NVFP4 decode contract. Reading the
+        # scalar input tensors with .item() here forces device-host syncs inside
+        # the timed FlashInfer call path.
+        num_experts=NUM_EXPERTS,
+        top_k=TOP_K,
+        n_group=0,
+        topk_group=0,
+        intermediate_size=INTERMEDIATE_SIZE,
+        local_expert_offset=LOCAL_EXPERT_OFFSET,
+        local_num_experts=LOCAL_NUM_EXPERTS,
+        routed_scaling_factor=None,
         routing_method_type=ROUTING_METHOD_DEEPSEEK_V3,
         do_finalize=True,
         enable_pdl=True,
         activation_type=ACTIVATION_SWIGLU,
         output=output,
-        tune_max_num_tokens=_next_power_of_2(hidden_states.shape[0]),
+        tune_max_num_tokens=8192,
     )
     return result[0]
