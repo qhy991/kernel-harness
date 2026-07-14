@@ -83,7 +83,7 @@ package. Files:
 | File | Responsibility |
 |---|---|
 | `inputs.py` | axis resolution, calling the recipe's `get_inputs`, positional input assembly, output normalization (tuple/dict/tensor → positional tensor list) |
-| `dtypes.py` | dtype-string ↔ `torch.dtype` map |
+| `dtypes.py` | dtype-string ↔ `torch.dtype` map; logical `nvfp4` maps to packed `uint8` storage |
 | `correctness.py` | allclose-style error stats + matched-ratio, inf/nan sanity, optional max-error cap |
 | `timing.py` | CUPTI device-kernel timing (primary) + CUDA-events (fallback); L2 flush, arg clone |
 | `reward_hack.py` | timer-patch detection, lazy-output rejection, thread-injection check |
@@ -103,6 +103,38 @@ Default tolerance: `max_atol=0.02, max_rtol=0.01, required_matched_ratio=0.999`.
 tolerances come from `task.json`/`workload.jsonl` and override the default (e.g. attention
 and fp8 paths are looser; exact-index oracles use `atol=0, rtol=0, ratio=1.0`). inf/nan in
 either tensor is an automatic fail.
+
+### 3.1.1 NVFP4 representation
+
+`nvfp4` is a logical dtype name in the task schema, not a native arithmetic dtype in the
+harness. It maps to packed `uint8` tensor storage because SGLang/FlashInfer pass NVFP4 as
+two e2m1 values per byte plus separate scale tensors. Typical SGLang ModelOpt FP4 MoE state is:
+
+- packed FP4 activations or weights: `uint8`, logical shape has the K dimension halved;
+- block scales: `float8_e4m3fn` bytes, commonly one scale per 16 original K elements;
+- global or alpha scales: `float32`/BF16 scalar tensors, depending on the FlashInfer API.
+
+This means adding `nvfp4` to `dtypes.py` only makes task metadata explicit. A true NVFP4
+task still needs its recipe `get_inputs()` to build packed payloads and scales, and its
+`run()` to call the production FP4 backend. For GLM-5.2, SGLang's registered NVFP4 path uses
+`nvidia/GLM-5.2-NVFP4` with `--quantization modelopt_fp4` and
+`--moe-runner-backend flashinfer_trtllm`; the MoE runner calls FlashInfer
+`trtllm_fp4_block_scale_moe` / `trtllm_fp4_block_scale_routed_moe`.
+
+For the existing generated GLM-5.2 FP8 tasks, the practical NVFP4 extension order is:
+
+- best first targets: `routed_gateup_decode`, `routed_down_decode`, `routed_gateup_prefill`,
+  `routed_down_prefill`; these are the MoE GEMMs where NVFP4 cuts the dominant expert-weight
+  traffic from FP8 bytes to packed FP4 bytes;
+- secondary targets: `routed_swiglu_decode`, `routed_swiglu_prefill`; these should become
+  SwiGLU + NVFP4 activation quant tasks feeding the down projection;
+- lower priority: `o_proj_decode`, `o_proj_prefill`; dense FP4 GEMM is possible but this is
+  not the main GLM-5.2 MoE NVFP4 path;
+- poor fit: `sparse_mla_decode`; it is an attention/cache task rather than an MoE FP4 expert
+  GEMM target.
+
+Do not silently convert the current FP8 GLM-5.2 tasks in place. Fork new NVFP4 families or task
+names so the baseline contract remains clear.
 
 ### 3.2 Timing model (`timing.py`)
 

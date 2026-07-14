@@ -2,7 +2,7 @@
     "name": "glm52_routed_down_prefill",
     "hf_id": "zai-org/GLM-5.2-FP8",
     "family": "grouped-moe-contiguous",
-    "description": "GLM-5.2 Routed Expert Down (prefill, EP8 local E=32), FP8 grouped GEMM. Routing = fixed-seed top-8/256 filtered to this rank; K=2048, N=6144. Quant offline; only the grouped GEMM is timed. Baseline = SGLang DeepGEMM production kernel.",
+    "description": "GLM-5.2 Routed Expert Down (prefill, EP8 local E=32), FP8 grouped GEMM. Routing = fixed-seed top-8/256 filtered to this rank; prefill normalizes local assignment count to the expected M for stable shapes. K=2048, N=6144. Quant offline; only the grouped GEMM is timed. Baseline = SGLang DeepGEMM production kernel.",
     "axes": {
         "M": {
             "type": "var",

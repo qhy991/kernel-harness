@@ -82,7 +82,7 @@ def _glm52_sparse_mla_decode():
         performance_model={"kind": "sparse-mla", "family": "sparse-mla-decode"},
         workload_metrics=["valid_selected_kv", "effective_topk", "effective_topk_ratio",
                           "selected_token_head_per_s", "effective_kv_gbps",
-                          "cache_footprint_bytes", "us_per_token"],
+                          "allocated_cache_footprint_bytes", "us_per_token"],
         meta={"num_heads": G.local_heads, "kv_lora": G.kv_lora,
               "index_topk": G.index_topk, "page_size": G.page_size,
               "ctx_sweep": list(GLM52_SPARSE_MLA_CTX),

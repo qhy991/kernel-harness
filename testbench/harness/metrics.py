@@ -112,7 +112,7 @@ def sparse_mla_metrics(axes: dict[str, int], inputs: dict[str, torch.Tensor],
         "effective_topk": round(eff_topk, 2),
         "effective_topk_ratio": round(_safe_div(eff_topk, max(topk, 1)), 4),
         "selected_kv_bytes": selected_kv_bytes,
-        "cache_footprint_bytes": cache_bytes,
+        "allocated_cache_footprint_bytes": cache_bytes,
         "q_bytes": q_bytes,
         "out_bytes": out_bytes,
     }
@@ -133,19 +133,27 @@ def routed_expert_metrics(axes: dict[str, int], inputs: dict[str, torch.Tensor],
                           flops_expr: Optional[str] = None) -> dict[str, Any]:
     """Routed Gate+Up / Down: load imbalance + useful-vs-padded utilization."""
     E = axes.get("E", 0)
-    M = axes.get("M", 0)   # for masked: tokens/expert pad; for contig: tokens/expert mean
+    M = axes.get("M", 0)   # original token/batch population, not masked capacity
     K = axes.get("K", 0)
     N = axes.get("N", 0)
 
     masked_m = inputs.get("masked_m")
     m_indices = inputs.get("m_indices")
+    out_tensor = inputs.get("out")
 
     if isinstance(masked_m, torch.Tensor) and masked_m.numel() > 0:
         counts = masked_m.detach().to(torch.int64).cpu()
         active = int((counts > 0).sum().item())
         empty = int(E - active)
         total_assign = int(counts.sum().item())
-        pad_cap = int(counts.numel() * max(M, 1))
+        if isinstance(out_tensor, torch.Tensor) and out_tensor.ndim >= 2:
+            # Masked DeepGEMM/SwiGLU inputs are shaped [E, Mp, ...].  Mp is the
+            # actual per-expert padded capacity chosen by the recipe/preprocess.
+            pad_cap = int(out_tensor.shape[0] * out_tensor.shape[1])
+        else:
+            max_count = int(counts.max().item()) if counts.numel() else 1
+            padded_m = ((max(max_count, 1) + 127) // 128) * 128
+            pad_cap = int(counts.numel() * padded_m)
         st = _tensor_stats(counts.float())
         layout = "masked"
     elif isinstance(m_indices, torch.Tensor) and m_indices.numel() > 0:
@@ -173,13 +181,14 @@ def routed_expert_metrics(axes: dict[str, int], inputs: dict[str, torch.Tensor],
     util = _safe_div(total_assign, pad_cap)
     useful_flops = 2 * total_assign * K * N if (K and N) else None
     padded_flops = None
-    if flops_expr:
+    if flops_expr and layout != "masked":
         try:
             padded_flops = eval_expr(flops_expr, axes)
         except Exception:
             padded_flops = None
     if padded_flops is None and K and N:
-        # masked path pads to align(M,128) * E in the recipe; flops_expr preferred
+        # Masked path pads to [E, Mp, ...] from the actual preprocessed buffer;
+        # contiguous path has pad_cap == real rows unless the recipe pads it.
         padded_flops = 2 * pad_cap * K * N
 
     out: dict[str, Any] = {

@@ -106,7 +106,7 @@
         "effective_topk_ratio",
         "selected_token_head_per_s",
         "effective_kv_gbps",
-        "cache_footprint_bytes",
+        "allocated_cache_footprint_bytes",
         "us_per_token"
     ]
 }

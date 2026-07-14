@@ -306,10 +306,14 @@ def _glm52_routed_experts():
         family = "grouped-moe-contiguous" if layout == 0 else "grouped-moe"
         backend = ("deep_gemm m_grouped_fp8_gemm_nt_contiguous (blackwell)" if layout == 0
                    else "deep_gemm fp8_m_grouped_gemm_nt_masked (blackwell)")
+        routing_note = (
+            "prefill normalizes local assignment count to the expected M for stable shapes. "
+            if layout == 0 else "decode uses sampled EP-local counts and masked per-expert padding. "
+        )
         yield TaskSpec(
             model=G.model, name=name, op=op, family=family, phase=phase,
             hf_id=G.hf_id, recipe=r, sweep=sweep, backend=backend,
-            flops_expr="2*M*K*N" if layout == 0 else "2*E*M*K*N",
+            flops_expr="2*M*K*N" if layout == 0 else None,
             performance_model={"kind": "routed-expert", "family": family,
                                "stage": "gateup" if "gateup" in name else "down"},
             workload_metrics=["local_assignments", "active_experts", "empty_experts",
@@ -318,7 +322,7 @@ def _glm52_routed_experts():
             description=(
                 f"GLM-5.2 {op} ({phase}, EP{G.ep} local E={G.ep_local}), FP8 grouped GEMM. "
                 f"Routing = fixed-seed top-{G.moe_topk}/{G.n_routed_experts} filtered to this "
-                f"rank; K={kk}, N={nn}. Quant offline; only the grouped GEMM is timed. "
+                f"rank; {routing_note}K={kk}, N={nn}. Quant offline; only the grouped GEMM is timed. "
                 f"Baseline = SGLang DeepGEMM production kernel."),
             goal=(f"Optimize solution.py against SGLang's DeepGEMM grouped-GEMM baseline "
                   f"for GLM-5.2 {op} {phase}; beat every workload and match SGLang output."),

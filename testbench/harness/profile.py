@@ -211,7 +211,8 @@ def main():
         keys = [k for k in ("kind", "achieved_tflops", "achieved_gbps", "bound",
                             "effective_topk", "effective_kv_gbps", "active_experts",
                             "tokens_per_expert_cv", "useful_vs_padded_util",
-                            "useful_tflops", "us_per_token") if k in metrics]
+                            "useful_tflops", "allocated_cache_footprint_bytes",
+                            "us_per_token") if k in metrics]
         if keys:
             print("  metrics: " + ", ".join(f"{k}={metrics[k]}" for k in keys))
     print("  (ADVISORY — use evaluate.py for the authoritative correctness+latency verdict)")

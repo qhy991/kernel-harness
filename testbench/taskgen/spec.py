@@ -28,6 +28,7 @@ GLM52_SPARSE_MLA_CTX = [1024, 2048, 4096, 8192, 32768]
 
 BF16_TOL = {"max_atol": 0.02, "max_rtol": 0.01, "required_matched_ratio": 0.999}
 FP8_TOL = {"max_atol": 0.1, "max_rtol": 0.05, "required_matched_ratio": 0.999}
+NVFP4_TOL = {"max_atol": 0.2, "max_rtol": 0.1, "required_matched_ratio": 0.99}
 ATTENTION_TOL = {"max_atol": 0.03, "max_rtol": 0.02, "required_matched_ratio": 0.999}
 # FP8 DSA sparse MLA (SGLang DSA unit-test headroom for FP8 KV)
 SPARSE_MLA_FP8_TOL = {"max_atol": 0.2, "max_rtol": 0.2, "required_matched_ratio": 0.99}
@@ -36,6 +37,10 @@ EXACT_TOL = {"max_atol": 0.0, "max_rtol": 0.0, "required_matched_ratio": 1.0}
 _FP8_FAMILIES = {
     "fp8-linear-gemm", "grouped-moe", "grouped-moe-contiguous", "act-fp8-quant",
     "swiglu-fp8-quant",
+}
+_NVFP4_FAMILIES = {
+    "nvfp4-linear-gemm", "nvfp4-moe", "nvfp4-moe-contiguous",
+    "swiglu-nvfp4-quant",
 }
 _ATTENTION_FAMILIES = {
     "mla-attention", "dsa-decode-attn", "dsa-prefill-attn", "sparse-mla-decode",
@@ -54,6 +59,8 @@ def tolerance_for(family: str) -> dict:
         return dict(SPARSE_MLA_FP8_TOL)
     if family in _FP8_FAMILIES:
         return dict(FP8_TOL)
+    if family in _NVFP4_FAMILIES:
+        return dict(NVFP4_TOL)
     if family in _ATTENTION_FAMILIES:
         return dict(ATTENTION_TOL)
     return dict(BF16_TOL)

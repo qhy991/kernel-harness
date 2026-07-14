@@ -7,6 +7,10 @@ _STR_TO_DTYPE = {
     "float8_e5m2": torch.float8_e5m2,
     "int64": torch.int64, "int32": torch.int32, "int16": torch.int16, "int8": torch.int8,
     "uint8": torch.uint8, "bool": torch.bool,
+    # NVFP4 is represented in SGLang/FlashInfer as two packed e2m1 values per
+    # byte plus separate FP8 block scales and FP32 global scales. Keep the task
+    # schema explicit while mapping tensor storage to the actual packed dtype.
+    "nvfp4": torch.uint8,
 }
 # optional newer dtypes
 for _n in ("float4_e2m1fn_x2", "uint16", "uint32", "uint64"):

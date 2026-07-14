@@ -439,7 +439,8 @@ def main():
         hints = []
         for k in ("achieved_tflops", "achieved_gbps", "bound", "useful_tflops",
                   "effective_kv_gbps", "effective_topk", "active_experts",
-                  "tokens_per_expert_cv", "useful_vs_padded_util", "us_per_token"):
+                  "tokens_per_expert_cv", "useful_vs_padded_util",
+                  "allocated_cache_footprint_bytes", "us_per_token"):
             if k in m:
                 hints.append(f"{k}={m[k]}")
         if r.get("us_per_token") is not None and "us_per_token" not in m:
