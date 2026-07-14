@@ -52,8 +52,9 @@ tasks/<model>/<task_name>/
   .baseline_cache.json   cached per-shape baseline latency (git-ignored)
 ```
 
-`definition.json` keys: `name, hf_id, description, axes, custom_inputs_entrypoint, inputs,
-outputs, reference`.
+`definition.json` keys: `name, hf_id, family, description, axes, custom_inputs_entrypoint,
+inputs, outputs, reference`, plus optional `flops_expr` / `performance_model` /
+`workload_metrics` for advisory metrics.
 
 **Axes** are the shape variables. Three types (`harness/inputs.py:resolve_axes`):
 - `const` — fixed (e.g. hidden size `H=7168`).
@@ -86,6 +87,7 @@ package. Files:
 | `correctness.py` | allclose-style error stats + matched-ratio, inf/nan sanity, optional max-error cap |
 | `timing.py` | CUPTI device-kernel timing (primary) + CUDA-events (fallback); L2 flush, arg clone |
 | `reward_hack.py` | timer-patch detection, lazy-output rejection, thread-injection check |
+| `metrics.py` | read-only diagnostic metrics (GEMM / sparse MLA / routed experts / SwiGLU); never gates WIN |
 | `driver.py` | subprocess entrypoint: for one task + one candidate, evaluate every workload → `traces.json` |
 | `profile.py` | fast advisory profiler (§7) — separate from the verdict path |
 
@@ -147,10 +149,17 @@ resolve axes → build_inputs (via reference.get_inputs)
   → if correct: time_runnable(candidate) with a fresh clone per iteration
   → post-timing: check_monkey_patch() again + one more candidate run re-compared
     against the oracle (rejects timers patched inside run() and go-lazy-under-timing)
-  → emit trace {status, correctness, performance.latency_ms, log}
+  → emit trace {status, correctness (+ optional extras), performance.latency_ms
+                 (+ advisory metrics / us_per_token), log}
 ```
 Status is one of `PASSED / INCORRECT / RUNTIME_ERROR / REWARD_HACK`. All exceptions are caught
 and become a trace with a log — a crash on one shape never aborts the sweep.
+
+**Advisory metrics.** When a task declares `performance_model`, the driver attaches
+`performance.metrics` (from `harness/metrics.py`, fed by reference inputs + measured
+latency) and optional `correctness.extras` (mean/p99 abs err, cosine distance). These
+fields flow into `VERDICT_JSON.per_shape` for agent feedback. They **never** change the
+WIN gate (full sweep, NaN/Inf ban, matched-ratio, conservative speedup).
 
 ---
 

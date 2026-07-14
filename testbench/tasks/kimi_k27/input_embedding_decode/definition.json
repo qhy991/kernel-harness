@@ -1,6 +1,7 @@
 {
     "name": "kimi_k27_input_embedding_decode",
     "hf_id": "moonshotai/Kimi-K2.7",
+    "family": "embedding",
     "description": "Kimi-K2.7 Input Embedding (decode), vocab gather (F.embedding, unquantized VocabParallelEmbedding path). out[M,7168] = weight[input_ids], vocab=163840. Baseline = sglang production op; beat its latency while matching output.",
     "axes": {
         "M": {

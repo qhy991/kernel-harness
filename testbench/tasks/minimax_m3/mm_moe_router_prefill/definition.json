@@ -1,6 +1,7 @@
 {
     "name": "minimax_m3_mm_moe_router_prefill",
     "hf_id": "MiniMaxAI/MiniMax-M3",
+    "family": "router-gemm",
     "description": "MiniMax-M3 MoE Router GEMM (prefill), fp32 cuBLAS matmul (inventory op37): logits[M,128] = hidden[M,6144] @ gate_w[128,6144].T. Baseline = sglang production path; beat its latency while matching output.",
     "axes": {
         "M": {

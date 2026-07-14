@@ -1,6 +1,7 @@
 {
     "name": "minimax_m3_mm_dsa_decode_attn_ctx4096",
     "hf_id": "MiniMaxAI/MiniMax-M3",
+    "family": "dsa-decode-attn",
     "description": "MiniMax-M3 DSA decode main sparse attention (decode, ctx=4096), flash_decode_with_gqa_share_sparse (Triton, op34): GQA-share sparse attention over the top-16 KV blocks. num_q_heads=64, num_kv_heads=4 (GQA 16:1), head_dim=128, block_size=128. Batch=sweep, paged KV. Requires amd_add_m3. Baseline = sglang production kernel.",
     "axes": {
         "M": {

@@ -1,0 +1,112 @@
+{
+    "name": "glm52_sparse_mla_decode",
+    "hf_id": "zai-org/GLM-5.2-FP8",
+    "family": "sparse-mla-decode",
+    "description": "GLM-5.2 Sparse MLA Decode (TP8 local heads=8), flashinfer TRT-LLM sparse MLA (B200 production path). Same SGLang kernel for all contexts; sweep ctx=[1024, 2048, 4096, 8192, 32768] \u00d7 batch=[16, 32]. top-k=2048 (effective min(ctx,topk)); page_size=64; latent dim=576; out kv_lora=512. Baseline = SGLang production kernel on Blackwell.",
+    "axes": {
+        "M": {
+            "type": "var",
+            "description": "decode batch (sweep)"
+        },
+        "ctx": {
+            "type": "var",
+            "description": "KV context length (sweep)"
+        },
+        "num_heads": {
+            "type": "const",
+            "value": 8,
+            "description": "local heads under TP8"
+        },
+        "head_dim": {
+            "type": "const",
+            "value": 576,
+            "description": "kv_lora + qk_rope"
+        },
+        "kv_lora": {
+            "type": "const",
+            "value": 512
+        },
+        "topk": {
+            "type": "const",
+            "value": 2048
+        },
+        "page_size": {
+            "type": "const",
+            "value": 64
+        },
+        "qk_nope": {
+            "type": "const",
+            "value": 192
+        },
+        "qk_rope": {
+            "type": "const",
+            "value": 64
+        }
+    },
+    "custom_inputs_entrypoint": "get_inputs",
+    "inputs": {
+        "q": {
+            "shape": [
+                "M",
+                1,
+                "num_heads",
+                "head_dim"
+            ],
+            "dtype": "float8_e4m3fn"
+        },
+        "kv_cache": {
+            "shape": null,
+            "dtype": "float8_e4m3fn"
+        },
+        "block_tables": {
+            "shape": [
+                "M",
+                1,
+                "topk"
+            ],
+            "dtype": "int32"
+        },
+        "seq_lens": {
+            "shape": [
+                "M"
+            ],
+            "dtype": "int32"
+        },
+        "workspace": {
+            "shape": null,
+            "dtype": "uint8"
+        },
+        "bmm1_scale": {
+            "shape": null,
+            "dtype": "float32"
+        },
+        "max_seq_len": {
+            "shape": null,
+            "dtype": "int32"
+        }
+    },
+    "outputs": {
+        "o": {
+            "shape": [
+                "M",
+                "num_heads",
+                "kv_lora"
+            ],
+            "dtype": "bfloat16"
+        }
+    },
+    "reference": "\"\"\"GLM-5.2 Sparse MLA decode \u2014 SGLang B200 production baseline (TRT-LLM).\n\nOn Blackwell + FP8 KV, SGLang's DSA decode path dispatches\n`flashinfer.decode.trtllm_batch_decode_with_kv_cache_mla(..., backend=\"trtllm-gen\")`\n(see sglang dsa_backend._forward_trtllm). That kernel is the correctness oracle\nAND the latency baseline for this task \u2014 not Hopper flashmla_sparse.\n\nFP8 path requires FP8 query + FP8 KV (BF16 query with FP8 KV has no TRTLLM-GEN\nkernel). Query is pre-quantized offline in get_inputs; only the decode launch is timed.\n\nI/O contract (TP8 local shard):\n  q[B, 1, H_local=8, 576]          \u2014 absorbed (nope|rope) query, FP8_e4m3\n  kv_cache[pages, 1, page=64, 576] \u2014 FP8_e4m3 packed latent KV (TRTLLM layout)\n  block_tables[B, 1, topk=2048]    \u2014 selected token indices (invalid = -1)\n  seq_lens[B]                      \u2014 per-seq context length\n  workspace                        \u2014 flashinfer workspace buffer\n\n  o[B, H_local, kv_lora=512]\n\nOnly the decode kernel is timed. Index / page construction is untimed in get_inputs.\n\"\"\"\n\nimport os\n\nimport torch\n\nNUM_HEADS_LOCAL = 8          # 64 / TP8\nKV_LORA = 512\nQK_ROPE = 64\nQK_NOPE = 192\nHEAD_DIM = KV_LORA + QK_ROPE  # 576\nPAGE_SIZE = 64\nINDEX_TOPK = 2048\n# FlashInfer TRT-LLM workspace. Sparse MLA over long ctx + large batch needs more\n# than the default 128 MiB; size with headroom from ctx/batch.\n_DEFAULT_WS = 128 * 1024 * 1024\n_MAX_WS = 1024 * 1024 * 1024\n\n\ndef _workspace(device: torch.device, batch: int = 1, ctx: int = 1024) -> torch.Tensor:\n    env = os.environ.get(\"SGLANG_FLASHINFER_WORKSPACE_SIZE\")\n    if env:\n        n = int(env)\n    else:\n        # Empirically: 128 MiB covers short ctx; scale up with B * ctx token traffic.\n        n = max(_DEFAULT_WS, int(256 * 1024 * 1024 * (batch * max(ctx, 1) / 65536.0)))\n        n = min(n, _MAX_WS)\n    return torch.zeros(n, dtype=torch.uint8, device=device)  # zeros required on first use\n\n\ndef get_inputs(axes_and_scalars: dict, device: torch.device) -> dict:\n    B = int(axes_and_scalars[\"M\"])\n    ctx = int(axes_and_scalars[\"ctx\"])\n    topk = int(axes_and_scalars.get(\"topk\", INDEX_TOPK))\n    heads = int(axes_and_scalars.get(\"num_heads\", NUM_HEADS_LOCAL))\n    head_dim = int(axes_and_scalars.get(\"head_dim\", HEAD_DIM))\n    page = int(axes_and_scalars.get(\"page_size\", PAGE_SIZE))\n    sm_scale = float(axes_and_scalars.get(\"sm_scale\", head_dim ** -0.5))\n\n    # Effective selected length: min(ctx, topk). Pad remaining slots with -1.\n    eff = min(ctx, topk)\n\n    # Token pool sized to cover B sequences of `ctx`, rounded up to page boundary.\n    tokens_per_seq = ((ctx + page - 1) // page) * page\n    total_tokens = B * tokens_per_seq\n    num_pages = total_tokens // page\n\n    # FP8 query (B200 production path quantizes Q before TRT-LLM).\n    q = (torch.randn(B, 1, heads, head_dim, device=device, dtype=torch.float32) * 0.05\n         ).to(torch.float8_e4m3fn)\n\n    # FP8 latent KV cache in TRTLLM layout: [pages, 1, page_size, head_dim].\n    kv_bf16 = (torch.randn(num_pages, 1, page, head_dim, device=device,\n                           dtype=torch.float32) * 0.05)\n    kv_cache = kv_bf16.to(torch.float8_e4m3fn)\n\n    # Per-seq selected indices into the flat token pool. Seeded for reproducibility.\n    g = torch.Generator(device=device)\n    g.manual_seed(20260714 + B * 1009 + ctx)\n    block_tables = torch.full((B, 1, topk), -1, dtype=torch.int32, device=device)\n    for b in range(B):\n        base = b * tokens_per_seq\n        # Sample `eff` distinct positions from [base, base+ctx).\n        perm = torch.randperm(ctx, generator=g, device=device)[:eff]\n        block_tables[b, 0, :eff] = (perm + base).to(torch.int32)\n\n    seq_lens = torch.full((B,), ctx, dtype=torch.int32, device=device)\n    workspace = _workspace(device, batch=B, ctx=ctx)\n    # Scalar axes carried as 0-dim tensors so they survive clone_args.\n    bmm1_scale = torch.tensor(sm_scale, dtype=torch.float32, device=device)\n    max_seq_len = torch.tensor(ctx, dtype=torch.int32, device=device)\n    return {\n        \"q\": q,\n        \"kv_cache\": kv_cache,\n        \"block_tables\": block_tables,\n        \"seq_lens\": seq_lens,\n        \"workspace\": workspace,\n        \"bmm1_scale\": bmm1_scale,\n        \"max_seq_len\": max_seq_len,\n    }\n\n\n@torch.no_grad()\ndef run(q, kv_cache, block_tables, seq_lens, workspace, bmm1_scale, max_seq_len):\n    import flashinfer.decode\n\n    # Mirror dsa_backend._forward_trtllm view conventions.\n    kv = kv_cache.view(-1, 1, kv_cache.shape[-2], kv_cache.shape[-1])\n    scale = float(bmm1_scale.item() if isinstance(bmm1_scale, torch.Tensor)\n                  else bmm1_scale)\n    msl = int(max_seq_len.item() if isinstance(max_seq_len, torch.Tensor)\n              else max_seq_len)\n    out = flashinfer.decode.trtllm_batch_decode_with_kv_cache_mla(\n        query=q,\n        kv_cache=kv,\n        workspace_buffer=workspace,\n        qk_nope_head_dim=QK_NOPE,\n        kv_lora_rank=KV_LORA,\n        qk_rope_head_dim=QK_ROPE,\n        block_tables=block_tables,\n        seq_lens=seq_lens,\n        max_seq_len=msl,\n        sparse_mla_top_k=block_tables.shape[-1],\n        bmm1_scale=scale,\n        backend=\"trtllm-gen\",\n    )\n    # flashinfer returns [B, 1, H, kv_lora] or [B, H, kv_lora] depending on version;\n    # normalize to [B, H, kv_lora] for a stable contract.\n    if out.ndim == 4 and out.shape[1] == 1:\n        out = out.squeeze(1)\n    return out\n",
+    "performance_model": {
+        "kind": "sparse-mla",
+        "family": "sparse-mla-decode"
+    },
+    "workload_metrics": [
+        "valid_selected_kv",
+        "effective_topk",
+        "effective_topk_ratio",
+        "selected_token_head_per_s",
+        "effective_kv_gbps",
+        "cache_footprint_bytes",
+        "us_per_token"
+    ]
+}

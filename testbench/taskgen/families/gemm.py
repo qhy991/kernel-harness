@@ -1,6 +1,7 @@
 """GEMM / quant families: fp8-linear, bf16-linear, router, lm-head, grouped-MoE, act-quant."""
-from ..config import KIMI as K, MM, recipe
+from ..config import KIMI as K, MM, GLM52 as G, recipe
 from ..spec import (TaskSpec, DECODE_SWEEP, PREFILL_SWEEP, ROUTER_SWEEP, MASKED_SWEEP,
+                    GLM52_PREFILL_SWEEP, GLM52_DECODE_SWEEP,
                     EXACT_TOL, sweep_for, var, const, expr, tensor)
 
 # fp8-linear-gemm: (name, op, phase, K, N, csv_wallclock_us)
@@ -251,9 +252,100 @@ def _act_quant():
             meta={"K": MM.hidden})
 
 
+def _glm52_o_proj():
+    """Attention O Projection under TP8: K=local_heads*v_head=2048, N=hidden=6144."""
+    r = recipe("fp8_linear_gemm.py")
+    kk, nn = G.o_in, G.hidden
+    for name, phase, sweep in [
+        ("o_proj_prefill", "prefill", GLM52_PREFILL_SWEEP),
+        ("o_proj_decode", "decode", GLM52_DECODE_SWEEP),
+    ]:
+        yield TaskSpec(
+            model=G.model, name=name, op="Attention O Projection",
+            family="fp8-linear-gemm", phase=phase, hf_id=G.hf_id, recipe=r,
+            sweep=sweep, backend="deep_gemm w8a8_block_fp8 (blackwell)",
+            flops_expr="2*M*K*N",
+            performance_model={"kind": "gemm", "family": "fp8-linear-gemm"},
+            workload_metrics=["achieved_tflops", "achieved_gbps", "arithmetic_intensity",
+                              "bound", "us_per_token"],
+            description=(
+                f"GLM-5.2 Attention O Projection ({phase}, TP8 local), FP8 blockwise GEMM "
+                f"(deep_gemm w8a8_block_fp8). out[M,{nn}] = x_fp8[M,{kk}] @ w_fp8[{nn},{kk}].T. "
+                f"K={kk}=local_heads*v_head ({G.local_heads}*{G.v_head}), N={nn}=hidden. "
+                f"Baseline = SGLang production DeepGEMM; beat every shape while matching output."),
+            goal=(f"Optimize solution.py against SGLang's DeepGEMM w8a8_block_fp8 "
+                  f"baseline for GLM-5.2 O Projection {phase}; beat the sweep and match "
+                  "SGLang output within the declared FP8 tolerance."),
+            axes={"M": var(f"{phase} token/batch count (sweep)"),
+                  "K": const(kk, "local O_proj input = heads/TP * v_head"),
+                  "N": const(nn, "hidden size"),
+                  "K_scale_blocks": expr("K//512", "ue8m0-packed K scale blocks")},
+            inputs={"x_fp8": tensor(["M", "K"], "float8_e4m3fn"),
+                    "x_scale": tensor(["M", "K_scale_blocks"], "int32"),
+                    "w_fp8": tensor(["N", "K"], "float8_e4m3fn"),
+                    "w_scale": tensor(["N", "K_scale_blocks"], "int32")},
+            outputs={"output": tensor(["M", "N"], "bfloat16")},
+            meta={"K": kk, "N": nn, "tp": G.tp, "deployment": "B200-TP8-EP8"})
+
+
+def _glm52_routed_experts():
+    """Routed Gate+Up / Down with EP-local realistic top-8 routing."""
+    r = recipe("glm52_routed_moe_gemm.py")
+    # (name, op, phase, layout 0=contig/1=masked, K, N, sweep)
+    table = [
+        ("routed_gateup_prefill", "Routed Expert Gate+Up", "prefill", 0,
+         G.hidden, G.gateup_n, GLM52_PREFILL_SWEEP),
+        ("routed_gateup_decode",  "Routed Expert Gate+Up", "decode",  1,
+         G.hidden, G.gateup_n, GLM52_DECODE_SWEEP),
+        ("routed_down_prefill",   "Routed Expert Down",    "prefill", 0,
+         G.moe_inter, G.hidden, GLM52_PREFILL_SWEEP),
+        ("routed_down_decode",    "Routed Expert Down",    "decode",  1,
+         G.moe_inter, G.hidden, GLM52_DECODE_SWEEP),
+    ]
+    for name, op, phase, layout, kk, nn, sweep in table:
+        family = "grouped-moe-contiguous" if layout == 0 else "grouped-moe"
+        backend = ("deep_gemm m_grouped_fp8_gemm_nt_contiguous (blackwell)" if layout == 0
+                   else "deep_gemm fp8_m_grouped_gemm_nt_masked (blackwell)")
+        yield TaskSpec(
+            model=G.model, name=name, op=op, family=family, phase=phase,
+            hf_id=G.hf_id, recipe=r, sweep=sweep, backend=backend,
+            flops_expr="2*M*K*N" if layout == 0 else "2*E*M*K*N",
+            performance_model={"kind": "routed-expert", "family": family,
+                               "stage": "gateup" if "gateup" in name else "down"},
+            workload_metrics=["local_assignments", "active_experts", "empty_experts",
+                              "tokens_per_expert_cv", "useful_vs_padded_util",
+                              "useful_tflops", "us_per_assignment"],
+            description=(
+                f"GLM-5.2 {op} ({phase}, EP{G.ep} local E={G.ep_local}), FP8 grouped GEMM. "
+                f"Routing = fixed-seed top-{G.moe_topk}/{G.n_routed_experts} filtered to this "
+                f"rank; K={kk}, N={nn}. Quant offline; only the grouped GEMM is timed. "
+                f"Baseline = SGLang DeepGEMM production kernel."),
+            goal=(f"Optimize solution.py against SGLang's DeepGEMM grouped-GEMM baseline "
+                  f"for GLM-5.2 {op} {phase}; beat every workload and match SGLang output."),
+            axes={"M": var(f"{phase} token/batch population (sweep)"),
+                  "E": const(G.ep_local, f"local experts (EP{G.ep} of {G.n_routed_experts})"),
+                  "K": const(kk), "N": const(nn),
+                  "layout": const(layout, "0=contiguous prefill, 1=masked decode"),
+                  "n_global": const(G.n_routed_experts),
+                  "topk": const(G.moe_topk)},
+            inputs={"a_fp8": tensor(None, "float8_e4m3fn"),
+                    "a_s": tensor(None, "int32"),
+                    "b_fp8": tensor(None, "float8_e4m3fn"),
+                    "b_s": tensor(None, "int32"),
+                    "out": tensor(None, "bfloat16"),
+                    "masked_m": tensor(["E"], "int32"),
+                    "expected_m": tensor(None, "int32"),
+                    "m_indices": tensor(None, "int32"),
+                    "layout": tensor(None, "int32")},
+            outputs={"grouped_out": tensor(None, "bfloat16")},
+            meta={"E": G.ep_local, "K": kk, "N": nn, "ep": G.ep, "tp": G.tp,
+                  "deployment": "B200-TP8-EP8"})
+
+
 def specs():
     out = []
     for gen in (_fp8_linear, _bf16_linear, _router, _lm_head,
-                _grouped_moe_masked, _grouped_moe_contiguous, _act_quant):
+                _grouped_moe_masked, _grouped_moe_contiguous, _act_quant,
+                _glm52_o_proj, _glm52_routed_experts):
         out.extend(gen())
     return out

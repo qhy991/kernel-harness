@@ -1,6 +1,7 @@
 {
     "name": "kimi_k27_input_layernorm_fused_prefill",
     "hf_id": "moonshotai/Kimi-K2.7",
+    "family": "fused-add-rmsnorm",
     "description": "Kimi-K2.7 Input LayerNorm (fused add-RMSNorm) (prefill), fused residual-add + RMSNorm over hidden=7168 (sgl_kernel.fused_add_rmsnorm, in-place). residual_out = x + residual; normed = rmsnorm(residual_out) * weight. INTERFACE-EXACT drop-in. Baseline = sglang production kernel; beat its latency while matching BOTH outputs.",
     "axes": {
         "M": {

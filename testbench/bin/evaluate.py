@@ -35,13 +35,29 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from config import VENV, SGLANG_DIR as SGLANG, CUDA_HOME, resolve_sglang_dir
+from config import VENV, SGLANG_DIR as SGLANG, CUDA_HOME, resolve_sglang_dir, TESTBENCH_ROOT
 
 
 def _env(sglang_dir=None):
     e = dict(os.environ)
     e["PATH"] = f"{VENV}/bin:" + e.get("PATH", "")
-    e["PYTHONPATH"] = f"{sglang_dir or SGLANG}/python:" + e.get("PYTHONPATH", "")
+    # Put the testbench package root first so `python -m harness.driver` resolves,
+    # but DO NOT put harness/ itself on PYTHONPATH (that shadows stdlib `profile`).
+    # Prefer a local SGLang checkout only when it looks complete enough to host the
+    # production modules the recipes import (fp8_kernel). An incomplete shallow
+    # checkout would otherwise shadow the installed sglang package and break imports.
+    sgl_root = Path(sglang_dir or SGLANG)
+    sgl_py = sgl_root / "python"
+    marker = sgl_py / "sglang" / "srt" / "layers" / "quantization" / "fp8_kernel.py"
+    parts = [str(TESTBENCH_ROOT)]
+    if marker.is_file():
+        parts.append(str(sgl_py))
+    # Drop any inherited incomplete SGLANG python entry so site-packages can resolve.
+    inherited = [
+        p for p in e.get("PYTHONPATH", "").split(":")
+        if p and Path(p).resolve() != sgl_py.resolve()
+    ]
+    e["PYTHONPATH"] = ":".join(parts + inherited)
     e.setdefault("CUDA_HOME", str(CUDA_HOME))
     return e
 
@@ -71,13 +87,16 @@ def _tmp_base(task_dir: Path) -> str:
     return f"/tmp/kernel-harness/{task_dir.name}-{h}"
 
 
-_DRIVER = Path(__file__).resolve().parent.parent / "harness" / "driver.py"
+_DRIVER_MODULE = "harness.driver"
 
 
 def _run(task_dir: Path, solution: str, out: Path, iterations: int, max_workloads):
     out.mkdir(parents=True, exist_ok=True)
+    # Invoke as a module so the harness/ directory is NOT sys.path[0]
+    # (running harness/driver.py as a script would shadow the stdlib `profile`
+    # module with harness/profile.py and break torch/torchvision imports).
     cmd = [
-        str(VENV / "bin" / "python"), str(_DRIVER), str(task_dir),
+        str(VENV / "bin" / "python"), "-m", _DRIVER_MODULE, str(task_dir),
         "--solution-name", solution, "--iterations", str(iterations), "-o", str(out),
     ]
     if max_workloads:
@@ -93,8 +112,13 @@ def _run(task_dir: Path, solution: str, out: Path, iterations: int, max_workload
             traces[ax] = {
                 "status": e["status"],
                 "latency_ms": perf.get("latency_ms"),
+                "latency_us": perf.get("latency_us"),
+                "us_per_token": perf.get("us_per_token"),
+                "tokens_per_s": perf.get("tokens_per_s"),
+                "metrics": perf.get("metrics"),
                 "max_abs_err": corr.get("max_absolute_error"),
                 "max_rel_err": corr.get("max_relative_error"),
+                "corr_extras": corr.get("extras"),
                 "has_nan": corr.get("has_nan"),
                 "has_inf": corr.get("has_inf"),
                 "log": (e.get("log") or "")[:300],
@@ -185,7 +209,9 @@ def _run_samples(task_dir, solution, tag, iterations, max_workloads, repeat):
         for ax, v in tr.items():
             rec = agg.setdefault(ax, {"samples": [], "runs": 0, "passed_runs": 0,
                                       "max_abs_err": None, "max_rel_err": None,
-                                      "has_nan": False, "has_inf": False, "log": ""})
+                                      "has_nan": False, "has_inf": False, "log": "",
+                                      "metrics": None, "corr_extras": None,
+                                      "us_per_token": None, "tokens_per_s": None})
             rec["runs"] += 1
             ok = v["status"] == "PASSED" and not v["has_nan"] and not v["has_inf"]
             if ok and v["latency_ms"]:
@@ -198,6 +224,15 @@ def _run_samples(task_dir, solution, tag, iterations, max_workloads, repeat):
             for k in ("max_abs_err", "max_rel_err"):
                 if v[k] is not None:
                     rec[k] = v[k] if rec[k] is None else max(rec[k], v[k])
+            # Keep the last run's advisory metrics (identical axes → same diagnostics).
+            if v.get("metrics"):
+                rec["metrics"] = v["metrics"]
+            if v.get("corr_extras"):
+                rec["corr_extras"] = v["corr_extras"]
+            if v.get("us_per_token") is not None:
+                rec["us_per_token"] = v["us_per_token"]
+            if v.get("tokens_per_s") is not None:
+                rec["tokens_per_s"] = v["tokens_per_s"]
     return agg
 
 
@@ -345,7 +380,8 @@ def main():
 
     rows, sp_med, sp_cons, sp_opt = [], [], [], []
     correct = bool(sol_agg)
-    for ax in sorted(sol_agg, key=lambda a: json.loads(a).get("M", 0)):
+    for ax in sorted(sol_agg, key=lambda a: (
+            json.loads(a).get("ctx", 0), json.loads(a).get("M", 0))):
         r = sol_agg[ax]
         ok = r["runs"] > 0 and r["passed_runs"] == r["runs"] and bool(r["samples"])
         correct = correct and ok
@@ -370,6 +406,10 @@ def main():
                      "speedup": round(s_med, 3) if s_med else None,
                      "speedup_conservative": round(s_cons, 3) if s_cons else None,
                      "speedup_optimistic": round(s_opt, 3) if s_opt else None,
+                     "us_per_token": r.get("us_per_token"),
+                     "tokens_per_s": r.get("tokens_per_s"),
+                     "metrics": r.get("metrics"),
+                     "corr_extras": r.get("corr_extras"),
                      "log": r["log"] if not ok else ""})
 
     geo, geo_c, geo_o = _geo(sp_med), _geo(sp_cons), _geo(sp_opt)
@@ -394,6 +434,22 @@ def main():
               f"{(r['speedup_conservative'] if r['speedup_conservative'] is not None else 0):>8.3f} "
               f"{(r['max_rel_err'] if r['max_rel_err'] is not None else 0):>12.2e}"
               + (f"   {r['log']}" if not r['passed'] else ""))
+        m = r.get("metrics") or {}
+        extras = r.get("corr_extras") or {}
+        hints = []
+        for k in ("achieved_tflops", "achieved_gbps", "bound", "useful_tflops",
+                  "effective_kv_gbps", "effective_topk", "active_experts",
+                  "tokens_per_expert_cv", "useful_vs_padded_util", "us_per_token"):
+            if k in m:
+                hints.append(f"{k}={m[k]}")
+        if r.get("us_per_token") is not None and "us_per_token" not in m:
+            hints.append(f"us_per_token={r['us_per_token']}")
+        for k in ("mean_abs_err", "p99_abs_err", "cosine_distance"):
+            if k in extras:
+                hints.append(f"{k}={extras[k]:.3e}" if isinstance(extras[k], float)
+                             else f"{k}={extras[k]}")
+        if hints:
+            print("    metrics: " + ", ".join(hints[:8]))
     verdict = {
         "task": task_dir.name, "solution": args.solution, "repeat": repeat,
         "correct": correct, "win": win,

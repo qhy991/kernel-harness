@@ -1,13 +1,15 @@
 # kernel-harness / testbench
 
-Standalone per-kernel optimization tasks for the Kimi-K2.7 / MiniMax-M3 / DeepSeek-V3.2
-inventory (`../logs/kimi_minimax_20260710-070816/all_models_kernel_inventory.csv`).
+Standalone per-kernel optimization tasks for the Kimi-K2.7 / MiniMax-M3 / GLM-5.2 /
+DeepSeek-V3.2 inventory.
 
-**Inventory:** 82 tasks across 24 families (Kimi-K2.7 39 + MiniMax-M3 43, incl. 6 DSA
-sparse-attention families on the `sglang-m3` build). `bin/integrate.py` has a drop-in
-recipe for every family with a single rebindable sglang dispatch symbol; the fused
-sparse-attention families (`dsa-decode-attn`, `dsa-prefill-attn`, `dsa-prefill-topk`)
-have no isolated symbol and report `SKIP` rather than a faked recipe.
+**Inventory:** 91 tasks across 26 unique family names (Kimi-K2.7 39 + MiniMax-M3 43 +
+GLM-5.2 9). GLM-5.2 targets B200 + TP8/EP8 production shapes (`zai-org/GLM-5.2-FP8`):
+O Projection, Sparse MLA Decode (TRT-LLM), routed Gate+Up / Down / fused SwiGLU+FP8.
+`bin/integrate.py` has a drop-in recipe for every family with a single rebindable sglang
+dispatch symbol; fused families (`dsa-decode-attn`, `dsa-prefill-attn`,
+`dsa-prefill-topk`, `sparse-mla-decode`) have no isolated symbol and report `SKIP`
+rather than a faked recipe.
 
 Each **task** is one `(op, phase)` kernel with its whole shape sweep bundled. An agent
 optimizes `solution.py` to **match the sglang production kernel's output** (within a
@@ -290,11 +292,12 @@ as **no clean source site** rather than faked.
 
 ## Regenerate / extend
 
-From the repository root, `.venv/bin/python testbench/gen_tasks.py` regenerates both
+From the repository root, `.venv/bin/python testbench/gen_tasks.py` regenerates all
 models from declarative `TaskSpec`s in `taskgen/families/` and kernel sources in
-`recipes/`. It writes Kimi tasks to `tasks/kimi_k27/` and MiniMax tasks to
-`tasks/minimax_m3/`. Workloads are grounded in each model's canonical config; new ops
-are added one at a time and API-verified on GPU before their recipe is accepted.
+`recipes/`. It writes Kimi → `tasks/kimi_k27/`, MiniMax → `tasks/minimax_m3/`,
+GLM-5.2 → `tasks/glm52/`. Workloads are grounded in each model's canonical config
+(`taskgen/config.py`); new ops are added one at a time and API-verified on GPU before
+their recipe is accepted.
 
 ## Coverage
 
@@ -309,7 +312,30 @@ Current generated snapshot:
 - Kimi-K2.7: 39 tasks in 12 families, including three MLA-attention tasks
   (`mla_prefill`, `mla_decode_seq2048`, `mla_decode_seq32768`).
 - MiniMax-M3: 43 tasks in 18 families, including 11 tasks across six DSA families.
-- Combined: 82 tasks across 24 unique family names.
+- GLM-5.2: 9 tasks under B200 / TP8 / EP8 (`zai-org/GLM-5.2-FP8`):
+  - `o_proj_{prefill,decode}` — block-FP8 DeepGEMM, K=2048, N=6144
+  - `sparse_mla_decode` — flashinfer TRT-LLM sparse MLA (`backend=trtllm-gen`;
+    **not** Hopper `flashmla_sparse`); workloads = ctx∈{1024,2048,4096,8192,32768} ×
+    bs∈{16,32} (same SGLang kernel, context is metadata)
+  - `routed_{gateup,down}_{prefill,decode}` — EP-local top-8/256 → 32 experts
+  - `routed_swiglu_{prefill,decode}` — fused `silu_and_mul_*_post_quant`
+  - Other workloads: prefill M∈{1024,2048,4096}, decode M∈{16,32}
+- Combined: 91 tasks across 26 unique family names.
+
+### Diagnostic metrics (advisory only)
+
+Tasks that declare `performance_model` (including all GLM-5.2 tasks) attach read-only
+diagnostics to `VERDICT_JSON.per_shape` (`metrics` / `corr_extras`). They are derived from
+reference-built input stats + measured latency — **candidates cannot forge them, and they
+never participate in the WIN gate**:
+- GEMM / O Projection: useful FLOPs, TFLOP/s, GB/s, arithmetic intensity, B200 roofline %
+- Sparse MLA: valid selected-KV, effective top-k ratio, KV bandwidth, cache footprint;
+  correctness extras include mean/p99 abs error and cosine distance
+- Routed experts / SwiGLU: local assignments, active/empty experts, tokens-per-expert CV,
+  padding ratio, useful-vs-padded utilization / stage throughput
+
+Authoritative rules are unchanged: full sweep + CUPTI cold-L2 + per-shape candidate worst
+vs baseline best.
 
 MiniMax DSA tasks pin `MM_M3_SGLANG_DIR` because they need a checkout containing the
 M3 sparse stack. They are available when that checkout passes `bin/check_env.py`; they
@@ -320,8 +346,9 @@ are not replaced with proxy baselines when it is absent.
   `dsv3_fused_a_gemm` fused fast path for M≤16 (fuses act-quant+GEMM) that could be a
   separate, more faithful decode baseline later.
 - Floating tolerances are assigned by family in `taskgen/spec.py`: BF16
-  `(0.02, 0.01, 0.999)`, FP8 `(0.1, 0.05, 0.999)`, and attention
-  `(0.03, 0.02, 0.999)` as `(atol, rtol, matched_ratio)`.
+  `(0.02, 0.01, 0.999)`, FP8 `(0.1, 0.05, 0.999)`, attention
+  `(0.03, 0.02, 0.999)`, and Sparse MLA FP8 DSA `(0.2, 0.2, 0.99)` as
+  `(atol, rtol, matched_ratio)`.
 - **Index-producing / routing ops** (`moe-gate`) use an **exact-index oracle**
   (`atol=0, rtol=0, matched_ratio=1.0`) and output the integer indices only — the
   harness applies one tolerance per workload, so int-exact ids can't be co-judged with

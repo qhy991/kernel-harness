@@ -1,6 +1,7 @@
 {
     "name": "minimax_m3_mm_gemma_rmsnorm_decode",
     "hf_id": "MiniMaxAI/MiniMax-M3",
+    "family": "gemma-rmsnorm",
     "description": "MiniMax-M3 Gemma-RMSNorm (decode), Gemma-RMSNorm over hidden=6144 (sgl_kernel.gemma_rmsnorm; scales by 1+weight). out[M,6144] = x * rsqrt(mean(x^2,-1)+eps) * (1 + weight). INTERFACE-EXACT drop-in. Baseline = sglang production kernel; beat its latency while matching output.",
     "axes": {
         "M": {

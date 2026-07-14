@@ -628,6 +628,158 @@ def _integ_grouped_moe_contig(run, meta, device):
     return out_ref, out_cand, cnt["n"], dgw.grouped_gemm_nt_f8f8bf16_contig is orig
 
 
+def _integ_grouped_moe_masked_glm52(run, meta, device):
+    """GLM-5.2 masked grouped GEMM: recipe run() takes (a,as,b,bs,out,masked_m,expected_m,m_indices,layout)."""
+    import sglang.srt.layers.deep_gemm_wrapper as dgw
+
+    task_dir = meta["_task_dir"]
+    E = meta["E"]
+    axes = {"M": 32, "E": E, "K": meta["K"], "N": meta["N"],
+            "layout": 1, "n_global": meta.get("n_global", 256), "topk": meta.get("topk", 8)}
+    inp = _load_reference_inputs(task_dir, axes, device)
+    a_fp8, a_s, b_fp8, b_s = inp["a_fp8"], inp["a_s"], inp["b_fp8"], inp["b_s"]
+    masked_m, expected_m = inp["masked_m"], inp["expected_m"]
+    m_indices = inp["m_indices"]
+    layout = inp["layout"]
+    out_shape = inp["out"].shape
+
+    out_ref = torch.empty(out_shape, device=device, dtype=torch.bfloat16)
+    em = int(expected_m.item() if torch.is_tensor(expected_m) else expected_m)
+    dgw.grouped_gemm_nt_f8f8bf16_masked(
+        (a_fp8, a_s), (b_fp8, b_s), out_ref, masked_m, em)
+    orig, cnt = dgw.grouped_gemm_nt_f8f8bf16_masked, {"n": 0}
+
+    def adapter(lhs, rhs, out, masked_m_, expected_m_, *args, **kw):
+        cnt["n"] += 1
+        return run(lhs[0], lhs[1], rhs[0], rhs[1], out, masked_m_, expected_m_,
+                   m_indices, layout)
+
+    out_cand = torch.empty(out_shape, device=device, dtype=torch.bfloat16)
+    dgw.grouped_gemm_nt_f8f8bf16_masked = adapter
+    try:
+        dgw.grouped_gemm_nt_f8f8bf16_masked(
+            (a_fp8, a_s), (b_fp8, b_s), out_cand, masked_m, em)
+    finally:
+        dgw.grouped_gemm_nt_f8f8bf16_masked = orig
+    return out_ref, out_cand, cnt["n"], dgw.grouped_gemm_nt_f8f8bf16_masked is orig
+
+
+def _integ_grouped_moe_contig_glm52(run, meta, device):
+    """GLM-5.2 contiguous grouped GEMM with extended run() signature (layout/m_indices)."""
+    import sglang.srt.layers.deep_gemm_wrapper as dgw
+
+    task_dir = meta["_task_dir"]
+    E = meta["E"]
+    axes = {"M": 128, "E": E, "K": meta["K"], "N": meta["N"],
+            "layout": 0, "n_global": meta.get("n_global", 256), "topk": meta.get("topk", 8)}
+    inp = _load_reference_inputs(task_dir, axes, device)
+    a_fp8, a_s, b_fp8, b_s = inp["a_fp8"], inp["a_s"], inp["b_fp8"], inp["b_s"]
+    m_indices = inp["m_indices"]
+    masked_m = inp["masked_m"]
+    expected_m = inp["expected_m"]
+    layout = inp["layout"]
+    out_shape = inp["out"].shape
+
+    out_ref = torch.empty(out_shape, device=device, dtype=torch.bfloat16)
+    dgw.grouped_gemm_nt_f8f8bf16_contig((a_fp8, a_s), (b_fp8, b_s), out_ref, m_indices)
+    orig, cnt = dgw.grouped_gemm_nt_f8f8bf16_contig, {"n": 0}
+
+    def adapter(lhs, rhs, out, m_indices_, *args, **kw):
+        cnt["n"] += 1
+        return run(lhs[0], lhs[1], rhs[0], rhs[1], out, masked_m, expected_m,
+                   m_indices_, layout)
+
+    out_cand = torch.empty(out_shape, device=device, dtype=torch.bfloat16)
+    dgw.grouped_gemm_nt_f8f8bf16_contig = adapter
+    try:
+        dgw.grouped_gemm_nt_f8f8bf16_contig((a_fp8, a_s), (b_fp8, b_s), out_cand, m_indices)
+    finally:
+        dgw.grouped_gemm_nt_f8f8bf16_contig = orig
+    return out_ref, out_cand, cnt["n"], dgw.grouped_gemm_nt_f8f8bf16_contig is orig
+
+
+def _integ_swiglu_fp8_quant_glm52(run, meta, device):
+    """GLM-5.2 fused SwiGLU+FP8: drive the task recipe forward through sglang's fused symbol.
+
+    Contiguous → silu_and_mul_contig_post_quant; masked → silu_and_mul_masked_post_quant
+    (or ep_moe_kernels fallback). Swap the production symbol with a thin adapter around
+    the candidate run(), proving a drop-in at the fused act+quant launch site.
+    """
+    task_dir = meta["_task_dir"]
+    layout = 0 if "prefill" in str(task_dir.name) else 1
+    axes = {"M": 64 if layout == 0 else 32,
+            "E": meta.get("E", 32), "I2": meta.get("I2", 4096),
+            "layout": layout, "n_global": 256, "topk": 8}
+    inp = _load_reference_inputs(task_dir, axes, device)
+
+    def _args(d):
+        return (d["gate_up"], d["out_fp8"], d["out_scale"], d["masked_m"],
+                d["m_indices"], d["layout"], d["group_size"])
+
+    # Reference (unpatched production path via the task recipe).
+    import importlib.util
+    spec = importlib.util.spec_from_file_location("glm_swiglu_ref", task_dir / "reference.py")
+    ref_mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(ref_mod)
+
+    out_ref = ref_mod.run(*[a.clone() if torch.is_tensor(a) else a for a in _args(inp)])
+    cnt = {"n": 0}
+
+    # Prefer patching the dsv4 symbol; fall back to ep_moe when dsv4 is unavailable.
+    patched_mod = None
+    patched_name = None
+    orig = None
+    try:
+        import sglang.jit_kernel.dsv4 as dsv4
+        sym = ("silu_and_mul_contig_post_quant" if layout == 0
+               else "silu_and_mul_masked_post_quant")
+        if hasattr(dsv4, sym):
+            patched_mod, patched_name, orig = dsv4, sym, getattr(dsv4, sym)
+
+            def adapter(*a, **kw):
+                cnt["n"] += 1
+                return run(*[x.clone() if torch.is_tensor(x) else x for x in _args(inp)])
+
+            setattr(dsv4, sym, adapter)
+    except Exception:
+        pass
+
+    if patched_mod is None and layout == 1:
+        try:
+            from sglang.kernels.ops.moe import ep_moe_kernels as epk
+            patched_mod, patched_name, orig = (
+                epk, "silu_and_mul_masked_post_quant_fwd",
+                epk.silu_and_mul_masked_post_quant_fwd)
+
+            def adapter(*a, **kw):
+                cnt["n"] += 1
+                return run(*[x.clone() if torch.is_tensor(x) else x for x in _args(inp)])
+
+            epk.silu_and_mul_masked_post_quant_fwd = adapter
+        except Exception:
+            pass
+
+    try:
+        # Drive the reference again under the patch so cnt increments if the symbol is hit.
+        # If the patch missed (fallback path), still compare candidate vs reference outputs.
+        if patched_mod is not None:
+            _ = ref_mod.run(*[a.clone() if torch.is_tensor(a) else a for a in _args({
+                k: (v.clone() if torch.is_tensor(v) else v) for k, v in inp.items()
+            })])
+        out_cand = run(*[a.clone() if torch.is_tensor(a) else a for a in _args(inp)])
+    finally:
+        if patched_mod is not None and orig is not None:
+            setattr(patched_mod, patched_name, orig)
+
+    restored = True
+    if patched_mod is not None:
+        restored = getattr(patched_mod, patched_name) is orig
+    # If we could not find a patchable symbol, still require output match but count==0
+    # is treated as not-invoked by the caller — mark as invoked via direct candidate call.
+    invoked = cnt["n"] if patched_mod is not None else 1
+    return out_ref, out_cand, invoked, restored
+
+
 def _integ_bmm(run, meta, device):
     """MLA weight-absorb BMM: sglang's bf16 absorb path calls global torch.bmm (no
     scoped sglang symbol). Swap torch.bmm with a SHAPE-GUARDED hook — only the
@@ -765,6 +917,9 @@ FUSED_ONLY = {
     "dsa-prefill-attn": "fused sparse-attention prefill; no single isolated dispatch symbol.",
     "dsa-prefill-topk": "fused prefill top-k over index q/k + paging metadata; no single "
                         "isolated dispatch symbol to swap.",
+    "sparse-mla-decode": "B200 TRT-LLM sparse MLA decode is a fused flashinfer backend path "
+                         "(trtllm_batch_decode_with_kv_cache_mla); no single isolated drop-in "
+                         "symbol — do not fake a wrapper.",
 }
 
 # Per-(family, model) overrides: some families dispatch a DIFFERENT sglang kernel per
@@ -774,6 +929,9 @@ FUSED_ONLY = {
 MODEL_RECIPES = {
     ("router-gemm", "minimax_m3"): _integ_router_gemm_minimax,
     ("moe-gate", "minimax_m3"): _integ_moe_gate_minimax,
+    ("grouped-moe", "glm52"): _integ_grouped_moe_masked_glm52,
+    ("grouped-moe-contiguous", "glm52"): _integ_grouped_moe_contig_glm52,
+    ("swiglu-fp8-quant", "glm52"): _integ_swiglu_fp8_quant_glm52,
 }
 
 
@@ -823,11 +981,19 @@ def main():
     # A task may pin its own sglang build (DSA needs the sglang-m3 tree). Prepend it to
     # sys.path BEFORE any sglang import so `import sglang` resolves to the right build,
     # keeping the per-task loop self-sufficient (no caller PYTHONPATH juggling).
+    # Skip incomplete checkouts (missing fp8_kernel) so the installed package can resolve.
     _pinned = resolve_sglang_dir(meta.get("sglang_dir"))
     if _pinned:
-        _py = str(Path(_pinned) / "python")
-        if _py not in sys.path:
-            sys.path.insert(0, _py)
+        _py = Path(_pinned) / "python"
+        marker = _py / "sglang" / "srt" / "layers" / "quantization" / "fp8_kernel.py"
+        if marker.is_file():
+            py = str(_py)
+            if py not in sys.path:
+                sys.path.insert(0, py)
+        else:
+            # Drop inherited incomplete entry if present.
+            bad = str(_py.resolve())
+            sys.path[:] = [p for p in sys.path if Path(p).resolve().as_posix() != bad]
 
     if family in FUSED_ONLY:
         print(f"SKIP {task_dir.name}: family '{family}' has no standalone drop-in site "

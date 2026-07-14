@@ -1,6 +1,7 @@
 {
     "name": "minimax_m3_mm_lm_head_decode",
     "hf_id": "MiniMaxAI/MiniMax-M3",
+    "family": "lm-head",
     "description": "MiniMax-M3 LM-head logits GEMM (decode), torch.matmul bf16: out[M,200064] = hidden[M,6144] @ lm_head_w[200064,6144].T. Bandwidth-bound. Baseline = sglang production path; beat its latency while matching output.",
     "axes": {
         "M": {

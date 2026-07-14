@@ -29,6 +29,7 @@ import torch
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from harness.inputs import resolve_axes, build_inputs, normalize_outputs, eval_expr
+from harness.metrics import compute_workload_metrics
 from harness.timing import clone_args, _empty_cache, _clear_cache
 
 # Approximate NVIDIA B200 peaks (label as approximate; used only for the % context).
@@ -118,11 +119,31 @@ def _load_run_and_inputs(task_dir: Path, solution: str):
     return defn, get_inputs, cand_ns["run"]
 
 
-def _pick_shape(task_dir: Path, shape: Optional[int]) -> int:
+def _pick_workload_axes(task_dir: Path, shape: Optional[int]) -> dict:
+    """Pick one workload's axes for advisory profiling.
+
+    Prefer a mid workload.jsonl row (covers multi-axis sweeps like M×ctx). If --shape
+    is given, pick the first row whose M matches that shape (else mid row with that M
+    patched in for M-only tasks).
+    """
+    rows = []
+    wl = task_dir / "workload.jsonl"
+    if wl.exists():
+        for line in wl.read_text().splitlines():
+            line = line.strip()
+            if line:
+                rows.append(json.loads(line).get("axes", {}))
+    if not rows:
+        m = shape if shape is not None else 16
+        return {"M": m}
     if shape is not None:
-        return shape
-    sweep = json.loads((task_dir / "task.json").read_text()).get("sweep", [16])
-    return sweep[len(sweep) // 2]   # a representative mid-sweep shape
+        matches = [r for r in rows if r.get("M") == shape]
+        if matches:
+            return dict(matches[len(matches) // 2])
+        axes = dict(rows[len(rows) // 2])
+        axes["M"] = shape
+        return axes
+    return dict(rows[len(rows) // 2])
 
 
 def profile_task(task_dir, solution: str = "solution.py", shape: Optional[int] = None,
@@ -138,9 +159,10 @@ def profile_task(task_dir, solution: str = "solution.py", shape: Optional[int] =
         sys.path.insert(0, sglang_python)
     defn, get_inputs, run = _load_run_and_inputs(task_dir, solution)
     device = "cuda" if torch.cuda.is_available() else "cpu"
-    m = _pick_shape(task_dir, shape)
-    resolved = resolve_axes(defn, {"M": m})
+    workload_axes = _pick_workload_axes(task_dir, shape)
+    resolved = resolve_axes(defn, workload_axes)
     inputs = build_inputs(get_inputs, defn, resolved, device)
+    inputs_dict = dict(zip(defn["inputs"].keys(), inputs))
 
     out_tensors = normalize_outputs(run(*clone_args(inputs)), defn, device)
     lat = quick_latency(fn=lambda a: run(*a), setup=lambda: clone_args(inputs),
@@ -154,7 +176,13 @@ def profile_task(task_dir, solution: str = "solution.py", shape: Optional[int] =
         except Exception:
             flops = None
     rl = roofline(inputs, out_tensors, lat["median_us"], flops)
-    return {"shape": m, "cold_l2": cold_l2, **lat, "roofline": rl}
+    try:
+        metrics = compute_workload_metrics(
+            defn, resolved, inputs_dict, latency_us=lat["median_us"])
+    except Exception as e:
+        metrics = {"error": str(e)[:200]}
+    return {"shape": workload_axes.get("M"), "axes": workload_axes,
+            "cold_l2": cold_l2, **lat, "roofline": rl, "metrics": metrics}
 
 
 def main():
@@ -170,7 +198,7 @@ def main():
     r = profile_task(args.task_dir, args.solution, args.shape, args.reps,
                      args.cold_l2, args.sglang_python)
     rl = r["roofline"]
-    print(f"{args.task_dir.name}  M={r['shape']}  ({args.solution}, {r['reps']} reps, "
+    print(f"{args.task_dir.name}  axes={r.get('axes', {'M': r['shape']})}  ({args.solution}, {r['reps']} reps, "
           f"{'cold' if r['cold_l2'] else 'warm'} L2)")
     print(f"  latency: median {r['median_us']:.2f} us   min {r['min_us']:.2f} us")
     line = (f"  roofline: {rl['achieved_gbps']} GB/s ({rl['pct_of_hbm_peak']}% HBM)"
@@ -178,6 +206,14 @@ def main():
     if "achieved_tflops" in rl:
         line += f"  {rl['achieved_tflops']} TFLOP/s ({rl['pct_of_fp_peak']}% peak), AI={rl['arithmetic_intensity']}"
     print(line)
+    metrics = r.get("metrics") or {}
+    if metrics and "error" not in metrics:
+        keys = [k for k in ("kind", "achieved_tflops", "achieved_gbps", "bound",
+                            "effective_topk", "effective_kv_gbps", "active_experts",
+                            "tokens_per_expert_cv", "useful_vs_padded_util",
+                            "useful_tflops", "us_per_token") if k in metrics]
+        if keys:
+            print("  metrics: " + ", ".join(f"{k}={metrics[k]}" for k in keys))
     print("  (ADVISORY — use evaluate.py for the authoritative correctness+latency verdict)")
 
 

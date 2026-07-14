@@ -1,6 +1,7 @@
 {
     "name": "minimax_m3_mm_moe_down_grouped_prefill",
     "hf_id": "MiniMaxAI/MiniMax-M3",
+    "family": "grouped-moe-contiguous",
     "description": "MiniMax-M3 MoE Down GroupGEMM (contiguous) (prefill), deep_gemm.m_grouped_fp8_gemm_nt_contiguous over E=16 local experts, K=3072, N=6144. Sweep = tokens/expert (contiguous layout, m_indices routing). FP8 blockwise, quant offline in get_inputs; only the grouped GEMM is timed. Baseline = sglang production kernel; beat its latency.",
     "axes": {
         "M": {

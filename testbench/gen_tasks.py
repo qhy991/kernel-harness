@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Generate standalone kernel-harness tasks for Kimi-K2.7 and MiniMax-M3.
+"""Generate standalone kernel-harness tasks for Kimi-K2.7, MiniMax-M3, and GLM-5.2.
 
 Thin runner over the `taskgen` package: every kernel task is a declarative `TaskSpec`
 (taskgen/families/*.py, grouped by kernel family) written by one canonical writer

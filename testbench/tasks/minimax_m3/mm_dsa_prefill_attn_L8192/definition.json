@@ -1,6 +1,7 @@
 {
     "name": "minimax_m3_mm_dsa_prefill_attn_L8192",
     "hf_id": "MiniMaxAI/MiniMax-M3",
+    "family": "dsa-prefill-attn",
     "description": "MiniMax-M3 DSA prefill main sparse attention (prefill, L=8192), flash_prefill_with_gqa_share_sparse (Triton, op33): GQA-share sparse attention over top-16 KV blocks. num_q_heads=64, num_kv_heads=4 (GQA 16:1), head_dim=128, block_size_k=128. B=sweep. Requires amd_add_m3. Baseline = sglang production kernel.",
     "axes": {
         "M": {

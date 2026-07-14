@@ -1,7 +1,7 @@
-{"uuid": "minimax_m3-mm_act_fp8_quant_prefill-00512", "axes": {"M": 512}, "inputs": {"x": {"type": "custom"}}, "tolerance": {"max_atol": 0.1, "max_rtol": 0.05, "required_matched_ratio": 0.999}}
-{"uuid": "minimax_m3-mm_act_fp8_quant_prefill-01024", "axes": {"M": 1024}, "inputs": {"x": {"type": "custom"}}, "tolerance": {"max_atol": 0.1, "max_rtol": 0.05, "required_matched_ratio": 0.999}}
-{"uuid": "minimax_m3-mm_act_fp8_quant_prefill-02048", "axes": {"M": 2048}, "inputs": {"x": {"type": "custom"}}, "tolerance": {"max_atol": 0.1, "max_rtol": 0.05, "required_matched_ratio": 0.999}}
-{"uuid": "minimax_m3-mm_act_fp8_quant_prefill-04096", "axes": {"M": 4096}, "inputs": {"x": {"type": "custom"}}, "tolerance": {"max_atol": 0.1, "max_rtol": 0.05, "required_matched_ratio": 0.999}}
-{"uuid": "minimax_m3-mm_act_fp8_quant_prefill-08192", "axes": {"M": 8192}, "inputs": {"x": {"type": "custom"}}, "tolerance": {"max_atol": 0.1, "max_rtol": 0.05, "required_matched_ratio": 0.999}}
-{"uuid": "minimax_m3-mm_act_fp8_quant_prefill-16384", "axes": {"M": 16384}, "inputs": {"x": {"type": "custom"}}, "tolerance": {"max_atol": 0.1, "max_rtol": 0.05, "required_matched_ratio": 0.999}}
-{"uuid": "minimax_m3-mm_act_fp8_quant_prefill-32768", "axes": {"M": 32768}, "inputs": {"x": {"type": "custom"}}, "tolerance": {"max_atol": 0.1, "max_rtol": 0.05, "required_matched_ratio": 0.999}}
+{"uuid": "minimax_m3-mm_act_fp8_quant_prefill-M512", "axes": {"M": 512}, "inputs": {"x": {"type": "custom"}}, "tolerance": {"max_atol": 0.1, "max_rtol": 0.05, "required_matched_ratio": 0.999}}
+{"uuid": "minimax_m3-mm_act_fp8_quant_prefill-M1024", "axes": {"M": 1024}, "inputs": {"x": {"type": "custom"}}, "tolerance": {"max_atol": 0.1, "max_rtol": 0.05, "required_matched_ratio": 0.999}}
+{"uuid": "minimax_m3-mm_act_fp8_quant_prefill-M2048", "axes": {"M": 2048}, "inputs": {"x": {"type": "custom"}}, "tolerance": {"max_atol": 0.1, "max_rtol": 0.05, "required_matched_ratio": 0.999}}
+{"uuid": "minimax_m3-mm_act_fp8_quant_prefill-M4096", "axes": {"M": 4096}, "inputs": {"x": {"type": "custom"}}, "tolerance": {"max_atol": 0.1, "max_rtol": 0.05, "required_matched_ratio": 0.999}}
+{"uuid": "minimax_m3-mm_act_fp8_quant_prefill-M8192", "axes": {"M": 8192}, "inputs": {"x": {"type": "custom"}}, "tolerance": {"max_atol": 0.1, "max_rtol": 0.05, "required_matched_ratio": 0.999}}
+{"uuid": "minimax_m3-mm_act_fp8_quant_prefill-M16384", "axes": {"M": 16384}, "inputs": {"x": {"type": "custom"}}, "tolerance": {"max_atol": 0.1, "max_rtol": 0.05, "required_matched_ratio": 0.999}}
+{"uuid": "minimax_m3-mm_act_fp8_quant_prefill-M32768", "axes": {"M": 32768}, "inputs": {"x": {"type": "custom"}}, "tolerance": {"max_atol": 0.1, "max_rtol": 0.05, "required_matched_ratio": 0.999}}

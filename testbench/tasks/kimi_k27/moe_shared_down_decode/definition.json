@@ -1,6 +1,7 @@
 {
     "name": "kimi_k27_moe_shared_down_decode",
     "hf_id": "moonshotai/Kimi-K2.7",
+    "family": "fp8-linear-gemm",
     "description": "Kimi-K2.7 MoE Shared Down (decode), FP8 blockwise GEMM (deep_gemm w8a8_block_fp8, Blackwell). out[M,7168] = x_fp8[M,256] @ w_fp8[7168,256].T with 1x128 act / 128x128 weight scales. Baseline = sglang production kernel (~51.1us at canonical shape); beat its latency across the sweep while matching its output.",
     "axes": {
         "M": {

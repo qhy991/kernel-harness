@@ -1,6 +1,7 @@
 {
     "name": "minimax_m3_mm_dsa_prefill_topk_L8192",
     "hf_id": "MiniMaxAI/MiniMax-M3",
+    "family": "dsa-prefill-topk",
     "description": "MiniMax-M3 DSA prefill Indexer score + top-k (prefill, L=8192), flash_prefill_with_topk_index (single-launch Triton, op31): per-block index score + top-16 in one kernel. num_index_heads=4, idx_dim=128, block_size=128. EXACT-index oracle. B=sweep. Requires amd_add_m3.",
     "axes": {
         "M": {

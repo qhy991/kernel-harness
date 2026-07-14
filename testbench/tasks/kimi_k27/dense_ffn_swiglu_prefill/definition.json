@@ -1,6 +1,7 @@
 {
     "name": "kimi_k27_dense_ffn_swiglu_prefill",
     "hf_id": "moonshotai/Kimi-K2.7",
+    "family": "swiglu",
     "description": "Kimi-K2.7 Dense FFN SwiGLU (prefill), SiLU-and-mul (sgl_kernel.silu_and_mul). out[M,2304] = silu(x[:, :2304]) * x[:, 2304:], x is the [M,4608] gate|up projection. Baseline = sglang production kernel; beat its latency while matching output.",
     "axes": {
         "M": {

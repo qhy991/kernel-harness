@@ -21,6 +21,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from harness import correctness as C
 from harness import reward_hack as RH
 from harness.inputs import resolve_axes, build_inputs, normalize_outputs
+from harness.metrics import compute_workload_metrics, correctness_extras
 from harness.timing import clone_args, time_runnable
 
 
@@ -30,15 +31,67 @@ def _load_ns(source: str, name: str) -> dict:
     return ns
 
 
+def _inputs_dict(defn, inputs_list):
+    return dict(zip(defn["inputs"].keys(), inputs_list))
+
+
+def _attach_diagnostics(perf, corr, defn, resolved, inputs_list, cand_out, ref_out,
+                        latency_ms=None):
+    """Advisory metrics / extras. Never consulted by the WIN gate."""
+    try:
+        latency_us = (latency_ms * 1e3) if latency_ms is not None else None
+        metrics = compute_workload_metrics(
+            defn, resolved, _inputs_dict(defn, inputs_list), latency_us)
+        if perf is None:
+            perf = {}
+        perf = {**perf, "metrics": metrics}
+        if latency_us is not None:
+            perf["latency_us"] = round(latency_us, 3)
+            m = resolved.get("M") or resolved.get("batch") or 1
+            if m:
+                perf["us_per_token"] = round(latency_us / max(int(m), 1), 4)
+                perf["tokens_per_s"] = round(1e6 * int(m) / latency_us, 1)
+    except Exception as e:
+        if perf is None:
+            perf = {}
+        perf = {**perf, "metrics_error": str(e)[:200]}
+
+    if corr is not None and cand_out and ref_out:
+        try:
+            extras_list = []
+            for c, r in zip(cand_out, ref_out):
+                if (isinstance(c, torch.Tensor) and isinstance(r, torch.Tensor)
+                        and c.is_floating_point() and r.is_floating_point()):
+                    ex = correctness_extras(c, r)
+                    if ex:
+                        extras_list.append(ex)
+            if extras_list:
+                corr = {**corr, "extras": {
+                    "mean_abs_err": max(e["mean_abs_err"] for e in extras_list),
+                    "p99_abs_err": max(e["p99_abs_err"] for e in extras_list),
+                    "cosine_similarity": min(e["cosine_similarity"] for e in extras_list),
+                    "cosine_distance": max(e["cosine_distance"] for e in extras_list),
+                }}
+        except Exception:
+            pass
+    return perf, corr
+
+
 def _eval_workload(defn, wl, get_inputs, ref_run, cand_run, device, iters):
     axes = wl.get("axes", {})
     tol = wl.get("tolerance", C.DEFAULT_TOL)
     resolved = resolve_axes(defn, axes)
 
-    def trace(status, corr=None, latency=None, log=""):
+    def trace(status, corr=None, latency=None, log="", inputs_list=None,
+              cand_out=None, ref_out=None):
+        perf = {"latency_ms": latency} if latency is not None else None
+        if inputs_list is not None:
+            perf, corr = _attach_diagnostics(
+                perf, corr, defn, resolved, inputs_list, cand_out or [],
+                ref_out or [], latency_ms=latency)
         return {"workload": {"axes": axes},
                 "evaluation": {"status": status,
-                               "performance": {"latency_ms": latency} if latency is not None else None,
+                               "performance": perf,
                                "correctness": corr, "log": log}}
 
     try:
@@ -50,28 +103,33 @@ def _eval_workload(defn, wl, get_inputs, ref_run, cand_run, device, iters):
     try:
         ref_out = normalize_outputs(ref_run(*clone_args(inputs)), defn, device)
     except Exception as e:
-        return trace("RUNTIME_ERROR", log=f"Reference run() failed: {e}\n{traceback.format_exc()[:400]}")
+        return trace("RUNTIME_ERROR", log=f"Reference run() failed: {e}\n{traceback.format_exc()[:400]}",
+                     inputs_list=inputs)
 
     RH.check_monkey_patch()
     try:
         raw = cand_run(*clone_args(inputs))
     except Exception as e:
-        return trace("RUNTIME_ERROR", log=f"Solution run() failed: {e}\n{traceback.format_exc()[:400]}")
+        return trace("RUNTIME_ERROR", log=f"Solution run() failed: {e}\n{traceback.format_exc()[:400]}",
+                     inputs_list=inputs, ref_out=ref_out)
     try:
         cand_out = normalize_outputs(raw, defn, device)
         RH.check_lazy_outputs(cand_out)
     except RH.RewardHackDetected as e:
-        return trace("REWARD_HACK", log=str(e))
+        return trace("REWARD_HACK", log=str(e), inputs_list=inputs, ref_out=ref_out)
     except Exception as e:
-        return trace("RUNTIME_ERROR", log=f"output normalization failed: {e}")
+        return trace("RUNTIME_ERROR", log=f"output normalization failed: {e}",
+                     inputs_list=inputs, ref_out=ref_out)
 
     if len(cand_out) != len(ref_out):
-        return trace("INCORRECT", log=f"output count {len(cand_out)} != reference {len(ref_out)}")
+        return trace("INCORRECT", log=f"output count {len(cand_out)} != reference {len(ref_out)}",
+                     inputs_list=inputs, cand_out=cand_out, ref_out=ref_out)
     agg = {"max_absolute_error": 0.0, "max_relative_error": 0.0, "has_nan": False, "has_inf": False}
     exceeded = False
     for c, r in zip(cand_out, ref_out):
         if c.shape != r.shape:
-            return trace("INCORRECT", corr=agg, log=f"shape {tuple(c.shape)} != {tuple(r.shape)}")
+            return trace("INCORRECT", corr=agg, log=f"shape {tuple(c.shape)} != {tuple(r.shape)}",
+                         inputs_list=inputs, cand_out=cand_out, ref_out=ref_out)
         stats, ex = C.compute_error_stats(c, r, tol)
         exceeded = exceeded or ex
         agg["has_nan"] |= bool(stats["has_nan"]); agg["has_inf"] |= bool(stats["has_inf"])
@@ -79,7 +137,9 @@ def _eval_workload(defn, wl, get_inputs, ref_run, cand_run, device, iters):
             if stats[k] is not None:
                 agg[k] = max(agg[k] or 0.0, stats[k])
     if exceeded or agg["has_nan"] or agg["has_inf"]:
-        return trace("INCORRECT", corr=agg, log="tolerance exceeded" if exceeded else "nan/inf")
+        return trace("INCORRECT", corr=agg,
+                     log="tolerance exceeded" if exceeded else "nan/inf",
+                     inputs_list=inputs, cand_out=cand_out, ref_out=ref_out)
 
     # Correct -> time the candidate (median device-kernel ms), fresh clone per iteration.
     latency = time_runnable(fn=lambda a: cand_run(*a),
@@ -102,11 +162,14 @@ def _eval_workload(defn, wl, get_inputs, ref_run, cand_run, device, iters):
                     "output no longer matches the oracle after timing — "
                     "stateful/lazy candidate rejected")
     except RH.RewardHackDetected as e:
-        return trace("REWARD_HACK", log=str(e))
+        return trace("REWARD_HACK", log=str(e), inputs_list=inputs,
+                     cand_out=cand_out, ref_out=ref_out)
     except Exception as e:
-        return trace("RUNTIME_ERROR", log=f"post-timing recheck failed: {e}")
+        return trace("RUNTIME_ERROR", log=f"post-timing recheck failed: {e}",
+                     inputs_list=inputs, cand_out=cand_out, ref_out=ref_out)
 
-    return trace("PASSED", corr=agg, latency=latency)
+    return trace("PASSED", corr=agg, latency=latency, inputs_list=inputs,
+                 cand_out=cand_out, ref_out=ref_out)
 
 
 def main():

@@ -62,3 +62,45 @@ class MM:
     o_in = nq * hd                        # 8192
     ep_local = 16                         # 128 routed / EP8
     sglang_dir = "MM_M3_SGLANG_DIR"       # symbolic; resolved by bin/config.py at runtime
+
+
+# ===================== GLM-5.2-FP8 (canonical) =====================
+# AUTHORITATIVE from zai-org/GLM-5.2-FP8 config.json / GlmMoeDsaConfig.
+# Deployment assumption for shapes: B200, TP8 / EP8 (local heads = 8, local
+# experts = 32). Sparse MLA decode oracle is the B200 production path
+# (TRT-LLM sparse MLA), not Hopper flashmla_sparse.
+class GLM52:
+    hf_id = "zai-org/GLM-5.2-FP8"
+    model = "glm52"
+    hidden = 6144
+    q_lora = 2048
+    kv_lora = 512
+    num_heads = 64
+    qk_nope = 192
+    qk_rope = 64
+    v_head = 256                       # config.v_head_dim; absorbed MLA output uses kv_lora
+    qk_head = qk_nope + qk_rope        # 256
+    head_dim = kv_lora + qk_rope       # 576 latent KV dim for sparse MLA
+    n_routed_experts = 256
+    moe_topk = 8
+    n_shared_experts = 1
+    moe_inter = 2048                   # per-expert intermediate (full, pre-TP)
+    dense_inter = 12288
+    routed_scaling = 2.5
+    vocab = 154880
+    index_topk = 2048
+    index_n_heads = 32
+    index_head_dim = 128
+    page_size = 64
+    tp = 8
+    ep = 8
+    # Derived per-rank dims under TP8/EP8
+    local_heads = num_heads // tp      # 8
+    o_in = local_heads * v_head        # 2048 — absorbed decode may use kv_lora; FP8 O_proj
+                                       # on the production path is num_heads*v_head / TP
+    o_in_absorb = local_heads * kv_lora  # 4096 when O consumes absorbed latent V
+    # Prefer the production RowParallelLinear shape: num_heads * v_head / TP = 2048
+    ep_local = n_routed_experts // ep  # 32
+    gateup_n = 2 * moe_inter           # 4096 Gate|Up per expert
+    first_k_dense_replace = 3
+    num_hidden_layers = 78

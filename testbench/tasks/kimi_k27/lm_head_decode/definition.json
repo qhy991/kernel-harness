@@ -1,6 +1,7 @@
 {
     "name": "kimi_k27_lm_head_decode",
     "hf_id": "moonshotai/Kimi-K2.7",
+    "family": "lm-head",
     "description": "Kimi-K2.7 LM-head logits GEMM (decode), torch.matmul bf16: out[M,163840] = hidden[M,7168] @ lm_head_w[163840,7168].T. Bandwidth-bound. Baseline = sglang production path; beat its latency while matching output.",
     "axes": {
         "M": {

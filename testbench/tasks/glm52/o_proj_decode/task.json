@@ -1,0 +1,38 @@
+{
+  "name": "o_proj_decode",
+  "model": "glm52",
+  "op": "Attention O Projection",
+  "phase": "decode",
+  "family": "fp8-linear-gemm",
+  "goal": "Optimize solution.py against SGLang's DeepGEMM w8a8_block_fp8 baseline for GLM-5.2 O Projection decode; beat the sweep and match SGLang output within the declared FP8 tolerance.",
+  "K": 2048,
+  "N": 6144,
+  "tp": 8,
+  "deployment": "B200-TP8-EP8",
+  "sweep": [
+    16,
+    32
+  ],
+  "backend": "deep_gemm w8a8_block_fp8 (blackwell)",
+  "tolerance": {
+    "max_atol": 0.1,
+    "max_rtol": 0.05,
+    "required_matched_ratio": 0.999
+  },
+  "baseline": {
+    "source": "live",
+    "measure": "reference.py timed by the harness CUPTI runtime (median device-kernel us)",
+    "denominator": "the live per-shape reference latency (see .baseline_cache.json)"
+  },
+  "performance_model": {
+    "kind": "gemm",
+    "family": "fp8-linear-gemm"
+  },
+  "workload_metrics": [
+    "achieved_tflops",
+    "achieved_gbps",
+    "arithmetic_intensity",
+    "bound",
+    "us_per_token"
+  ]
+}

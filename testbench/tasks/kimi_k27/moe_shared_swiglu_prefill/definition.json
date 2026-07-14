@@ -1,6 +1,7 @@
 {
     "name": "kimi_k27_moe_shared_swiglu_prefill",
     "hf_id": "moonshotai/Kimi-K2.7",
+    "family": "swiglu",
     "description": "Kimi-K2.7 MoE Shared SwiGLU (prefill), SiLU-and-mul (sgl_kernel.silu_and_mul). out[M,256] = silu(x[:, :256]) * x[:, 256:], x is the [M,512] gate|up projection. Baseline = sglang production kernel; beat its latency while matching output.",
     "axes": {
         "M": {

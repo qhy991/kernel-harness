@@ -1,6 +1,7 @@
 {
     "name": "kimi_k27_moe_router_gemm_decode",
     "hf_id": "moonshotai/Kimi-K2.7",
+    "family": "router-gemm",
     "description": "Kimi-K2.7 MoE Router GEMM (decode), sgl_kernel.dsv3_router_gemm: out[M,384] = hidden[M,7168] @ router_w[384,7168].T in fp32. Kernel requires num_tokens<=16 (DP32xEP32 M_local=16), so the sweep is architecture-true M in [1, 2, 4, 8, 16]. Baseline = sglang production kernel; beat its latency across the sweep while matching its output.",
     "axes": {
         "M": {

@@ -1,6 +1,7 @@
 {
     "name": "kimi_k27_mla_prefill",
     "hf_id": "moonshotai/Kimi-K2.7",
+    "family": "mla-attention",
     "description": "Kimi-K2.7 MLA prefill attention (prefill), flashinfer BatchPrefillWithRaggedKVCacheWrapper: MHA over full q/k/v (FA3/flash_attn_varlen is not built for B200 sm100, so the ragged flashinfer path is production here). num_heads=64, qk_head_dim=192, v_head_dim=128, causal. seqlen=sweep, single sequence. Wrapper .plan() is untimed setup; only .run() is timed. Baseline = sglang production kernel; beat its latency while matching output.",
     "axes": {
         "M": {

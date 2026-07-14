@@ -1,6 +1,7 @@
 {
     "name": "minimax_m3_mm_moe_gate_topk_decode",
     "hf_id": "MiniMaxAI/MiniMax-M3",
+    "family": "moe-gate",
     "description": "MiniMax-M3 MoE Gate + sigmoid Top-4 (decode), sgl_kernel.topk_sigmoid: sigmoid + correction bias + renormalized top-4 over 128 experts (routed_scaling=2.0). Outputs selected expert INDICES[M,4] (int32); EXACT-match oracle. Baseline = sglang production kernel; beat its latency while matching routing.",
     "axes": {
         "M": {

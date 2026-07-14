@@ -1,6 +1,7 @@
 {
     "name": "minimax_m3_mm_moe_combine_prefill",
     "hf_id": "MiniMaxAI/MiniMax-M3",
+    "family": "moe-combine",
     "description": "MiniMax-M3 MoE Combine (prefill), sum the top_k=4 expert outputs per token (sgl_kernel.moe_sum, in-place DPS). output[M,6144] = sum(input[M,4,6144], dim=1). INTERFACE-EXACT drop-in. Baseline = sglang production kernel; beat its latency while matching output.",
     "axes": {
         "M": {

@@ -1,6 +1,7 @@
 {
     "name": "minimax_m3_mm_shared_gateup_decode",
     "hf_id": "MiniMaxAI/MiniMax-M3",
+    "family": "bf16-linear",
     "description": "MiniMax-M3 Shared expert GateUp (decode), bf16 cuBLAS GEMM (base checkpoint; inventory op28 standard Linear). out[M,6144] = x[M,6144] @ weight[6144,6144].T. Baseline = sglang production path; beat its latency across the sweep while matching output. (-MXFP8 checkpoint would use deep_gemm/flashinfer \u2014 separate.)",
     "axes": {
         "M": {

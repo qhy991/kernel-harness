@@ -1,6 +1,7 @@
 {
     "name": "minimax_m3_mm_act_fp8_quant_prefill",
     "hf_id": "MiniMaxAI/MiniMax-M3",
+    "family": "act-fp8-quant",
     "description": "MiniMax-M3 Act FP8 quant (per-token) (prefill), sglang_per_token_group_quant_fp8: bf16 activation[M,6144] -> fp8_e4m3 + 1x128 ue8m0/tma-aligned scales. The quant that precedes every block-FP8 GEMM. Baseline = sglang production kernel; beat its latency while matching output.",
     "axes": {
         "M": {

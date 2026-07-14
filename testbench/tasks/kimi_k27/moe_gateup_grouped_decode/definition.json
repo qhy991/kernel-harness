@@ -1,6 +1,7 @@
 {
     "name": "kimi_k27_moe_gateup_grouped_decode",
     "hf_id": "moonshotai/Kimi-K2.7",
+    "family": "grouped-moe",
     "description": "Kimi-K2.7 MoE GateUp GroupGEMM (masked) (decode), deep_gemm.fp8_m_grouped_gemm_nt_masked over E=12 local experts (EP32 of 384 routed), K=7168, N=4096. Sweep = tokens/expert (masked). FP8 blockwise (per-token act, per-block weight, UE8M0), quant done offline in get_inputs; only the grouped GEMM is timed. Baseline = sglang production kernel; beat its latency while matching output.",
     "axes": {
         "M": {

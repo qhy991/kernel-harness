@@ -81,6 +81,34 @@ def check_task(task: Path) -> list[str]:
                 problems.append(f"task.json missing key {key!r}")
     except Exception as e:
         problems.append(f"task.json does not parse: {e}")
+        meta = {}
+
+    # Optional performance_model / workload_metrics (advisory; must be well-formed if present).
+    pm = defn.get("performance_model", meta.get("performance_model"))
+    if pm is not None:
+        if not isinstance(pm, dict):
+            problems.append("performance_model must be an object")
+        elif "kind" not in pm and "family" not in pm:
+            problems.append("performance_model needs 'kind' or 'family'")
+    wmetrics = defn.get("workload_metrics", meta.get("workload_metrics"))
+    if wmetrics is not None:
+        if not isinstance(wmetrics, list) or not all(isinstance(x, str) for x in wmetrics):
+            problems.append("workload_metrics must be a list of strings")
+    fexpr = defn.get("flops_expr")
+    if fexpr is not None:
+        if not isinstance(fexpr, str) or not fexpr.strip():
+            problems.append("flops_expr must be a non-empty string")
+        else:
+            # Ensure every Name in the expression is a known axis (const/var/expr).
+            try:
+                tree = ast.parse(fexpr, mode="eval")
+                names = {n.id for n in ast.walk(tree) if isinstance(n, ast.Name)}
+                axes = set(defn.get("axes", {}))
+                unknown = names - axes
+                if unknown:
+                    problems.append(f"flops_expr references unknown axes {sorted(unknown)}")
+            except SyntaxError as e:
+                problems.append(f"flops_expr does not parse: {e}")
 
     var_axes = {n for n, a in defn["axes"].items() if a.get("type") == "var"}
     lines = [l for l in (task / "workload.jsonl").read_text().splitlines() if l.strip()]

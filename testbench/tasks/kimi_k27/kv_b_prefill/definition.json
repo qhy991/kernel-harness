@@ -1,6 +1,7 @@
 {
     "name": "kimi_k27_kv_b_prefill",
     "hf_id": "moonshotai/Kimi-K2.7",
+    "family": "fp8-linear-gemm",
     "description": "Kimi-K2.7 KV_b (prefill), FP8 blockwise GEMM (deep_gemm w8a8_block_fp8, Blackwell). out[M,2048] = x_fp8[M,512] @ w_fp8[2048,512].T with 1x128 act / 128x128 weight scales. Baseline = sglang production kernel (~73.4us at canonical shape); beat its latency across the sweep while matching its output.",
     "axes": {
         "M": {

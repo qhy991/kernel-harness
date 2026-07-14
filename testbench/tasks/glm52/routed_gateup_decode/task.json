@@ -1,0 +1,43 @@
+{
+  "name": "routed_gateup_decode",
+  "model": "glm52",
+  "op": "Routed Expert Gate+Up",
+  "phase": "decode",
+  "family": "grouped-moe",
+  "goal": "Optimize solution.py against SGLang's DeepGEMM grouped-GEMM baseline for GLM-5.2 Routed Expert Gate+Up decode; beat every workload and match SGLang output.",
+  "E": 32,
+  "K": 6144,
+  "N": 4096,
+  "ep": 8,
+  "tp": 8,
+  "deployment": "B200-TP8-EP8",
+  "sweep": [
+    16,
+    32
+  ],
+  "backend": "deep_gemm fp8_m_grouped_gemm_nt_masked (blackwell)",
+  "tolerance": {
+    "max_atol": 0.1,
+    "max_rtol": 0.05,
+    "required_matched_ratio": 0.999
+  },
+  "baseline": {
+    "source": "live",
+    "measure": "reference.py timed by the harness CUPTI runtime (median device-kernel us)",
+    "denominator": "the live per-shape reference latency (see .baseline_cache.json)"
+  },
+  "performance_model": {
+    "kind": "routed-expert",
+    "family": "grouped-moe",
+    "stage": "gateup"
+  },
+  "workload_metrics": [
+    "local_assignments",
+    "active_experts",
+    "empty_experts",
+    "tokens_per_expert_cv",
+    "useful_vs_padded_util",
+    "useful_tflops",
+    "us_per_assignment"
+  ]
+}

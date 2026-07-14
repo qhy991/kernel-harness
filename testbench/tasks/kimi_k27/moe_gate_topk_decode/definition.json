@@ -1,6 +1,7 @@
 {
     "name": "kimi_k27_moe_gate_topk_decode",
     "hf_id": "moonshotai/Kimi-K2.7",
+    "family": "moe-gate",
     "description": "Kimi-K2.7 MoE Gate + biased TopK (decode), sgl_kernel.kimi_k2_moe_fused_gate: bias + renormalized top-6 selection over 384 experts. Outputs the selected expert INDICES[M,6] (int32); EXACT-match oracle (atol=0,rtol=0,ratio=1.0). Baseline = sglang production kernel; beat its latency while matching routing exactly.",
     "axes": {
         "M": {

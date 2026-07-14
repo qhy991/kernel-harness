@@ -1,6 +1,7 @@
 {
     "name": "minimax_m3_mm_dsa_store_kv_index_decode",
     "hf_id": "MiniMaxAI/MiniMax-M3",
+    "family": "dsa-store-kv-index",
     "description": "MiniMax-M3 DSA Indexer K/V cache fused store (decode), store_kv_index (JIT CUDA, op30): single-launch scatter of new K/V + index-K into paged caches at per-token slots. num_kv_heads=4, head_dim=128, index_dim=128. ~12x vs separate stores. Requires amd_add_m3. Baseline = sglang production kernel.",
     "axes": {
         "M": {

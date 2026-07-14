@@ -1,6 +1,7 @@
 {
     "name": "minimax_m3_mm_qk_rope_prefill",
     "hf_id": "MiniMaxAI/MiniMax-M3",
+    "family": "rope",
     "description": "MiniMax-M3 GQA q/k RoPE (prefill), in-place RoPE on the rope slice (apply_rope_with_cos_sin_cache_inplace). Rotates q[M,64,64] and k[M,4,64] by cos/sin at `positions`. INTERFACE-EXACT drop-in. Baseline = sglang production kernel; beat its latency while matching BOTH outputs.",
     "axes": {
         "M": {

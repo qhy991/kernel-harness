@@ -1,6 +1,7 @@
 {
     "name": "minimax_m3_mm_moe_gateup_grouped_decode",
     "hf_id": "MiniMaxAI/MiniMax-M3",
+    "family": "grouped-moe",
     "description": "MiniMax-M3 MoE GateUp GroupGEMM (masked) (decode), deep_gemm.fp8_m_grouped_gemm_nt_masked over E=16 local experts (128 routed / EP8), K=6144, N=6144. Sweep = tokens/expert (masked). FP8 blockwise (per-token act, per-block weight, UE8M0), quant offline in get_inputs; only the grouped GEMM is timed. Baseline = sglang production kernel; beat its latency while matching output.",
     "axes": {
         "M": {

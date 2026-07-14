@@ -1,6 +1,7 @@
 {
     "name": "minimax_m3_mm_gemma_fused_add_rmsnorm_decode",
     "hf_id": "MiniMaxAI/MiniMax-M3",
+    "family": "gemma-fused-add-rmsnorm",
     "description": "MiniMax-M3 Gemma fused add-RMSNorm (decode), fused residual-add + Gemma-RMSNorm over hidden=6144 (sgl_kernel.gemma_fused_add_rmsnorm, in-place). residual_out = x + residual; normed = rmsnorm(residual_out) * (1 + weight). INTERFACE-EXACT drop-in. Baseline = sglang production kernel; beat its latency while matching BOTH outputs.",
     "axes": {
         "M": {

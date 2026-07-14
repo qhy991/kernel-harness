@@ -1,6 +1,7 @@
 {
     "name": "kimi_k27_mla_decode_seq32768",
     "hf_id": "moonshotai/Kimi-K2.7",
+    "family": "mla-attention",
     "description": "Kimi-K2.7 MLA decode attention (decode, seq_len=32768), sgl_kernel.cutlass_mla_decode: Multi-head Latent Attention over the compressed latent KV cache. num_heads=64, kv_lora_rank=512, qk_rope=64 -> head_dim=576, block_size=128. batch=sweep, paged latent KV. Baseline = sglang production kernel; beat its latency while matching output.",
     "axes": {
         "M": {

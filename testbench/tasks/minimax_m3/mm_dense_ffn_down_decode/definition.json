@@ -1,6 +1,7 @@
 {
     "name": "minimax_m3_mm_dense_ffn_down_decode",
     "hf_id": "MiniMaxAI/MiniMax-M3",
+    "family": "bf16-linear",
     "description": "MiniMax-M3 Dense FFN Down (layers 0-2) (decode), bf16 cuBLAS GEMM (base checkpoint; inventory op28 standard Linear). out[M,6144] = x[M,12288] @ weight[6144,12288].T. Baseline = sglang production path; beat its latency across the sweep while matching output. (-MXFP8 checkpoint would use deep_gemm/flashinfer \u2014 separate.)",
     "axes": {
         "M": {

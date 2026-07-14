@@ -1,6 +1,7 @@
 {
     "name": "kimi_k27_q_a_layernorm_prefill",
     "hf_id": "moonshotai/Kimi-K2.7",
+    "family": "rmsnorm",
     "description": "Kimi-K2.7 Q_a LayerNorm (RMSNorm) (prefill), standalone RMSNorm over hidden=1536 (sgl_kernel.rmsnorm). out[M,1536] = x * rsqrt(mean(x^2,-1)+eps) * weight. Baseline = sglang production kernel; beat its latency while matching output.",
     "axes": {
         "M": {

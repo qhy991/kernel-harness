@@ -1,6 +1,7 @@
 {
     "name": "kimi_k27_kv_a_layernorm_decode",
     "hf_id": "moonshotai/Kimi-K2.7",
+    "family": "rmsnorm",
     "description": "Kimi-K2.7 KV_a LayerNorm (RMSNorm) (decode), standalone RMSNorm over hidden=512 (sgl_kernel.rmsnorm). out[M,512] = x * rsqrt(mean(x^2,-1)+eps) * weight. Baseline = sglang production kernel; beat its latency while matching output.",
     "axes": {
         "M": {

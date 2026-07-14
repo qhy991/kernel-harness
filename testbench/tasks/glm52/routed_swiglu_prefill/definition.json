@@ -1,0 +1,94 @@
+{
+    "name": "glm52_routed_swiglu_prefill",
+    "hf_id": "zai-org/GLM-5.2-FP8",
+    "family": "swiglu-fp8-quant",
+    "description": "GLM-5.2 Routed Expert SwiGLU + FP8 post-quant (prefill, EP-local E=32). gate|up width I2=4096; fused act+quant matches the DeepGEMM MoE runner launch that feeds Down. Routing = fixed-seed top-8/256. Baseline = SGLang production fused kernel.",
+    "axes": {
+        "M": {
+            "type": "var",
+            "description": "prefill token/batch population (sweep)"
+        },
+        "E": {
+            "type": "const",
+            "value": 32
+        },
+        "I2": {
+            "type": "const",
+            "value": 4096,
+            "description": "gate|up = 2 * moe_intermediate"
+        },
+        "I": {
+            "type": "expr",
+            "expression": "I2//2"
+        },
+        "layout": {
+            "type": "const",
+            "value": 0,
+            "description": "0=contiguous, 1=masked"
+        },
+        "n_global": {
+            "type": "const",
+            "value": 256
+        },
+        "topk": {
+            "type": "const",
+            "value": 8
+        }
+    },
+    "custom_inputs_entrypoint": "get_inputs",
+    "inputs": {
+        "gate_up": {
+            "shape": null,
+            "dtype": "bfloat16"
+        },
+        "out_fp8": {
+            "shape": null,
+            "dtype": "float8_e4m3fn"
+        },
+        "out_scale": {
+            "shape": null,
+            "dtype": "int32"
+        },
+        "masked_m": {
+            "shape": [
+                "E"
+            ],
+            "dtype": "int32"
+        },
+        "m_indices": {
+            "shape": null,
+            "dtype": "int32"
+        },
+        "layout": {
+            "shape": null,
+            "dtype": "int32"
+        },
+        "group_size": {
+            "shape": null,
+            "dtype": "int32"
+        }
+    },
+    "outputs": {
+        "q_fp8": {
+            "shape": null,
+            "dtype": "float8_e4m3fn"
+        },
+        "scale": {
+            "shape": null,
+            "dtype": "int32"
+        }
+    },
+    "reference": "\"\"\"GLM-5.2 routed-expert SwiGLU + FP8 post-quant \u2014 SGLang production baseline.\n\nPrefill (contiguous): sglang.jit_kernel.dsv4.silu_and_mul_contig_post_quant\nDecode  (masked):     sglang.jit_kernel.dsv4.silu_and_mul_masked_post_quant\n                      (falls back to ep_moe_kernels.silu_and_mul_masked_post_quant_fwd)\n\nThis matches the DeepGEMM MoE runner's fused act+quant launch that precedes the\nDown projection \u2014 NOT a bare torch.silu proxy. Returns (fp8_act, ue8m0_scale).\n\nAxes:\n  M = token population (routing), E = local experts (32), I2 = 2*moe_inter = 4096\n  layout = 0 contiguous / 1 masked\n\"\"\"\n\nimport torch\n\nGROUP = 128\n\n\ndef _sample_counts(M, E, n_global, topk, device, seed):\n    g = torch.Generator(device=\"cpu\")\n    g.manual_seed(seed)\n    counts = torch.zeros(E, dtype=torch.int32)\n    for _ in range(M):\n        choice = torch.randperm(n_global, generator=g)[:topk]\n        for e in choice[choice < E].tolist():\n            counts[e] += 1\n    return counts.to(device)\n\n\ndef _align(x, a):\n    return (x + a - 1) // a * a\n\n\ndef get_inputs(axes_and_scalars: dict, device: torch.device) -> dict:\n    M = int(axes_and_scalars[\"M\"])\n    E = int(axes_and_scalars[\"E\"])\n    I2 = int(axes_and_scalars[\"I2\"])\n    layout = int(axes_and_scalars.get(\"layout\", 1))\n    n_global = int(axes_and_scalars.get(\"n_global\", 256))\n    topk = int(axes_and_scalars.get(\"topk\", 8))\n    I = I2 // 2\n\n    counts = _sample_counts(M, E, n_global, topk, device,\n                            seed=0xA5A5 + M * 31 + layout)\n    if layout == 0:\n        total = int(counts.sum().item())\n        if total < M:\n            for i in range(M - total):\n                counts[int(torch.argmin(counts).item())] += 1\n        elif total > M:\n            for _ in range(total - M):\n                e = int(torch.argmax(counts).item())\n                if counts[e] > 0:\n                    counts[e] -= 1\n        total = M\n        gate_up = torch.randn(total, I2, device=device, dtype=torch.bfloat16)\n        pieces = []\n        for e in range(E):\n            c = int(counts[e].item())\n            if c:\n                pieces.append(torch.full((c,), e, dtype=torch.int32, device=device))\n        m_indices = torch.cat(pieces) if pieces else torch.zeros(\n            M, dtype=torch.int32, device=device)\n        masked_m = torch.empty(0, dtype=torch.int32, device=device)\n        out_fp8 = torch.empty(total, I, device=device, dtype=torch.float8_e4m3fn)\n        n_scale = max(I // 512, 1)\n        out_scale = torch.empty(total, n_scale, device=device, dtype=torch.int32)\n    else:\n        max_c = max(int(counts.max().item()), 1)\n        Mp = _align(max_c, 128)\n        gate_up = torch.randn(E, Mp, I2, device=device, dtype=torch.bfloat16)\n        m_indices = torch.empty(0, dtype=torch.int32, device=device)\n        masked_m = counts\n        out_fp8 = torch.empty(E, Mp, I, device=device, dtype=torch.float8_e4m3fn)\n        n_scale = max(I // 128, 1)\n        out_scale = torch.empty(E, Mp, n_scale, device=device, dtype=torch.float32)\n\n    return {\n        \"gate_up\": gate_up,\n        \"out_fp8\": out_fp8,\n        \"out_scale\": out_scale,\n        \"masked_m\": masked_m,\n        \"m_indices\": m_indices,\n        \"layout\": torch.tensor(layout, dtype=torch.int32, device=device),\n        \"group_size\": torch.tensor(GROUP, dtype=torch.int32, device=device),\n    }\n\n\n@torch.no_grad()\ndef run(gate_up, out_fp8, out_scale, masked_m, m_indices, layout, group_size):\n    lay = int(layout.item() if isinstance(layout, torch.Tensor) else layout)\n    gs = int(group_size.item() if isinstance(group_size, torch.Tensor) else group_size)\n\n    if lay == 0:\n        try:\n            from sglang.jit_kernel.dsv4 import silu_and_mul_contig_post_quant\n            silu_and_mul_contig_post_quant(\n                input=gate_up,\n                output=out_fp8,\n                output_scale=out_scale,\n                quant_group_size=gs,\n                scale_ue8m0=True,\n                transposed=True,\n                swiglu_limit=None,\n            )\n        except Exception:\n            # Portable fallback: silu_and_mul then per-token group quant (same math).\n            from sgl_kernel import silu_and_mul\n            from sglang.srt.layers.quantization.fp8_kernel import (\n                sglang_per_token_group_quant_fp8,\n            )\n            mid = torch.empty(gate_up.shape[0], gate_up.shape[-1] // 2,\n                              device=gate_up.device, dtype=gate_up.dtype)\n            silu_and_mul(gate_up, mid)\n            q, s = sglang_per_token_group_quant_fp8(\n                mid, gs, column_major_scales=True,\n                scale_tma_aligned=True, scale_ue8m0=True)\n            out_fp8.copy_(q)\n            # scale layout may differ slightly; clone into buffer when shapes match\n            if s.shape == out_scale.shape:\n                out_scale.copy_(s)\n            else:\n                out_scale = s\n        return out_fp8, out_scale\n\n    # Masked decode path\n    try:\n        from sglang.jit_kernel.dsv4 import silu_and_mul_masked_post_quant\n        silu_and_mul_masked_post_quant(\n            gate_up, out_fp8, out_scale, gs, masked_m,\n            scale_ue8m0=False, topk=1, transposed=False, swiglu_limit=None,\n        )\n    except Exception:\n        from sglang.kernels.ops.moe.ep_moe_kernels import (\n            silu_and_mul_masked_post_quant_fwd,\n        )\n        silu_and_mul_masked_post_quant_fwd(\n            gate_up, out_fp8, out_scale, gs, masked_m, scale_ue8m0=False,\n        )\n    return out_fp8, out_scale\n",
+    "performance_model": {
+        "kind": "swiglu-fp8",
+        "family": "swiglu-fp8-quant",
+        "stage": "swiglu"
+    },
+    "workload_metrics": [
+        "achieved_gbps",
+        "local_assignments",
+        "active_experts",
+        "tokens_per_expert_cv",
+        "us_per_token"
+    ]
+}

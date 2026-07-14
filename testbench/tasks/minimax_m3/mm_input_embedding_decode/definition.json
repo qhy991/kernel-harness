@@ -1,6 +1,7 @@
 {
     "name": "minimax_m3_mm_input_embedding_decode",
     "hf_id": "MiniMaxAI/MiniMax-M3",
+    "family": "embedding",
     "description": "MiniMax-M3 Input Embedding (decode), vocab gather (F.embedding, unquantized VocabParallelEmbedding path). out[M,6144] = weight[input_ids], vocab=200064. Baseline = sglang production op; beat its latency while matching output.",
     "axes": {
         "M": {

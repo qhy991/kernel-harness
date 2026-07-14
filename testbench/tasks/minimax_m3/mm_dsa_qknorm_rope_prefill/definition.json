@@ -1,6 +1,7 @@
 {
     "name": "minimax_m3_mm_dsa_qknorm_rope_prefill",
     "hf_id": "MiniMaxAI/MiniMax-M3",
+    "family": "dsa-qknorm-rope",
     "description": "MiniMax-M3 DSA fused Gemma-QK-norm + partial RoPE (prefill), jit_kernel.minimax_qknorm_rope (fused C++, op29/35): per-head Gemma-RMSNorm of q/k in a packed QKV[T,9216] (nq=64,nk=nv=4, head_dim=128) + partial RoPE (rope_dim=64, theta=5e6). Single-launch, ~2.4x vs two launches. Requires the amd_add_m3 sglang build.",
     "axes": {
         "M": {

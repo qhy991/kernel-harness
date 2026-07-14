@@ -1,6 +1,7 @@
 {
     "name": "kimi_k27_v_absorb_bmm_decode",
     "hf_id": "moonshotai/Kimi-K2.7",
+    "family": "bmm",
     "description": "Kimi-K2.7 v-absorb BMM (decode), MLA weight-absorb batched matmul (torch.bmm, bf16 default). out[64,M,128] = bmm(a[64,M,512], b[64,512,128]), Bh=num_heads. Baseline = sglang production op; beat its latency while matching output.",
     "axes": {
         "M": {
