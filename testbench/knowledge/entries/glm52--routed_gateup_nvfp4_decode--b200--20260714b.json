@@ -1,0 +1,75 @@
+{
+  "schema_version": 1,
+  "id": "glm52--routed_gateup_nvfp4_decode--b200--20260714b",
+  "date": "2026-07-14",
+  "model": "glm52",
+  "task": "glm52/routed_gateup_nvfp4_decode",
+  "op": "Routed Expert Gate+Up NVFP4",
+  "family": "nvfp4-moe",
+  "phase": "decode",
+  "shapes": {
+    "H": 6144,
+    "I": 2048,
+    "gateup_n": 4096,
+    "E_local": 32,
+    "topk": 8,
+    "M_sweep": [
+      16,
+      32
+    ]
+  },
+  "hardware": {
+    "gpu": "NVIDIA B200",
+    "sm": "sm_100"
+  },
+  "stack": {
+    "sglang_commit": "7e229e2a",
+    "torch": "2.11.0+cu130",
+    "cuda": "13.0"
+  },
+  "baseline_kernel": "flashinfer trtllm_fp4_block_scale_routed_moe (modelopt_fp4 NVFP4)",
+  "bottleneck": {
+    "kind": "launch-overhead",
+    "evidence": "Final evaluate.py --repeat 3 for the PDL variant: M=16 solution 811.06 us vs baseline 820.53 us, M=32 solution 812.90 us vs baseline 831.15 us; conservative min speedup is only 0.8751 because M=32 had a 943.12 us high sample. Advisory profile M=16 reports 782.82 us and 10.9% HBM, so the tiny decode sweep is not HBM-bound."
+  },
+  "approaches": [
+    {
+      "technique": "separate-nvfp4-task-contract",
+      "summary": "Added glm52/routed_gateup_nvfp4_decode as a separate ModelOpt-FP4 task using packed uint8 NVFP4 activations and weights, FP8 E4M3 block scales, FP32 scalar scales, and FlashInfer TRT-LLM routed MoE.",
+      "outcome": "partial",
+      "geomean_speedup": 1.0171,
+      "why": "The task contract is correct and uses the requested SGLang/FlashInfer NVFP4 backend, but task creation alone does not provide a robust conservative speedup."
+    },
+    {
+      "technique": "flashinfer-pdl-enable",
+      "summary": "Set enable_pdl=True on the FlashInfer TRT-LLM routed FP4 MoE call in solution.py.",
+      "outcome": "partial",
+      "geomean_speedup": 1.0171,
+      "why": "PDL improved median latency slightly on both shapes, but the M=32 high sample erased the conservative gate margin."
+    },
+    {
+      "technique": "baseline-pass-through",
+      "summary": "Initially kept solution.py identical to the SGLang/FlashInfer reference to validate the new task contract before attempting a custom kernel.",
+      "outcome": "slower",
+      "geomean_speedup": 0.9974,
+      "why": "The pass-through candidate was correct but slightly slower than the live reference under repeat-3 noise."
+    }
+  ],
+  "result": {
+    "status": "no-win",
+    "geomean_speedup": 1.0171,
+    "min_speedup_conservative": 0.8751,
+    "repeat": 3,
+    "integrate": "not-run"
+  },
+  "lesson": "For GLM-5.2 NVFP4 MoE decode on sm_100, enabling FlashInfer PDL may shift median latency by about 1-2%, but it is not stable enough to satisfy the conservative gate on the M=16/32 sweep. The main remaining headroom is likely reducing fixed TRT-LLM runner overhead or exposing a gate-up-only primitive instead of timing the fused MoE path.",
+  "transfers_to": [
+    "GLM-5.2 modelopt_fp4 MoE decode tasks on sm_100",
+    "FlashInfer TRT-LLM routed MoE tasks using packed uint8 NVFP4 plus FP8 E4M3 scales"
+  ],
+  "caveats": [
+    "This no-win entry supersedes glm52--routed_gateup_nvfp4_decode--b200--20260714a for the final solution.py state.",
+    "Advisory profile numbers are not used as result speedups."
+  ],
+  "agent": "codex"
+}

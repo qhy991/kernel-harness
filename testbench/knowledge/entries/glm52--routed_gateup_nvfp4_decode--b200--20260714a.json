@@ -1,0 +1,68 @@
+{
+  "schema_version": 1,
+  "id": "glm52--routed_gateup_nvfp4_decode--b200--20260714a",
+  "date": "2026-07-14",
+  "model": "glm52",
+  "task": "glm52/routed_gateup_nvfp4_decode",
+  "op": "Routed Expert Gate+Up NVFP4",
+  "family": "nvfp4-moe",
+  "phase": "decode",
+  "shapes": {
+    "H": 6144,
+    "I": 2048,
+    "gateup_n": 4096,
+    "E_local": 32,
+    "topk": 8,
+    "M_sweep": [
+      16,
+      32
+    ]
+  },
+  "hardware": {
+    "gpu": "NVIDIA B200",
+    "sm": "sm_100"
+  },
+  "stack": {
+    "sglang_commit": "7e229e2a",
+    "torch": "2.11.0+cu130",
+    "cuda": "13.0"
+  },
+  "baseline_kernel": "flashinfer trtllm_fp4_block_scale_routed_moe (modelopt_fp4 NVFP4)",
+  "bottleneck": {
+    "kind": "launch-overhead",
+    "evidence": "Final evaluate.py --repeat 3: M=16 817.40 us baseline vs 818.12 us solution, M=32 814.11 us baseline vs 817.63 us solution; advisory profile M=16 reports 785.63 us and only 10.8% HBM, indicating fixed TRTLLM runner/JIT launch overhead dominates this tiny decode sweep."
+  },
+  "approaches": [
+    {
+      "technique": "separate-nvfp4-task-contract",
+      "summary": "Added glm52/routed_gateup_nvfp4_decode as a separate ModelOpt-FP4 task using packed uint8 NVFP4 activations and weights, FP8 E4M3 block scales, FP32 scalar scales, and FlashInfer TRT-LLM routed MoE.",
+      "outcome": "partial",
+      "geomean_speedup": 0.9974,
+      "why": "The new task is correct and exercises the requested SGLang NVFP4 backend, but solution.py intentionally mirrors reference.py so it cannot beat the live baseline."
+    },
+    {
+      "technique": "baseline-pass-through",
+      "summary": "Kept solution.py identical to the SGLang/FlashInfer reference to validate the new task contract before attempting a custom kernel.",
+      "outcome": "slower",
+      "geomean_speedup": 0.9974,
+      "why": "Run-to-run noise plus clone/setup variation made the pass-through candidate slightly slower than the cached reference; no algorithmic optimization was attempted yet."
+    }
+  ],
+  "result": {
+    "status": "no-win",
+    "geomean_speedup": 0.9974,
+    "min_speedup_conservative": 0.977,
+    "repeat": 3,
+    "integrate": "not-run"
+  },
+  "lesson": "For a new SGLang NVFP4 MoE task, first validate the exact FlashInfer TRT-LLM packed tensor and scale contract separately from FP8 DeepGEMM. A pass-through baseline is useful for contract validation but provides no speedup; future work must reduce TRTLLM runner overhead or expose a gate-up-only primitive for the M=16/32 decode regime.",
+  "transfers_to": [
+    "GLM-5.2 modelopt_fp4 MoE decode tasks on sm_100",
+    "FlashInfer TRT-LLM routed MoE tasks using packed uint8 NVFP4 plus FP8 E4M3 scales"
+  ],
+  "caveats": [
+    "This session did not implement a faster custom kernel.",
+    "Advisory profile numbers are not used as result speedups."
+  ],
+  "agent": "codex"
+}
