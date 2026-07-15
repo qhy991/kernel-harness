@@ -5,10 +5,12 @@
   "phase": "decode",
   "family": "fp8-linear-gemm",
   "goal": "Optimize solution.py against SGLang's DeepGEMM w8a8_block_fp8 baseline for GLM-5.2 O Projection decode; beat the sweep and match SGLang output within the declared FP8 tolerance.",
-  "K": 2048,
+  "K": 16384,
   "N": 6144,
-  "tp": 8,
-  "deployment": "B200-TP8-EP8",
+  "tp": 1,
+  "ep": 32,
+  "dp": 1,
+  "deployment": "B200-DP1-TP1-EP32",
   "sweep": [
     16,
     32

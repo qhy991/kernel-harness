@@ -1,62 +1,53 @@
-"""GLM-5.2 DSA sparse MLA prefill — independent chunked-PyTorch reference.
+"""GLM-5.2 DSA sparse prefill attention — SGLang FlashMLA baseline.
 
-This is the correctness oracle for the task: an independent reimplementation of
-the sparse latent attention computed by SGLang's ``flash_mla_sparse_fwd``, written
-purely in PyTorch tensor ops. It does NOT call the production kernel.
+This is the B200 sparse-prefill kernel used by SGLang's DSA backend:
+`flash_mla_sparse_fwd`.  Under DP=1/TP=1 GLM-5.2 has 64 query heads, while the
+Blackwell kernel requires a multiple of 128 heads.  SGLang pads to 128 before
+dispatch and trims the output afterward; the task mirrors that contract while
+keeping the padding allocation out of the timed region.
 
-For each query token it gathers ``topk`` latent KV vectors from a shared cache via
-``indices``, scores ``Q·Kᵀ`` over the full latent width (576) scaled by
-``sm_scale = 576**-0.5``, softmaxes over the selected tokens (invalid indices
-masked to ``-inf``), and reduces against the first ``d_v = 512`` dims of the same
-latent vectors. Only the 8 tensor-parallel-local heads are returned. All math is
-accumulated in fp32; the output is cast to bfloat16.
+Workloads: query tokens M in {1024, 2048, 4096}, shared BF16 latent KV length
+65536, selected top-k 2048, latent head dim 576, output dim 512.
 """
 
 import torch
+from sgl_kernel.flash_mla import flash_mla_sparse_fwd
 
-LOCAL_HEADS = 8
+LOCAL_HEADS = 64
+PADDED_HEADS = 128
 HEAD_DIM = 576
 VALUE_DIM = 512
+TOPK = 2048
 
-# Query-token chunk size: bounds the transient fp32 gather buffer
-# (chunk * topk * 576 * 4 bytes) so a large M cannot exhaust device memory.
-_M_CHUNK = 256
+
+def get_inputs(axes_and_scalars: dict, device: torch.device) -> dict:
+    m = axes_and_scalars["M"]
+    s_kv = axes_and_scalars["ctx"]
+
+    # Blackwell FlashMLA sparse: pad local heads (64 under TP=1) to 128.
+    q = torch.zeros(
+        m, PADDED_HEADS, HEAD_DIM, device=device, dtype=torch.bfloat16
+    )
+    q[:, :LOCAL_HEADS].normal_()
+    kv_cache = torch.randn(s_kv, 1, HEAD_DIM, device=device, dtype=torch.bfloat16)
+
+    # Each row selects TOPK unique positions without constructing M randperms.
+    offsets = torch.randint(
+        0, s_kv, (m, 1, 1), device=device, dtype=torch.int32
+    )
+    selected = torch.arange(TOPK, device=device, dtype=torch.int32).view(1, 1, -1)
+    indices = (selected + offsets).remainder(s_kv).contiguous()
+
+    return {"q": q, "kv_cache": kv_cache, "indices": indices}
 
 
 @torch.no_grad()
 def run(q, kv_cache, indices):
-    device = q.device
-    m = q.shape[0]
-    s_kv = kv_cache.shape[0]
-    topk = indices.shape[-1]
-    sm_scale = HEAD_DIM ** -0.5
-
-    kv = kv_cache.reshape(s_kv, HEAD_DIM)              # [s_kv, 576]
-    idx = indices.reshape(m, topk).to(torch.long)      # [M, topk]
-    q_local = q[:, :LOCAL_HEADS, :]                    # [M, 8, 576]
-
-    out = torch.empty(m, LOCAL_HEADS, VALUE_DIM, device=device, dtype=torch.bfloat16)
-
-    for start in range(0, m, _M_CHUNK):
-        end = min(start + _M_CHUNK, m)
-        idx_c = idx[start:end]                         # [c, topk]
-        valid = (idx_c >= 0) & (idx_c < s_kv)          # [c, topk]
-        idx_safe = torch.where(valid, idx_c, torch.zeros_like(idx_c))
-
-        gathered = kv.index_select(0, idx_safe.reshape(-1))
-        gathered = gathered.reshape(end - start, topk, HEAD_DIM).float()   # [c, topk, 576]
-        q_c = q_local[start:end].float()                                    # [c, 8, 576]
-
-        scores = torch.einsum("mhd,mkd->mhk", q_c, gathered) * sm_scale     # [c, 8, topk]
-        scores = scores.masked_fill(~valid.unsqueeze(1), float("-inf"))
-        probs = torch.softmax(scores, dim=-1)
-        # A query whose selected tokens are all invalid has an all -inf row;
-        # softmax yields NaN there. The reference emits a zero output row, so
-        # replace NaN weights with zero to match.
-        probs = torch.nan_to_num(probs, nan=0.0)
-
-        out[start:end] = torch.einsum(
-            "mhk,mkd->mhd", probs, gathered[..., :VALUE_DIM]
-        ).to(torch.bfloat16)
-
-    return out
+    out, _, _ = flash_mla_sparse_fwd(
+        q=q,
+        kv=kv_cache,
+        indices=indices,
+        sm_scale=HEAD_DIM**-0.5,
+        d_v=VALUE_DIM,
+    )
+    return out[:, :LOCAL_HEADS, :]

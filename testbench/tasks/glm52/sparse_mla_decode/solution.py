@@ -8,14 +8,14 @@ AND the latency baseline for this task — not Hopper flashmla_sparse.
 FP8 path requires FP8 query + FP8 KV (BF16 query with FP8 KV has no TRTLLM-GEN
 kernel). Query is pre-quantized offline in get_inputs; only the decode launch is timed.
 
-I/O contract (TP8 local shard):
-  q[B, 1, H_local=8, 576]          — absorbed (nope|rope) query, FP8_e4m3
+I/O contract (DP1/TP1/EP32 — full attention shard):
+  q[B, 1, H=64, 576]               — absorbed (nope|rope) query, FP8_e4m3
   kv_cache[pages, 1, page=64, 576] — FP8_e4m3 packed latent KV (TRTLLM layout)
   block_tables[B, 1, topk=2048]    — selected token indices (invalid = -1)
   seq_lens[B]                      — per-seq context length
   workspace                        — flashinfer workspace buffer
 
-  o[B, H_local, kv_lora=512]
+  o[B, H, kv_lora=512]
 
 Only the decode kernel is timed. Index / page construction is untimed in get_inputs.
 """
@@ -24,7 +24,7 @@ import os
 
 import torch
 
-NUM_HEADS_LOCAL = 8          # 64 / TP8
+NUM_HEADS_LOCAL = 64         # TP=1: full num_heads
 KV_LORA = 512
 QK_ROPE = 64
 QK_NOPE = 192
@@ -106,6 +106,8 @@ def run(q, kv_cache, block_tables, seq_lens, workspace, bmm1_scale, max_seq_len)
 
     # Mirror dsa_backend._forward_trtllm view conventions.
     kv = kv_cache.view(-1, 1, kv_cache.shape[-2], kv_cache.shape[-1])
+    scale = float(bmm1_scale.item() if isinstance(bmm1_scale, torch.Tensor)
+                  else bmm1_scale)
     msl = int(max_seq_len.item() if isinstance(max_seq_len, torch.Tensor)
               else max_seq_len)
     out = flashinfer.decode.trtllm_batch_decode_with_kv_cache_mla(
@@ -119,7 +121,7 @@ def run(q, kv_cache, block_tables, seq_lens, workspace, bmm1_scale, max_seq_len)
         seq_lens=seq_lens,
         max_seq_len=msl,
         sparse_mla_top_k=block_tables.shape[-1],
-        bmm1_scale=bmm1_scale,
+        bmm1_scale=scale,
         backend="trtllm-gen",
     )
     # flashinfer returns [B, 1, H, kv_lora] or [B, H, kv_lora] depending on version;

@@ -8,7 +8,7 @@ This matches the DeepGEMM MoE runner's fused act+quant launch that precedes the
 Down projection — NOT a bare torch.silu proxy. Returns (fp8_act, ue8m0_scale).
 
 Axes:
-  M = token population (routing), E = local experts (32), I2 = 2*moe_inter = 4096
+  M = token population (routing), E = local experts (8 under EP32), I2 = 2*moe_inter = 4096
   layout = 0 contiguous / 1 masked
 """
 
