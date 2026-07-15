@@ -1,3 +1,4 @@
+<!-- RETARGET: DP1/TP1/EP32 (synced with Kernel-Harness main 88d7044) -->
 # GLM-5.2 o_proj_decode — Phase 1 Prompt
 
 Develop a kernel that minimizes latency while preserving numerical correctness.
@@ -17,7 +18,7 @@ are the priority. Do not treat Phase 2/3 shape specialization as in-scope yet.
 - Family: fp8-linear-gemm
 - Backend / baseline: deep_gemm w8a8_block_fp8 (blackwell)
 - Goal: Optimize solution.py against SGLang's DeepGEMM w8a8_block_fp8 baseline for GLM-5.2 O Projection decode; beat the sweep and match SGLang output within the declared FP8 tolerance.
-- Description: GLM-5.2 Attention O Projection (decode, TP8 local), FP8 blockwise GEMM (deep_gemm w8a8_block_fp8). out[M,6144] = x_fp8[M,2048] @ w_fp8[6144,2048].T. K=2048=local_heads*v_head (8*256), N=6144=hidden. Baseline = SGLang production DeepGEMM; beat every shape while matching output.
+- Description: 
 
 Authoritative task directory in this worktree:
 `testbench/tasks/glm52/o_proj_decode/`
