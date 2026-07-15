@@ -1,0 +1,115 @@
+# GLM-5.2 o_proj_decode — Phase 1 Prompt
+
+Develop a kernel that minimizes latency while preserving numerical correctness.
+Target machine: NVIDIA B200. Allowed approaches include CUDA C++, CuTe DSL,
+Triton, Python-wrapped CUDA extensions, CUTLASS, DeepGEMM retuning, or any
+other path available in the Kernel-Harness `.venv`.
+
+This is **Phase 1**: research and produce the first **correct independent**
+B200 implementation. Performance matters, but correctness and a clean design
+are the priority. Do not treat Phase 2/3 shape specialization as in-scope yet.
+
+## Task Contract (Kernel-Harness)
+
+- Task: `glm52/o_proj_decode`
+- Op: Attention O Projection
+- Phase: decode
+- Family: fp8-linear-gemm
+- Backend / baseline: deep_gemm w8a8_block_fp8 (blackwell)
+- Goal: Optimize solution.py against SGLang's DeepGEMM w8a8_block_fp8 baseline for GLM-5.2 O Projection decode; beat the sweep and match SGLang output within the declared FP8 tolerance.
+- Description: GLM-5.2 Attention O Projection (decode, TP8 local), FP8 blockwise GEMM (deep_gemm w8a8_block_fp8). out[M,6144] = x_fp8[M,2048] @ w_fp8[6144,2048].T. K=2048=local_heads*v_head (8*256), N=6144=hidden. Baseline = SGLang production DeepGEMM; beat every shape while matching output.
+
+Authoritative task directory in this worktree:
+`testbench/tasks/glm52/o_proj_decode/`
+
+### Axes / sweep
+
+| Axis | Role | Value |
+|------|------|-------|
+| `M` | variable (sweep) | decode token/batch count (sweep) |
+| `K` | const | `2048` — local O_proj input = heads/TP * v_head |
+| `N` | const | `6144` — hidden size |
+| `K_scale_blocks` | const | `` — ue8m0-packed K scale blocks |
+
+Sweep shapes: `[16, 32]`
+
+### Correctness
+
+- `max_atol = 0.1`
+- `max_rtol = 0.05`
+- `required_matched_ratio = 0.999`
+
+Oracle = live `reference.py` (SGLang / production path). Candidate must match
+on every shape.
+
+### Performance (later phases; measure now, do not block Phase 1)
+
+Authoritative WIN requires correct on every shape AND
+`solution_us < baseline_us` on every shape (CUPTI cold-L2). Beating baseline is
+**desirable but NOT required** to exit Phase 1.
+
+## Validation Commands
+
+Fast advisory smoke (from this worktree root; use this worktree's `.venv` via the
+shared Kernel-Harness env if present, otherwise the main checkout `.venv`):
+
+```bash
+cd /home/qinhaiyan/KDA-Exp/worktrees/glm52-o_proj_decode
+PY=/home/qinhaiyan/Kernel-Harness/.venv/bin/python
+PYTHONPATH=testbench $PY -m harness.profile \
+  testbench/tasks/glm52/o_proj_decode --shape 16
+```
+
+Authoritative gate:
+
+```bash
+cd /home/qinhaiyan/KDA-Exp/worktrees/glm52-o_proj_decode
+PY=/home/qinhaiyan/Kernel-Harness/.venv/bin/python
+$PY testbench/bin/evaluate.py testbench/tasks/glm52/o_proj_decode --max-workloads 1
+$PY testbench/bin/evaluate.py testbench/tasks/glm52/o_proj_decode
+```
+
+Or: `cd testbench/tasks/glm52/o_proj_decode && ./run.sh` (forwards to evaluate.py;
+prefer the `$PY` form above so the shared `.venv` is used).
+
+Exit codes: `0` = WIN, `1` = correct but not faster, `2` = incorrect.
+
+## Workflow Requirements
+
+- Consult KernelWiki for Blackwell/B200, DeepGEMM / FP8 GEMM / MoE grouped GEMM,
+  CUTLASS/CuTe, Triton, TMA/TMEM/`tcgen05` as relevant to this op.
+- Use `ncu-report-skill` when collecting or interpreting Nsight Compute reports.
+- Record candidates in `kda/candidates.jsonl` and runs in `kda/benchmark.csv`.
+- Keep NCU artifacts under `kda/profile/`.
+- Do **not** copy final contest release kernels into this workspace.
+- Edit only `testbench/tasks/glm52/o_proj_decode/solution.py` for the candidate
+  (do not edit `reference.py`).
+
+## Phase 1 Goal
+
+Research prior art and produce the first **correct independent** implementation
+that can replace `solution.py` while matching `reference.py` within tolerance on
+all sweep shapes `[16, 32]`.
+
+Phase 1 success criterion: authoritative evaluate reports `correct=true` on all
+shapes. Prefer a path that can later be optimized (not a thin re-export of the
+baseline op). Calling the exact baseline kernel as the only body of `run()` is
+**not** an acceptable Phase-1 deliverable.
+
+## Plan Draft Requirement
+
+Before implementing, write an implementation-plan draft to:
+
+```text
+kda/docs/draft.md
+```
+
+The draft must include baseline behavior + validation, risks/unknowns, ranked
+candidate directions, first concrete steps, exact validation commands, and
+evidence rules to promote/revise/reject.
+
+Then convert the draft with Humanize:
+
+```text
+/humanize:gen-plan --input kda/docs/draft.md --output kda/docs/plan.md --direct
+```
