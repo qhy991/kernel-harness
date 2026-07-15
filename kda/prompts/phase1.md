@@ -1,3 +1,4 @@
+<!-- RETARGET: DP1/TP1/EP32 (synced with Kernel-Harness main 88d7044) -->
 # GLM-5.2 moe_gate_proj_prefill — Phase 1 Prompt
 
 Develop a kernel that minimizes latency while preserving numerical correctness.
@@ -17,7 +18,7 @@ are the priority. Do not treat Phase 2/3 shape specialization as in-scope yet.
 - Family: grouped-moe
 - Backend / baseline: deep_gemm fp8_m_grouped_gemm_nt_masked (blackwell)
 - Goal: Optimize solution.py against SGLang's DeepGEMM fp8_m_grouped_gemm_nt_masked baseline for GLM-5.2 MoE Gate Projection prefill; beat every workload and match SGLang output.
-- Description: GLM-5.2 MoE Gate Projection (prefill, EP8 local E=32), matching llm_flops moe_gate_proj: FP8 masked grouped GEMM out[E,Mp,2048] = a[E,Mp,6144] @ w[E,2048,6144].T. Routing = fixed-seed top-8/256 filtered to this rank; K=6144, N=2048. Quant offline; only the grouped GEMM is timed.
+- Description: 
 
 Authoritative task directory in this worktree:
 `testbench/tasks/glm52/moe_gate_proj_prefill/`
@@ -27,7 +28,7 @@ Authoritative task directory in this worktree:
 | Axis | Role | Value |
 |------|------|-------|
 | `M` | variable (sweep) | prefill token/batch population (sweep) |
-| `E` | const | `32` — local experts (EP8 of 256) |
+| `E` | const | `32` — local experts (EP32 of 256) |
 | `K` | const | `6144`  |
 | `N` | const | `2048`  |
 | `layout` | const | `1` — 1=masked (llm_flops prefill+decode path) |
