@@ -179,7 +179,7 @@ def _glm52_routed_swiglu():
             outputs={"q_fp8": tensor(None, "float8_e4m3fn"),
                      "scale": tensor(None, "int32")},
             meta={"E": G.ep_local, "I2": i2, "ep": G.ep, "tp": G.tp,
-                  "deployment": "B200-TP8-EP8"})
+                  "dp": G.dp, "deployment": G.deployment})
 
 
 def specs():

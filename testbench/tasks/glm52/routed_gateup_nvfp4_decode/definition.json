@@ -10,8 +10,8 @@
         },
         "E": {
             "type": "const",
-            "value": 32,
-            "description": "local experts (EP8 of 256)"
+            "value": 8,
+            "description": "local experts (EP32 of 256)"
         },
         "H": {
             "type": "const",

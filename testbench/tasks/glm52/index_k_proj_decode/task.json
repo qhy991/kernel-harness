@@ -7,8 +7,10 @@
   "goal": "Optimize solution.py against SGLang's DeepGEMM w8a8_block_fp8 baseline for GLM-5.2 decode index_k_proj at batch 16/32.",
   "K": 6144,
   "N": 128,
-  "tp": 8,
-  "deployment": "B200-TP8-EP8",
+  "tp": 1,
+  "ep": 32,
+  "dp": 1,
+  "deployment": "B200-DP1-TP1-EP32",
   "sweep": [
     16,
     32

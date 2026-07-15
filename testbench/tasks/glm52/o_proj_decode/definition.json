@@ -2,7 +2,7 @@
     "name": "glm52_o_proj_decode",
     "hf_id": "zai-org/GLM-5.2-FP8",
     "family": "fp8-linear-gemm",
-    "description": "GLM-5.2 Attention O Projection (decode, TP8 local), FP8 blockwise GEMM (deep_gemm w8a8_block_fp8). out[M,6144] = x_fp8[M,2048] @ w_fp8[6144,2048].T. K=2048=local_heads*v_head (8*256), N=6144=hidden. Baseline = SGLang production DeepGEMM; beat every shape while matching output.",
+    "description": "GLM-5.2 Attention O Projection (decode, DP1/TP1/EP32), FP8 blockwise GEMM (deep_gemm w8a8_block_fp8). out[M,6144] = x_fp8[M,16384] @ w_fp8[6144,16384].T. K=16384=local_heads*v_head (64*256), N=6144=hidden. Baseline = SGLang production DeepGEMM; beat every shape while matching output.",
     "axes": {
         "M": {
             "type": "var",
@@ -10,8 +10,8 @@
         },
         "K": {
             "type": "const",
-            "value": 2048,
-            "description": "local O_proj input = heads/TP * v_head"
+            "value": 16384,
+            "description": "O_proj input = local_heads * v_head (TP=1)"
         },
         "N": {
             "type": "const",

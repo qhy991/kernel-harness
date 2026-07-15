@@ -65,9 +65,11 @@ class MM:
 
 # ===================== GLM-5.2-FP8 (canonical) =====================
 # AUTHORITATIVE from zai-org/GLM-5.2-FP8 config.json / GlmMoeDsaConfig.
-# Deployment assumption for shapes: B200, TP8 / EP8 (local heads = 8, local
-# experts = 32). Sparse MLA decode oracle is the B200 production path
-# (TRT-LLM sparse MLA), not Hopper flashmla_sparse.
+# Deployment assumption for shapes: B200, DP=1 / TP=1 / EP=32
+# (full attention heads = 64, local experts = 8). Aligns single-rank GEMM /
+# MoE shapes with llm_flops' unpartitioned-attention + E=8 microbench.
+# Sparse MLA decode oracle is the B200 production path (TRT-LLM sparse MLA),
+# not Hopper flashmla_sparse.
 class GLM52:
     hf_id = "zai-org/GLM-5.2-FP8"
     model = "glm52"
@@ -83,7 +85,7 @@ class GLM52:
     n_routed_experts = 256
     moe_topk = 8
     n_shared_experts = 1
-    moe_inter = 2048                   # per-expert intermediate (full, pre-TP)
+    moe_inter = 2048                   # per-expert intermediate
     dense_inter = 12288
     routed_scaling = 2.5
     vocab = 154880
@@ -91,15 +93,17 @@ class GLM52:
     index_n_heads = 32
     index_head_dim = 128
     page_size = 64
-    tp = 8
-    ep = 8
-    # Derived per-rank dims under TP8/EP8
-    local_heads = num_heads // tp      # 8
-    o_in = local_heads * v_head        # 2048 — absorbed decode may use kv_lora; FP8 O_proj
-                                       # on the production path is num_heads*v_head / TP
-    o_in_absorb = local_heads * kv_lora  # 4096 when O consumes absorbed latent V
-    # Prefer the production RowParallelLinear shape: num_heads * v_head / TP = 2048
-    ep_local = n_routed_experts // ep  # 32
+    dp = 1
+    tp = 1
+    ep = 32
+    # Derived per-rank dims under DP1/TP1/EP32
+    local_heads = num_heads // tp      # 64
+    o_in = local_heads * v_head        # 16384 — full (unshard) o_proj input
+    o_in_absorb = local_heads * kv_lora  # 32768 when O consumes absorbed latent V
+    ep_local = n_routed_experts // ep  # 8
     gateup_n = 2 * moe_inter           # 4096 Gate|Up per expert
+    deployment = "B200-DP1-TP1-EP32"
+    # Blackwell FlashMLA sparse requires q heads multiple of 128; pad 64→128.
+    dsa_padded_heads = 128
     first_k_dense_replace = 3
     num_hidden_layers = 78
