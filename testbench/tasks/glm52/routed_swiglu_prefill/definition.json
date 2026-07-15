@@ -2,7 +2,7 @@
     "name": "glm52_routed_swiglu_prefill",
     "hf_id": "zai-org/GLM-5.2-FP8",
     "family": "swiglu-fp8-quant",
-    "description": "GLM-5.2 Routed Expert SwiGLU + FP8 post-quant (prefill, EP-local E=32). gate|up width I2=4096; fused act+quant matches the DeepGEMM MoE runner launch that feeds Down. Routing = fixed-seed top-8/256. Baseline = SGLang production fused kernel.",
+    "description": "GLM-5.2 Routed Expert SwiGLU + FP8 post-quant (prefill, EP-local E=8). gate|up width I2=4096; fused act+quant matches the DeepGEMM MoE runner launch that feeds Down. Routing = fixed-seed top-8/256. Baseline = SGLang production fused kernel.",
     "axes": {
         "M": {
             "type": "var",
@@ -10,7 +10,7 @@
         },
         "E": {
             "type": "const",
-            "value": 32
+            "value": 8
         },
         "I2": {
             "type": "const",

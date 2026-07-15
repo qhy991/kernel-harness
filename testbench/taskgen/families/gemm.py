@@ -253,7 +253,7 @@ def _act_quant():
 
 
 def _glm52_o_proj():
-    """Attention O Projection under TP8: K=local_heads*v_head=2048, N=hidden=6144."""
+    """Attention O Projection under DP1/TP1: K=num_heads*v_head=16384, N=hidden=6144."""
     r = recipe("fp8_linear_gemm.py")
     kk, nn = G.o_in, G.hidden
     for name, phase, sweep in [
@@ -269,7 +269,7 @@ def _glm52_o_proj():
             workload_metrics=["achieved_tflops", "achieved_gbps", "arithmetic_intensity",
                               "bound", "us_per_token"],
             description=(
-                f"GLM-5.2 Attention O Projection ({phase}, TP8 local), FP8 blockwise GEMM "
+                f"GLM-5.2 Attention O Projection ({phase}, DP1/TP1/EP{G.ep}), FP8 blockwise GEMM "
                 f"(deep_gemm w8a8_block_fp8). out[M,{nn}] = x_fp8[M,{kk}] @ w_fp8[{nn},{kk}].T. "
                 f"K={kk}=local_heads*v_head ({G.local_heads}*{G.v_head}), N={nn}=hidden. "
                 f"Baseline = SGLang production DeepGEMM; beat every shape while matching output."),
@@ -277,7 +277,7 @@ def _glm52_o_proj():
                   f"baseline for GLM-5.2 O Projection {phase}; beat the sweep and match "
                   "SGLang output within the declared FP8 tolerance."),
             axes={"M": var(f"{phase} token/batch count (sweep)"),
-                  "K": const(kk, "local O_proj input = heads/TP * v_head"),
+                  "K": const(kk, "O_proj input = local_heads * v_head (TP=1)"),
                   "N": const(nn, "hidden size"),
                   "K_scale_blocks": expr("K//512", "ue8m0-packed K scale blocks")},
             inputs={"x_fp8": tensor(["M", "K"], "float8_e4m3fn"),
@@ -285,7 +285,8 @@ def _glm52_o_proj():
                     "w_fp8": tensor(["N", "K"], "float8_e4m3fn"),
                     "w_scale": tensor(["N", "K_scale_blocks"], "int32")},
             outputs={"output": tensor(["M", "N"], "bfloat16")},
-            meta={"K": kk, "N": nn, "tp": G.tp, "deployment": "B200-TP8-EP8"})
+            meta={"K": kk, "N": nn, "tp": G.tp, "ep": G.ep, "dp": G.dp,
+                  "deployment": G.deployment})
 
 
 def _glm52_index_k_proj():
@@ -317,7 +318,8 @@ def _glm52_index_k_proj():
                 "w_fp8": tensor(["N", "K"], "float8_e4m3fn"),
                 "w_scale": tensor(["N", "K_scale_blocks"], "int32")},
         outputs={"output": tensor(["M", "N"], "bfloat16")},
-        meta={"K": kk, "N": nn, "tp": G.tp, "deployment": "B200-TP8-EP8"})
+        meta={"K": kk, "N": nn, "tp": G.tp, "ep": G.ep, "dp": G.dp,
+              "deployment": G.deployment})
 
 
 def _glm52_routed_experts():
@@ -382,7 +384,7 @@ def _glm52_routed_experts():
                     "layout": tensor(None, "int32")},
             outputs={"grouped_out": tensor(None, "bfloat16")},
             meta={"E": G.ep_local, "K": kk, "N": nn, "ep": G.ep, "tp": G.tp,
-                  "deployment": "B200-TP8-EP8",
+                  "dp": G.dp, "deployment": G.deployment,
                   "llm_flops_op": f"moe_{stage}_proj"})
 
 
