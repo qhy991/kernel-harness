@@ -61,7 +61,6 @@ class MM:
     qkv_out = (nq + 2 * nkv) * hd         # 9216
     o_in = nq * hd                        # 8192
     ep_local = 16                         # 128 routed / EP8
-    sglang_dir = "MM_M3_SGLANG_DIR"       # symbolic; resolved by bin/config.py at runtime
 
 
 # ===================== GLM-5.2-FP8 (canonical) =====================

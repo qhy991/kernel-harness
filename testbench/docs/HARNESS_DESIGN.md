@@ -198,9 +198,11 @@ WIN gate (full sweep, NaN/Inf ban, matched-ratio, conservative speedup).
 ## 4. The evaluator (`bin/evaluate.py`) — the verdict
 
 `evaluate.py` orchestrates the driver, measures the baseline, and produces the verdict. It runs
-the driver in a **subprocess** under an env that puts the correct sglang checkout's `python/`
-first on `PYTHONPATH` (`_env` + `_sglang_dir_for`), so a task can pin its own sglang build
-(e.g. DSA tasks need the `amd_add_m3` tree) via `task.json`'s `sglang_dir`.
+the driver in a **subprocess** under an env that puts the single configured `SGLANG_DIR`
+checkout's `python/` first on `PYTHONPATH` when that checkout is complete enough to host
+production modules (currently gated on `fp8_kernel.py`). Otherwise the installed `sglang`
+package is used, and the baseline fingerprint records that package identity instead of a
+checkout commit. Every task — including MiniMax-M3 DSA — shares this one SGLang source.
 
 ### 4.1 Verdict and exit code
 
@@ -299,7 +301,7 @@ fine differences with `evaluate.py`.
 
 ## 8. Portability
 
-External locations (`SGLANG_DIR`, `CUDA_HOME`, `MM_M3_SGLANG_DIR`) resolve through
+External locations (`SGLANG_DIR`, `CUDA_HOME`) resolve through
 `bin/config.py`: **env var → `testbench/harness.env` → built-in default**. The venv is
 always the repo-local `.venv` (exported by `config.py` but deliberately not overridable —
 one supported environment). A checkout on a new machine needs only env vars or a one-line

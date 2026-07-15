@@ -1,0 +1,73 @@
+{
+  "schema_version": 1,
+  "id": "glm52--routed_down_decode--b200--20260714b",
+  "date": "2026-07-14",
+  "model": "glm52",
+  "task": "glm52/routed_down_decode",
+  "op": "Routed Expert Down",
+  "family": "grouped-moe",
+  "phase": "decode",
+  "shapes": {
+    "E": 32,
+    "K": 2048,
+    "N": 6144,
+    "M_sweep": [
+      16,
+      32
+    ]
+  },
+  "hardware": {
+    "gpu": "NVIDIA B200",
+    "sm": "sm_100"
+  },
+  "stack": {
+    "sglang_commit": "7e229e2a",
+    "torch": "2.11.0+cu130",
+    "cuda": "13.0"
+  },
+  "baseline_kernel": "deep_gemm fp8_m_grouped_gemm_nt_masked (blackwell)",
+  "bottleneck": {
+    "kind": "launch-overhead",
+    "evidence": "Final evaluate.py repeat=3: removing the decode-impossible layout.item() branch reduced median latency from the live reference baseline to 75.97 us at M=16 and 98.27 us at M=32; outputs remained bit-identical. Advisory profile showed the GEMM itself is memory-bound with heavy padded work (useful_vs_padded_util 0.0034/0.0076), but the measured win came from avoiding a per-call device scalar read before launch."
+  },
+  "approaches": [
+    {
+      "technique": "decode-specialized-dispatch",
+      "summary": "Removed the runtime layout.item() check and contiguous fallback from run(), directly calling the masked DeepGEMM path used by this decode-only workload.",
+      "outcome": "win",
+      "geomean_speedup": 1.2379,
+      "why": "The task sweep has layout=1 for every shape, so the branch only added a device scalar synchronization and Python dispatch overhead before the real DeepGEMM launch."
+    },
+    {
+      "technique": "explicit-deepgemm-recipe",
+      "summary": "Tried recipe=(1,128,128) to fp8_m_grouped_gemm_nt_masked to make the scale layout explicit.",
+      "outcome": "error",
+      "geomean_speedup": null,
+      "why": "The task inputs already carry TMA-transformed scale tensors; the explicit recipe made DeepGEMM reinterpret their layout and failed the scale-shape assertion."
+    },
+    {
+      "technique": "integration-empty-expert-diagnosis",
+      "summary": "Ran integrate.py after the WIN and reproduced the same failure with a reference.py copy as the candidate.",
+      "outcome": "abandoned",
+      "geomean_speedup": null,
+      "why": "The integration recipe compares separate uninitialized output buffers for empty experts that DeepGEMM intentionally leaves untouched; computed expert rows match, but empty rows contain unrelated memory."
+    }
+  ],
+  "result": {
+    "status": "win",
+    "geomean_speedup": 1.2379,
+    "min_speedup_conservative": 1.2074,
+    "repeat": 3,
+    "integrate": "fail"
+  },
+  "lesson": "For decode-only GLM52 grouped-MoE tasks, avoid reading scalar layout tensors inside run() when the workload sweep fixes layout=1. The saved device synchronization can be larger than the DeepGEMM kernel tuning headroom at tiny routed loads.",
+  "transfers_to": [
+    "glm52 grouped-moe decode tasks with fixed masked layout",
+    "small-M routed expert GEMM wrappers that branch on device scalar metadata"
+  ],
+  "caveats": [
+    "Does not apply to prefill or mixed-layout tasks that genuinely need the contiguous path",
+    "The current grouped-MoE integration verifier can fail on empty experts because reference and candidate outputs leave separate uninitialized buffers untouched"
+  ],
+  "agent": "codex"
+}

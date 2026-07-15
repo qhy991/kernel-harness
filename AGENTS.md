@@ -7,6 +7,14 @@ older proxy catalogue and is **not** the oracle; ignore it.
 
 Optimize **one task per session**. All commands are run from the repo root.
 
+Before editing, check the integration contract (drop-in vs fused-only):
+
+```bash
+python3 testbench/bin/integration_status.py <model>/<task>
+```
+
+See [`testbench/docs/AGENT_INTEGRATION.md`](testbench/docs/AGENT_INTEGRATION.md) for GLM-5.2 examples and failure modes.
+
 ## Environment
 
 - Run on the target GPU node; the comparison uses the real SGLang kernels.
@@ -30,9 +38,13 @@ Optimize **one task per session**. All commands are run from the repo root.
    `.venv/bin/python testbench/bin/evaluate.py <task> --repeat 3`
 6. Read the `VERDICT_JSON` block and the exit code: **0 = WIN** (correct AND faster on every
    shape), **1 = correct, not faster**, **2 = incorrect / error / incomplete**.
-7. On a WIN, verify it is a real SGLang drop-in:
+7. On a WIN, verify it is a real SGLang drop-in **when the contract is `drop-in`**:
    `.venv/bin/python testbench/bin/integrate.py <task>` (exit 0 = verified).
-8. **Win or not**, end the session by recording one knowledge-base entry (next section).
+   For `fused-only` tasks (e.g. `sparse-mla-decode`), skip integrate and record
+   `integrate=no-recipe` in knowledge — the WIN is interface-exact at `run()`.
+8. Optional structured closeout (evaluate + integrate + recommendation):
+   `.venv/bin/python testbench/bin/agent_closeout.py <model>/<task> --repeat 3`
+9. **Win or not**, end the session by recording one knowledge-base entry (next section).
 
 ## Fast probe vs. authoritative verdict
 
@@ -50,12 +62,22 @@ Optimize **one task per session**. All commands are run from the repo root.
 Memory-bound / fused ops have the most launch/fusion headroom. Do **not** start with FP8
 DeepGEMM GEMMs — they beat a hand-tuned Blackwell kernel and are intentionally difficult.
 
+**Kimi K27 (general):**
+
 - `testbench/tasks/kimi_k27/input_embedding_decode`
 - `testbench/tasks/kimi_k27/q_a_layernorm_decode` (or any `rmsnorm` / `fused-add-rmsnorm` task)
 - `testbench/tasks/kimi_k27/mla_qk_rope_decode`
 - `testbench/tasks/kimi_k27/q_nope_absorb_bmm_decode`
 
-List everything with `.venv/bin/python testbench/bin/inventory.py`.
+**GLM-5.2 (B200, good agent headroom — check contract first):**
+
+- `testbench/tasks/glm52/routed_swiglu_prefill` — drop-in, fusion + buffer write wins
+- `testbench/tasks/glm52/routed_down_decode` — drop-in, dispatch/sync wins
+- `testbench/tasks/glm52/sparse_mla_decode` — fused-only; preserve device tensor scales
+- Avoid first: `o_proj_decode`, `routed_gateup_*` (DeepGEMM floor)
+
+List everything with `.venv/bin/python testbench/bin/inventory.py`
+(or `inventory.py --headroom glm52` for agent routing by difficulty + integrate contract).
 
 ## Knowledge base (recipes)
 

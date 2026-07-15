@@ -7,7 +7,7 @@ import subprocess
 import sys
 from pathlib import Path
 
-from config import CUDA_HOME, SGLANG_DIR, VENV, resolve
+from config import CUDA_HOME, SGLANG_DIR, VENV, has_m3_kernels, is_usable_sglang_checkout, sglang_python_root
 
 
 def _commit(path: Path) -> str:
@@ -51,11 +51,16 @@ def main() -> int:
         print(f"gpu:         {torch.cuda.get_device_name(index)} sm_{''.join(map(str, torch.cuda.get_device_capability(index)))}")
         print(f"torch/cuda:  {torch.__version__} / {torch.version.cuda}")
 
-    m3_path = Path(resolve("MM_M3_SGLANG_DIR"))
-    if (m3_path / "python" / "sglang").is_dir():
-        print(f"M3 checkout: {m3_path} ({_commit(m3_path)})")
+    usable = sglang_python_root(sglang_path)
+    if usable:
+        print(f"sglang src:  checkout (PYTHONPATH prepends {usable})")
     else:
-        print(f"M3 checkout: unavailable ({m3_path}); only M3 DSA tasks are affected")
+        print("sglang src:  installed package (checkout incomplete — missing fp8_kernel)")
+    if has_m3_kernels(sglang_path):
+        print("M3 kernels:  present in SGLANG_DIR")
+    else:
+        # Not a hard error: site-packages may still provide them.
+        print("M3 kernels:  not found in SGLANG_DIR; DSA tasks need them from the installed sglang")
 
     if errors:
         print("\nEnvironment check failed:", file=sys.stderr)

@@ -106,8 +106,6 @@ def run(q, kv_cache, block_tables, seq_lens, workspace, bmm1_scale, max_seq_len)
 
     # Mirror dsa_backend._forward_trtllm view conventions.
     kv = kv_cache.view(-1, 1, kv_cache.shape[-2], kv_cache.shape[-1])
-    scale = float(bmm1_scale.item() if isinstance(bmm1_scale, torch.Tensor)
-                  else bmm1_scale)
     msl = int(max_seq_len.item() if isinstance(max_seq_len, torch.Tensor)
               else max_seq_len)
     out = flashinfer.decode.trtllm_batch_decode_with_kv_cache_mla(
@@ -121,7 +119,7 @@ def run(q, kv_cache, block_tables, seq_lens, workspace, bmm1_scale, max_seq_len)
         seq_lens=seq_lens,
         max_seq_len=msl,
         sparse_mla_top_k=block_tables.shape[-1],
-        bmm1_scale=scale,
+        bmm1_scale=bmm1_scale,
         backend="trtllm-gen",
     )
     # flashinfer returns [B, 1, H, kv_lora] or [B, H, kv_lora] depending on version;

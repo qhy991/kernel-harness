@@ -1,0 +1,65 @@
+{
+  "schema_version": 1,
+  "id": "glm52--routed_down_decode--b200--20260715a",
+  "date": "2026-07-15",
+  "model": "glm52",
+  "task": "glm52/routed_down_decode",
+  "op": "Routed Expert Down",
+  "family": "grouped-moe",
+  "phase": "decode",
+  "shapes": {
+    "E": 32,
+    "K": 2048,
+    "N": 6144,
+    "M_sweep": [
+      16,
+      32
+    ]
+  },
+  "hardware": {
+    "gpu": "NVIDIA B200",
+    "sm": "sm_100"
+  },
+  "stack": {
+    "sglang_commit": "7e229e2a",
+    "torch": "2.11.0+cu130",
+    "cuda": "13.0"
+  },
+  "baseline_kernel": "deep_gemm fp8_m_grouped_gemm_nt_masked (blackwell)",
+  "bottleneck": {
+    "kind": "launch-overhead",
+    "evidence": "Supersedes 20260714b: evaluate WIN geo=1.2379 minc=1.2074 unchanged; integrate.py now DROP-IN VERIFIED after comparing only active expert rows (masked_m>0)."
+  },
+  "approaches": [
+    {
+      "technique": "decode-specialized-dispatch",
+      "summary": "Removed layout.item() branch; call masked DeepGEMM directly (same solution.py as 20260714b).",
+      "outcome": "win",
+      "geomean_speedup": 1.2379,
+      "why": "Decode sweep fixes layout=1; the device scalar sync was pure overhead."
+    },
+    {
+      "technique": "harness-integrate-active-rows-fix",
+      "summary": "integrate grouped-moe recipes now flatten only rows DeepGEMM wrote (per masked_m), ignoring uninitialized padded capacity.",
+      "outcome": "win",
+      "geomean_speedup": 1.2379,
+      "why": "Prior integrate=fail compared two separately allocated out buffers' empty expert padding (garbage), not computed rows."
+    }
+  ],
+  "result": {
+    "status": "win",
+    "geomean_speedup": 1.2379,
+    "min_speedup_conservative": 1.2074,
+    "repeat": 3,
+    "integrate": "pass"
+  },
+  "lesson": "Masked grouped-MoE decode drop-in verification must ignore empty-expert padded slots. A harness WIN that removes device-scalar layout reads is production-safe once active rows match bit-exactly under deep_gemm_wrapper.grouped_gemm_nt_f8f8bf16_masked.",
+  "transfers_to": [
+    "glm52 grouped-moe decode drop-in checks",
+    "any DeepGEMM masked MoE integrate recipe"
+  ],
+  "caveats": [
+    "Supersedes glm52--routed_down_decode--b200--20260714b for integrate status; evaluate numbers from that session"
+  ],
+  "agent": "cursor-harness-fix"
+}

@@ -35,7 +35,7 @@ from pathlib import Path
 
 import torch
 
-from config import resolve_sglang_dir
+from config import SGLANG_DIR, sglang_python_root
 
 BLOCK = 128
 
@@ -595,7 +595,12 @@ def _integ_grouped_moe_masked(run, meta, device):
             (a_fp8, a_s), (b_fp8, b_s), out_cand, masked_m, expected_m)
     finally:
         dgw.grouped_gemm_nt_f8f8bf16_masked = orig
-    return out_ref, out_cand, cnt["n"], dgw.grouped_gemm_nt_f8f8bf16_masked is orig
+    return (
+        _flatten_grouped_moe_active(out_ref, masked_m),
+        _flatten_grouped_moe_active(out_cand, masked_m),
+        cnt["n"],
+        dgw.grouped_gemm_nt_f8f8bf16_masked is orig,
+    )
 
 
 def _integ_grouped_moe_contig(run, meta, device):
@@ -661,7 +666,12 @@ def _integ_grouped_moe_masked_glm52(run, meta, device):
             (a_fp8, a_s), (b_fp8, b_s), out_cand, masked_m, em)
     finally:
         dgw.grouped_gemm_nt_f8f8bf16_masked = orig
-    return out_ref, out_cand, cnt["n"], dgw.grouped_gemm_nt_f8f8bf16_masked is orig
+    return (
+        _flatten_grouped_moe_active(out_ref, masked_m),
+        _flatten_grouped_moe_active(out_cand, masked_m),
+        cnt["n"],
+        dgw.grouped_gemm_nt_f8f8bf16_masked is orig,
+    )
 
 
 def _integ_grouped_moe_contig_glm52(run, meta, device):
@@ -780,6 +790,109 @@ def _integ_swiglu_fp8_quant_glm52(run, meta, device):
     return out_ref, out_cand, invoked, restored
 
 
+def _integ_nvfp4_moe_glm52(run, meta, device):
+    """GLM-5.2 ModelOpt-FP4 routed MoE: swap FlashInfer TRT-LLM symbol used by
+    both task recipes and sglang's flashinfer_trtllm runner.
+
+    Production import sites:
+      - flashinfer.trtllm_fp4_block_scale_routed_moe
+      - flashinfer.fused_moe.trtllm_fp4_block_scale_routed_moe
+    (usually the same function object; we patch both attributes.)
+    """
+    import flashinfer
+    import flashinfer.fused_moe as fused_moe
+
+    task_dir = meta["_task_dir"]
+    axes = {
+        "M": 16,
+        "E": meta.get("E", 32),
+        "H": meta.get("H", 6144),
+        "I": meta.get("I", 2048),
+        "topk": meta.get("topk", 8),
+        "n_global": meta.get("n_global", 256),
+    }
+    inp = _load_reference_inputs(task_dir, axes, device)
+
+    import importlib.util
+    spec = importlib.util.spec_from_file_location("glm_nvfp4_ref", task_dir / "reference.py")
+    ref_mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(ref_mod)
+
+    def _args(d):
+        return (
+            d["topk_ids"], d["topk_weights"], d["hidden_states"], d["hidden_states_scale"],
+            d["gemm1_weights"], d["gemm1_weights_scale"], d["gemm2_weights"],
+            d["gemm2_weights_scale"], d["output"], d["output1_scale_scalar"],
+            d["output1_scale_gate_scalar"], d["output2_scale_scalar"], d["num_experts"],
+            d["top_k"], d["local_expert_offset"], d["local_num_experts"],
+            d["intermediate_size"], d["routed_scaling_factor"],
+        )
+
+    def _clone_dict(d):
+        return {k: (v.clone() if torch.is_tensor(v) else v) for k, v in d.items()}
+
+    out_ref = ref_mod.run(*[a.clone() if torch.is_tensor(a) else a for a in _args(inp)])
+    cnt = {"n": 0}
+    orig = fused_moe.trtllm_fp4_block_scale_routed_moe
+
+    def _install(fn):
+        fused_moe.trtllm_fp4_block_scale_routed_moe = fn
+        flashinfer.trtllm_fp4_block_scale_routed_moe = fn
+
+    def adapter(*a, **kw):
+        cnt["n"] += 1
+        # Candidate run() itself imports flashinfer and calls this symbol — restore
+        # the real kernel for the duration of the candidate call (same pattern as bmm).
+        _install(orig)
+        try:
+            if kw:
+                topk_ids = kw.get("topk_ids")
+                if isinstance(topk_ids, (tuple, list)):
+                    ids, weights = topk_ids[0], topk_ids[1]
+                else:
+                    ids, weights = topk_ids, kw.get("topk_weights")
+                d = _clone_dict(inp)
+                d["topk_ids"] = ids
+                d["topk_weights"] = weights if weights is not None else d["topk_weights"]
+                d["hidden_states"] = kw.get("hidden_states", d["hidden_states"])
+                d["hidden_states_scale"] = kw.get(
+                    "hidden_states_scale", d["hidden_states_scale"])
+                d["gemm1_weights"] = kw.get("gemm1_weights", d["gemm1_weights"])
+                d["gemm1_weights_scale"] = kw.get(
+                    "gemm1_weights_scale", d["gemm1_weights_scale"])
+                d["gemm2_weights"] = kw.get("gemm2_weights", d["gemm2_weights"])
+                d["gemm2_weights_scale"] = kw.get(
+                    "gemm2_weights_scale", d["gemm2_weights_scale"])
+                if kw.get("output") is not None:
+                    d["output"] = kw["output"]
+                for sk in ("output1_scale_scalar", "output1_scale_gate_scalar",
+                           "output2_scale_scalar"):
+                    if kw.get(sk) is not None:
+                        d[sk] = kw[sk]
+                out = run(*_args(d))
+                return (out,)
+            out = run(*[x.clone() if torch.is_tensor(x) else x for x in _args(inp)])
+            return (out,)
+        finally:
+            _install(adapter)
+
+    _install(adapter)
+    try:
+        _ = ref_mod.run(*[a.clone() if torch.is_tensor(a) else a
+                          for a in _args(_clone_dict(inp))])
+        # Direct candidate compare with the real flashinfer symbol restored.
+        _install(orig)
+        out_cand = run(*[a.clone() if torch.is_tensor(a) else a for a in _args(inp)])
+    finally:
+        _install(orig)
+
+    restored = (
+        fused_moe.trtllm_fp4_block_scale_routed_moe is orig
+        and flashinfer.trtllm_fp4_block_scale_routed_moe is orig
+    )
+    return out_ref, out_cand, cnt["n"], restored
+
+
 def _integ_bmm(run, meta, device):
     """MLA weight-absorb BMM: sglang's bf16 absorb path calls global torch.bmm (no
     scoped sglang symbol). Swap torch.bmm with a SHAPE-GUARDED hook — only the
@@ -832,12 +945,13 @@ def _task_scalars(task_dir: Path):
     return scalars
 
 
-# DSA (MiniMax-M3 sparse-attention) JIT kernels live in the sglang-m3 build. Each of
-# these families' run() is a verbatim wrapper of one jit_kernel symbol, so the recipe
-# swaps that symbol with an identity probe, drives the task's reference forward through
-# it (proving it's the real dispatch site), and returns the candidate's output for the
-# match check. The fused-attention families (dsa-decode-attn, dsa-prefill-attn,
-# dsa-prefill-topk) have no single isolated symbol and are left to SKIP.
+# DSA (MiniMax-M3 sparse-attention) JIT kernels live in the shared SGLANG_DIR /
+# installed sglang package. Each of these families' run() is a verbatim wrapper of
+# one jit_kernel symbol, so the recipe swaps that symbol with an identity probe,
+# drives the task's reference forward through it (proving it's the real dispatch
+# site), and returns the candidate's output for the match check. The fused-attention
+# families (dsa-decode-attn, dsa-prefill-attn, dsa-prefill-topk) have no single
+# isolated symbol and are left to SKIP.
 _DSA_JIT = {
     "dsa-qknorm-rope": ("sglang.jit_kernel.minimax_qknorm_rope", "minimax_qknorm_rope"),
     "dsa-decode-topk": ("sglang.jit_kernel.minimax_decode_topk", "minimax_decode_topk"),
@@ -846,7 +960,7 @@ _DSA_JIT = {
 
 
 def _integ_dsa_jit(run, meta, device):
-    """Interface-exact DSA JIT op (sglang-m3). See _DSA_JIT."""
+    """Interface-exact DSA JIT op. See _DSA_JIT."""
     import importlib
 
     family = meta["family"]
@@ -904,7 +1018,7 @@ RECIPES = {
     "grouped-moe": _integ_grouped_moe_masked,
     "grouped-moe-contiguous": _integ_grouped_moe_contig,
     "bmm": _integ_bmm,
-    # DSA (sglang-m3) interface-exact JIT ops
+    # DSA interface-exact JIT ops
     "dsa-qknorm-rope": _integ_dsa_jit,
     "dsa-decode-topk": _integ_dsa_jit,
     "dsa-store-kv-index": _integ_dsa_jit,
@@ -932,7 +1046,11 @@ MODEL_RECIPES = {
     ("grouped-moe", "glm52"): _integ_grouped_moe_masked_glm52,
     ("grouped-moe-contiguous", "glm52"): _integ_grouped_moe_contig_glm52,
     ("swiglu-fp8-quant", "glm52"): _integ_swiglu_fp8_quant_glm52,
+    ("nvfp4-moe", "glm52"): _integ_nvfp4_moe_glm52,
 }
+
+# Family-default when no (family, model) override is needed.
+RECIPES["nvfp4-moe"] = _integ_nvfp4_moe_glm52
 
 
 def _resolve_recipe(family, model):
@@ -946,6 +1064,42 @@ def _as_list(out):
     return list(out) if isinstance(out, (tuple, list)) else [out]
 
 
+_FLOAT8_DTYPES = tuple(
+    getattr(torch, n) for n in (
+        "float8_e4m3fn", "float8_e5m2", "float8_e4m3fnuz", "float8_e5m2fnuz",
+    ) if hasattr(torch, n)
+)
+
+
+def _to_compare_float(t: torch.Tensor) -> torch.Tensor:
+    """Promote any numeric tensor to float32 for allclose-style checks."""
+    if t.dtype in _FLOAT8_DTYPES or str(t.dtype).startswith("torch.float8"):
+        return t.to(torch.float32)
+    if t.is_floating_point():
+        return t.float()
+    return t.float()
+
+
+def _tensor_has_bad_values(t: torch.Tensor) -> bool:
+    f = _to_compare_float(t)
+    return bool(torch.isnan(f).any() or torch.isinf(f).any())
+
+
+def _flatten_grouped_moe_active(out: torch.Tensor, masked_m: torch.Tensor) -> torch.Tensor:
+    """Concatenate only rows DeepGEMM actually wrote (per-expert counts).
+
+    Padded capacity slots for empty experts are intentionally uninitialized; comparing
+    the full [E, Mp, N] buffer across two separately allocated outputs false-fails."""
+    parts = []
+    for e in range(int(masked_m.numel())):
+        n = int(masked_m[e].item())
+        if n > 0:
+            parts.append(out[e, :n].reshape(-1))
+    if not parts:
+        return torch.empty(0, device=out.device, dtype=out.dtype)
+    return torch.cat(parts)
+
+
 def _compare(ref, cand, atol, rtol):
     """Worst-case match across all outputs (handles single-tensor and tuple returns)."""
     refs, cands = _as_list(ref), _as_list(cand)
@@ -954,8 +1108,8 @@ def _compare(ref, cand, atol, rtol):
     min_ratio, max_abs, shape_ok, has_bad = 1.0, 0.0, True, False
     for r, c in zip(refs, cands):
         shape_ok = shape_ok and (c.shape == r.shape)
-        has_bad = has_bad or bool(torch.isnan(c).any() or torch.isinf(c).any())
-        a, b = c.float(), r.float()
+        has_bad = has_bad or _tensor_has_bad_values(c) or _tensor_has_bad_values(r)
+        a, b = _to_compare_float(c), _to_compare_float(r)
         ok = (a - b).abs() <= (atol + rtol * b.abs())
         min_ratio = min(min_ratio, ok.float().mean().item())
         max_abs = max(max_abs, (a - b).abs().max().item())
@@ -978,26 +1132,30 @@ def main():
     model = meta.get("model") or task_dir.parent.name
     tol = meta.get("tolerance", {"max_atol": 0.1, "max_rtol": 0.05, "required_matched_ratio": 0.98})
 
-    # A task may pin its own sglang build (DSA needs the sglang-m3 tree). Prepend it to
-    # sys.path BEFORE any sglang import so `import sglang` resolves to the right build,
-    # keeping the per-task loop self-sufficient (no caller PYTHONPATH juggling).
-    # Skip incomplete checkouts (missing fp8_kernel) so the installed package can resolve.
-    _pinned = resolve_sglang_dir(meta.get("sglang_dir"))
-    if _pinned:
-        _py = Path(_pinned) / "python"
-        marker = _py / "sglang" / "srt" / "layers" / "quantization" / "fp8_kernel.py"
-        if marker.is_file():
-            py = str(_py)
-            if py not in sys.path:
-                sys.path.insert(0, py)
-        else:
-            # Drop inherited incomplete entry if present.
-            bad = str(_py.resolve())
-            sys.path[:] = [p for p in sys.path if Path(p).resolve().as_posix() != bad]
+    # Single SGLANG_DIR for every task. Prepend it only when complete enough
+    # (fp8_kernel present); otherwise the installed sglang package resolves.
+    _py_root = sglang_python_root(SGLANG_DIR)
+    if _py_root:
+        if _py_root not in sys.path:
+            sys.path.insert(0, _py_root)
+    else:
+        bad = str((Path(SGLANG_DIR) / "python").resolve())
+        sys.path[:] = [p for p in sys.path if Path(p).resolve().as_posix() != bad]
 
     if family in FUSED_ONLY:
         print(f"SKIP {task_dir.name}: family '{family}' has no standalone drop-in site "
               f"({FUSED_ONLY[family]}).")
+        print("INTEGRATION_JSON_BEGIN")
+        print(json.dumps({
+            "task": task_dir.name,
+            "family": family,
+            "solution": args.solution,
+            "drop_in_ok": None,
+            "integration_contract": "fused-only",
+            "integrate": "no-recipe",
+            "reason": FUSED_ONLY[family],
+        }))
+        print("INTEGRATION_JSON_END")
         sys.exit(2)
     recipe = _resolve_recipe(family, model)
     if recipe is None:

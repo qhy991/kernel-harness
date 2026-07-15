@@ -113,7 +113,6 @@ class TaskSpec:
     tolerance: Optional[dict] = None
     meta: dict[str, Any] = field(default_factory=dict)   # extra task.json fields
     baseline_us: Optional[float] = None                  # fp8 legacy csv wall-clock
-    sglang_dir: Optional[str] = None                     # per-task sglang build override
     # Optional diagnostic model (read-only feedback for agents; never gates WIN).
     flops_expr: Optional[str] = None                     # e.g. "2*M*K*N"
     performance_model: Optional[dict[str, Any]] = None   # family-specific metric schema
@@ -189,8 +188,6 @@ def write_task(spec: TaskSpec, tasks_root: Path) -> str:
         task_json["workloads"] = spec.workloads
     if spec.baseline_us is not None:
         task_json["csv_wallclock_us_reference"] = spec.baseline_us
-    if spec.sglang_dir is not None:
-        task_json["sglang_dir"] = spec.sglang_dir
     if spec.performance_model is not None:
         task_json["performance_model"] = spec.performance_model
     if spec.workload_metrics is not None:

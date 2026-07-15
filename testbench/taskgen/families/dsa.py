@@ -1,8 +1,6 @@
-"""MiniMax-M3 DSA sparse-attention stack (op29-34). All pin the amd_add_m3 sglang build."""
+"""MiniMax-M3 DSA sparse-attention stack (op29-34). Uses the single shared SGLANG_DIR."""
 from ..config import MM, recipe
 from ..spec import (TaskSpec, DECODE_SWEEP, EXACT_TOL, sweep_for, var, const, expr, tensor)
-
-DIR = MM.sglang_dir
 
 
 def _qknorm_rope():
@@ -12,13 +10,13 @@ def _qknorm_rope():
         op = "DSA fused Gemma-QK-norm + partial RoPE"
         yield TaskSpec(
             model=MM.model, name=name, op=op, family="dsa-qknorm-rope", phase=phase, hf_id=MM.hf_id,
-            recipe=r, sweep=sweep_for(phase), sglang_dir=DIR,
+            recipe=r, sweep=sweep_for(phase),
             backend="minimax_qknorm_rope fused C++ (blackwell)",
             description=(
                 f"MiniMax-M3 {op} ({phase}), jit_kernel.minimax_qknorm_rope (fused C++, op29/35): "
                 f"per-head Gemma-RMSNorm of q/k in a packed QKV[T,{qkv_dim}] (nq={MM.nq},nk=nv={MM.nkv}, "
                 f"head_dim={MM.hd}) + partial RoPE (rope_dim={MM.rope_dim}, theta=5e6). Single-launch, "
-                f"~2.4x vs two launches. Requires the amd_add_m3 sglang build."),
+                f"~2.4x vs two launches. Baseline = SGLang production kernel."),
             goal=(f"Optimize solution.py against SGLang's minimax_qknorm_rope "
                   f"baseline for {op} {phase}; beat the full sweep and match SGLang "
                   "output within the declared tolerance."),
@@ -38,13 +36,14 @@ def _prefill_topk():
         op = "DSA prefill Indexer score + top-k"
         yield TaskSpec(
             model=MM.model, name=name, op=op, family="dsa-prefill-topk", phase="prefill", hf_id=MM.hf_id,
-            recipe=r, sweep=DECODE_SWEEP, sglang_dir=DIR, tolerance=dict(EXACT_TOL),
+            recipe=r, sweep=DECODE_SWEEP, tolerance=dict(EXACT_TOL),
             backend="flash_prefill_with_topk_index Triton (blackwell)",
             meta={"L": ll, "oracle": "exact-index"},
             description=(
                 f"MiniMax-M3 {op} (prefill, L={ll}), flash_prefill_with_topk_index (single-launch Triton, op31): "
                 f"per-block index score + top-{MM.topk_blocks} in one kernel. num_index_heads={MM.idx_heads}, "
-                f"idx_dim={MM.idx_dim}, block_size={MM.block}. EXACT-index oracle. B=sweep. Requires amd_add_m3."),
+                f"idx_dim={MM.idx_dim}, block_size={MM.block}. EXACT-index oracle. B=sweep. "
+                f"Baseline = SGLang production kernel."),
             goal=(f"Optimize solution.py against SGLang's "
                   f"flash_prefill_with_topk_index baseline for {op} at L={ll}; beat "
                   "every batch workload and match block indices exactly (atol=0)."),
@@ -66,14 +65,14 @@ def _prefill_attn():
         op = "DSA prefill main sparse attention"
         yield TaskSpec(
             model=MM.model, name=name, op=op, family="dsa-prefill-attn", phase="prefill", hf_id=MM.hf_id,
-            recipe=r, sweep=DECODE_SWEEP, sglang_dir=DIR,
+            recipe=r, sweep=DECODE_SWEEP,
             backend="flash_prefill_with_gqa_share_sparse Triton (blackwell)",
             meta={"L": ll, "num_q_heads": MM.nq, "num_kv_heads": MM.nkv, "head_dim": MM.hd},
             description=(
                 f"MiniMax-M3 {op} (prefill, L={ll}), flash_prefill_with_gqa_share_sparse (Triton, op33): "
                 f"GQA-share sparse attention over top-{MM.topk_blocks} KV blocks. num_q_heads={MM.nq}, "
                 f"num_kv_heads={MM.nkv} (GQA 16:1), head_dim={MM.hd}, block_size_k={MM.block}. B=sweep. "
-                f"Requires amd_add_m3. Baseline = sglang production kernel."),
+                f"Baseline = SGLang production kernel."),
             goal=(f"Optimize solution.py against SGLang's "
                   f"flash_prefill_with_gqa_share_sparse baseline for {op} at L={ll}; "
                   "beat every batch workload and match SGLang output within tolerance."),
@@ -95,14 +94,14 @@ def _store_kv_index():
     yield TaskSpec(
         model=MM.model, name="mm_dsa_store_kv_index_decode", op="DSA Indexer K/V cache fused store",
         family="dsa-store-kv-index", phase="decode", hf_id=MM.hf_id,
-        recipe=recipe("minimax_dsa_store_kv_index.py"), sweep=DECODE_SWEEP, sglang_dir=DIR,
+        recipe=recipe("minimax_dsa_store_kv_index.py"), sweep=DECODE_SWEEP,
         backend="store_kv_index JIT CUDA (blackwell)",
         meta={"num_kv_heads": MM.nkv, "head_dim": MM.hd},
         description=(
             f"MiniMax-M3 DSA Indexer K/V cache fused store (decode), store_kv_index (JIT CUDA, op30): "
             f"single-launch scatter of new K/V + index-K into paged caches at per-token slots. "
             f"num_kv_heads={MM.nkv}, head_dim={MM.hd}, index_dim={MM.idx_dim}. ~12x vs separate stores. "
-            f"Requires amd_add_m3. Baseline = sglang production kernel."),
+            f"Baseline = SGLang production kernel."),
         goal=("Optimize solution.py against SGLang's store_kv_index baseline for the "
               "DSA indexer K/V-cache fused decode store; beat the full sweep and match "
               "all three SGLang cache outputs."),
@@ -124,14 +123,14 @@ def _decode_attn():
         op = "DSA decode main sparse attention"
         yield TaskSpec(
             model=MM.model, name=name, op=op, family="dsa-decode-attn", phase="decode", hf_id=MM.hf_id,
-            recipe=r, sweep=DECODE_SWEEP, sglang_dir=DIR,
+            recipe=r, sweep=DECODE_SWEEP,
             backend="flash_decode_with_gqa_share_sparse Triton (blackwell)",
             meta={"ctx": ctx, "num_q_heads": MM.nq, "num_kv_heads": MM.nkv, "head_dim": MM.hd},
             description=(
                 f"MiniMax-M3 {op} (decode, ctx={ctx}), flash_decode_with_gqa_share_sparse (Triton, op34): "
                 f"GQA-share sparse attention over the top-{MM.topk_blocks} KV blocks. num_q_heads={MM.nq}, "
                 f"num_kv_heads={MM.nkv} (GQA 16:1), head_dim={MM.hd}, block_size={MM.block}. Batch=sweep, "
-                f"paged KV. Requires amd_add_m3. Baseline = sglang production kernel."),
+                f"paged KV. Baseline = SGLang production kernel."),
             goal=(f"Optimize solution.py against SGLang's "
                   f"flash_decode_with_gqa_share_sparse baseline for {op} at context "
                   f"length {ctx}; beat every batch workload and match SGLang output."),
@@ -153,13 +152,14 @@ def _decode_topk():
         op = "DSA decode Indexer top-k blocks"
         yield TaskSpec(
             model=MM.model, name=name, op=op, family="dsa-decode-topk", phase="decode", hf_id=MM.hf_id,
-            recipe=r, sweep=DECODE_SWEEP, sglang_dir=DIR, tolerance=dict(EXACT_TOL),
+            recipe=r, sweep=DECODE_SWEEP, tolerance=dict(EXACT_TOL),
             backend="minimax_decode_topk JIT radix (blackwell)",
             meta={"index_heads": MM.idx_heads, "block_size": MM.block, "ctx": ctx, "oracle": "exact-index"},
             description=(
                 f"MiniMax-M3 {op} (decode, ctx={ctx}), minimax_decode_topk (JIT radix, op32): select "
                 f"top-{MM.topk_blocks} KV blocks per (index_head,seq) from block scores. "
-                f"index_heads={MM.idx_heads}, block_size={MM.block}. EXACT-index oracle. Requires amd_add_m3."),
+                f"index_heads={MM.idx_heads}, block_size={MM.block}. EXACT-index oracle. "
+                f"Baseline = SGLang production kernel."),
             goal=(f"Optimize solution.py against SGLang's minimax_decode_topk baseline "
                   f"for {op} at context length {ctx}; beat every batch workload and "
                   "match block indices exactly (atol=0)."),

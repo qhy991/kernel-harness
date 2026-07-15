@@ -30,6 +30,5 @@
     "source": "live",
     "measure": "reference.py timed by the harness CUPTI runtime (median device-kernel us)",
     "denominator": "the live per-shape reference latency (see .baseline_cache.json)"
-  },
-  "sglang_dir": "MM_M3_SGLANG_DIR"
+  }
 }

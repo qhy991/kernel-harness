@@ -1,0 +1,75 @@
+{
+  "schema_version": 1,
+  "id": "glm52--routed_swiglu_prefill--b200--20260714a",
+  "date": "2026-07-14",
+  "model": "glm52",
+  "task": "glm52/routed_swiglu_prefill",
+  "op": "Routed Expert SwiGLU+FP8 Quant",
+  "family": "swiglu-fp8-quant",
+  "phase": "prefill",
+  "shapes": {
+    "M_sweep": [
+      1024,
+      2048,
+      4096
+    ],
+    "E": 32,
+    "I2": 4096,
+    "group_size": 128,
+    "layout": "contiguous"
+  },
+  "hardware": {
+    "gpu": "NVIDIA B200",
+    "sm": "sm_100"
+  },
+  "stack": {
+    "sglang_commit": "7e229e2a",
+    "torch": "2.11.0+cu130",
+    "cuda": "13.0"
+  },
+  "baseline_kernel": "silu_and_mul_contig_post_quant",
+  "bottleneck": {
+    "kind": "kernel-count",
+    "evidence": "Final evaluate.py repeat=3 shows the reference/fallback path near 155-163 us while direct-buffer two-kernel quantization is near 78-81 us; profile.py also reported only ~1.1% HBM at M=1024, so avoidable launches/copies dominated rather than memory bandwidth."
+  },
+  "approaches": [
+    {
+      "technique": "dsv4-swizzle-template",
+      "summary": "Tried enabling the existing SGLang DSV4 swizzle specialization for the contiguous activation kernel.",
+      "outcome": "error",
+      "geomean_speedup": null,
+      "why": "The swizzled DSV4 kernel requires a different scale tensor layout and rejected the task buffer with a TensorMatcher stride/size error."
+    },
+    {
+      "technique": "sgl-kernel-fused-swiglu-quant",
+      "summary": "Called sgl_per_token_group_quant_8bit with fuse_silu_and_mul=True, first directly and then with a column-major packed-scale view.",
+      "outcome": "incorrect",
+      "geomean_speedup": null,
+      "why": "The fused v2 quant kernel uses a different SwiGLU convention/rounding path and failed the 0.999 matched-ratio tolerance despite close cosine similarity."
+    },
+    {
+      "technique": "direct-output-two-stage-fallback",
+      "summary": "Preserved the reference fallback math with sgl_kernel.silu_and_mul followed by sgl_per_token_group_quant_8bit, but wrote quantized FP8 directly into out_fp8 and only copied the packed scale view back to out_scale.",
+      "outcome": "win",
+      "geomean_speedup": 1.9974,
+      "why": "Avoiding the high-level quant wrapper allocation and q.copy_ removes an extra device copy while keeping exact FP8 payload and packed UE8M0 scale semantics."
+    }
+  ],
+  "result": {
+    "status": "win",
+    "geomean_speedup": 1.9974,
+    "min_speedup_conservative": 1.804,
+    "repeat": 3,
+    "integrate": "fail"
+  },
+  "lesson": "For GLM-style contiguous SwiGLU+FP8 tasks where DSV4 rejects the raw row-major packed scale buffer, keep the proven two-stage fallback math but write quantization directly into the provided output tensor. The high-level sglang_per_token_group_quant_fp8 helper may hide an extra allocation and copy that costs about half the runtime on B200 for this sweep.",
+  "transfers_to": [
+    "swiglu-fp8-quant prefill tasks with contiguous gate/up input and packed UE8M0 scales",
+    "B200 sm_100 activation+quant workloads where the reference falls back from DSV4 to sgl_kernel helpers"
+  ],
+  "caveats": [
+    "The sgl_kernel fused SwiGLU quant path was not numerically equivalent here",
+    "integrate.py failed in its FP8 comparison path because torch.isinf is not implemented for Float8_e4m3fn, so drop-in verification could not complete without harness changes"
+  ],
+  "agent": "codex"
+}

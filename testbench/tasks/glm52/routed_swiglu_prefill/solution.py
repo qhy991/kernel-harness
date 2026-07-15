@@ -93,35 +93,31 @@ def run(gate_up, out_fp8, out_scale, masked_m, m_indices, layout, group_size):
     gs = int(group_size.item() if isinstance(group_size, torch.Tensor) else group_size)
 
     if lay == 0:
-        try:
-            from sglang.jit_kernel.dsv4 import silu_and_mul_contig_post_quant
-            silu_and_mul_contig_post_quant(
-                input=gate_up,
-                output=out_fp8,
-                output_scale=out_scale,
-                quant_group_size=gs,
-                scale_ue8m0=True,
-                transposed=True,
-                swiglu_limit=None,
-            )
-        except Exception:
-            # Portable fallback: silu_and_mul then per-token group quant (same math).
-            from sgl_kernel import silu_and_mul
-            from sglang.srt.layers.quantization.fp8_kernel import (
-                sglang_per_token_group_quant_fp8,
-            )
-            mid = torch.empty(gate_up.shape[0], gate_up.shape[-1] // 2,
-                              device=gate_up.device, dtype=gate_up.dtype)
-            silu_and_mul(gate_up, mid)
-            q, s = sglang_per_token_group_quant_fp8(
-                mid, gs, column_major_scales=True,
-                scale_tma_aligned=True, scale_ue8m0=True)
-            out_fp8.copy_(q)
-            # scale layout may differ slightly; clone into buffer when shapes match
-            if s.shape == out_scale.shape:
-                out_scale.copy_(s)
-            else:
-                out_scale = s
+        from sgl_kernel import silu_and_mul, sgl_per_token_group_quant_8bit
+
+        mid = torch.empty(gate_up.shape[0], gate_up.shape[-1] // 2,
+                          device=gate_up.device, dtype=gate_up.dtype)
+        scale_tmp = torch.empty(
+            (out_scale.shape[1], out_scale.shape[0]),
+            device=out_scale.device,
+            dtype=out_scale.dtype,
+        ).transpose(0, 1)
+        info = torch.finfo(out_fp8.dtype)
+        silu_and_mul(gate_up, mid)
+        sgl_per_token_group_quant_8bit(
+            mid,
+            out_fp8,
+            scale_tmp,
+            gs,
+            1e-10,
+            float(info.min),
+            float(info.max),
+            True,
+            False,
+            None,
+            True,
+        )
+        out_scale.copy_(scale_tmp)
         return out_fp8, out_scale
 
     # Masked decode path

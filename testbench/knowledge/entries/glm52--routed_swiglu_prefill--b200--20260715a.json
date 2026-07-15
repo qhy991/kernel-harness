@@ -1,0 +1,67 @@
+{
+  "schema_version": 1,
+  "id": "glm52--routed_swiglu_prefill--b200--20260715a",
+  "date": "2026-07-15",
+  "model": "glm52",
+  "task": "glm52/routed_swiglu_prefill",
+  "op": "Routed Expert SwiGLU+FP8 Quant",
+  "family": "swiglu-fp8-quant",
+  "phase": "prefill",
+  "shapes": {
+    "M_sweep": [
+      1024,
+      2048,
+      4096
+    ],
+    "E": 32,
+    "I2": 4096,
+    "group_size": 128,
+    "layout": "contiguous"
+  },
+  "hardware": {
+    "gpu": "NVIDIA B200",
+    "sm": "sm_100"
+  },
+  "stack": {
+    "sglang_commit": "7e229e2a",
+    "torch": "2.11.0+cu130",
+    "cuda": "13.0"
+  },
+  "baseline_kernel": "silu_and_mul_contig_post_quant",
+  "bottleneck": {
+    "kind": "kernel-count",
+    "evidence": "Supersedes 20260714a after harness Fix: evaluate WIN geo=1.9974 minc=1.804 unchanged; integrate.py now DROP-IN VERIFIED (match_ratio=1.0) after Float8 isinf promote-to-float32."
+  },
+  "approaches": [
+    {
+      "technique": "direct-output-two-stage-fallback",
+      "summary": "Kept silu_and_mul + sgl_per_token_group_quant_8bit writing into out_fp8 directly (same winning solution.py as 20260714a).",
+      "outcome": "win",
+      "geomean_speedup": 1.9974,
+      "why": "Avoids high-level quant helper allocation/copy while preserving FP8+UE8M0 semantics."
+    },
+    {
+      "technique": "harness-integrate-fp8-compare-fix",
+      "summary": "Re-ran integrate.py after promoting Float8 tensors to float32 before isinf/isnan in integrate._compare.",
+      "outcome": "win",
+      "geomean_speedup": 1.9974,
+      "why": "Previous integrate=fail was a harness bug (torch.isinf unsupported for Float8_e4m3fn), not a failed drop-in."
+    }
+  ],
+  "result": {
+    "status": "win",
+    "geomean_speedup": 1.9974,
+    "min_speedup_conservative": 1.804,
+    "repeat": 3,
+    "integrate": "pass"
+  },
+  "lesson": "Contiguous SwiGLU+FP8 GLM prefill wins that write quantized payloads into provided out buffers ARE real sglang drop-ins at the dsv4/sgl_kernel launch site. If integrate fails on Float8, fix the harness compare path before abandoning the solution.",
+  "transfers_to": [
+    "swiglu-fp8-quant prefill drop-in verification",
+    "any FP8 output task where integrate compares nan/inf"
+  ],
+  "caveats": [
+    "Supersedes glm52--routed_swiglu_prefill--b200--20260714a for integrate status only; evaluate numbers copied from that session"
+  ],
+  "agent": "cursor-harness-fix"
+}

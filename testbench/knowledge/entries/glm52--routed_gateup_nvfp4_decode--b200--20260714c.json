@@ -31,7 +31,7 @@
   },
   "baseline_kernel": "flashinfer trtllm_fp4_block_scale_routed_moe (modelopt_fp4 NVFP4)",
   "bottleneck": {
-    "kind": "device-host-scalar-sync-plus-launch-overhead",
+    "kind": "synchronization",
     "evidence": "The reference and early solution converted num_experts/top_k/local offsets/intermediate/routed scale with CUDA tensor .item() inside run(). CUPTI spans the candidate call, so these scalar reads serialize the hot path before the FlashInfer SM100 MoE launch. Replacing fixed GLM-5.2 decode scalars with Python constants changed quick no-baseline solution timing from about 780 us to about 455 us while preserving exact output."
   },
   "approaches": [
@@ -46,7 +46,8 @@
     {
       "technique": "flashinfer-pdl-enable",
       "summary": "Keep enable_pdl=True on the FlashInfer TRT-LLM routed FP4 MoE call.",
-      "outcome": "supporting",
+      "outcome": "partial",
+      "geomean_speedup": 1.7089,
       "why": "PDL alone was too noisy to pass the conservative gate, but it remains part of the final winning candidate together with scalar-sync removal."
     },
     {
@@ -60,7 +61,8 @@
     {
       "technique": "routing-method-topk-type-1",
       "summary": "Tried routing_method_type=1 because one SGLang routed-topk branch uses it for validation.",
-      "outcome": "negative",
+      "outcome": "slower",
+      "geomean_speedup": 1.002,
       "why": "Correctness passed, but repeat-3 regressed/noised out: geomean speedup 1.002 and conservative min speedup 0.8679. Keep routing_method_type=2 for this task."
     }
   ],

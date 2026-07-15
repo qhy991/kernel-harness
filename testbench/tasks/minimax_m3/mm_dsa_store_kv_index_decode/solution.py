@@ -8,7 +8,7 @@ the inventory measures it ~12x faster than separate stores (peak 4815 GB/s @ T=1
   k/v -> k_cache/v_cache[loc]; idx_k -> idx_k_cache[loc]   (in place, at slots `indices`)
 
 Config: num_kv_heads=4, head_dim=128, sparse_index_dim=128 (idx_v disabled per M3's
-sparse_disable_index_value). Runs against the amd_add_m3 sglang build. reference.py IS
+sparse_disable_index_value). Uses the shared SGLANG_DIR / installed sglang. reference.py IS
 the correctness oracle AND the latency baseline; run() returns the mutated caches.
 """
 

@@ -8,8 +8,7 @@ the inventory measures it 1.64-192.7us, ~2.4x faster than two separate launches.
   qkv[T, (nq+nk+nv)*HD] --(per-head Gemma-RMSNorm on q,k + partial RoPE rope_dim=64)--> qkv_out
 
 Config: nq=64, nk=nv=4, head_dim=128, rope_dim=64, theta=5e6; norm weights are per-head_dim
-(qk_norm_type=per_head), cos_sin_cache is fp32. Runs against the amd_add_m3 sglang build
-(task.json sglang_dir). reference.py IS the correctness oracle AND the latency baseline.
+(qk_norm_type=per_head), cos_sin_cache is fp32. Uses the shared SGLANG_DIR / installed sglang. reference.py IS the correctness oracle AND the latency baseline.
 """
 
 import torch

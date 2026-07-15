@@ -9,7 +9,7 @@ shape-gated topk<=32); this task benchmarks that production kernel.
 
 ROUTING oracle: integer block indices, EXACT-match (atol=0, rtol=0, ratio=1.0). Config:
 sparse_num_index_heads=4, sparse_block_size=128, sparse_topk_blocks=16. Runs against the
-amd_add_m3 sglang build (task.json sglang_dir). reference.py IS the oracle AND baseline.
+shared SGLANG_DIR / installed sglang. reference.py IS the oracle AND baseline.
 """
 
 import torch

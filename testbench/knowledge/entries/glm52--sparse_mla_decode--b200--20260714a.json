@@ -1,0 +1,84 @@
+{
+  "schema_version": 1,
+  "id": "glm52--sparse_mla_decode--b200--20260714a",
+  "date": "2026-07-14",
+  "model": "glm52",
+  "task": "glm52/sparse_mla_decode",
+  "op": "Sparse MLA Decode",
+  "family": "sparse-mla-decode",
+  "phase": "decode",
+  "shapes": {
+    "M_sweep": [
+      16,
+      32
+    ],
+    "ctx_sweep": [
+      1024,
+      2048,
+      4096,
+      8192,
+      32768
+    ],
+    "num_heads": 8,
+    "head_dim": 576,
+    "kv_lora": 512,
+    "qk_rope": 64,
+    "qk_nope": 192,
+    "topk": 2048,
+    "page_size": 64
+  },
+  "hardware": {
+    "gpu": "NVIDIA B200",
+    "sm": "sm_100"
+  },
+  "stack": {
+    "sglang_commit": "7e229e2a",
+    "torch": "2.11.0+cu130",
+    "cuda": "13.0"
+  },
+  "baseline_kernel": "flashinfer trtllm_batch_decode_with_kv_cache_mla (trtllm-gen, blackwell)",
+  "bottleneck": {
+    "kind": "other",
+    "evidence": "Final evaluate.py --repeat 3 showed the original float host scale path was slower across all shapes; passing bmm1_scale as a float32 tensor switched FlashInfer TRT-LLM to its FP8 dynamic scale path and reduced latency from 75.89-93.41 us baseline to 71.01-89.73 us candidate while preserving exact correctness. Advisory profile at M=16, ctx=4096 reported only 48.9% HBM, so this was not a pure memory-bandwidth limit."
+  },
+  "approaches": [
+    {
+      "technique": "flashinfer-tensor-bmm1-scale",
+      "summary": "Kept the repo-provided device float32 bmm1_scale tensor and passed it directly to trtllm_batch_decode_with_kv_cache_mla instead of converting it to a Python float.",
+      "outcome": "win",
+      "geomean_speedup": 1.0611,
+      "why": "The tensor scale path avoids the slower static host-scale TRT-LLM path for FP8 MLA decode and wins every workload with min conservative speedup 1.0186."
+    },
+    {
+      "technique": "effective-topk-table-slice",
+      "summary": "For ctx=1024, sliced block_tables to 1024 entries and set sparse_mla_top_k to the effective selected length.",
+      "outcome": "slower",
+      "geomean_speedup": null,
+      "why": "FlashInfer requires the page-table width to equal sparse_mla_top_k, and the valid sliced version was slower on the smoke row while deviating numerically from the production-shaped call."
+    },
+    {
+      "technique": "fixed-sequence-flag",
+      "summary": "Set is_var_seq=False because every workload has uniform seq_lens equal to ctx.",
+      "outcome": "slower",
+      "geomean_speedup": 0.9987,
+      "why": "The flag did not improve the generated TRT-LLM sparse decode path and regressed conservative timing, with final min_speedup_conservative 0.7876."
+    }
+  ],
+  "result": {
+    "status": "win",
+    "geomean_speedup": 1.0611,
+    "min_speedup_conservative": 1.0186,
+    "repeat": 3,
+    "integrate": "no-recipe"
+  },
+  "lesson": "For FlashInfer TRT-LLM FP8 sparse MLA decode on Blackwell, preserve device tensor scale inputs when the wrapper supports them; converting scalar scale tensors to Python floats can silently select a slower static-scale path. Do not shrink sparse_mla_top_k unless the block-table shape and production semantics also change.",
+  "transfers_to": [
+    "FlashInfer TRT-LLM FP8 MLA decode tasks on sm_100",
+    "Sparse MLA decode workloads with device-resident scale tensors"
+  ],
+  "caveats": [
+    "Integration harness reports no standalone drop-in site for this fused TRT-LLM backend family",
+    "The tensor-scale result depends on FlashInfer supporting tensor bmm1_scale for trtllm-gen"
+  ],
+  "agent": "codex"
+}

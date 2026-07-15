@@ -96,7 +96,7 @@ MIGRATE_MAP = {
         "    idx = _cand(inp, bias)\n"
         "    return None, idx\n",   # (weights, indices) tuple; index oracle
     ),
-    # DSA (sglang-m3) interface-exact JIT ops — rebind the jit_kernel module symbol.
+    # DSA interface-exact JIT ops — rebind the jit_kernel module symbol.
     "dsa-qknorm-rope": (
         "sglang.jit_kernel.minimax_qknorm_rope", "minimax_qknorm_rope",
         "def _sgl(*a, **k):\n    return _cand(*a, **k)\n",
@@ -251,7 +251,7 @@ def main():
     model = meta.get("model") or task_dir.parent.name   # dir is the reliable model signal
     task = meta.get("name", task_dir.name)
     sol_path = task_dir / args.solution
-    sglang_dir = resolve_sglang_dir(meta.get("sglang_dir"))
+    sglang_dir = resolve_sglang_dir()
 
     entry, no_source = _resolve_migrate(family, model)
     if entry is None and no_source is not None:

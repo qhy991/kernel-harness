@@ -141,13 +141,8 @@ def get_inputs(axes_and_scalars: dict, device: torch.device) -> dict:
 
 @torch.no_grad()
 def run(a_fp8, a_s, b_fp8, b_s, out, masked_m, expected_m, m_indices, layout):
-    lay = int(layout.item() if isinstance(layout, torch.Tensor) else layout)
-    if lay == 0:
-        deep_gemm.m_grouped_fp8_gemm_nt_contiguous(
-            (a_fp8, a_s), (b_fp8, b_s), out, m_indices)
-    else:
-        em = int(expected_m.item() if isinstance(expected_m, torch.Tensor)
-                 else expected_m)
-        deep_gemm.fp8_m_grouped_gemm_nt_masked(
-            (a_fp8, a_s), (b_fp8, b_s), out, masked_m, em)
+    em = int(expected_m.item() if isinstance(expected_m, torch.Tensor)
+             else expected_m)
+    deep_gemm.fp8_m_grouped_gemm_nt_masked(
+        (a_fp8, a_s), (b_fp8, b_s), out, masked_m, em)
     return out

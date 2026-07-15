@@ -7,6 +7,10 @@ source edits.
 
 Resolution order per var:  explicit env var  →  testbench/harness.env  →  built-in
 portable default. Relative paths are resolved from the repository root.
+
+There is a single SGLang source path: ``SGLANG_DIR``. MiniMax-M3 DSA kernels live in
+the same mainline tree (or the installed ``sglang`` package when the checkout is too
+incomplete to prepend safely).
 """
 import os
 import shlex
@@ -25,8 +29,20 @@ _cuda_default = next(
 _DEFAULTS = {
     "SGLANG_DIR": str(_REPO.parent / "sglang"),
     "CUDA_HOME": str(_cuda_default),
-    "MM_M3_SGLANG_DIR": str(_REPO.parent / "sglang-m3"),
 }
+
+# Prefer a local checkout on PYTHONPATH only when it can host the modules recipes
+# import. A shallow/incomplete tree must not shadow the installed package.
+SGLANG_CAPABILITY_MARKERS = (
+    "python/sglang/srt/layers/quantization/fp8_kernel.py",
+)
+# Soft check used by env/selftest to confirm mainline vendors MiniMax-M3 DSA.
+M3_KERNEL_MARKERS = (
+    "python/sglang/jit_kernel/minimax_decode_topk.py",
+    "python/sglang/jit_kernel/minimax_store_kv_index.py",
+    "python/sglang/jit_kernel/minimax_qknorm_rope.py",
+    "python/sglang/srt/layers/attention/minimax_sparse_ops/decode/topk_sparse.py",
+)
 
 
 def _load_env_file():
@@ -55,16 +71,37 @@ def resolve(name: str) -> str:
     return str(path.absolute())
 
 
+def checkout_has_files(root: str | Path, relative_files: tuple[str, ...]) -> bool:
+    root = Path(root)
+    return all((root / rel).is_file() for rel in relative_files)
+
+
+def is_usable_sglang_checkout(root: str | Path) -> bool:
+    """True when the checkout is complete enough to safely prepend to PYTHONPATH."""
+    return checkout_has_files(root, SGLANG_CAPABILITY_MARKERS)
+
+
+def has_m3_kernels(root: str | Path) -> bool:
+    """True when the tree vendors the MiniMax-M3 DSA kernels used by DSA tasks."""
+    return checkout_has_files(root, M3_KERNEL_MARKERS)
+
+
 def resolve_sglang_dir(pinned: str | None = None) -> str:
-    """Resolve a task's symbolic checkout selector without embedding machine paths."""
-    if not pinned:
-        return resolve("SGLANG_DIR")
-    if pinned in {"SGLANG_DIR", "MM_M3_SGLANG_DIR"}:
-        return resolve(pinned)
-    path = Path(pinned).expanduser()
-    if not path.is_absolute():
-        path = _REPO / path
-    return str(path.resolve())
+    """Always resolve to the single configured SGLANG_DIR.
+
+    ``pinned`` is accepted for backward compatibility with older callers/task.json
+    fields that mentioned a symbolic checkout selector; it is ignored.
+    """
+    del pinned  # single source of truth
+    return resolve("SGLANG_DIR")
+
+
+def sglang_python_root(sglang_dir: str | Path | None = None) -> str | None:
+    """Return ``<checkout>/python`` when safe to prepend, else None (use site-packages)."""
+    root = Path(sglang_dir or resolve("SGLANG_DIR"))
+    if is_usable_sglang_checkout(root):
+        return str((root / "python").resolve())
+    return None
 
 
 VENV = (_REPO / ".venv").absolute()
@@ -76,5 +113,5 @@ TESTBENCH_ROOT = _TESTBENCH
 if __name__ == "__main__":
     # `python bin/config.py` prints resolved values (also consumed by run.sh via eval).
     print(f"VENV={shlex.quote(str(VENV))}")
-    for k in ("SGLANG_DIR", "MM_M3_SGLANG_DIR", "CUDA_HOME"):
+    for k in ("SGLANG_DIR", "CUDA_HOME"):
         print(f"{k}={shlex.quote(resolve(k))}")

@@ -1,0 +1,86 @@
+{
+  "schema_version": 1,
+  "id": "glm52--o_proj_decode--b200--20260714a",
+  "date": "2026-07-14",
+  "model": "glm52",
+  "task": "glm52/o_proj_decode",
+  "op": "Attention O Projection",
+  "family": "fp8-linear-gemm",
+  "phase": "decode",
+  "shapes": {
+    "K": 2048,
+    "N": 6144,
+    "M_sweep": [
+      16,
+      32
+    ]
+  },
+  "hardware": {
+    "gpu": "NVIDIA B200",
+    "sm": "sm_100"
+  },
+  "stack": {
+    "sglang_commit": "7e229e2a",
+    "torch": "2.11.0+cu130",
+    "cuda": "13.0"
+  },
+  "baseline_kernel": "deep_gemm w8a8_block_fp8 (blackwell)",
+  "bottleneck": {
+    "kind": "memory-bandwidth",
+    "evidence": "Final evaluate.py repeat=3 labels both shapes memory-bound: M=16 AI=31.669, 1421.5 GB/s, 45.02 TFLOP/s; M=32 AI=63.175, 1461.8 GB/s, 92.35 TFLOP/s. Both are far below the B200 FP ridge point reported by the harness (281.25), and the task is dominated by reading the 6144x2048 FP8 weight matrix for only 16-32 rows."
+  },
+  "approaches": [
+    {
+      "technique": "packed-deepgemm-lower-op",
+      "summary": "Bypassed SGLang w8a8_block_fp8_matmul_deepgemm validation and called deep_gemm_fp8_fp8_bf16_nt with an explicit bf16 output tensor.",
+      "outcome": "slower",
+      "geomean_speedup": null,
+      "why": "The harness times device-kernel spans with CUPTI, so removing Python wrapper work does not help the measured kernel and repeat-3 evaluation regressed at M=16."
+    },
+    {
+      "technique": "raw-deepgemm-fp8-gemm-nt",
+      "summary": "Called deep_gemm.fp8_gemm_nt directly with the task's packed UE8M0 activation and weight scales.",
+      "outcome": "error",
+      "geomean_speedup": null,
+      "why": "The raw DeepGEMM API expects a different scale layout and failed its scale-shape assertion for the SGLang-packed tensors."
+    },
+    {
+      "technique": "sglang-triton-w8a8-block-fp8",
+      "summary": "Forced SGLang's Triton W8A8 block-FP8 matmul path on the same prepacked inputs.",
+      "outcome": "incorrect",
+      "geomean_speedup": null,
+      "why": "The Triton path interpreted the packed UE8M0 scales incorrectly and produced very large output errors on the quick check."
+    },
+    {
+      "technique": "deepgemm-num-sms-sweep",
+      "summary": "Temporarily set DeepGEMM num_sms to 32, 64, 96, 128, and 148 around the candidate call.",
+      "outcome": "abandoned",
+      "geomean_speedup": null,
+      "why": "The quick no-baseline sweep showed no credible dual-shape direction: lower SM counts hurt M=16 or only tied M=32 within noise, so no setting justified a final merge."
+    },
+    {
+      "technique": "restore-production-wrapper",
+      "summary": "Restored the original SGLang DeepGEMM wrapper after candidate variants failed to beat the gate.",
+      "outcome": "slower",
+      "geomean_speedup": 1.0,
+      "why": "The final repeat-3 gate was correct but did not beat every shape; M=16 had conservative speedup 0.987 while M=32 was only slightly above baseline."
+    }
+  ],
+  "result": {
+    "status": "no-win",
+    "geomean_speedup": 1.0,
+    "min_speedup_conservative": 0.9875,
+    "repeat": 3,
+    "integrate": "not-run"
+  },
+  "lesson": "For small-M B200 FP8 decode GEMMs with SGLang-packed UE8M0 scales, the production DeepGEMM wrapper is already the safe path. Python-wrapper bypasses do not improve CUPTI device-kernel timing, and alternate APIs either need different scale layouts or fail to beat both M=16 and M=32.",
+  "transfers_to": [
+    "fp8-linear-gemm decode tasks on B200 using SGLang DeepGEMM packed UE8M0 scales",
+    "small-M projection GEMMs where evaluate.py times device kernels rather than Python launch overhead"
+  ],
+  "caveats": [
+    "Does not rule out a custom kernel that changes the actual device work or data layout",
+    "No final gate was run for num_sms variants because quick checks did not show a stable dual-shape win"
+  ],
+  "agent": "Codex"
+}

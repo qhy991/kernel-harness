@@ -9,8 +9,7 @@ block_size_q=1, prefix_lens=L-1. topk_idx is random-but-valid block ids per (kv_
   o[B, num_q_heads, head_dim] = sparse_prefill_attn(q, paged k/v_cache, topk_idx)
 
 Config: num_q_heads=64, num_kv_heads=4 (GQA 16:1), head_dim=128, block_size_k=128,
-topk_blocks=16. B=sweep, L fixed per task. Runs against the amd_add_m3 sglang build.
-reference.py IS the correctness oracle AND the latency baseline.
+topk_blocks=16. B=sweep, L fixed per task. Uses the shared SGLANG_DIR / installed sglang. reference.py IS the correctness oracle AND the latency baseline.
 """
 
 import torch

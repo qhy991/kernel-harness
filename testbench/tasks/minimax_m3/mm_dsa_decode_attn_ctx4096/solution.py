@@ -10,7 +10,7 @@ production fallback, which its own unit tests cover).
 
 Config: num_q_heads=64, num_kv_heads=4 (GQA 16:1), head_dim=128, block_size=128,
 topk_blocks=16. Batch = sweep; ctx fixed per task. paged KV via randperm req_to_token.
-Runs against the amd_add_m3 sglang build. reference.py IS the oracle AND baseline.
+Uses the shared SGLANG_DIR / installed sglang. reference.py IS the oracle AND baseline.
 """
 
 import torch

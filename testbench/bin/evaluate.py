@@ -35,7 +35,13 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from config import VENV, SGLANG_DIR as SGLANG, CUDA_HOME, resolve_sglang_dir, TESTBENCH_ROOT
+from config import (
+    VENV,
+    SGLANG_DIR as SGLANG,
+    CUDA_HOME,
+    sglang_python_root,
+    TESTBENCH_ROOT,
+)
 
 
 def _env(sglang_dir=None):
@@ -43,15 +49,15 @@ def _env(sglang_dir=None):
     e["PATH"] = f"{VENV}/bin:" + e.get("PATH", "")
     # Put the testbench package root first so `python -m harness.driver` resolves,
     # but DO NOT put harness/ itself on PYTHONPATH (that shadows stdlib `profile`).
-    # Prefer a local SGLang checkout only when it looks complete enough to host the
-    # production modules the recipes import (fp8_kernel). An incomplete shallow
-    # checkout would otherwise shadow the installed sglang package and break imports.
+    # Prefer the single SGLANG_DIR checkout only when it is complete enough to host
+    # production modules. An incomplete shallow checkout would otherwise shadow the
+    # installed sglang package and break imports.
     sgl_root = Path(sglang_dir or SGLANG)
     sgl_py = sgl_root / "python"
-    marker = sgl_py / "sglang" / "srt" / "layers" / "quantization" / "fp8_kernel.py"
+    usable = sglang_python_root(sgl_root)
     parts = [str(TESTBENCH_ROOT)]
-    if marker.is_file():
-        parts.append(str(sgl_py))
+    if usable:
+        parts.append(usable)
     # Drop any inherited incomplete SGLANG python entry so site-packages can resolve.
     inherited = [
         p for p in e.get("PYTHONPATH", "").split(":")
@@ -62,15 +68,38 @@ def _env(sglang_dir=None):
     return e
 
 
-def _sglang_dir_for(task_dir: Path):
-    """A task may pin its own sglang build (e.g. DSA tasks need the amd_add_m3 tree)
-    via task.json 'sglang_dir'. Falls back to SGLANG_DIR / the default checkout."""
-    tj = task_dir / "task.json"
-    if tj.exists():
-        pinned = json.loads(tj.read_text()).get("sglang_dir")
-        if pinned:
-            return resolve_sglang_dir(pinned)
-    return SGLANG
+def _installed_sglang_identity() -> str:
+    """Identity of the site-packages sglang when no usable checkout is prepended."""
+    try:
+        from importlib.metadata import version
+        ver = version("sglang")
+    except Exception:
+        ver = "unknown"
+    try:
+        import sglang
+        root = Path(sglang.__file__).resolve().parent
+        sample = root / "jit_kernel" / "minimax_decode_topk.py"
+        if not sample.is_file():
+            sample = root / "__init__.py"
+        digest = hashlib.sha1(sample.read_bytes()).hexdigest()[:12]
+        return f"pkg:{ver}:{digest}"
+    except Exception:
+        return f"pkg:{ver}"
+
+
+def _runtime_sglang_identity(sglang_dir: str | None = None) -> str:
+    """Fingerprint the SGLang source that evaluation actually uses."""
+    root = Path(sglang_dir or SGLANG)
+    if sglang_python_root(root):
+        try:
+            commit = subprocess.run(
+                ["git", "-C", str(root), "rev-parse", "--short", "HEAD"],
+                capture_output=True, text=True, check=False,
+            ).stdout.strip()
+        except Exception:
+            commit = ""
+        return f"checkout:{commit or 'nogit'}"
+    return _installed_sglang_identity()
 
 
 def _tmp_base(task_dir: Path) -> str:
@@ -101,7 +130,7 @@ def _run(task_dir: Path, solution: str, out: Path, iterations: int, max_workload
     ]
     if max_workloads:
         cmd += ["--max-workloads", str(max_workloads)]
-    proc = subprocess.run(cmd, env=_env(_sglang_dir_for(task_dir)), check=False)
+    proc = subprocess.run(cmd, env=_env(SGLANG), check=False)
     traces = {}
     for f in glob.glob(f"{out}/**/traces.json", recursive=True):
         for t in json.load(open(f)):
@@ -146,18 +175,13 @@ def _expected_axes(task_dir: Path):
 
 def _baseline_fingerprint(task_dir: Path, iterations) -> str:
     """Cache key that changes when anything affecting the baseline changes:
-    iterations, the reference.py bytes, and the sglang build (commit). A stale cache
-    from a different sglang or an edited reference must NOT be reused as the denominator.
+    iterations, the reference.py bytes, and the sglang source actually used at
+    runtime (checkout commit when prepended, else installed package identity).
+    A stale cache from a different sglang or an edited reference must NOT be reused.
     """
     ref = task_dir / "reference.py"
     ref_hash = hashlib.sha1(ref.read_bytes()).hexdigest()[:12] if ref.exists() else "none"
-    sglang_dir = _sglang_dir_for(task_dir)
-    try:
-        commit = subprocess.run(["git", "-C", str(sglang_dir), "rev-parse", "--short", "HEAD"],
-                                capture_output=True, text=True).stdout.strip() or "nogit"
-    except Exception:
-        commit = "nogit"
-    return f"iters={iterations};ref={ref_hash};sglang={commit}"
+    return f"iters={iterations};ref={ref_hash};sglang={_runtime_sglang_identity(SGLANG)}"
 
 
 def _baseline(task_dir: Path, iterations, max_workloads, refresh):
@@ -308,7 +332,7 @@ for a, b in zip(r, c):
 print("ALIAS_PROBE:" + ("OK" if ok else "ALIASED"))
 '''
     r = subprocess.run([str(VENV / "bin" / "python"), "-c", probe_src],
-                       env=_env(_sglang_dir_for(task_dir)),
+                       env=_env(SGLANG),
                        capture_output=True, text=True)
     if "ALIAS_PROBE:OK" in r.stdout:
         return True, "ALIAS_PROBE:OK"
@@ -469,6 +493,21 @@ def main():
     print(f"\n{tag}: correct={correct} geomean_speedup={verdict['geomean_speedup']} "
           f"min_speedup={verdict['min_speedup']} "
           f"min_speedup_conservative={verdict['min_speedup_conservative']}")
+    # Surface the SGLang drop-in contract so agents know whether integrate.py applies.
+    try:
+        import importlib.util as _ilu
+        _status = Path(__file__).resolve().parent / "integration_status.py"
+        if _status.exists():
+            _spec = _ilu.spec_from_file_location("_integ_status", _status)
+            _mod = _ilu.module_from_spec(_spec)
+            _spec.loader.exec_module(_mod)
+            _rows = _mod._contract(task_dir)  # noqa: SLF001
+            print(f"INTEGRATION_CONTRACT: {_rows['integration_contract']} "
+                  f"(integrate={_rows['integrate_expected']}) — {_rows['note'][:120]}")
+            verdict["integration_contract"] = _rows["integration_contract"]
+            verdict["integrate_expected"] = _rows["integrate_expected"]
+    except Exception as _e:
+        print(f"INTEGRATION_CONTRACT: (unavailable: {_e})")
     print("VERDICT_JSON_BEGIN")
     print(json.dumps(verdict))
     print("VERDICT_JSON_END")

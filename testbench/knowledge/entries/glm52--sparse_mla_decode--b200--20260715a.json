@@ -1,0 +1,62 @@
+{
+  "schema_version": 1,
+  "id": "glm52--sparse_mla_decode--b200--20260715a",
+  "date": "2026-07-15",
+  "model": "glm52",
+  "task": "glm52/sparse_mla_decode",
+  "op": "Sparse MLA Decode",
+  "family": "sparse-mla-decode",
+  "phase": "decode",
+  "shapes": {
+    "M_sweep": [
+      16,
+      32
+    ],
+    "ctx_sweep": [
+      1024,
+      2048,
+      4096,
+      8192,
+      16384
+    ]
+  },
+  "hardware": {
+    "gpu": "NVIDIA B200",
+    "sm": "sm_100"
+  },
+  "stack": {
+    "sglang_commit": "7e229e2a",
+    "torch": "2.11.0+cu130",
+    "cuda": "13.0"
+  },
+  "baseline_kernel": "flashinfer trtllm_batch_decode_with_kv_cache_mla",
+  "bottleneck": {
+    "kind": "synchronization",
+    "evidence": "Supersedes 20260714a documentation only: evaluate WIN geo=1.0611 minc=1.0186; integrate remains no-recipe (fused-only). Clarifies that fused-only WINs are interface-exact TRT-LLM calls, not fake wrappers."
+  },
+  "approaches": [
+    {
+      "technique": "preserve-device-tensor-scales",
+      "summary": "Pass device float32 bmm1_scale tensor into trtllm_batch_decode_with_kv_cache_mla instead of Python float (same solution.py as 20260714a).",
+      "outcome": "win",
+      "geomean_speedup": 1.0611,
+      "why": "Avoids slower static-scale FlashInfer path while matching FP8 MLA outputs."
+    }
+  ],
+  "result": {
+    "status": "win",
+    "geomean_speedup": 1.0611,
+    "min_speedup_conservative": 1.0186,
+    "repeat": 3,
+    "integrate": "no-recipe"
+  },
+  "lesson": "sparse-mla-decode is intentionally fused-only: agents must NOT invent a drop-in integrate symbol. A harness WIN that keeps the FlashInfer call signature (including device tensor scales) is the production-ready claim.",
+  "transfers_to": [
+    "B200 TRT-LLM sparse MLA decode tasks",
+    "fused-only families in integration_status.py"
+  ],
+  "caveats": [
+    "Supersedes glm52--sparse_mla_decode--b200--20260714a for agent guidance; no new evaluate numbers"
+  ],
+  "agent": "cursor-harness-fix"
+}

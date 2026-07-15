@@ -1,0 +1,81 @@
+{
+  "schema_version": 1,
+  "id": "glm52--routed_swiglu_decode--b200--20260714a",
+  "date": "2026-07-14",
+  "model": "glm52",
+  "task": "glm52/routed_swiglu_decode",
+  "op": "Routed Expert SwiGLU+FP8 Quant",
+  "family": "swiglu-fp8-quant",
+  "phase": "decode",
+  "shapes": {
+    "E": 32,
+    "I2": 4096,
+    "I": 2048,
+    "layout": "masked",
+    "M_sweep": [
+      16,
+      32
+    ]
+  },
+  "hardware": {
+    "gpu": "NVIDIA B200",
+    "sm": "sm_100"
+  },
+  "stack": {
+    "sglang_commit": "7e229e2a",
+    "torch": "2.11.0+cu130",
+    "cuda": "13.0"
+  },
+  "baseline_kernel": "silu_and_mul_masked_post_quant",
+  "bottleneck": {
+    "kind": "other",
+    "evidence": "Final evaluate.py --repeat 3 on the restored production path reported cold-CUPTI latencies of 43.05 us vs 42.51 us at M=16 and 42.82 us vs 43.01 us at M=32; the direct custom kernels did less routing work but still lost to the production C++ kernel, indicating instruction/scheduling quality rather than padded-row work was limiting."
+  },
+  "approaches": [
+    {
+      "technique": "triton-direct-active-row-kernel",
+      "summary": "Implemented a Triton masked decode kernel that launched directly over expert/token slots and computed all 16 FP8 quant groups for each active row.",
+      "outcome": "slower",
+      "geomean_speedup": null,
+      "why": "Although it avoided the production prefix-scan mapping, Triton generated a heavier per-row vector program and measured about 52.5 us on both shapes in correctness-only evaluation, slower than the ~42 us baseline."
+    },
+    {
+      "technique": "cuda-direct-expert-token-kernel",
+      "summary": "Compiled an inline CUDA extension with one CTA per expert/token slot, 16 lanes per 128-wide group, scalar bf16 loads, and FP8 stores.",
+      "outcome": "slower",
+      "geomean_speedup": null,
+      "why": "The direct grid removed prefix-scan work but scalar conversion and store code measured 47.2 us on M=16, still slower than SGLang's vectorized production kernel."
+    },
+    {
+      "technique": "cuda-vectorized-bf16x2-fp8x2-kernel",
+      "summary": "Vectorized the inline CUDA extension using bf16x2 loads, float2 math, and fp8x2 stores to close the instruction-quality gap.",
+      "outcome": "slower",
+      "geomean_speedup": 0.9602,
+      "why": "The vectorized extension was correct but the authoritative repeat-3 gate measured 43.95/44.86 us against 41.74/43.55 us, so it still lost both shapes conservatively."
+    },
+    {
+      "technique": "restore-production-dispatch",
+      "summary": "Removed the slower custom extension and left solution.py on the SGLang production silu_and_mul_masked_post_quant dispatch path.",
+      "outcome": "partial",
+      "geomean_speedup": 0.9959,
+      "why": "The restored path matched the oracle and median-won M=32 slightly, but M=16 remained below baseline and the conservative all-shape gate failed."
+    }
+  ],
+  "result": {
+    "status": "no-win",
+    "geomean_speedup": 0.9959,
+    "min_speedup_conservative": 0.9656,
+    "repeat": 3,
+    "integrate": "not-run"
+  },
+  "lesson": "For GLM-5.2 masked routed SwiGLU decode on B200, the production SGLang C++ kernel is already close to the small-shape floor despite sparse active rows. Removing the CTA prefix mapping is not enough; a replacement must match the production vectorized bf16x2/fp8x2 instruction quality and beat run-to-run noise on M=16.",
+  "transfers_to": [
+    "swiglu-fp8-quant decode tasks with masked expert layout and low active rows on sm_100",
+    "small routed MoE activation+quant kernels where SGLang dsv4 C++ is the baseline"
+  ],
+  "caveats": [
+    "Does not rule out changes inside the production C++ kernel or a PDL/SASS-level variant",
+    "Does not apply to contiguous prefill where scale layout and token counts differ"
+  ],
+  "agent": "codex"
+}

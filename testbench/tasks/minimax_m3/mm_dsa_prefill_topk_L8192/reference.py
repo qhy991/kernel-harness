@@ -10,7 +10,7 @@ prefix_lens=L-1, per-batch paged index cache).
 
 Config: num_index_heads=4, idx_head_dim=128, block_size=128, topk_blocks=16,
 disable_index_value=True (M3 sparse_disable_index_value). Returns the integer topk_idx
-(EXACT-index oracle). Runs against the amd_add_m3 sglang build. reference.py IS the
+(EXACT-index oracle). Uses the shared SGLANG_DIR / installed sglang. reference.py IS the
 correctness oracle AND the latency baseline.
 """
 

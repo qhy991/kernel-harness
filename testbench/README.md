@@ -116,7 +116,7 @@ against the sglang kernel's output; efficiency against its measured latency.
 
 ## Portability (no hardcoded paths)
 
-All external locations (`SGLANG_DIR`, `CUDA_HOME`, `MM_M3_SGLANG_DIR`)
+All external locations (`SGLANG_DIR`, `CUDA_HOME`)
 resolve through `bin/config.py`: **env var → `testbench/harness.env` → built-in default**.
 `evaluate.py`, `integrate.py`, `migrate.py`, `emit_sglang.py`, `check_env.py`, and
 `run.sh` all resolve paths through it, so a checkout on a new machine only needs env
@@ -337,9 +337,9 @@ never participate in the WIN gate**:
 Authoritative rules are unchanged: full sweep + CUPTI cold-L2 + per-shape candidate worst
 vs baseline best.
 
-MiniMax DSA tasks pin `MM_M3_SGLANG_DIR` because they need a checkout containing the
-M3 sparse stack. They are available when that checkout passes `bin/check_env.py`; they
-are not replaced with proxy baselines when it is absent.
+MiniMax DSA tasks use the same shared `SGLANG_DIR` / installed `sglang` package as
+every other model. The M3 sparse stack must be present there (mainline checkout or
+site-packages); `bin/check_env.py` reports whether those kernels are visible.
 
 ### Known caveats
 - `qa_kva_fused_*` uses the generic w8a8_block_fp8 path. sglang also has a

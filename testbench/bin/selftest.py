@@ -15,7 +15,8 @@ is timed from the file — they must never drift); reference.py defines `run` an
 declared `custom_inputs_entrypoint`, solution.py defines `run`, and both compile;
 every workload line carries the swept var axes and a full tolerance block.
 
-Exit 0 = all clean, 1 = problems found.
+Also validates the single shared SGLANG_DIR wiring: no task may pin a per-task
+`sglang_dir`.
 """
 from __future__ import annotations
 
@@ -83,6 +84,10 @@ def check_task(task: Path) -> list[str]:
         problems.append(f"task.json does not parse: {e}")
         meta = {}
 
+    if "sglang_dir" in meta:
+        problems.append("task.json must not set sglang_dir "
+                        "(all tasks share the single SGLANG_DIR)")
+
     # Optional performance_model / workload_metrics (advisory; must be well-formed if present).
     pm = defn.get("performance_model", meta.get("performance_model"))
     if pm is not None:
@@ -99,7 +104,6 @@ def check_task(task: Path) -> list[str]:
         if not isinstance(fexpr, str) or not fexpr.strip():
             problems.append("flops_expr must be a non-empty string")
         else:
-            # Ensure every Name in the expression is a known axis (const/var/expr).
             try:
                 tree = ast.parse(fexpr, mode="eval")
                 names = {n.id for n in ast.walk(tree) if isinstance(n, ast.Name)}
@@ -130,13 +134,46 @@ def check_task(task: Path) -> list[str]:
     return problems
 
 
+def check_sglang_wiring() -> list[str]:
+    """Validate the single SGLANG_DIR configuration (GPU-free)."""
+    sys.path.insert(0, str(Path(__file__).resolve().parent))
+    from config import SGLANG_DIR, has_m3_kernels, is_usable_sglang_checkout, resolve
+
+    problems = []
+    root = Path(SGLANG_DIR)
+    if not (root / "python" / "sglang").is_dir():
+        problems.append(f"SGLANG_DIR={root} is not a usable sglang checkout")
+        return problems
+
+    try:
+        resolve("MM_M3_SGLANG_DIR")
+        problems.append("MM_M3_SGLANG_DIR is still resolvable; "
+                        "it must be removed so only SGLANG_DIR remains")
+    except KeyError:
+        pass
+
+    if not has_m3_kernels(root) and not is_usable_sglang_checkout(root):
+        problems.append(
+            f"SGLANG_DIR={root} lacks MiniMax-M3 DSA kernel markers; "
+            "DSA tasks will require them from the installed sglang package"
+        )
+    return problems
+
+
 def main() -> int:
     if len(sys.argv) > 1:
         tasks = [Path(sys.argv[1]).resolve()]
+        wiring_problems = []
     else:
         root = Path(__file__).resolve().parent.parent / "tasks"
         tasks = sorted(p for p in root.glob("*/*") if p.is_dir())
+        wiring_problems = check_sglang_wiring()
+
     total_problems = 0
+    for msg in wiring_problems:
+        print(f"sglang-wiring: {msg}")
+        total_problems += 1
+
     for task in tasks:
         for p in check_task(task):
             print(f"{task.parent.name}/{task.name}: {p}")
