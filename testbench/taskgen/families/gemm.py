@@ -288,48 +288,87 @@ def _glm52_o_proj():
             meta={"K": kk, "N": nn, "tp": G.tp, "deployment": "B200-TP8-EP8"})
 
 
+def _glm52_index_k_proj():
+    """DSA index-key projection for newly decoded tokens."""
+    r = recipe("fp8_linear_gemm.py")
+    kk, nn = G.hidden, G.index_head_dim
+    yield TaskSpec(
+        model=G.model, name="index_k_proj_decode", op="DSA Index K Projection",
+        family="fp8-linear-gemm", phase="decode", hf_id=G.hf_id, recipe=r,
+        sweep=GLM52_DECODE_SWEEP,
+        backend="deep_gemm w8a8_block_fp8 (blackwell)",
+        flops_expr="2*M*K*N",
+        performance_model={"kind": "gemm", "family": "fp8-linear-gemm"},
+        workload_metrics=["achieved_tflops", "achieved_gbps", "arithmetic_intensity",
+                          "bound", "us_per_token"],
+        description=(
+            f"GLM-5.2 DSA index K projection (decode), matching llm_flops and "
+            f"SGLang's FP8 ReplicatedLinear path. out[M,{nn}] = "
+            f"x_fp8[M,{kk}] @ w_fp8[{nn},{kk}].T; batch sweep={GLM52_DECODE_SWEEP}. "
+            "Only the pre-quantized DeepGEMM kernel is timed."),
+        goal=("Optimize solution.py against SGLang's DeepGEMM w8a8_block_fp8 "
+              "baseline for GLM-5.2 decode index_k_proj at batch 16/32."),
+        axes={"M": var("decode token/batch count (sweep)"),
+              "K": const(kk, "hidden size"),
+              "N": const(nn, "index head dimension"),
+              "K_scale_blocks": expr("K//512", "ue8m0-packed K scale blocks")},
+        inputs={"x_fp8": tensor(["M", "K"], "float8_e4m3fn"),
+                "x_scale": tensor(["M", "K_scale_blocks"], "int32"),
+                "w_fp8": tensor(["N", "K"], "float8_e4m3fn"),
+                "w_scale": tensor(["N", "K_scale_blocks"], "int32")},
+        outputs={"output": tensor(["M", "N"], "bfloat16")},
+        meta={"K": kk, "N": nn, "tp": G.tp, "deployment": "B200-TP8-EP8"})
+
+
 def _glm52_routed_experts():
-    """Routed Gate+Up / Down with EP-local realistic top-8 routing."""
+    """Separate MoE Gate / Up / Down — matches llm_flops moe_*_proj shapes.
+
+    llm_flops benches each projection independently:
+      gate/up: K=hidden=6144, N=moe_inter=2048
+      down:    K=moe_inter=2048, N=hidden=6144
+    and uses deep_gemm.fp8_m_grouped_gemm_nt_masked for BOTH prefill and decode.
+    (Not the fused Gate+Up N=4096 path that SGLang may also dispatch.)
+    """
     r = recipe("glm52_routed_moe_gemm.py")
-    # (name, op, phase, layout 0=contig/1=masked, K, N, sweep)
+    # (name, op, stage, phase, K, N, sweep) — layout always masked(=1)
     table = [
-        ("routed_gateup_prefill", "Routed Expert Gate+Up", "prefill", 0,
-         G.hidden, G.gateup_n, GLM52_PREFILL_SWEEP),
-        ("routed_gateup_decode",  "Routed Expert Gate+Up", "decode",  1,
-         G.hidden, G.gateup_n, GLM52_DECODE_SWEEP),
-        ("routed_down_prefill",   "Routed Expert Down",    "prefill", 0,
+        ("moe_gate_proj_prefill", "MoE Gate Projection", "gate", "prefill",
+         G.hidden, G.moe_inter, GLM52_PREFILL_SWEEP),
+        ("moe_gate_proj_decode",  "MoE Gate Projection", "gate", "decode",
+         G.hidden, G.moe_inter, GLM52_DECODE_SWEEP),
+        ("moe_up_proj_prefill",   "MoE Up Projection",   "up", "prefill",
+         G.hidden, G.moe_inter, GLM52_PREFILL_SWEEP),
+        ("moe_up_proj_decode",    "MoE Up Projection",   "up", "decode",
+         G.hidden, G.moe_inter, GLM52_DECODE_SWEEP),
+        ("moe_down_proj_prefill", "MoE Down Projection", "down", "prefill",
          G.moe_inter, G.hidden, GLM52_PREFILL_SWEEP),
-        ("routed_down_decode",    "Routed Expert Down",    "decode",  1,
+        ("moe_down_proj_decode",  "MoE Down Projection", "down", "decode",
          G.moe_inter, G.hidden, GLM52_DECODE_SWEEP),
     ]
-    for name, op, phase, layout, kk, nn, sweep in table:
-        family = "grouped-moe-contiguous" if layout == 0 else "grouped-moe"
-        backend = ("deep_gemm m_grouped_fp8_gemm_nt_contiguous (blackwell)" if layout == 0
-                   else "deep_gemm fp8_m_grouped_gemm_nt_masked (blackwell)")
-        routing_note = (
-            "prefill normalizes local assignment count to the expected M for stable shapes. "
-            if layout == 0 else "decode uses sampled EP-local counts and masked per-expert padding. "
-        )
+    for name, op, stage, phase, kk, nn, sweep in table:
+        family = "grouped-moe"
+        backend = "deep_gemm fp8_m_grouped_gemm_nt_masked (blackwell)"
         yield TaskSpec(
             model=G.model, name=name, op=op, family=family, phase=phase,
             hf_id=G.hf_id, recipe=r, sweep=sweep, backend=backend,
-            flops_expr="2*M*K*N" if layout == 0 else None,
             performance_model={"kind": "routed-expert", "family": family,
-                               "stage": "gateup" if "gateup" in name else "down"},
+                               "stage": stage},
             workload_metrics=["local_assignments", "active_experts", "empty_experts",
                               "tokens_per_expert_cv", "useful_vs_padded_util",
                               "useful_tflops", "us_per_assignment"],
             description=(
-                f"GLM-5.2 {op} ({phase}, EP{G.ep} local E={G.ep_local}), FP8 grouped GEMM. "
-                f"Routing = fixed-seed top-{G.moe_topk}/{G.n_routed_experts} filtered to this "
-                f"rank; {routing_note}K={kk}, N={nn}. Quant offline; only the grouped GEMM is timed. "
-                f"Baseline = SGLang DeepGEMM production kernel."),
-            goal=(f"Optimize solution.py against SGLang's DeepGEMM grouped-GEMM baseline "
-                  f"for GLM-5.2 {op} {phase}; beat every workload and match SGLang output."),
+                f"GLM-5.2 {op} ({phase}, EP{G.ep} local E={G.ep_local}), matching "
+                f"llm_flops moe_{stage}_proj: FP8 masked grouped GEMM "
+                f"out[E,Mp,{nn}] = a[E,Mp,{kk}] @ w[E,{nn},{kk}].T. "
+                f"Routing = fixed-seed top-{G.moe_topk}/{G.n_routed_experts} filtered to "
+                f"this rank; K={kk}, N={nn}. Quant offline; only the grouped GEMM is timed."),
+            goal=(f"Optimize solution.py against SGLang's DeepGEMM "
+                  f"fp8_m_grouped_gemm_nt_masked baseline for GLM-5.2 {op} {phase}; "
+                  "beat every workload and match SGLang output."),
             axes={"M": var(f"{phase} token/batch population (sweep)"),
                   "E": const(G.ep_local, f"local experts (EP{G.ep} of {G.n_routed_experts})"),
                   "K": const(kk), "N": const(nn),
-                  "layout": const(layout, "0=contiguous prefill, 1=masked decode"),
+                  "layout": const(1, "1=masked (llm_flops prefill+decode path)"),
                   "n_global": const(G.n_routed_experts),
                   "topk": const(G.moe_topk)},
             inputs={"a_fp8": tensor(None, "float8_e4m3fn"),
@@ -343,13 +382,14 @@ def _glm52_routed_experts():
                     "layout": tensor(None, "int32")},
             outputs={"grouped_out": tensor(None, "bfloat16")},
             meta={"E": G.ep_local, "K": kk, "N": nn, "ep": G.ep, "tp": G.tp,
-                  "deployment": "B200-TP8-EP8"})
+                  "deployment": "B200-TP8-EP8",
+                  "llm_flops_op": f"moe_{stage}_proj"})
 
 
 def specs():
     out = []
     for gen in (_fp8_linear, _bf16_linear, _router, _lm_head,
                 _grouped_moe_masked, _grouped_moe_contiguous, _act_quant,
-                _glm52_o_proj, _glm52_routed_experts):
+                _glm52_o_proj, _glm52_index_k_proj, _glm52_routed_experts):
         out.extend(gen())
     return out

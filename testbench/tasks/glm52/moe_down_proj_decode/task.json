@@ -1,0 +1,44 @@
+{
+  "name": "moe_down_proj_decode",
+  "model": "glm52",
+  "op": "MoE Down Projection",
+  "phase": "decode",
+  "family": "grouped-moe",
+  "goal": "Optimize solution.py against SGLang's DeepGEMM fp8_m_grouped_gemm_nt_masked baseline for GLM-5.2 MoE Down Projection decode; beat every workload and match SGLang output.",
+  "E": 32,
+  "K": 2048,
+  "N": 6144,
+  "ep": 8,
+  "tp": 8,
+  "deployment": "B200-TP8-EP8",
+  "llm_flops_op": "moe_down_proj",
+  "sweep": [
+    16,
+    32
+  ],
+  "backend": "deep_gemm fp8_m_grouped_gemm_nt_masked (blackwell)",
+  "tolerance": {
+    "max_atol": 0.1,
+    "max_rtol": 0.05,
+    "required_matched_ratio": 0.999
+  },
+  "baseline": {
+    "source": "live",
+    "measure": "reference.py timed by the harness CUPTI runtime (median device-kernel us)",
+    "denominator": "the live per-shape reference latency (see .baseline_cache.json)"
+  },
+  "performance_model": {
+    "kind": "routed-expert",
+    "family": "grouped-moe",
+    "stage": "down"
+  },
+  "workload_metrics": [
+    "local_assignments",
+    "active_experts",
+    "empty_experts",
+    "tokens_per_expert_cv",
+    "useful_vs_padded_util",
+    "useful_tflops",
+    "us_per_assignment"
+  ]
+}

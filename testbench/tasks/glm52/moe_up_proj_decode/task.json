@@ -1,22 +1,22 @@
 {
-  "name": "routed_gateup_prefill",
+  "name": "moe_up_proj_decode",
   "model": "glm52",
-  "op": "Routed Expert Gate+Up",
-  "phase": "prefill",
-  "family": "grouped-moe-contiguous",
-  "goal": "Optimize solution.py against SGLang's DeepGEMM grouped-GEMM baseline for GLM-5.2 Routed Expert Gate+Up prefill; beat every workload and match SGLang output.",
+  "op": "MoE Up Projection",
+  "phase": "decode",
+  "family": "grouped-moe",
+  "goal": "Optimize solution.py against SGLang's DeepGEMM fp8_m_grouped_gemm_nt_masked baseline for GLM-5.2 MoE Up Projection decode; beat every workload and match SGLang output.",
   "E": 32,
   "K": 6144,
-  "N": 4096,
+  "N": 2048,
   "ep": 8,
   "tp": 8,
   "deployment": "B200-TP8-EP8",
+  "llm_flops_op": "moe_up_proj",
   "sweep": [
-    1024,
-    2048,
-    4096
+    16,
+    32
   ],
-  "backend": "deep_gemm m_grouped_fp8_gemm_nt_contiguous (blackwell)",
+  "backend": "deep_gemm fp8_m_grouped_gemm_nt_masked (blackwell)",
   "tolerance": {
     "max_atol": 0.1,
     "max_rtol": 0.05,
@@ -29,8 +29,8 @@
   },
   "performance_model": {
     "kind": "routed-expert",
-    "family": "grouped-moe-contiguous",
-    "stage": "gateup"
+    "family": "grouped-moe",
+    "stage": "up"
   },
   "workload_metrics": [
     "local_assignments",

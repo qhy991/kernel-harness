@@ -3,9 +3,10 @@
 Standalone per-kernel optimization tasks for the Kimi-K2.7 / MiniMax-M3 / GLM-5.2 /
 DeepSeek-V3.2 inventory.
 
-**Inventory:** 91 tasks across 26 unique family names (Kimi-K2.7 39 + MiniMax-M3 43 +
-GLM-5.2 9). GLM-5.2 targets B200 + TP8/EP8 production shapes (`zai-org/GLM-5.2-FP8`):
-O Projection, Sparse MLA Decode (TRT-LLM), routed Gate+Up / Down / fused SwiGLU+FP8.
+**Inventory:** 96 tasks across 27 unique family names (Kimi-K2.7 39 + MiniMax-M3 43 +
+GLM-5.2 14). GLM-5.2 targets B200 + TP8/EP8 production shapes (`zai-org/GLM-5.2-FP8`):
+O Projection, DSA index-K projection, sparse prefill/decode MLA,
+separate MoE Gate/Up/Down (llm_flops-aligned), and fused SwiGLU+FP8.
 `bin/integrate.py` has a drop-in recipe for every family with a single rebindable sglang
 dispatch symbol; fused families (`dsa-decode-attn`, `dsa-prefill-attn`,
 `dsa-prefill-topk`, `sparse-mla-decode`) have no isolated symbol and report `SKIP`
@@ -312,15 +313,20 @@ Current generated snapshot:
 - Kimi-K2.7: 39 tasks in 12 families, including three MLA-attention tasks
   (`mla_prefill`, `mla_decode_seq2048`, `mla_decode_seq32768`).
 - MiniMax-M3: 43 tasks in 18 families, including 11 tasks across six DSA families.
-- GLM-5.2: 9 tasks under B200 / TP8 / EP8 (`zai-org/GLM-5.2-FP8`):
+- GLM-5.2: 14 tasks under B200 / TP8 / EP8 (`zai-org/GLM-5.2-FP8`):
   - `o_proj_{prefill,decode}` — block-FP8 DeepGEMM, K=2048, N=6144
+  - `index_k_proj_decode` — block-FP8 DeepGEMM, K=6144, N=128
+  - `dsa_prefill_attn` — BF16 `flash_mla_sparse_fwd`, s_kv=65536,
+    top-k=2048, query M∈{1024,2048,4096}
   - `sparse_mla_decode` — flashinfer TRT-LLM sparse MLA (`backend=trtllm-gen`;
     **not** Hopper `flashmla_sparse`); workloads = ctx∈{1024,2048,4096,8192,32768} ×
     bs∈{16,32} (same SGLang kernel, context is metadata)
-  - `routed_{gateup,down}_{prefill,decode}` — EP-local top-8/256 → 32 experts
+  - `moe_{gate,up,down}_proj_{prefill,decode}` — separate llm_flops MoE projs
+    (gate/up K=6144,N=2048; down K=2048,N=6144), masked DeepGEMM, EP-local E=32
+  - `routed_gateup_nvfp4_decode` — NVFP4 grouped-MoE decode comparison path
   - `routed_swiglu_{prefill,decode}` — fused `silu_and_mul_*_post_quant`
   - Other workloads: prefill M∈{1024,2048,4096}, decode M∈{16,32}
-- Combined: 91 tasks across 26 unique family names.
+- Combined: 96 tasks across 27 unique family names.
 
 ### Diagnostic metrics (advisory only)
 

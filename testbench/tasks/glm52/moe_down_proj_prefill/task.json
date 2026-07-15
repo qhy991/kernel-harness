@@ -1,22 +1,23 @@
 {
-  "name": "routed_down_prefill",
+  "name": "moe_down_proj_prefill",
   "model": "glm52",
-  "op": "Routed Expert Down",
+  "op": "MoE Down Projection",
   "phase": "prefill",
-  "family": "grouped-moe-contiguous",
-  "goal": "Optimize solution.py against SGLang's DeepGEMM grouped-GEMM baseline for GLM-5.2 Routed Expert Down prefill; beat every workload and match SGLang output.",
+  "family": "grouped-moe",
+  "goal": "Optimize solution.py against SGLang's DeepGEMM fp8_m_grouped_gemm_nt_masked baseline for GLM-5.2 MoE Down Projection prefill; beat every workload and match SGLang output.",
   "E": 32,
   "K": 2048,
   "N": 6144,
   "ep": 8,
   "tp": 8,
   "deployment": "B200-TP8-EP8",
+  "llm_flops_op": "moe_down_proj",
   "sweep": [
     1024,
     2048,
     4096
   ],
-  "backend": "deep_gemm m_grouped_fp8_gemm_nt_contiguous (blackwell)",
+  "backend": "deep_gemm fp8_m_grouped_gemm_nt_masked (blackwell)",
   "tolerance": {
     "max_atol": 0.1,
     "max_rtol": 0.05,
@@ -29,7 +30,7 @@
   },
   "performance_model": {
     "kind": "routed-expert",
-    "family": "grouped-moe-contiguous",
+    "family": "grouped-moe",
     "stage": "down"
   },
   "workload_metrics": [

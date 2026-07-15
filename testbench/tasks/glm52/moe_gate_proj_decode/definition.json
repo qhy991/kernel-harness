@@ -1,0 +1,100 @@
+{
+    "name": "glm52_moe_gate_proj_decode",
+    "hf_id": "zai-org/GLM-5.2-FP8",
+    "family": "grouped-moe",
+    "description": "GLM-5.2 MoE Gate Projection (decode, EP8 local E=32), matching llm_flops moe_gate_proj: FP8 masked grouped GEMM out[E,Mp,2048] = a[E,Mp,6144] @ w[E,2048,6144].T. Routing = fixed-seed top-8/256 filtered to this rank; K=6144, N=2048. Quant offline; only the grouped GEMM is timed.",
+    "axes": {
+        "M": {
+            "type": "var",
+            "description": "decode token/batch population (sweep)"
+        },
+        "E": {
+            "type": "const",
+            "value": 32,
+            "description": "local experts (EP8 of 256)"
+        },
+        "K": {
+            "type": "const",
+            "value": 6144
+        },
+        "N": {
+            "type": "const",
+            "value": 2048
+        },
+        "layout": {
+            "type": "const",
+            "value": 1,
+            "description": "1=masked (llm_flops prefill+decode path)"
+        },
+        "n_global": {
+            "type": "const",
+            "value": 256
+        },
+        "topk": {
+            "type": "const",
+            "value": 8
+        }
+    },
+    "custom_inputs_entrypoint": "get_inputs",
+    "inputs": {
+        "a_fp8": {
+            "shape": null,
+            "dtype": "float8_e4m3fn"
+        },
+        "a_s": {
+            "shape": null,
+            "dtype": "int32"
+        },
+        "b_fp8": {
+            "shape": null,
+            "dtype": "float8_e4m3fn"
+        },
+        "b_s": {
+            "shape": null,
+            "dtype": "int32"
+        },
+        "out": {
+            "shape": null,
+            "dtype": "bfloat16"
+        },
+        "masked_m": {
+            "shape": [
+                "E"
+            ],
+            "dtype": "int32"
+        },
+        "expected_m": {
+            "shape": null,
+            "dtype": "int32"
+        },
+        "m_indices": {
+            "shape": null,
+            "dtype": "int32"
+        },
+        "layout": {
+            "shape": null,
+            "dtype": "int32"
+        }
+    },
+    "outputs": {
+        "grouped_out": {
+            "shape": null,
+            "dtype": "bfloat16"
+        }
+    },
+    "reference": "\"\"\"GLM-5.2 routed-expert grouped GEMM \u2014 DeepGEMM baseline with realistic routing.\n\nPrefill \u2192 deep_gemm.m_grouped_fp8_gemm_nt_contiguous\nDecode  \u2192 deep_gemm.fp8_m_grouped_gemm_nt_masked\n\nRouting (fixed seed, EP-local filter):\n  For each of M tokens draw top-8 experts uniformly from 256 global experts, keep\n  only those belonging to this EP rank's 32 local experts. Local assignments then\n  \u2248 M * (8/256)*32 = M on expectation, with natural empty experts on decode and\n  load jitter on prefill. Quant + scale layout prep is OFFLINE in get_inputs.\n\nAxes:\n  M = prefill tokens OR decode batch (sweep)\n  E = local experts (32)\n  K, N = GEMM dims (GateUp: K=6144,N=4096; Down: K=2048,N=6144)\n  layout = 0 contiguous / 1 masked   (const per task)\n\"\"\"\n\nimport torch\nimport deep_gemm\nfrom deep_gemm.utils.math import align, per_block_cast_to_fp8, per_token_cast_to_fp8\n\n\ndef _sample_local_counts(M: int, E: int, n_global: int, topk: int,\n                         device: torch.device, seed: int) -> torch.Tensor:\n    \"\"\"Return int32[E] local token counts from a top-k / n_global draw.\"\"\"\n    g = torch.Generator(device=\"cpu\")\n    g.manual_seed(seed)\n    # Global expert ids for this EP rank: [0, E) locally == global [rank*E, (rank+1)*E).\n    # We simulate rank 0 without loss of generality.\n    counts = torch.zeros(E, dtype=torch.int32)\n    # Vectorized: for each token, sample `topk` distinct global experts.\n    # Rejection via randperm rows kept small for harness sizes (M<=4096, topk=8).\n    for _ in range(M):\n        choice = torch.randperm(n_global, generator=g)[:topk]\n        local = choice[choice < E]\n        for e in local.tolist():\n            counts[e] += 1\n    return counts.to(device)\n\n\ndef _build_masked(axes, device):\n    E = axes[\"E\"]\n    M = axes[\"M\"]          # decode batch / token count (routing population)\n    K, N = axes[\"K\"], axes[\"N\"]\n    n_global = axes.get(\"n_global\", 256)\n    topk = axes.get(\"topk\", 8)\n    Ka, Na = align(K, 128), align(N, 128)\n\n    counts = _sample_local_counts(M, E, n_global, topk, device,\n                                  seed=0x314159 + M * 17 + E)\n    # Pad capacity per expert = max(max_count, 1) aligned up to 128 (DeepGEMM).\n    max_c = int(counts.max().item()) if counts.numel() else 1\n    Mp = align(max(max_c, 1), 128)\n\n    a = torch.randn(E, Mp, Ka, device=device, dtype=torch.bfloat16)\n    b = torch.randn(E, Na, Ka, device=device, dtype=torch.bfloat16) * (Ka ** -0.5)\n    a_fp8, a_s = zip(*[per_token_cast_to_fp8(a[e], use_ue8m0=True) for e in range(E)])\n    b_fp8, b_s = zip(*[per_block_cast_to_fp8(b[e], use_ue8m0=True) for e in range(E)])\n    a_fp8, a_s = torch.stack(list(a_fp8)), torch.stack(list(a_s))\n    b_fp8, b_s = torch.stack(list(b_fp8)), torch.stack(list(b_s))\n    a_s = deep_gemm.transform_sf_into_required_layout(\n        a_s, mn=Mp, k=Ka, recipe=(1, 128, 128), num_groups=E, is_sfa=True)\n    b_s = deep_gemm.transform_sf_into_required_layout(\n        b_s, mn=Na, k=Ka, recipe=(1, 128, 128), num_groups=E, is_sfa=False)\n    out = torch.empty(E, Mp, Na, device=device, dtype=torch.bfloat16)\n    # expected_m \u2248 mean local load (deep_gemm hint); use max for safety\n    expected_m = max(max_c, 1)\n    return {\n        \"a_fp8\": a_fp8, \"a_s\": a_s, \"b_fp8\": b_fp8, \"b_s\": b_s,\n        \"out\": out, \"masked_m\": counts, \"expected_m\": expected_m,\n        \"m_indices\": torch.empty(0, dtype=torch.int32, device=device),  # unused\n        \"layout\": 1,\n    }\n\n\ndef _build_contig(axes, device):\n    E = axes[\"E\"]\n    M = axes[\"M\"]\n    K, N = axes[\"K\"], axes[\"N\"]\n    n_global = axes.get(\"n_global\", 256)\n    topk = axes.get(\"topk\", 8)\n    Ka, Na = align(K, 128), align(N, 128)\n\n    counts = _sample_local_counts(M, E, n_global, topk, device,\n                                  seed=0x271828 + M * 13 + E)\n    # Pin row count to exactly M so definition shapes stay stable while still\n    # reflecting EP-local top-k imbalance (clip or top-up the sampled counts).\n    total = int(counts.sum().item())\n    if total < M:\n        extra = M - total\n        # Sprinkle leftovers onto the least-loaded experts.\n        for i in range(extra):\n            e = int(torch.argmin(counts).item())\n            counts[e] += 1\n    elif total > M:\n        # Trim from the most-loaded experts.\n        over = total - M\n        for _ in range(over):\n            e = int(torch.argmax(counts).item())\n            if counts[e] > 0:\n                counts[e] -= 1\n    total = M\n\n    a = torch.randn(total, Ka, device=device, dtype=torch.bfloat16)\n    b = torch.randn(E, Na, Ka, device=device, dtype=torch.bfloat16) * (Ka ** -0.5)\n    a_fp8, a_s = per_token_cast_to_fp8(a, use_ue8m0=True)\n    b_fp8, b_s = zip(*[per_block_cast_to_fp8(b[e], use_ue8m0=True) for e in range(E)])\n    b_fp8, b_s = torch.stack(list(b_fp8)), torch.stack(list(b_s))\n    out = torch.empty(total, Na, device=device, dtype=torch.bfloat16)\n    pieces = []\n    for e in range(E):\n        c = int(counts[e].item())\n        if c:\n            pieces.append(torch.full((c,), e, dtype=torch.int32, device=device))\n    m_indices = torch.cat(pieces) if pieces else torch.zeros(\n        M, dtype=torch.int32, device=device)\n    assert m_indices.numel() == M\n    return {\n        \"a_fp8\": a_fp8, \"a_s\": a_s, \"b_fp8\": b_fp8, \"b_s\": b_s,\n        \"out\": out,\n        \"masked_m\": torch.empty(0, dtype=torch.int32, device=device),\n        \"expected_m\": 0,\n        \"m_indices\": m_indices,\n        \"layout\": 0,\n    }\n\n\ndef get_inputs(axes_and_scalars: dict, device: torch.device) -> dict:\n    layout = int(axes_and_scalars.get(\"layout\", 1))\n    if layout == 0:\n        d = _build_contig(axes_and_scalars, device)\n    else:\n        d = _build_masked(axes_and_scalars, device)\n    # Scalar layout as 0-dim tensor for clone_args friendliness.\n    d[\"layout\"] = torch.tensor(layout, dtype=torch.int32, device=device)\n    d[\"expected_m\"] = torch.tensor(int(d[\"expected_m\"]), dtype=torch.int32,\n                                   device=device)\n    return d\n\n\n@torch.no_grad()\ndef run(a_fp8, a_s, b_fp8, b_s, out, masked_m, expected_m, m_indices, layout):\n    lay = int(layout.item() if isinstance(layout, torch.Tensor) else layout)\n    if lay == 0:\n        deep_gemm.m_grouped_fp8_gemm_nt_contiguous(\n            (a_fp8, a_s), (b_fp8, b_s), out, m_indices)\n    else:\n        em = int(expected_m.item() if isinstance(expected_m, torch.Tensor)\n                 else expected_m)\n        deep_gemm.fp8_m_grouped_gemm_nt_masked(\n            (a_fp8, a_s), (b_fp8, b_s), out, masked_m, em)\n    return out\n",
+    "performance_model": {
+        "kind": "routed-expert",
+        "family": "grouped-moe",
+        "stage": "gate"
+    },
+    "workload_metrics": [
+        "local_assignments",
+        "active_experts",
+        "empty_experts",
+        "tokens_per_expert_cv",
+        "useful_vs_padded_util",
+        "useful_tflops",
+        "us_per_assignment"
+    ]
+}

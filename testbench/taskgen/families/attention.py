@@ -1,7 +1,7 @@
 """Kimi MLA attention + GLM-5.2 Sparse MLA decode."""
 from ..config import KIMI as K, GLM52 as G, recipe
 from ..spec import (TaskSpec, DECODE_SWEEP, PREFILL_SWEEP,
-                    GLM52_DECODE_SWEEP, GLM52_SPARSE_MLA_CTX,
+                    GLM52_PREFILL_SWEEP, GLM52_DECODE_SWEEP, GLM52_SPARSE_MLA_CTX,
                     var, const, expr, tensor)
 
 
@@ -117,5 +117,46 @@ def _glm52_sparse_mla_decode():
         outputs={"o": tensor(["M", "num_heads", "kv_lora"], "bfloat16")})
 
 
+def _glm52_dsa_prefill_attn():
+    """B200 BF16 sparse prefill — one kernel, M sweep at fixed 64K KV."""
+    yield TaskSpec(
+        model=G.model, name="dsa_prefill_attn", op="DSA Sparse MLA Prefill",
+        family="dsa-prefill-attn", phase="prefill", hf_id=G.hf_id,
+        recipe=recipe("glm52_dsa_prefill_attn.py"),
+        sweep=GLM52_PREFILL_SWEEP,
+        backend="sgl_kernel flash_mla_sparse_fwd BF16 (blackwell)",
+        performance_model={"kind": "sparse-mla", "family": "dsa-prefill-attn"},
+        workload_metrics=["valid_selected_kv", "effective_topk", "effective_topk_ratio",
+                          "selected_token_head_per_s", "effective_kv_gbps",
+                          "allocated_cache_footprint_bytes", "us_per_token"],
+        meta={"num_heads": G.local_heads, "padded_heads": 128,
+              "kv_lora": G.kv_lora, "index_topk": G.index_topk,
+              "s_kv": 65536, "tp": G.tp, "deployment": "B200-TP8-EP8",
+              "backend_note": "SGLang pads 8 TP-local heads to 128 for the SM100 kernel"},
+        description=(
+            f"GLM-5.2 DSA sparse MLA prefill (TP8 local heads={G.local_heads}), "
+            f"SGLang flash_mla_sparse_fwd BF16 production kernel on B200. "
+            f"Query M={GLM52_PREFILL_SWEEP}, shared latent KV length=65536, "
+            f"top-k={G.index_topk}, head_dim={G.head_dim}, d_v={G.kv_lora}. "
+            "The B200-required 128-head padding is prepared untimed; output is trimmed "
+            "to the 8 local heads."),
+        goal=("Optimize solution.py against SGLang's flash_mla_sparse_fwd B200 "
+              "baseline for GLM-5.2 DSA prefill; beat M=1024/2048/4096 and "
+              "match the local-head output within attention tolerance."),
+        axes={"M": var("prefill query tokens (sweep)"),
+              "ctx": const(65536, "shared latent KV length (s_kv)"),
+              "num_heads": const(G.local_heads, "TP8-local query heads"),
+              "padded_heads": const(128, "SM100 kernel query heads"),
+              "head_dim": const(G.head_dim),
+              "kv_lora": const(G.kv_lora),
+              "topk": const(G.index_topk)},
+        inputs={"q": tensor(["M", "padded_heads", "head_dim"], "bfloat16"),
+                "kv_cache": tensor(["ctx", 1, "head_dim"], "bfloat16"),
+                "indices": tensor(["M", 1, "topk"], "int32")},
+        outputs={"o": tensor(["M", "num_heads", "kv_lora"], "bfloat16")})
+
+
 def specs():
-    return list(_mla_decode()) + list(_mla_prefill()) + list(_glm52_sparse_mla_decode())
+    return (list(_mla_decode()) + list(_mla_prefill())
+            + list(_glm52_sparse_mla_decode())
+            + list(_glm52_dsa_prefill_attn()))

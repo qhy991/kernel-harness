@@ -1,16 +1,17 @@
 {
-  "name": "routed_down_decode",
+  "name": "moe_gate_proj_decode",
   "model": "glm52",
-  "op": "Routed Expert Down",
+  "op": "MoE Gate Projection",
   "phase": "decode",
   "family": "grouped-moe",
-  "goal": "Optimize solution.py against SGLang's DeepGEMM grouped-GEMM baseline for GLM-5.2 Routed Expert Down decode; beat every workload and match SGLang output.",
+  "goal": "Optimize solution.py against SGLang's DeepGEMM fp8_m_grouped_gemm_nt_masked baseline for GLM-5.2 MoE Gate Projection decode; beat every workload and match SGLang output.",
   "E": 32,
-  "K": 2048,
-  "N": 6144,
+  "K": 6144,
+  "N": 2048,
   "ep": 8,
   "tp": 8,
   "deployment": "B200-TP8-EP8",
+  "llm_flops_op": "moe_gate_proj",
   "sweep": [
     16,
     32
@@ -29,7 +30,7 @@
   "performance_model": {
     "kind": "routed-expert",
     "family": "grouped-moe",
-    "stage": "down"
+    "stage": "gate"
   },
   "workload_metrics": [
     "local_assignments",

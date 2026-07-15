@@ -123,9 +123,10 @@ task still needs its recipe `get_inputs()` to build packed payloads and scales, 
 
 For the existing generated GLM-5.2 FP8 tasks, the practical NVFP4 extension order is:
 
-- best first targets: `routed_gateup_decode`, `routed_down_decode`, `routed_gateup_prefill`,
-  `routed_down_prefill`; these are the MoE GEMMs where NVFP4 cuts the dominant expert-weight
-  traffic from FP8 bytes to packed FP4 bytes;
+- best first targets: `moe_gate_proj_decode`, `moe_up_proj_decode`, `moe_down_proj_decode`,
+  `moe_gate_proj_prefill`, `moe_up_proj_prefill`, `moe_down_proj_prefill`; these are the
+  separate MoE GEMMs where NVFP4 cuts the dominant expert-weight traffic from FP8 bytes to
+  packed FP4 bytes;
 - secondary targets: `routed_swiglu_decode`, `routed_swiglu_prefill`; these should become
   SwiGLU + NVFP4 activation quant tasks feeding the down projection;
 - lower priority: `o_proj_decode`, `o_proj_prefill`; dense FP4 GEMM is possible but this is

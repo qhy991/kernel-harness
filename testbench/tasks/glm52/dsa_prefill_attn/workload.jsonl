@@ -1,0 +1,3 @@
+{"uuid": "glm52-dsa_prefill_attn-M1024", "axes": {"M": 1024}, "inputs": {"q": {"type": "custom"}, "kv_cache": {"type": "custom"}, "indices": {"type": "custom"}}, "tolerance": {"max_atol": 0.03, "max_rtol": 0.02, "required_matched_ratio": 0.999}}
+{"uuid": "glm52-dsa_prefill_attn-M2048", "axes": {"M": 2048}, "inputs": {"q": {"type": "custom"}, "kv_cache": {"type": "custom"}, "indices": {"type": "custom"}}, "tolerance": {"max_atol": 0.03, "max_rtol": 0.02, "required_matched_ratio": 0.999}}
+{"uuid": "glm52-dsa_prefill_attn-M4096", "axes": {"M": 4096}, "inputs": {"q": {"type": "custom"}, "kv_cache": {"type": "custom"}, "indices": {"type": "custom"}}, "tolerance": {"max_atol": 0.03, "max_rtol": 0.02, "required_matched_ratio": 0.999}}

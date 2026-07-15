@@ -1,0 +1,45 @@
+{
+  "name": "dsa_prefill_attn",
+  "model": "glm52",
+  "op": "DSA Sparse MLA Prefill",
+  "phase": "prefill",
+  "family": "dsa-prefill-attn",
+  "goal": "Optimize solution.py against SGLang's flash_mla_sparse_fwd B200 baseline for GLM-5.2 DSA prefill; beat M=1024/2048/4096 and match the local-head output within attention tolerance.",
+  "num_heads": 8,
+  "padded_heads": 128,
+  "kv_lora": 512,
+  "index_topk": 2048,
+  "s_kv": 65536,
+  "tp": 8,
+  "deployment": "B200-TP8-EP8",
+  "backend_note": "SGLang pads 8 TP-local heads to 128 for the SM100 kernel",
+  "sweep": [
+    1024,
+    2048,
+    4096
+  ],
+  "backend": "sgl_kernel flash_mla_sparse_fwd BF16 (blackwell)",
+  "tolerance": {
+    "max_atol": 0.03,
+    "max_rtol": 0.02,
+    "required_matched_ratio": 0.999
+  },
+  "baseline": {
+    "source": "live",
+    "measure": "reference.py timed by the harness CUPTI runtime (median device-kernel us)",
+    "denominator": "the live per-shape reference latency (see .baseline_cache.json)"
+  },
+  "performance_model": {
+    "kind": "sparse-mla",
+    "family": "dsa-prefill-attn"
+  },
+  "workload_metrics": [
+    "valid_selected_kv",
+    "effective_topk",
+    "effective_topk_ratio",
+    "selected_token_head_per_s",
+    "effective_kv_gbps",
+    "allocated_cache_footprint_bytes",
+    "us_per_token"
+  ]
+}

@@ -1,12 +1,12 @@
 {
-    "name": "glm52_routed_down_decode",
+    "name": "glm52_moe_gate_proj_prefill",
     "hf_id": "zai-org/GLM-5.2-FP8",
     "family": "grouped-moe",
-    "description": "GLM-5.2 Routed Expert Down (decode, EP8 local E=32), FP8 grouped GEMM. Routing = fixed-seed top-8/256 filtered to this rank; decode uses sampled EP-local counts and masked per-expert padding. K=2048, N=6144. Quant offline; only the grouped GEMM is timed. Baseline = SGLang DeepGEMM production kernel.",
+    "description": "GLM-5.2 MoE Gate Projection (prefill, EP8 local E=32), matching llm_flops moe_gate_proj: FP8 masked grouped GEMM out[E,Mp,2048] = a[E,Mp,6144] @ w[E,2048,6144].T. Routing = fixed-seed top-8/256 filtered to this rank; K=6144, N=2048. Quant offline; only the grouped GEMM is timed.",
     "axes": {
         "M": {
             "type": "var",
-            "description": "decode token/batch population (sweep)"
+            "description": "prefill token/batch population (sweep)"
         },
         "E": {
             "type": "const",
@@ -15,16 +15,16 @@
         },
         "K": {
             "type": "const",
-            "value": 2048
+            "value": 6144
         },
         "N": {
             "type": "const",
-            "value": 6144
+            "value": 2048
         },
         "layout": {
             "type": "const",
             "value": 1,
-            "description": "0=contiguous prefill, 1=masked decode"
+            "description": "1=masked (llm_flops prefill+decode path)"
         },
         "n_global": {
             "type": "const",
@@ -86,7 +86,7 @@
     "performance_model": {
         "kind": "routed-expert",
         "family": "grouped-moe",
-        "stage": "down"
+        "stage": "gate"
     },
     "workload_metrics": [
         "local_assignments",

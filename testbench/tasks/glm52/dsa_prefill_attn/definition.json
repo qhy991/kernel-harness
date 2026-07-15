@@ -1,0 +1,90 @@
+{
+    "name": "glm52_dsa_prefill_attn",
+    "hf_id": "zai-org/GLM-5.2-FP8",
+    "family": "dsa-prefill-attn",
+    "description": "GLM-5.2 DSA sparse MLA prefill (TP8 local heads=8), SGLang flash_mla_sparse_fwd BF16 production kernel on B200. Query M=[1024, 2048, 4096], shared latent KV length=65536, top-k=2048, head_dim=576, d_v=512. The B200-required 128-head padding is prepared untimed; output is trimmed to the 8 local heads.",
+    "axes": {
+        "M": {
+            "type": "var",
+            "description": "prefill query tokens (sweep)"
+        },
+        "ctx": {
+            "type": "const",
+            "value": 65536,
+            "description": "shared latent KV length (s_kv)"
+        },
+        "num_heads": {
+            "type": "const",
+            "value": 8,
+            "description": "TP8-local query heads"
+        },
+        "padded_heads": {
+            "type": "const",
+            "value": 128,
+            "description": "SM100 kernel query heads"
+        },
+        "head_dim": {
+            "type": "const",
+            "value": 576
+        },
+        "kv_lora": {
+            "type": "const",
+            "value": 512
+        },
+        "topk": {
+            "type": "const",
+            "value": 2048
+        }
+    },
+    "custom_inputs_entrypoint": "get_inputs",
+    "inputs": {
+        "q": {
+            "shape": [
+                "M",
+                "padded_heads",
+                "head_dim"
+            ],
+            "dtype": "bfloat16"
+        },
+        "kv_cache": {
+            "shape": [
+                "ctx",
+                1,
+                "head_dim"
+            ],
+            "dtype": "bfloat16"
+        },
+        "indices": {
+            "shape": [
+                "M",
+                1,
+                "topk"
+            ],
+            "dtype": "int32"
+        }
+    },
+    "outputs": {
+        "o": {
+            "shape": [
+                "M",
+                "num_heads",
+                "kv_lora"
+            ],
+            "dtype": "bfloat16"
+        }
+    },
+    "reference": "\"\"\"GLM-5.2 DSA sparse prefill attention \u2014 SGLang FlashMLA baseline.\n\nThis is the B200 sparse-prefill kernel used by SGLang's DSA backend:\n`flash_mla_sparse_fwd`.  Under TP8 GLM-5.2 has 8 local query heads, while the\nBlackwell kernel requires 128 heads.  SGLang pads to 128 before dispatch and\ntrims the output afterward; the task mirrors that contract while keeping the\npadding allocation out of the timed region.\n\nWorkloads: query tokens M in {1024, 2048, 4096}, shared BF16 latent KV length\n65536, selected top-k 2048, latent head dim 576, output dim 512.\n\"\"\"\n\nimport torch\nfrom sgl_kernel.flash_mla import flash_mla_sparse_fwd\n\nLOCAL_HEADS = 8\nPADDED_HEADS = 128\nHEAD_DIM = 576\nVALUE_DIM = 512\nTOPK = 2048\n\n\ndef get_inputs(axes_and_scalars: dict, device: torch.device) -> dict:\n    m = axes_and_scalars[\"M\"]\n    s_kv = axes_and_scalars[\"ctx\"]\n\n    # SGLang's B200 path pads TP-local heads from 8 to 128 before dispatch.\n    q = torch.zeros(\n        m, PADDED_HEADS, HEAD_DIM, device=device, dtype=torch.bfloat16\n    )\n    q[:, :LOCAL_HEADS].normal_()\n    kv_cache = torch.randn(s_kv, 1, HEAD_DIM, device=device, dtype=torch.bfloat16)\n\n    # Each row selects TOPK unique positions without constructing M randperms.\n    offsets = torch.randint(\n        0, s_kv, (m, 1, 1), device=device, dtype=torch.int32\n    )\n    selected = torch.arange(TOPK, device=device, dtype=torch.int32).view(1, 1, -1)\n    indices = (selected + offsets).remainder(s_kv).contiguous()\n\n    return {\"q\": q, \"kv_cache\": kv_cache, \"indices\": indices}\n\n\n@torch.no_grad()\ndef run(q, kv_cache, indices):\n    out, _, _ = flash_mla_sparse_fwd(\n        q=q,\n        kv=kv_cache,\n        indices=indices,\n        sm_scale=HEAD_DIM**-0.5,\n        d_v=VALUE_DIM,\n    )\n    return out[:, :LOCAL_HEADS, :]\n",
+    "performance_model": {
+        "kind": "sparse-mla",
+        "family": "dsa-prefill-attn"
+    },
+    "workload_metrics": [
+        "valid_selected_kv",
+        "effective_topk",
+        "effective_topk_ratio",
+        "selected_token_head_per_s",
+        "effective_kv_gbps",
+        "allocated_cache_footprint_bytes",
+        "us_per_token"
+    ]
+}
