@@ -1,19 +1,24 @@
 """GLM-5.2 routed-expert grouped GEMM — DeepGEMM baseline with realistic routing.
 
-Prefill → deep_gemm.m_grouped_fp8_gemm_nt_contiguous
-Decode  → deep_gemm.fp8_m_grouped_gemm_nt_masked
+Used by the llm_flops-aligned separate MoE projections:
+  moe_gate_proj_*: K=6144, N=2048
+  moe_up_proj_*:   K=6144, N=2048
+  moe_down_proj_*: K=2048, N=6144
+
+llm_flops (and these tasks) use masked for BOTH prefill and decode:
+  deep_gemm.fp8_m_grouped_gemm_nt_masked
 
 Routing (fixed seed, EP-local filter):
   For each of M tokens draw top-8 experts uniformly from 256 global experts, keep
   only those belonging to this EP rank's 32 local experts. Local assignments then
-  ≈ M * (8/256)*32 = M on expectation, with natural empty experts on decode and
-  load jitter on prefill. Quant + scale layout prep is OFFLINE in get_inputs.
+  ≈ M * (8/256)*32 = M on expectation, with natural empty experts and load jitter.
+  Quant + scale layout prep is OFFLINE in get_inputs.
 
 Axes:
   M = prefill tokens OR decode batch (sweep)
   E = local experts (32)
-  K, N = GEMM dims (GateUp: K=6144,N=4096; Down: K=2048,N=6144)
-  layout = 0 contiguous / 1 masked   (const per task)
+  K, N = GEMM dims (Gate/Up: K=6144,N=2048; Down: K=2048,N=6144)
+  layout = 0 contiguous / 1 masked   (const per task; MoE projs use 1)
 """
 
 import torch

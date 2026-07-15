@@ -86,10 +86,10 @@ def _glm52_sparse_mla_decode():
         meta={"num_heads": G.local_heads, "kv_lora": G.kv_lora,
               "index_topk": G.index_topk, "page_size": G.page_size,
               "ctx_sweep": list(GLM52_SPARSE_MLA_CTX),
-              "tp": G.tp, "deployment": "B200-TP8-EP8",
+              "tp": G.tp, "ep": G.ep, "dp": G.dp, "deployment": G.deployment,
               "backend_note": "B200 FP8 KV auto-routes to TRT-LLM, not flashmla_sparse"},
         description=(
-            f"GLM-5.2 Sparse MLA Decode (TP8 local heads={G.local_heads}), "
+            f"GLM-5.2 Sparse MLA Decode (DP1/TP1 heads={G.local_heads}), "
             f"flashinfer TRT-LLM sparse MLA (B200 production path). "
             f"Same SGLang kernel for all contexts; sweep ctx={GLM52_SPARSE_MLA_CTX} × "
             f"batch={GLM52_DECODE_SWEEP}. top-k={G.index_topk} (effective min(ctx,topk)); "
@@ -100,7 +100,7 @@ def _glm52_sparse_mla_decode():
               "within the FP8 DSA tolerance."),
         axes={"M": var("decode batch (sweep)"),
               "ctx": var("KV context length (sweep)"),
-              "num_heads": const(G.local_heads, "local heads under TP8"),
+              "num_heads": const(G.local_heads, "query heads under TP=1"),
               "head_dim": const(G.head_dim, "kv_lora + qk_rope"),
               "kv_lora": const(G.kv_lora),
               "topk": const(G.index_topk),
@@ -129,24 +129,25 @@ def _glm52_dsa_prefill_attn():
         workload_metrics=["valid_selected_kv", "effective_topk", "effective_topk_ratio",
                           "selected_token_head_per_s", "effective_kv_gbps",
                           "allocated_cache_footprint_bytes", "us_per_token"],
-        meta={"num_heads": G.local_heads, "padded_heads": 128,
+        meta={"num_heads": G.local_heads, "padded_heads": G.dsa_padded_heads,
               "kv_lora": G.kv_lora, "index_topk": G.index_topk,
-              "s_kv": 65536, "tp": G.tp, "deployment": "B200-TP8-EP8",
-              "backend_note": "SGLang pads 8 TP-local heads to 128 for the SM100 kernel"},
+              "s_kv": 65536, "tp": G.tp, "ep": G.ep, "dp": G.dp,
+              "deployment": G.deployment,
+              "backend_note": "SM100 FlashMLA sparse pads 64 heads to 128"},
         description=(
-            f"GLM-5.2 DSA sparse MLA prefill (TP8 local heads={G.local_heads}), "
+            f"GLM-5.2 DSA sparse MLA prefill (DP1/TP1 heads={G.local_heads}), "
             f"SGLang flash_mla_sparse_fwd BF16 production kernel on B200. "
             f"Query M={GLM52_PREFILL_SWEEP}, shared latent KV length=65536, "
             f"top-k={G.index_topk}, head_dim={G.head_dim}, d_v={G.kv_lora}. "
-            "The B200-required 128-head padding is prepared untimed; output is trimmed "
-            "to the 8 local heads."),
+            f"The B200-required {G.dsa_padded_heads}-head padding is prepared untimed; "
+            f"output is trimmed to the {G.local_heads} local heads."),
         goal=("Optimize solution.py against SGLang's flash_mla_sparse_fwd B200 "
               "baseline for GLM-5.2 DSA prefill; beat M=1024/2048/4096 and "
               "match the local-head output within attention tolerance."),
         axes={"M": var("prefill query tokens (sweep)"),
               "ctx": const(65536, "shared latent KV length (s_kv)"),
-              "num_heads": const(G.local_heads, "TP8-local query heads"),
-              "padded_heads": const(128, "SM100 kernel query heads"),
+              "num_heads": const(G.local_heads, "query heads under TP=1"),
+              "padded_heads": const(G.dsa_padded_heads, "SM100 kernel query heads"),
               "head_dim": const(G.head_dim),
               "kv_lora": const(G.kv_lora),
               "topk": const(G.index_topk)},
