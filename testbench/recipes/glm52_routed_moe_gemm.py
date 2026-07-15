@@ -10,13 +10,14 @@ llm_flops (and these tasks) use masked for BOTH prefill and decode:
 
 Routing (fixed seed, EP-local filter):
   For each of M tokens draw top-8 experts uniformly from 256 global experts, keep
-  only those belonging to this EP rank's 32 local experts. Local assignments then
-  ≈ M * (8/256)*32 = M on expectation, with natural empty experts and load jitter.
+  only those belonging to this EP rank's local experts (E = n_routed/ep; EP32 → E=8).
+  Local assignments ≈ M * (topk/n_global)*E on expectation, with natural empty
+  experts and load jitter.
   Quant + scale layout prep is OFFLINE in get_inputs.
 
 Axes:
   M = prefill tokens OR decode batch (sweep)
-  E = local experts (32)
+  E = local experts (8 under DP1/TP1/EP32)
   K, N = GEMM dims (Gate/Up: K=6144,N=2048; Down: K=2048,N=6144)
   layout = 0 contiguous / 1 masked   (const per task; MoE projs use 1)
 """
