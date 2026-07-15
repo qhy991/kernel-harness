@@ -1,3 +1,4 @@
+<!-- RETARGET: DP1/TP1/EP32 (synced with Kernel-Harness main 88d7044) -->
 # GLM-5.2 index_k_proj_decode — Phase 1 Prompt
 
 Develop a kernel that minimizes latency while preserving numerical correctness.
@@ -17,7 +18,7 @@ are the priority. Do not treat Phase 2/3 shape specialization as in-scope yet.
 - Family: fp8-linear-gemm
 - Backend / baseline: deep_gemm w8a8_block_fp8 (blackwell)
 - Goal: Optimize solution.py against SGLang's DeepGEMM w8a8_block_fp8 baseline for GLM-5.2 decode index_k_proj at batch 16/32.
-- Description: GLM-5.2 DSA index K projection (decode), matching llm_flops and SGLang's FP8 ReplicatedLinear path. out[M,128] = x_fp8[M,6144] @ w_fp8[128,6144].T; batch sweep=[16, 32]. Only the pre-quantized DeepGEMM kernel is timed.
+- Description: 
 
 Authoritative task directory in this worktree:
 `testbench/tasks/glm52/index_k_proj_decode/`
