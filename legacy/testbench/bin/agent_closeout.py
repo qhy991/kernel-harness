@@ -26,8 +26,12 @@ import subprocess
 import sys
 from pathlib import Path
 
+# This stack moved under legacy/, so its own root and the repo root are no longer the
+# same directory: the venv, logs/ and token-records/ still live at the repo root while
+# the code lives here. Resolving _REPO by walking up from __file__ therefore lands on
+# legacy/ and silently looks for legacy/.venv. Walk up one more.
 _BIN = Path(__file__).resolve().parent
-_REPO = _BIN.parent.parent
+_REPO = _BIN.parents[2]
 _TASKS = _BIN.parent / "tasks"
 _TOKEN_ROOT = _REPO / "token-records"
 

@@ -1,14 +1,19 @@
 #!/usr/bin/env bash
 # Benchmark Kimi K2.x (DSA ops 1-27) + MiniMax M3-related kernels on B200.
 # Usage:
-#   source /home/qinhaiyan/kernel-harness/activate_env.sh
-#   bash scripts/run_kimi_minimax_perf.sh
+#   source activate_env.sh
+#   bash legacy/scripts/run_kimi_minimax_perf.sh
 set -uo pipefail
 
-ROOT="$(cd "$(dirname "$0")/.." && pwd)"
-source "${ROOT}/activate_env.sh"
+# LEGACY_ROOT holds this stack's own code (run_all.py, benchmarks/, shapes.py);
+# REPO_ROOT holds the things it borrows from the repo (the venv, logs/). They were
+# the same directory until this stack moved under legacy/, so they must be kept
+# apart now or the script silently looks for activate_env.sh inside legacy/.
+LEGACY_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+REPO_ROOT="$(cd "${LEGACY_ROOT}/.." && pwd)"
+source "${REPO_ROOT}/activate_env.sh"
 SGLANG_DIR="${SGLANG_DIR:-/home/qinhaiyan/sglang}"
-OUT="${ROOT}/logs/kimi_minimax_$(date +%Y%m%d-%H%M%S)"
+OUT="${REPO_ROOT}/logs/kimi_minimax_$(date +%Y%m%d-%H%M%S)"
 mkdir -p "$OUT"
 PYTHON="${PYTHON:-python3}"
 export PYTHONPATH="${SGLANG_DIR}/python:${PYTHONPATH:-}"
@@ -26,7 +31,7 @@ PY
 
 # ---------- 1) Harness baseline: Kimi DSA ops 1-27 ----------
 echo -e "\n##### [1/3] kernel-harness baseline (Kimi DSA ops 1-27) #####"
-cd "$ROOT"
+cd "$LEGACY_ROOT"
 "$PYTHON" run_all.py --out "$OUT/baseline" 2>&1 | tee "$OUT/01_baseline.log"
 cp -f "$OUT/baseline/results.json" "$OUT/baseline_results.json" 2>/dev/null || true
 cp -f "$OUT/baseline/results.csv"  "$OUT/baseline_results.csv"  2>/dev/null || true
@@ -110,4 +115,4 @@ fi
 echo -e "\n##### DONE #####"
 echo "Results under: $OUT"
 ls -la "$OUT"
-echo "$OUT" > "$ROOT/logs/kimi_minimax_latest.path"
+echo "$OUT" > "$REPO_ROOT/logs/kimi_minimax_latest.path"

@@ -16,10 +16,15 @@ import os
 import shlex
 from pathlib import Path
 
-# testbench/bin/config.py -> testbench/ -> repo root
+# legacy/testbench/bin/config.py -> legacy/testbench/ -> legacy/ -> repo root
+# This stack moved under legacy/, so its own root and the repo root are no longer the
+# same directory: the venv, logs/ and token-records/ still live at the repo root while
+# the code lives here. Resolving _REPO by walking up from __file__ therefore lands on
+# legacy/ and silently looks for legacy/.venv. Walk up one more.
 _BIN = Path(__file__).resolve().parent
 _TESTBENCH = _BIN.parent
-_REPO = _TESTBENCH.parent
+_LEGACY = _TESTBENCH.parent
+_REPO = _LEGACY.parent
 
 _cuda_default = next(
     (p for p in (Path("/usr/local/cuda"), Path("/usr/local/cuda-13.0")) if p.exists()),
