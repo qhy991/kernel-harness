@@ -114,7 +114,7 @@
   "performance": {
     "timing": "CUPTI cold-L2 device-kernel median: inputs cloned per iteration and L2 flushed before each, both outside the measured window",
     "why_device_time": "the reward is a hardware-utilisation ratio, so it must be paired with device time; a per-call wall-clock timer reports ~99us for this op's ~47us kernel, and the difference is host dispatch stall",
-    "gate": "min over shapes of (reference fastest sample / candidate slowest sample) > 1.0",
+    "gate": "min over shapes of (reference p10 / candidate p90) > 1.0 \u2014 a quantile, not max/min: dividing two extremes lets one artifact sample decide the verdict, which at repeat=10 is likely rather than rare",
     "defaults": {
       "warmup": 3,
       "repeat": 10,

@@ -786,8 +786,10 @@ def problem(op: str, phase: str, device=None) -> dict:
                                "paired with device time; a per-call wall-clock timer "
                                "reports ~99us for this op's ~47us kernel, and the "
                                "difference is host dispatch stall",
-            "gate": "min over shapes of (reference fastest sample / candidate slowest "
-                    "sample) > 1.0",
+            "gate": "min over shapes of (reference p10 / candidate p90) > 1.0 — a "
+                    "quantile, not max/min: dividing two extremes lets one artifact "
+                    "sample decide the verdict, which at repeat=10 is likely rather "
+                    "than rare",
             "defaults": {"warmup": 3, "repeat": 10, "iterations": 30},
             "repeat_note": "--repeat 1 is a probe, not a verdict: at 1 the conservative "
                            "margin collapses to the median one and a candidate identical "

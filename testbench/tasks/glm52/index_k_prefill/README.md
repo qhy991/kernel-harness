@@ -82,7 +82,7 @@ TASK  index_k/prefill — Indexer K Projection
              timed iterations
 
   FAST       CUPTI cold-L2 device-kernel median
-             gate: min over shapes of (reference fastest sample / candidate slowest sample) > 1.0
+             gate: min over shapes of (reference p10 / candidate p90) > 1.0 — a quantile, not max/min: dividing two extremes lets one artifact sample decide the verdict, which at repeat=10 is likely rather than rare
              defaults: warmup=3, repeat=10, iterations=30
 
   RUN        ./run.sh                        the gate

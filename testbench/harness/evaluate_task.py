@@ -47,13 +47,21 @@ correlating launches to kernels and measuring only the device span.
 The real cold-vs-warm penalty, once dispatch is excluded, is ~12% for this op
 (53us cold vs 47us warm), not the ~2.4x a per-call event timer suggests.
 
-`--repeat K` (default 10) takes K samples per shape and gates on the worst-case
-margin: candidate slowest vs reference fastest, mirroring evaluate.py. This is
-not pedantry. Measured noise here is +-5%, so at K=1 the conservative margin
-collapses to the median one and a candidate that *is* the reference scores
-0.947x-1.022x — passing a >1.0 gate roughly half the time. At K>=3 that same
-candidate is refused. Use --repeat 1 as a probe, not as a verdict. Default
-warmup is 3.
+`--repeat K` (default 10) takes K samples per shape and gates on the conservative
+margin: the candidate's p90 against the reference's p10. Not the median, because
+noise here is +-5% and at K=1 the margin collapses to median-vs-median, where a
+candidate that *is* the reference scores 0.947x-1.022x and passes a >1.0 gate
+roughly half the time — so --repeat 1 is a probe, never a verdict.
+
+Not max/min either, though that is what evaluate.py does and what this did first.
+Dividing two extremes lets ONE bad sample decide the verdict, and at K=10 that is
+likely rather than rare: observed sp_cons 0.347x against a 0.999x median because
+one sample of ten came back 2.9x high. Medians are stable to ~0.2% across runs, so
+those are measurement artifacts, not kernel behaviour — CUPTI session churn, GPU
+clock ramp and per-process allocator warmup were each tested and refuted as the
+cause. At a quantile, more samples make the gate better instead of more fragile,
+which is the only reason to raise K at all. The true min/max are still recorded and
+still drive the instability warning. Default warmup is 3.
 
 Unlike evaluate.py the samples are in-process, so they capture run-level but not
 process-level noise; result.json records this as repeat_scope="in-process".
@@ -171,6 +179,23 @@ def _geomean(xs):
     return math.exp(sum(math.log(x) for x in xs) / len(xs)) if xs else None
 
 
+# Quantile the conservative margin is taken at. 0.90 keeps the gate a statement about
+# the tail ("the candidate's slow end still beats the reference's fast end") while
+# staying out of reach of a single artifact sample. At --repeat 1 or 2 it degenerates
+# to the min/max it replaces, so a probe behaves exactly as before.
+CONS_Q = 0.90
+
+
+def _pct(xs, q: float) -> float:
+    """Linear-interpolated percentile (numpy's default method), stdlib only."""
+    s = sorted(xs)
+    if len(s) == 1:
+        return s[0]
+    i = q * (len(s) - 1)
+    lo, hi = math.floor(i), math.ceil(i)
+    return s[lo] if lo == hi else s[lo] + (s[hi] - s[lo]) * (i - lo)
+
+
 class ContractError(RuntimeError):
     """task.json disagrees with glm52_ops. Exit 3, never a silent measurement."""
 
@@ -235,8 +260,20 @@ def evaluate(task_dir: Path, args) -> tuple[dict, int]:
     print(f"     timing={TIMING_PROTOCOL} iters={args.iterations} warmup={args.warmup} "
           f"repeat={args.repeat}  S={S} seed={seed}  device={args.device}")
     print()
-    hdr = (f"{'shape':>8} {'correct':>8} {'calc_diff':>10} {'max_rel':>9} {'cand_us':>10} "
-           f"{'ref_us':>10} {'speedup':>9} {'sp_cons':>9} {'bound':>7} {'reward':>8}")
+    peak = ops.PEAK_FLOPS[op_meta["peak_dtype"]]
+    ridge = peak / ops.HBM_BYTES_PER_S
+    print(f"     roofline: {op_meta['peak_dtype']} peak {peak/1e15:.2f} PFLOP/s, HBM "
+          f"{ops.HBM_BYTES_PER_S/1e12:.1f} TB/s, ridge {ridge:.1f} FLOP/byte "
+          f"-> reward = utilisation of whichever resource binds")
+    print()
+    # reward IS the utilisation of the binding resource — bw_util when memory-bound,
+    # compute_util when compute-bound. Printing both alongside makes that identity
+    # visible rather than something the reader has to take on trust. The reference
+    # sub-row is the ceiling: without it a low reward reads as candidate headroom
+    # when it may simply be the op's roof.
+    hdr = (f"{'shape':>7} {'ok':>5} {'calc_diff':>10} {'cand_us':>9} {'ref_us':>9} "
+           f"{'speedup':>8} {'sp_cons':>8} {'AI':>7} {'bound':>7} {'TFLOP/s':>9} "
+           f"{'MFU':>7} {'GB/s':>9} {'BW':>7} {'reward':>8}")
     print(hdr)
 
     per_shape, sp_med_all, sp_cons_all = [], [], []
@@ -270,7 +307,7 @@ def evaluate(task_dir: Path, args) -> tuple[dict, int]:
             row["error"] = c["reason"]
             per_shape.append(row)
             dstr = "-" if c.get("calc_diff") is None else f"{c['calc_diff']:.2e}"
-            print(f"{shape:>8} {'FAIL':>8} {dstr:>10} {'':>9}  {c['reason']}")
+            print(f"{shape:>7} {'FAIL':>5} {dstr:>10}  {c['reason']}")
             continue
 
         # ── performance (same inputs, same ABI) ──
@@ -291,7 +328,19 @@ def evaluate(task_dir: Path, args) -> tuple[dict, int]:
         c_lo, c_med, c_hi = min(cand_s), statistics.median(cand_s), max(cand_s)
         b_lo, b_med, b_hi = min(ref_s), statistics.median(ref_s), max(ref_s)
         s_med = b_med / c_med
-        s_cons = b_lo / c_hi          # candidate worst vs reference best
+        # The conservative margin is the candidate's slow tail against the reference's
+        # fast tail, at CONS_Q. It used to be max/min, which mirrored evaluate.py — but
+        # max/min divides two extremes, so ONE bad sample decides the verdict, and at
+        # --repeat 10 that is likely rather than rare: observed sp_cons 0.347x against a
+        # 0.999x median, purely because one of ten samples came back 2.9x high. Medians
+        # here are stable to ~0.2% across runs, so those samples are measurement
+        # artifacts, not kernel behaviour (CUPTI session churn, GPU clock ramp and
+        # per-process allocator warmup were each tested and refuted as causes). Taking
+        # a quantile instead means more samples make the gate *better* rather than more
+        # fragile, which is the whole point of raising repeat. The true min/max are
+        # still recorded and still drive the instability warning.
+        c_tail, b_tail = _pct(cand_s, CONS_Q), _pct(ref_s, 1.0 - CONS_Q)
+        s_cons = b_tail / c_tail
         sp_med_all.append(s_med)
         sp_cons_all.append(s_cons)
 
@@ -308,7 +357,7 @@ def evaluate(task_dir: Path, args) -> tuple[dict, int]:
         row["timing_spread"] = round(spread, 3)
         row["timing_unstable"] = unstable
         if unstable:
-            print(f"{'':>8} {'WARN':>8}   timing samples spread {spread:.2f}x "
+            print(f"{'':>7} {'WARN':>5}   timing samples spread {spread:.2f}x "
                   f"(cand {c_lo*1e3:.1f}-{c_hi*1e3:.1f}us, ref {b_lo*1e3:.1f}-"
                   f"{b_hi*1e3:.1f}us) — sp_cons unreliable, re-run before trusting it")
 
@@ -338,6 +387,9 @@ def evaluate(task_dir: Path, args) -> tuple[dict, int]:
             reference_us=round(b_med * 1e3, 3), reference_us_lo=round(b_lo * 1e3, 3),
             reference_us_hi=round(b_hi * 1e3, 3),
             samples=args.repeat,
+            candidate_us_p90=round(c_tail * 1e3, 3),
+            reference_us_p10=round(b_tail * 1e3, 3),
+            conservative_quantile=CONS_Q,
             speedup=round(s_med, 4), speedup_conservative=round(s_cons, 4),
             bound=cand_r["bound"], arithmetic_intensity=cand_r["arithmetic_intensity"],
             ridge=cand_r["ridge"],
@@ -348,9 +400,17 @@ def evaluate(task_dir: Path, args) -> tuple[dict, int]:
         per_shape.append(row)
 
         mark = "PASS" if (ok and post_ok) else "DRIFT"
-        print(f"{shape:>8} {mark:>8} {c['calc_diff']:>10.2e} {c['max_rel_err']:>9.2e} "
-              f"{c_med*1e3:>10.2f} {b_med*1e3:>10.2f} {s_med:>8.3f}x {s_cons:>8.3f}x "
-              f"{cand_r['bound']:>7} {cand_r['reward']:>8.4f}")
+        print(f"{shape:>7} {mark:>5} {c['calc_diff']:>10.2e} "
+              f"{c_med*1e3:>9.2f} {b_med*1e3:>9.2f} {s_med:>7.3f}x {s_cons:>7.3f}x "
+              f"{cand_r['arithmetic_intensity']:>7.1f} {cand_r['bound']:>7} "
+              f"{cand_r['tflops']:>9.1f} {cand_r['compute_util']*100:>6.2f}% "
+              f"{cand_r['gbps']:>9.1f} {cand_r['bw_util']*100:>6.2f}% "
+              f"{cand_r['reward']:>8.4f}")
+        print(f"{'':>7} {'└ ref':>5} {'baseline':>10} "
+              f"{'':>9} {'':>9} {'':>8} {'':>8} {'':>7} {'':>7} "
+              f"{ref_r['tflops']:>9.1f} {ref_r['compute_util']*100:>6.2f}% "
+              f"{ref_r['gbps']:>9.1f} {ref_r['bw_util']*100:>6.2f}% "
+              f"{ref_r['reward']:>8.4f}")
 
     # ── aggregate ──
     rewards = [r["reward"] for r in per_shape if "reward" in r]
@@ -399,7 +459,7 @@ def evaluate(task_dir: Path, args) -> tuple[dict, int]:
             "diff_tol": op_meta["diff_tol"], "rel_tol": op_meta["rel_tol"],
             "abs_tol_factor": op_meta["abs_tol_factor"],
             "performance_gate": {"min_speedup": min_speedup_gate,
-                                 "basis": "conservative"},
+                                 "basis": f"conservative (q={CONS_Q})"},
         },
         "run": {
             "run_id": run_id, "started_utc": started,
