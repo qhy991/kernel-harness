@@ -31,6 +31,25 @@ python3 testbench/bin/knowledge.py lint                                  # valid
   approach has `outcome: "win"`.
 - **Append-only.** `add` refuses to overwrite; never edit or delete an existing entry.
   To correct or supersede one, add a new entry (query sorts newest first).
+
+### The pre-consolidation GLM-5.2 entries are not reproducible
+
+Every `glm52--*` entry dated 2026-07-14/15 was recorded against the contract GLM-5.2
+used before its operators were consolidated into `harness/glm52_ops.py`. They are kept
+because this log is append-only, but do not read their numbers as current:
+
+- Eleven of the twelve name task directories that no longer exist —
+  `routed_swiglu_{prefill,decode}`, `routed_gateup_nvfp4_decode`, `sparse_mla_decode`
+  (removed: not among the 12 operators) and `routed_down_decode` (removed earlier
+  still). `knowledge.py query --task` for those returns recipes for nothing.
+- The twelfth, `glm52--o_proj_decode--*`, names a task that still exists but whose
+  inputs, baseline, correctness gate and timing protocol have all since changed. Its
+  `min_speedup_conservative: 0.9875` came from a different measurement of a different
+  problem and cannot be compared with a current run.
+- The win rule they were validated under (`min_speedup_conservative > 1.0`) is no
+  longer GLM-5.2's. New `glm52/` entries are validated on `shapes_won >= 1` and
+  `shapes_regressed == 0` instead, taken from `result.json`'s aggregate — see
+  `./run.sh --describe`. The old rule still applies to every other model.
 - **Pin the substrate.** `hardware.gpu`/`sm` and `stack.sglang_commit` are required —
   a recipe is a claim about a kernel on a chip at a commit, not a universal truth.
   Copy them from `bin/check_env.py` output.
@@ -51,7 +70,7 @@ python3 testbench/bin/knowledge.py lint                                  # valid
 | `baseline_kernel` | str | what was beaten / not beaten, from `task.json` `backend` |
 | `bottleneck` | object | `kind` ∈ `memory-bandwidth` `compute` `launch-overhead` `kernel-count` `quantization-overhead` `occupancy` `synchronization` `none-identified` `other`; `evidence` = the measurement that proves it (roofline numbers, profile output) |
 | `approaches` | array | ≥1; each `{technique, summary, outcome, geomean_speedup, why}` — `outcome` ∈ `win` `partial` `slower` `incorrect` `error` `abandoned`; `geomean_speedup` required for `win`/`partial`, else may be null; `why` = one-sentence causal explanation |
-| `result` | object | `status` ∈ `win` `no-win` `failed`; `geomean_speedup`, `min_speedup_conservative`, `repeat` from the final `VERDICT_JSON` (null if not applicable); `integrate` ∈ `pass` `fail` `not-run` `no-recipe` |
+| `result` | object | `status` ∈ `win` `no-win` `failed`; `geomean_speedup`, `min_speedup_conservative`, `repeat` from the final `VERDICT_JSON` (null if not applicable); `integrate` ∈ `pass` `fail` `not-run` `no-recipe`. **glm52 only:** `shapes_won` / `shapes_regressed` from `result.json`'s aggregate, which is what a `win` is validated on there — `min_speedup_conservative` is not that model's gate |
 | `lesson` | str | 1–3 sentences: the transferable rule, stated so an agent on a *different* task can apply it |
 | `transfers_to` | array of str | where this likely applies (families/ops/shape regimes/arch) |
 | `caveats` | array of str | where it will NOT transfer (may be empty) |

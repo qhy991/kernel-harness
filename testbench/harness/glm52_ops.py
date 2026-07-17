@@ -7,10 +7,12 @@ of its own and cannot drift from what actually runs:
     build_inputs(op, phase, M, S, ...)  -> the frozen input dict (seeded, quantized once)
     reference(op, phase, inputs)        -> the baseline kernel == the correctness oracle
     poison(inputs)                      -> destroy the reference's answer before the candidate
-    compare(ref, cand, op, phase, ins)  -> {cosine, rel_l2}
+    compare(ref, cand, op, phase, ins)  -> every metric plus a decided pass/reason
+    calc_diff(x, y)                     -> deep_gemm.testing.numeric.calc_diff, verbatim
     cost(op, phase, M, S)               -> (flops, bytes_hbm, compute_dtype)
     reward(latency_ms, *cost)           -> bound-aware roofline utilisation
-    describe(op, phase)                 -> the human/agent-facing problem statement
+    problem(op, phase, device)          -> the whole problem definition as a dict
+    describe(op, phase, device)         -> problem() rendered as text
 
 Provenance
 ----------
@@ -433,7 +435,7 @@ def poison(inputs: dict) -> bool:
 
 
 # ══════════════════════════════════════════════════════════════════════════
-# Comparison — mask by output_kind, then cosine AND rel-L2
+# Comparison — mask by output_kind, then the three upstream layers
 # ══════════════════════════════════════════════════════════════════════════
 def _main(x):
     return x[0] if isinstance(x, (tuple, list)) else x

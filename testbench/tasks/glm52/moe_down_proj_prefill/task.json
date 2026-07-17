@@ -5,7 +5,7 @@
   "operator": "moe_down",
   "phase": "prefill",
   "family": "moe",
-  "goal": "Optimize candidate.py for GLM-5.2 MoE Down Projection (prefill). It must match glm52_ops.reference under the cosine AND rel-L2 gates on every shape, AND beat its latency on every shape.",
+  "goal": "Optimize candidate.py for GLM-5.2 MoE Down Projection (prefill). It must match glm52_ops.reference on every shape, and beat its latency on at least one shape without regressing on any. Run `./run.sh --describe` for the contract.",
   "entrypoint": "candidate.py",
   "runner": "testbench/harness/evaluate_task.py",
   "deployment": "B200-DP1-TP1-EP32",

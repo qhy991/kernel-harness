@@ -127,7 +127,24 @@ def validate(entry, expected_id=None) -> list[str]:
         p.append("result.repeat must be an integer or null")
     if res.get("status") == "win":
         msc = res.get("min_speedup_conservative")
-        if not (_num(msc) and msc > 1.0):
+        legacy_win = _num(msc) and msc > 1.0
+        if str(entry.get("task", "")).startswith("glm52/"):
+            # GLM-5.2 stopped gating on min_speedup_conservative: its runner judges each
+            # shape win/neutral/regress and passes on >=1 win with 0 regressions, so a
+            # legitimate win that falls back to the reference on one shape has msc < 1.0
+            # by construction and the legacy rule alone would reject it. Either form is
+            # accepted, because the legacy one implies the new one — msc > 1.0 means
+            # every shape won, hence >=1 win and no regression. That also keeps the
+            # pre-consolidation entries (which predate these fields) valid, as an
+            # append-only log requires.
+            won, regressed = res.get("shapes_won"), res.get("shapes_regressed")
+            shape_win = isinstance(won, int) and won >= 1 and regressed == 0
+            if not (shape_win or legacy_win):
+                p.append("result.status 'win' for glm52 requires either "
+                         "result.shapes_won >= 1 with result.shapes_regressed == 0 "
+                         "(from result.json's aggregate), or the legacy "
+                         "min_speedup_conservative > 1.0")
+        elif not legacy_win:
             p.append("result.status 'win' requires min_speedup_conservative > 1.0 "
                      "(from the final VERDICT_JSON)")
         if not any(isinstance(a, dict) and a.get("outcome") == "win" for a in approaches):

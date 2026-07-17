@@ -1,5 +1,9 @@
 """GLM-5.2 Absorbed W_UK BMM (prefill) — the one file to edit for this task.
 
+This file is the DEFAULT candidate, not the only one: `./run.sh --candidate PATH`
+tests any .py defining run(inputs), from anywhere on disk, without touching the task.
+Editing this file is just the convenient path.
+
 Run `./run.sh --describe` for the full contract. The short version:
 
 `inputs` is the frozen dict from glm52_ops.build_inputs. The very same dict feeds
@@ -13,9 +17,10 @@ Tensors at M=1024:
     A_scale          (1,)                     torch.float32
     B_scale          (1,)                     torch.float32
 
-Return the output. Correctness is cosine >= 0.99 AND
-rel_l2 <= 0.141421 against glm52_ops.reference on these inputs;
-cosine alone is scale-blind, so both gate.
+Return the output. Correctness against glm52_ops.reference on these inputs is
+FlashMLA's three-layer check: matching inf/nan positions, then every element
+abs_err < abs_tol OR rel_err < 0.0157, then DeepGEMM's calc_diff
+<= 5e-06. `./run.sh --describe` prints all of it.
 
 Baseline to beat: the call below, timed CUPTI cold-L2 on these same inputs.
 

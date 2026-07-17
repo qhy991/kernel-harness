@@ -202,9 +202,10 @@ Tensors at M={s['sweep'][0]}:
 
 {table}
 
-Return the output. Correctness is cosine >= {s['cosine_threshold']} AND
-rel_l2 <= {s['rel_l2_threshold']:.6f} against glm52_ops.reference on these inputs;
-cosine alone is scale-blind, so both gate.
+Return the output. Correctness against glm52_ops.reference on these inputs is
+FlashMLA's three-layer check: matching inf/nan positions, then every element
+abs_err < abs_tol OR rel_err < {s['rel_tol']:.4f}, then DeepGEMM's calc_diff
+<= {s['diff_tol']:.0e}. `./run.sh --describe` prints all of it.
 '''
     if s["has_output_buffer"]:
         doc += '''
@@ -242,8 +243,9 @@ def _task_json(dirname: str, op: str, phase: str) -> str:
         # forbidden from restating, which nothing would check.
         "family": s["family"],
         "goal": (f"Optimize candidate.py for GLM-5.2 {s['label']} ({phase}). It must match "
-                 f"glm52_ops.reference under the cosine AND rel-L2 gates on every shape, "
-                 f"AND beat its latency on every shape."),
+                 f"glm52_ops.reference on every shape, and beat its latency on at least "
+                 f"one shape without regressing on any. Run `./run.sh --describe` for the "
+                 f"contract."),
         "entrypoint": "candidate.py",
         "runner": "testbench/harness/evaluate_task.py",
         "deployment": "B200-DP1-TP1-EP32",
