@@ -1,0 +1,7 @@
+__pycache__/
+*.pyc
+# generated candidate outputs (per-run, not part of the framework)
+glm5_ops_prefill_candidates.csv
+glm5_ops_decode_candidates.csv
+# per-operator result history written into candidate dirs
+reward_bench.csv

@@ -137,6 +137,11 @@ unit tests, CUDA-graph safety, and AOT/JIT build + non-Blackwell fallback. See
   migrate, anti-cheat guards, inventory.
 - [`testbench/docs/HARNESS_DESIGN.md`](testbench/docs/HARNESS_DESIGN.md) — correctness,
   timing, and the two-tier fast/authoritative probe design.
+- [`rewardbench/README.md`](rewardbench/README.md) — a standalone **performance-reward**
+  tool for GLM-5 operators: point it at a folder of optimized kernels and it reports a
+  bound-aware roofline-utilization reward ∈ [0,1] per op (compute-util if compute-bound,
+  HBM-bandwidth-util if memory-bound). Complements `evaluate.py` (which gates a single
+  task's correctness+speedup) by scoring a whole candidate folder against the roofline.
 
 ## 8. Legacy proxy baselines (not the agent oracle)
 
