@@ -13,11 +13,9 @@ within the per-workload tolerance and run faster.
 """
 
 import torch
+import deep_gemm
 from deep_gemm import ceil_div, get_tma_aligned_size
-from sglang.srt.layers.quantization.fp8_kernel import (
-    sglang_per_token_group_quant_fp8,
-    w8a8_block_fp8_matmul_deepgemm,
-)
+from sglang.srt.layers.quantization.fp8_kernel import sglang_per_token_group_quant_fp8
 from sglang.srt.layers.quantization.fp8_utils import requant_weight_ue8m0
 
 BLOCK = 128
@@ -71,6 +69,16 @@ def get_inputs(axes_and_scalars: dict, device: torch.device) -> dict:
 
 @torch.no_grad()
 def run(x_fp8, x_scale, w_fp8, w_scale):
-    return w8a8_block_fp8_matmul_deepgemm(
-        x_fp8, w_fp8, x_scale, w_scale, [BLOCK, BLOCK], output_dtype=torch.bfloat16
-    )
+    # Dispatch deep_gemm.fp8_gemm_nt directly with compiled_dims="nk" so that
+    # N=6144 and K=16384 become compile-time template constants (the production
+    # sglang wrapper leaves them fully dynamic, compiled_dims=""). The packed
+    # UE8M0 int32 scale layout (As[M, K//512], Bs[N, K//512]) is passed through
+    # unchanged, exactly as the wrapper hands it to fp8_gemm_nt.
+    # A num_sms sweep {32..148} was measured on both shapes: values < 48 slow the
+    # kernel (fewer SMs than the 48-tile grid), and values >= 48 tie the default
+    # within noise, so no set_num_sms override is applied here.
+    M = x_fp8.shape[0]
+    N = w_fp8.shape[0]
+    out = x_fp8.new_empty((M, N), dtype=torch.bfloat16)
+    deep_gemm.fp8_gemm_nt((x_fp8, x_scale), (w_fp8, w_scale), out, compiled_dims="nk")
+    return out
