@@ -131,7 +131,12 @@
         "why": "scale-SENSITIVE, unlike cosine \u2014 a uniform k*reference is caught here (k=0.5 or 2 both give 0.2)"
       }
     ],
-    "post_timing_recheck": "correctness is re-checked on freshly built inputs after timing, to catch a kernel that mutates its inputs or drifts across the timed iterations"
+    "post_timing_recheck": "correctness is re-checked on freshly built inputs after timing, to catch a kernel that mutates its inputs or drifts across the timed iterations",
+    "diagnostics": {
+      "cosine": "reported, never gated \u2014 it is scale-invariant, so reference*k scores 1.000000 for every k and it cannot catch the likeliest FP8 bug on its own",
+      "best_fit_scale": "least-squares k for candidate ~= k*reference",
+      "why": "paired with calc_diff they name the failure: cosine ~1 with a large calc_diff is a magnitude error (check the dequant scale, the ue8m0 exponent, a dropped 448.0) and best_fit_scale is the factor to look for; a low cosine is an algorithm, indexing or layout error instead. calc_diff alone cannot tell them apart \u2014 flipping the output and dividing it by 448 both score ~0.995"
+    }
   },
   "performance": {
     "timing": "CUPTI cold-L2 device-kernel median: inputs cloned per iteration and L2 flushed before each, both outside the measured window",

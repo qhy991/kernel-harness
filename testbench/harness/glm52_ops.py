@@ -512,6 +512,22 @@ def compare(ref_out, cand_out, op: str, phase: str, inputs: dict) -> dict:
         c = c.masked_fill(cm, 0.0)
     out["anomaly_ok"] = True
 
+    # ── diagnostic only: cosine + best-fit scale ──
+    # Cosine is NOT a gate here, and cannot be: it is scale-invariant, so
+    # reference*k scores 1.000000 for every positive k (verified at k = 0.5, 2.0,
+    # 1000.0), and a dropped 448.0 or a wrong ue8m0 exponent is exactly that shape of
+    # bug. But paired with calc_diff it *names* the failure, which neither does alone:
+    # direction right + magnitude wrong is a scale error, direction wrong is an
+    # algorithm/indexing/layout error, and those want completely different fixes.
+    # best_fit_scale is the least-squares k for cand ~= k*ref, so a scale error reports
+    # the factor to look for rather than leaving it to be guessed.
+    rd, cd_ = r.double(), c.double()
+    rn = torch.linalg.vector_norm(rd)
+    cn = torch.linalg.vector_norm(cd_)
+    dot = (rd * cd_).sum()
+    out["cosine"] = (dot / (rn * cn)).item() if rn > 0 and cn > 0 else float("nan")
+    out["best_fit_scale"] = (dot / (rn * rn)).item() if rn > 0 else float("nan")
+
     # ── 2. elementwise: abs OR rel ──
     abs_tol = s["abs_tol_factor"] * r.abs().max().item()
     raw_abs = (c - r).abs()
@@ -530,16 +546,29 @@ def compare(ref_out, cand_out, op: str, phase: str, inputs: dict) -> dict:
         out.update(pass_=False, reason=(
             f"{n_fail}/{int(r.numel())} elements fail both tolerances "
             f"(abs<{abs_tol:.3e} or rel<{s['rel_tol']:.3e}); worst offender "
-            f"abs={raw_abs[bad].max().item():.3e} rel={raw_rel[bad].max().item():.3e}"))
+            f"abs={raw_abs[bad].max().item():.3e} rel={raw_rel[bad].max().item():.3e}"
+            + _diagnose(out)))
         return _finish(out)
     if abs(out["calc_diff"]) > s["diff_tol"]:
         out.update(pass_=False, reason=(
-            f"calc_diff {out['calc_diff']:.3e} > {s['diff_tol']:.1e} — every element "
-            f"is within tolerance but the output is systematically off "
-            f"(a uniform scale error looks exactly like this)"))
+            f"calc_diff {out['calc_diff']:.3e} > {s['diff_tol']:.1e} — every element is "
+            f"within tolerance but the output is systematically off" + _diagnose(out)))
         return _finish(out)
     out.update(pass_=True, reason=None)
     return _finish(out)
+
+
+def _diagnose(out: dict) -> str:
+    """Turn cosine + best_fit_scale into the sentence that says which bug this is."""
+    cos, k = out.get("cosine"), out.get("best_fit_scale")
+    if cos is None or math.isnan(cos):
+        return ""
+    if cos > 0.999:
+        return (f". Direction is right (cosine {cos:.6f}) and the output is ~{k:.4g}x the "
+                f"reference — a magnitude error, not an algorithm one. Look at the "
+                f"dequant scale, the ue8m0 exponent, or a dropped 448.0")
+    return (f". Direction is wrong (cosine {cos:.6f}), so this is not a scale error — "
+            f"look at the algorithm, the indexing, or the layout")
 
 
 def _finish(out: dict) -> dict:
@@ -779,6 +808,18 @@ def problem(op: str, phase: str, device=None) -> dict:
             "post_timing_recheck": "correctness is re-checked on freshly built inputs "
                                    "after timing, to catch a kernel that mutates its "
                                    "inputs or drifts across the timed iterations",
+            "diagnostics": {
+                "cosine": "reported, never gated — it is scale-invariant, so "
+                          "reference*k scores 1.000000 for every k and it cannot "
+                          "catch the likeliest FP8 bug on its own",
+                "best_fit_scale": "least-squares k for candidate ~= k*reference",
+                "why": "paired with calc_diff they name the failure: cosine ~1 with a "
+                       "large calc_diff is a magnitude error (check the dequant scale, "
+                       "the ue8m0 exponent, a dropped 448.0) and best_fit_scale is the "
+                       "factor to look for; a low cosine is an algorithm, indexing or "
+                       "layout error instead. calc_diff alone cannot tell them apart — "
+                       "flipping the output and dividing it by 448 both score ~0.995",
+            },
         },
 
         "performance": {
@@ -894,6 +935,8 @@ def describe(op: str, phase: str, device=None) -> str:
             if key in lyr:
                 L += [f"                  {line}" for line in _wrap(lyr[key], 58)]
     L += [f"             {line}" for line in _wrap(k["post_timing_recheck"], 64)]
+    L.append("             diagnostics (reported, never gated):")
+    L += [f"               {line}" for line in _wrap(k["diagnostics"]["why"], 60)]
     L += ["", f"  FAST       {f['timing'].split(':')[0]}"]
     L += [f"             gate: {f['gate']}"]
     sv = f["shape_verdict"]

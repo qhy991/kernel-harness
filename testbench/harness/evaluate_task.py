@@ -301,7 +301,8 @@ def evaluate(task_dir: Path, args) -> tuple[dict, int]:
                    output_buffer_poisoned=c["poisoned"],
                    **{k: c[k] for k in ("calc_diff", "max_abs_err", "max_rel_err",
                                         "abs_tol", "rel_tol", "diff_tol",
-                                        "elementwise_failed", "anomaly_ok", "elements")
+                                        "elementwise_failed", "anomaly_ok", "elements",
+                                        "cosine", "best_fit_scale")
                       if k in c})
         if not ok:
             all_correct = False

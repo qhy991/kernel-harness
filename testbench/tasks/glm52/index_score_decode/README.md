@@ -80,6 +80,14 @@ TASK  index_score/decode — Indexer Score (MQA logits)
              correctness is re-checked on freshly built inputs after timing,
              to catch a kernel that mutates its inputs or drifts across the
              timed iterations
+             diagnostics (reported, never gated):
+               paired with calc_diff they name the failure: cosine ~1 with
+               a large calc_diff is a magnitude error (check the dequant
+               scale, the ue8m0 exponent, a dropped 448.0) and
+               best_fit_scale is the factor to look for; a low cosine is an
+               algorithm, indexing or layout error instead. calc_diff alone
+               cannot tell them apart — flipping the output and dividing it
+               by 448 both score ~0.995
 
   FAST       CUPTI cold-L2 device-kernel median
              gate: at least one shape WINS and no shape REGRESSES
