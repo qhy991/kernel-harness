@@ -3,8 +3,8 @@
 Standalone per-kernel optimization tasks for the Kimi-K2.7 / MiniMax-M3 / GLM-5.2 /
 DeepSeek-V3.2 inventory.
 
-**Inventory:** 96 tasks across 27 unique family names (Kimi-K2.7 39 + MiniMax-M3 43 +
-GLM-5.2 14). GLM-5.2 targets B200 + DP1/TP1/EP32 shapes (`zai-org/GLM-5.2-FP8`):
+**Inventory:** 106 tasks across 28 unique family names (Kimi-K2.7 39 + MiniMax-M3 43 +
+GLM-5.2 24). GLM-5.2 targets B200 + DP1/TP1/EP32 shapes (`zai-org/GLM-5.2-FP8`):
 O Projection, DSA index-K projection, sparse prefill/decode MLA,
 separate MoE Gate/Up/Down (llm_flops-aligned), and fused SwiGLU+FP8.
 `bin/integrate.py` has a drop-in recipe for every family with a single rebindable sglang
@@ -313,20 +313,27 @@ Current generated snapshot:
 - Kimi-K2.7: 39 tasks in 12 families, including three MLA-attention tasks
   (`mla_prefill`, `mla_decode_seq2048`, `mla_decode_seq32768`).
 - MiniMax-M3: 43 tasks in 18 families, including 11 tasks across six DSA families.
-- GLM-5.2: 14 tasks under B200 / DP1 / TP1 / EP32 (`zai-org/GLM-5.2-FP8`):
-  - `o_proj_{prefill,decode}` — block-FP8 DeepGEMM, K=16384, N=6144
-  - `index_k_proj_decode` — block-FP8 DeepGEMM, K=6144, N=128
-  - `dsa_prefill_attn` — BF16 `flash_mla_sparse_fwd`, s_kv=65536,
-    top-k=2048, query M∈{1024,2048,4096}, heads 64→pad 128
-  - `sparse_mla_decode` — flashinfer TRT-LLM sparse MLA (`backend=trtllm-gen`;
-    **not** Hopper `flashmla_sparse`); workloads = ctx∈{1024,2048,4096,8192,32768} ×
-    bs∈{16,32} (same SGLang kernel, context is metadata); heads=64
-  - `moe_{gate,up,down}_proj_{prefill,decode}` — separate llm_flops MoE projs
-    (gate/up K=6144,N=2048; down K=2048,N=6144), masked DeepGEMM, EP-local E=8
-  - `routed_gateup_nvfp4_decode` — NVFP4 grouped-MoE decode comparison path
-  - `routed_swiglu_{prefill,decode}` — fused `silu_and_mul_*_post_quant`
-  - Other workloads: prefill M∈{1024,2048,4096}, decode M∈{16,32}
-- Combined: 96 tasks across 27 unique family names.
+- GLM-5.2: 24 tasks = 12 operators x 2 phases, B200 / DP1 / TP1 / EP32
+  (`zai-org/GLM-5.2-FP8`). **These do not use the definition.json / reference.py /
+  solution.py contract described above.** Every operator is defined exactly once in
+  `harness/glm52_ops.py`; a task directory carries only `task.json` (operator + phase
+  + bar), `workload.jsonl`, `candidate.py` (the one editable file) and `run.sh` (the
+  one command). Regenerate the tree with `bin/sync_glm52_tasks.py`.
+  - gemm (10): `fused_qkv_a`, `q_b`, `o_proj`, `index_q_upproj`, `index_k` x
+    {prefill, decode} — deep_gemm `fp8_gemm_nt`, ue8m0 blockwise scales.
+    `index_k` prefill is driven by S=65536, not M.
+  - bmm (4): `absorbed_W_UK`, `absorbed_W_UV` x {prefill, decode} — `sgl_kernel.bmm_fp8`
+  - moe (6): `moe_{gate,up,down}_proj` x {prefill, decode} — masked DeepGEMM, EP-local E=8
+  - mla (2): `dsa_attn` x {prefill, decode} — `flash_mla_sparse_fwd`, s_kv=65536, top-k=2048
+  - score (2): `index_score` x {prefill, decode} — `fp8_mqa_logits` /
+    `fp8_paged_mqa_logits` (different kernels per phase)
+  - Sweeps: prefill M∈{1024,2048,4096}, decode M∈{16,32}. Every decode shape is
+    memory/launch-bound; most prefill shapes are compute-bound — which is why phases
+    are separate tasks.
+  - Baseline caveat: the reference is deep_gemm's f32-blockwise-scale path, ~1.6x
+    slower than SGLang's production int32-ue8m0 dispatch. `run.sh --describe` says so
+    per task.
+- Combined: 106 tasks across 28 unique family names.
 
 ### Diagnostic metrics (advisory only)
 

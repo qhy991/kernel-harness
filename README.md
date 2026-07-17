@@ -18,8 +18,10 @@ candidate drop-in for that kernel.
 
 ## 1. What this repo is
 
-- **Tasks, not a framework.** 91 tasks (Kimi-K2.7 39 + MiniMax-M3 43 + GLM-5.2 9) across
-  26 unique family names. No optimization-framework lock-in — any agent or human runs the same loop.
+- **Tasks, not a framework.** 106 tasks (Kimi-K2.7 39 + MiniMax-M3 43 + GLM-5.2 24) across
+  28 unique family names. No optimization-framework lock-in — any agent or human runs the same loop.
+  GLM-5.2 is the exception: its 12 operators x 2 phases share one definition
+  (`testbench/harness/glm52_ops.py`) and one command (`<task>/run.sh`); see AGENTS.md.
 - **Real oracle.** `reference.py` *is* the SGLang production kernel. Correctness is judged
   against its output; efficiency against its CUPTI-measured latency.
 - **Self-contained harness.** The evaluator, correctness checks, timing, and anti-gaming
@@ -73,8 +75,8 @@ heavily hand-tuned Blackwell kernel and are intentionally hard.
   `fused-add-rmsnorm` family).
 - `testbench/tasks/kimi_k27/mla_qk_rope_decode` — RoPE apply; fusion opportunity.
 - `testbench/tasks/kimi_k27/q_nope_absorb_bmm_decode` — small batched matmul (absorb BMM).
-- `testbench/tasks/glm52/routed_swiglu_decode` — GLM-5.2 fused act+quant on the EP-local MoE path.
-- `testbench/tasks/glm52/sparse_mla_decode` — B200 TRT-LLM Sparse MLA (ctx×bs workloads).
+- `testbench/tasks/glm52/o_proj_decode` — GLM-5.2 block-FP8 DeepGEMM, memory-bound at decode.
+  Ask any GLM-5.2 task what it is with `run.sh --describe`.
 
 ## 5. Dispatch one task to an agent
 

@@ -15,6 +15,50 @@ python3 testbench/bin/integration_status.py <model>/<task>
 
 See [`testbench/docs/AGENT_INTEGRATION.md`](testbench/docs/AGENT_INTEGRATION.md) for GLM-5.2 examples and failure modes.
 
+## GLM-5.2 uses a different contract — read this instead
+
+The rest of this guide (`solution.py`, `definition.json`, `evaluate.py`) describes the
+Kimi-K2.7 / MiniMax-M3 tasks. GLM-5.2's 24 tasks do **not** follow it. There, all 12
+operators are defined exactly once, in
+[`testbench/harness/glm52_ops.py`](testbench/harness/glm52_ops.py); a task directory
+names which problem it is and nothing else, so it has nothing it could contradict.
+
+```
+testbench/tasks/glm52/<task>/
+  task.json       operator + phase + the performance bar. Restating anything
+                  glm52_ops owns is rejected with exit 3.
+  workload.jsonl  the M sweep
+  candidate.py    the ONLY file you edit: run(inputs: dict) -> output
+  run.sh          the ONLY command
+  README.md       generated; identical to `run.sh --describe`
+```
+
+```bash
+./testbench/tasks/glm52/o_proj_decode/run.sh --describe   # what is this problem?
+./testbench/tasks/glm52/o_proj_decode/run.sh --repeat 3   # the gate
+```
+
+Exit codes: **0** correct and faster · **1** correct, not faster · **2** incorrect ·
+**3** infrastructure or contract error. One command reports correctness, latency,
+speedup and roofline reward, and persists the run under `runs/glm52/<task>/<run_id>/`.
+
+Things that differ from the loop below, and will bite if you assume otherwise:
+
+- `inputs` is a frozen dict from `glm52_ops.build_inputs`, shared byte-for-byte with
+  the reference. Re-quantizing or re-seeding inside `run()` measures a different
+  problem than the one the gate checked.
+- `inputs["out"]`, where present, is **NaN-poisoned** before `run()` is called.
+  Returning it unwritten fails — a no-op cannot inherit the reference's answer.
+- Correctness is not allclose and not cosine. It is FlashMLA's three-layer check:
+  anomaly positions, then per-element `abs OR rel`, then DeepGEMM's `calc_diff`.
+  `--describe` prints the exact tolerances and where each came from.
+- `--repeat 1` is a probe, not a verdict: noise is ±4%, so a candidate identical to
+  the reference passes a `>1.0` gate a good fraction of the time. The default is 3.
+- The baseline is deep_gemm's f32-blockwise-scale path, which is **~1.6x slower than
+  SGLang's production int32-ue8m0 dispatch**. A sub-1.6x speedup here does not mean
+  you beat production. `--describe` repeats this warning per task.
+- `integrate.py`, `definition.json` and `evaluate.py` do not apply to these tasks.
+
 ## Environment
 
 - Run on the target GPU node; the comparison uses the real SGLang kernels.
@@ -69,15 +113,22 @@ DeepGEMM GEMMs — they beat a hand-tuned Blackwell kernel and are intentionally
 - `testbench/tasks/kimi_k27/mla_qk_rope_decode`
 - `testbench/tasks/kimi_k27/q_nope_absorb_bmm_decode`
 
-**GLM-5.2 (B200, good agent headroom — check contract first):**
+**GLM-5.2 (B200) — different contract, see below.** Ask the task itself which
+problem it is and where the headroom is:
 
-- `testbench/tasks/glm52/routed_swiglu_prefill` — drop-in, fusion + buffer write wins
-- `testbench/tasks/glm52/routed_down_decode` — drop-in, dispatch/sync wins
-- `testbench/tasks/glm52/sparse_mla_decode` — fused-only; preserve device tensor scales
-- Avoid first: `o_proj_decode`, `routed_gateup_*` (DeepGEMM floor)
+```bash
+./testbench/tasks/glm52/o_proj_decode/run.sh --describe
+```
 
-List everything with `.venv/bin/python testbench/bin/inventory.py`
-(or `inventory.py --headroom glm52` for agent routing by difficulty + integrate contract).
+Every decode shape is memory- or launch-bound (arithmetic intensity ~30 against an
+fp8 ridge of 562); every prefill shape except the indexer and BMM ops is
+compute-bound. Same operator, opposite bottleneck — they are separate tasks for
+that reason. `--describe` prints the bound, and the `reward` column of a run is the
+utilisation of whichever resource binds, so a task sitting at reward 0.24 has
+headroom and one at 0.9 does not. That measurement is the routing signal; there is
+no hand-maintained difficulty list to go stale.
+
+List everything with `.venv/bin/python testbench/bin/inventory.py`.
 
 ## Knowledge base (recipes)
 

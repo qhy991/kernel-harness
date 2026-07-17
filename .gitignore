@@ -22,3 +22,6 @@ logs/local_*
 logs/*.tmp.*
 logs/results.json
 logs/results.csv
+
+# Per-machine evaluation run store (evaluate_task.py); append-only, not portable
+runs/

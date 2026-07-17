@@ -27,6 +27,59 @@ from pathlib import Path
 
 CONTRACT_FILES = ("definition.json", "reference.py", "solution.py",
                   "task.json", "workload.jsonl", "run.sh")
+
+# GLM-5.2 does not use the contract above. Its operators are defined once, in
+# testbench/harness/glm52_ops.py, and the task directory only names which problem
+# it is — there is no per-task definition.json/reference.py/solution.py to
+# validate, because there is no per-task definition. See sync_glm52_tasks.py.
+GLM52_CONTRACT_FILES = ("task.json", "workload.jsonl", "candidate.py",
+                        "run.sh", "README.md")
+GLM52_OBSOLETE = ("definition.json", "reference.py", "solution.py",
+                  "impl.py", "verify.py")
+GLM52_TASK_JSON_KEYS = ("name", "model", "operator", "phase", "family",
+                        "performance_gate")
+
+
+def check_glm52_task(task: Path) -> list[str]:
+    """Structural check for the glm52 contract (stdlib only, like the rest of this
+    file). Semantic checks — operator exists, family matches, sweep matches — need
+    glm52_ops and therefore torch, so evaluate_task does them at run time and
+    exits 3 on a mismatch; `sync_glm52_tasks.py --check` covers them in CI."""
+    problems = []
+    missing = [f for f in GLM52_CONTRACT_FILES if not (task / f).is_file()]
+    if missing:
+        return [f"missing contract files: {missing}"]
+    left = [f for f in GLM52_OBSOLETE if (task / f).exists()]
+    if left:
+        problems.append(f"obsolete files from a superseded stack: {left} "
+                        f"(run testbench/bin/sync_glm52_tasks.py)")
+    try:
+        meta = json.loads((task / "task.json").read_text())
+    except Exception as e:
+        return problems + [f"task.json does not parse: {e}"]
+    for key in GLM52_TASK_JSON_KEYS:
+        if key not in meta:
+            problems.append(f"task.json missing key {key!r}")
+    for forbidden in ("diff_tol", "rel_tol", "abs_tol_factor", "sweep", "K", "N",
+                      "correctness", "performance", "contract"):
+        if forbidden in meta:
+            problems.append(f"task.json restates {forbidden!r}, which glm52_ops owns")
+    try:
+        for i, line in enumerate((task / "workload.jsonl").read_text().splitlines(), 1):
+            if line.strip():
+                wl = json.loads(line)
+                if "M" not in wl.get("axes", {}):
+                    problems.append(f"workload.jsonl line {i}: no axes.M")
+    except Exception as e:
+        problems.append(f"workload.jsonl does not parse: {e}")
+    try:
+        src = (task / "candidate.py").read_text()
+        if "run" not in _defines(src, "candidate.py", {"run"}):
+            problems.append("candidate.py defines no top-level run()")
+        compile(src, "candidate.py", "exec")
+    except SyntaxError as e:
+        problems.append(f"candidate.py does not compile: {e}")
+    return problems
 TOL_KEYS = ("max_atol", "max_rtol", "required_matched_ratio")
 TASK_JSON_KEYS = ("name", "op", "phase", "family", "sweep", "tolerance", "baseline")
 
@@ -39,6 +92,8 @@ def _defines(source: str, filename: str, names: set[str]) -> set[str]:
 
 
 def check_task(task: Path) -> list[str]:
+    if task.parent.name == "glm52":
+        return check_glm52_task(task)
     problems = []
     missing = [f for f in CONTRACT_FILES if not (task / f).is_file()]
     if missing:
