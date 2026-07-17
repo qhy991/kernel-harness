@@ -76,7 +76,22 @@ TASK  dsa_attn/prefill — DSA Sparse Attention
              timed iterations
 
   FAST       CUPTI cold-L2 device-kernel median
-             gate: min over shapes of (reference p10 / candidate p90) > 1.0 — a quantile, not max/min: dividing two extremes lets one artifact sample decide the verdict, which at repeat=10 is likely rather than rare
+             gate: at least one shape WINS and no shape REGRESSES
+               win      reference p10 / candidate p90 > 1.0 — the candidate is
+                        ahead even on the reading least favourable to it
+               regress  reference p90 / candidate p10 < 1.0 — the candidate is
+                        behind even on the reading most favourable to it
+               neutral  neither — inside the noise band; does not veto the run
+             run() may branch on the shape and hand the losing shapes to
+             glm52_ops.reference(op, phase, inputs). That is what SGLang
+             itself does (deepgemm_w8a8_block_fp8_linear_with_fallback), and
+             it is the expected answer when a kernel wins in one regime only:
+             the fallback shapes land as `neutral` and no longer veto the
+             win. Falling back on EVERY shape scores zero wins and still
+             fails, so this buys nothing unless something real is gained
+             somewhere. Do the dispatch inside run() — the harness will not
+             do it for you, because then it would be measuring a kernel the
+             candidate does not contain.
              defaults: warmup=3, repeat=10, iterations=30
 
   RUN        ./run.sh                        the gate

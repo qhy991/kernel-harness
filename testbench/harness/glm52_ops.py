@@ -786,10 +786,32 @@ def problem(op: str, phase: str, device=None) -> dict:
                                "paired with device time; a per-call wall-clock timer "
                                "reports ~99us for this op's ~47us kernel, and the "
                                "difference is host dispatch stall",
-            "gate": "min over shapes of (reference p10 / candidate p90) > 1.0 — a "
-                    "quantile, not max/min: dividing two extremes lets one artifact "
-                    "sample decide the verdict, which at repeat=10 is likely rather "
-                    "than rare",
+            "gate": "at least one shape WINS and no shape REGRESSES",
+            "shape_verdict": {
+                "win": "reference p10 / candidate p90 > 1.0 — the candidate is ahead "
+                       "even on the reading least favourable to it",
+                "regress": "reference p90 / candidate p10 < 1.0 — the candidate is "
+                           "behind even on the reading most favourable to it",
+                "neutral": "neither — inside the noise band; does not veto the run",
+                "why_quantiles": "not max/min: dividing two extremes lets one artifact "
+                                 "sample decide the verdict, which at repeat=10 is "
+                                 "likely rather than rare",
+                "why_not_all_shapes": "requiring every shape to win is unreachable the "
+                                      "moment one shape merely matches — an "
+                                      "identical-to-reference candidate measures "
+                                      "sp_cons 0.855-0.989, never above 1.0 — so it "
+                                      "made per-shape fallback impossible to express",
+            },
+            "fallback_is_allowed": (
+                "run() may branch on the shape and hand the losing shapes to "
+                "glm52_ops.reference(op, phase, inputs). That is what SGLang itself "
+                "does (deepgemm_w8a8_block_fp8_linear_with_fallback), and it is the "
+                "expected answer when a kernel wins in one regime only: the fallback "
+                "shapes land as `neutral` and no longer veto the win. Falling back on "
+                "EVERY shape scores zero wins and still fails, so this buys nothing "
+                "unless something real is gained somewhere. Do the dispatch inside "
+                "run() — the harness will not do it for you, because then it would be "
+                "measuring a kernel the candidate does not contain."),
             "defaults": {"warmup": 3, "repeat": 10, "iterations": 30},
             "repeat_note": "--repeat 1 is a probe, not a verdict: at 1 the conservative "
                            "margin collapses to the median one and a candidate identical "
@@ -872,6 +894,11 @@ def describe(op: str, phase: str, device=None) -> str:
     L += [f"             {line}" for line in _wrap(k["post_timing_recheck"], 64)]
     L += ["", f"  FAST       {f['timing'].split(':')[0]}"]
     L += [f"             gate: {f['gate']}"]
+    sv = f["shape_verdict"]
+    for key in ("win", "regress", "neutral"):
+        L += [f"               {key:<8} {line}" if i == 0 else f"                        {line}"
+              for i, line in enumerate(_wrap(sv[key], 54))]
+    L += [f"             {line}" for line in _wrap(f["fallback_is_allowed"], 64)]
     L += [f"             defaults: " + ", ".join(f"{a}={b}" for a, b in f["defaults"].items())]
     L += ["",
           "  RUN        ./run.sh                        the gate",

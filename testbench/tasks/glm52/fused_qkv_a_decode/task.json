@@ -12,7 +12,7 @@
   "performance_gate": {
     "min_speedup": 1.0,
     "basis": "conservative",
-    "detail": "min over shapes of (reference fastest sample / candidate slowest sample) > min_speedup, mirroring testbench/bin/evaluate.py"
+    "detail": "a shape WINS when reference_p10 / candidate_p90 > min_speedup and REGRESSES when reference_p90 / candidate_p10 < 1.0. The run passes with >=1 win and 0 regressions; shapes inside the noise band are neutral and do not veto. run() may fall back to glm52_ops.reference on shapes it cannot win \u2014 see `./run.sh --describe`."
   },
   "verdict": {
     "exit_0": "correct on every shape AND performance gate met",

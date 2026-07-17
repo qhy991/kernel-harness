@@ -133,7 +133,15 @@
   "performance": {
     "timing": "CUPTI cold-L2 device-kernel median: inputs cloned per iteration and L2 flushed before each, both outside the measured window",
     "why_device_time": "the reward is a hardware-utilisation ratio, so it must be paired with device time; a per-call wall-clock timer reports ~99us for this op's ~47us kernel, and the difference is host dispatch stall",
-    "gate": "min over shapes of (reference p10 / candidate p90) > 1.0 \u2014 a quantile, not max/min: dividing two extremes lets one artifact sample decide the verdict, which at repeat=10 is likely rather than rare",
+    "gate": "at least one shape WINS and no shape REGRESSES",
+    "shape_verdict": {
+      "win": "reference p10 / candidate p90 > 1.0 \u2014 the candidate is ahead even on the reading least favourable to it",
+      "regress": "reference p90 / candidate p10 < 1.0 \u2014 the candidate is behind even on the reading most favourable to it",
+      "neutral": "neither \u2014 inside the noise band; does not veto the run",
+      "why_quantiles": "not max/min: dividing two extremes lets one artifact sample decide the verdict, which at repeat=10 is likely rather than rare",
+      "why_not_all_shapes": "requiring every shape to win is unreachable the moment one shape merely matches \u2014 an identical-to-reference candidate measures sp_cons 0.855-0.989, never above 1.0 \u2014 so it made per-shape fallback impossible to express"
+    },
+    "fallback_is_allowed": "run() may branch on the shape and hand the losing shapes to glm52_ops.reference(op, phase, inputs). That is what SGLang itself does (deepgemm_w8a8_block_fp8_linear_with_fallback), and it is the expected answer when a kernel wins in one regime only: the fallback shapes land as `neutral` and no longer veto the win. Falling back on EVERY shape scores zero wins and still fails, so this buys nothing unless something real is gained somewhere. Do the dispatch inside run() \u2014 the harness will not do it for you, because then it would be measuring a kernel the candidate does not contain.",
     "defaults": {
       "warmup": 3,
       "repeat": 10,

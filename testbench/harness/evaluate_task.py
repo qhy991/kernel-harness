@@ -15,7 +15,8 @@ For every shape in the task's workload:
      elementwise (abs OR rel), then DeepGEMM's calc_diff.
   4. Only if correct, time candidate and reference on the same inputs and ABI.
   5. Re-check correctness on freshly built inputs after timing.
-  6. Turn the candidate latency into a bound-aware roofline reward.
+  6. Turn the candidate latency into a bound-aware roofline reward, and judge the
+     shape as win / regress / neutral.
 
 Why step 2 exists
 -----------------
@@ -272,11 +273,11 @@ def evaluate(task_dir: Path, args) -> tuple[dict, int]:
     # sub-row is the ceiling: without it a low reward reads as candidate headroom
     # when it may simply be the op's roof.
     hdr = (f"{'shape':>7} {'ok':>5} {'calc_diff':>10} {'cand_us':>9} {'ref_us':>9} "
-           f"{'speedup':>8} {'sp_cons':>8} {'AI':>7} {'bound':>7} {'TFLOP/s':>9} "
-           f"{'MFU':>7} {'GB/s':>9} {'BW':>7} {'reward':>8}")
+           f"{'speedup':>8} {'sp_cons':>8} {'verdict':>8} {'AI':>7} {'bound':>7} "
+           f"{'TFLOP/s':>9} {'MFU':>7} {'GB/s':>9} {'BW':>7} {'reward':>8}")
     print(hdr)
 
-    per_shape, sp_med_all, sp_cons_all = [], [], []
+    per_shape, sp_med_all, sp_cons_all, shape_verdicts = [], [], [], []
     all_correct = True
     workloads = _load_workloads(task_dir, args.M, args.max_workloads)
 
@@ -341,8 +342,22 @@ def evaluate(task_dir: Path, args) -> tuple[dict, int]:
         # still recorded and still drive the instability warning.
         c_tail, b_tail = _pct(cand_s, CONS_Q), _pct(ref_s, 1.0 - CONS_Q)
         s_cons = b_tail / c_tail
+        # The mirror image: the candidate's fast tail against the reference's slow one.
+        # A shape only counts as a regression if the candidate loses even under this,
+        # the reading most favourable to it — anything else is inside the noise.
+        s_opt = _pct(ref_s, CONS_Q) / _pct(cand_s, 1.0 - CONS_Q)
+        # Three outcomes, not two. min(sp_cons) > 1 required EVERY shape to win, which
+        # is unreachable the moment one shape merely matches: an identical-to-reference
+        # candidate measures sp_cons 0.855-0.989, never above 1.0. That made per-shape
+        # fallback — what SGLang itself does, see
+        # deepgemm_w8a8_block_fp8_linear_with_fallback — impossible to express: winning
+        # 1.5x on M=16 and falling back on M=32 scored "not faster". A shape now wins,
+        # regresses, or is neutral, and neutral does not veto.
+        shape_verdict = ("win" if s_cons > min_speedup_gate
+                         else "regress" if s_opt < 1.0 else "neutral")
         sp_med_all.append(s_med)
         sp_cons_all.append(s_cons)
+        shape_verdicts.append(shape_verdict)
 
         # The conservative margin divides extremes, so ONE bad sample decides the
         # verdict. Medians here are stable to ~0.2% across runs, yet a whole
@@ -391,6 +406,7 @@ def evaluate(task_dir: Path, args) -> tuple[dict, int]:
             reference_us_p10=round(b_tail * 1e3, 3),
             conservative_quantile=CONS_Q,
             speedup=round(s_med, 4), speedup_conservative=round(s_cons, 4),
+            speedup_optimistic=round(s_opt, 4), shape_verdict=shape_verdict,
             bound=cand_r["bound"], arithmetic_intensity=cand_r["arithmetic_intensity"],
             ridge=cand_r["ridge"],
             reward=cand_r["reward"], reference_reward=ref_r["reward"],
@@ -402,12 +418,13 @@ def evaluate(task_dir: Path, args) -> tuple[dict, int]:
         mark = "PASS" if (ok and post_ok) else "DRIFT"
         print(f"{shape:>7} {mark:>5} {c['calc_diff']:>10.2e} "
               f"{c_med*1e3:>9.2f} {b_med*1e3:>9.2f} {s_med:>7.3f}x {s_cons:>7.3f}x "
+              f"{shape_verdict.upper() if shape_verdict != 'neutral' else 'neutral':>8} "
               f"{cand_r['arithmetic_intensity']:>7.1f} {cand_r['bound']:>7} "
               f"{cand_r['tflops']:>9.1f} {cand_r['compute_util']*100:>6.2f}% "
               f"{cand_r['gbps']:>9.1f} {cand_r['bw_util']*100:>6.2f}% "
               f"{cand_r['reward']:>8.4f}")
         print(f"{'':>7} {'└ ref':>5} {'baseline':>10} "
-              f"{'':>9} {'':>9} {'':>8} {'':>8} {'':>7} {'':>7} "
+              f"{'':>9} {'':>9} {'':>8} {'':>8} {'':>8} {'':>7} {'':>7} "
               f"{ref_r['tflops']:>9.1f} {ref_r['compute_util']*100:>6.2f}% "
               f"{ref_r['gbps']:>9.1f} {ref_r['bw_util']*100:>6.2f}% "
               f"{ref_r['reward']:>8.4f}")
@@ -416,6 +433,8 @@ def evaluate(task_dir: Path, args) -> tuple[dict, int]:
     rewards = [r["reward"] for r in per_shape if "reward" in r]
     diffs = [r["calc_diff"] for r in per_shape if r.get("calc_diff") is not None]
     complete = len(per_shape) == len(workloads)
+    wins = shape_verdicts.count("win")
+    regressions = shape_verdicts.count("regress")
     aggregate = {
         "min_speedup": round(min(sp_med_all), 4) if sp_med_all else None,
         "geomean_speedup": round(_geomean(sp_med_all), 4) if sp_med_all else None,
@@ -427,23 +446,37 @@ def evaluate(task_dir: Path, args) -> tuple[dict, int]:
         "complete_sweep": complete,
         "timing_unstable_shapes": [r["uuid"] for r in per_shape
                                    if r.get("timing_unstable")],
+        "shapes_won": wins,
+        "shapes_regressed": regressions,
+        "shapes_neutral": shape_verdicts.count("neutral"),
+        "regressed_shapes": [r["uuid"] for r in per_shape
+                             if r.get("shape_verdict") == "regress"],
     }
 
     correct = bool(all_correct and per_shape and complete)
-    perf_ok = bool(correct and sp_cons_all
-                   and min(sp_cons_all) > min_speedup_gate)
+    # A win is a real gain somewhere with no regression anywhere. Requiring a gain
+    # EVERYWHERE punished the correct engineering answer; requiring one nowhere would
+    # pass a candidate that only ever falls back.
+    perf_ok = bool(correct and wins >= 1 and regressions == 0)
     status = "CORRECT" if correct else "INCORRECT"
     exit_code = 0 if perf_ok else (1 if correct else 2)
 
     print()
     print(f"VERDICT: {status}")
     if correct:
-        print(f"min_speedup={aggregate['min_speedup']}x  "
+        print(f"{wins}/{len(shape_verdicts)} shapes WIN, {regressions} regressed, "
+              f"{shape_verdicts.count('neutral')} neutral   "
               f"geomean_speedup={aggregate['geomean_speedup']}x  "
-              f"min_speedup_conservative={aggregate['min_speedup_conservative']}x  "
               f"best_reward={aggregate['best_reward']}")
-        print(f"performance_gate: min_speedup_conservative > {min_speedup_gate} -> "
+        print(f"performance_gate: >=1 win AND 0 regressions -> "
               f"{'MET' if perf_ok else 'NOT MET'}")
+        if wins == 0 and regressions == 0:
+            print("  (every shape is inside the noise band — a candidate that only "
+                  "matches the baseline is not a win)")
+        if regressions:
+            print(f"  regressed: {', '.join(aggregate['regressed_shapes'])} — the "
+                  f"candidate loses there even at its fastest sample vs the "
+                  f"reference's slowest. Fall back to the reference on those shapes.")
         if aggregate["timing_unstable_shapes"]:
             print(f"WARNING: unstable timing on "
                   f"{', '.join(aggregate['timing_unstable_shapes'])} — the "

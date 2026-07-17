@@ -60,7 +60,14 @@ Worked, measured examples of both:
 [`testbench/docs/GLM52_CANDIDATES.md`](testbench/docs/GLM52_CANDIDATES.md).
 
 Exit codes: **0** correct and faster · **1** correct, not faster · **2** incorrect ·
-**3** infrastructure or contract error. One command reports correctness, latency,
+**3** infrastructure or contract error. "Faster" means **at least one shape wins and
+none regresses** — not every shape. A shape wins when the candidate is ahead on the
+reading least favourable to it, regresses when it is behind on the most favourable
+one, and is otherwise neutral. So `run()` **may branch on the shape and fall back to
+`glm52_ops.reference` where it cannot win** — that is what SGLang itself does
+(`deepgemm_w8a8_block_fp8_linear_with_fallback`), and the fallback shapes land as
+neutral instead of vetoing the win. Falling back everywhere scores zero wins and
+still fails. One command reports correctness, latency,
 speedup and roofline reward, and persists the run under `runs/glm52/<task>/<run_id>/`.
 
 Things that differ from the loop below, and will bite if you assume otherwise:
