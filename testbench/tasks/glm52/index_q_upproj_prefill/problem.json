@@ -1,0 +1,166 @@
+{
+  "schema_version": "1.0",
+  "generated_by": "testbench/harness/glm52_ops.py:problem() \u2014 do not hand-edit",
+  "operator": "index_q_upproj",
+  "phase": "prefill",
+  "label": "Indexer Q Up-Projection",
+  "family": "gemm",
+  "model": "GLM-5.2",
+  "deployment": "B200 DP1/TP1/EP32",
+  "S": 65536,
+  "seed": 0,
+  "math": {
+    "expression": "out[M,4096] = x_fp8[M,2048] @ w_fp8[4096,2048].T",
+    "dims": {
+      "K": 2048,
+      "N": 4096,
+      "rows": "M"
+    },
+    "notes": []
+  },
+  "workload": {
+    "axis": "M",
+    "sweep": [
+      1024,
+      2048,
+      4096
+    ],
+    "rule": "every shape must pass correctness AND be beaten on latency"
+  },
+  "baseline": {
+    "backend": "deep_gemm.fp8_gemm_nt",
+    "call": "glm52_ops.reference('index_q_upproj', 'prefill', inputs)",
+    "role": "the correctness oracle AND the latency denominator \u2014 the same call, on the same frozen inputs, timed under the same protocol",
+    "caveat": "This is deep_gemm's f32-blockwise-scale path, NOT SGLang's production dispatch (deepgemm_w8a8_block_fp8_linear_with_fallback, which passes int32-packed ue8m0 scales to w8a8_block_fp8_matmul_deepgemm). Both land in deep_gemm; only the scale representation differs. Measured on B200 under this exact timing protocol, o_proj decode: production 33.1us vs this reference 53.3us at M=16 \u2014 production is ~1.6x FASTER. So reproducing SGLang's production call scores a ~1.6x 'win' here having improved nothing: a sub-1.6x speedup does not mean beating production. Kept deliberately \u2014 opbench (PR1) and rewardbench (PR2) agree on this definition and it is the frozen, verified standard."
+  },
+  "contract": {
+    "entrypoint": "run(inputs: dict) -> output",
+    "where": "candidate.py in this directory, or any file/directory passed to --candidate (it may live anywhere; testing a kernel does not require editing the task)",
+    "inputs_call": "glm52_ops.build_inputs('index_q_upproj', 'prefill', M, S, device, seed)",
+    "frozen": "the very same dict feeds the reference \u2014 do NOT re-quantize, re-seed, or rebuild any tensor inside run(), or you measure a different problem than the one the gate checked",
+    "tensors": {
+      "at_M": 1024,
+      "read_from": "a real build_inputs() call",
+      "items": [
+        {
+          "name": "x_fp8",
+          "shape": [
+            1024,
+            2048
+          ],
+          "dtype": "float8_e4m3fn"
+        },
+        {
+          "name": "x_scale",
+          "shape": [
+            1024,
+            16
+          ],
+          "dtype": "float32"
+        },
+        {
+          "name": "w_fp8",
+          "shape": [
+            4096,
+            2048
+          ],
+          "dtype": "float8_e4m3fn"
+        },
+        {
+          "name": "w_scale",
+          "shape": [
+            32,
+            16
+          ],
+          "dtype": "float32"
+        },
+        {
+          "name": "rows",
+          "value": 1024
+        },
+        {
+          "name": "N",
+          "value": 4096
+        },
+        {
+          "name": "out",
+          "shape": [
+            1024,
+            4096
+          ],
+          "dtype": "bfloat16"
+        }
+      ]
+    },
+    "tensors_error": null,
+    "output_buffer": {
+      "key": "out",
+      "may_write_in_place": true,
+      "poisoned": "NaN-filled before run() is called",
+      "why": "reference() writes into this shared buffer, so without poisoning a candidate whose whole body is `return inputs['out']` inherits the reference's answer and scores a perfect match having computed nothing. Returning it unwritten now FAILS."
+    },
+    "accepted_forms": [
+      "Python / PyTorch \u2014 a .py defining run(inputs)",
+      "Triton \u2014 @triton.jit / @triton.autotune live in that same .py; nothing special needed",
+      "CUDA .cu \u2014 pass a directory holding candidate.py + the .cu, and let candidate.py torch.utils.cpp_extension.load() it at import time (compilation happens outside the timed window). A bare .cu cannot be passed: nothing in it says which __global__ to launch, with what grid, or how the inputs dict maps to its arguments. run(inputs) is that missing statement, and it is the whole ABI."
+    ]
+  },
+  "correctness": {
+    "output_kind": "dense",
+    "structure": "FlashMLA kernelkit.check_is_allclose; the aggregate is deep_gemm.testing.numeric.calc_diff verbatim",
+    "layers": [
+      {
+        "order": 1,
+        "check": "inf / -inf / nan occupy the same positions in both"
+      },
+      {
+        "order": 2,
+        "check": "every element: abs_err < abs_tol OR rel_err < rel_tol",
+        "rel_tol": 0.015703125,
+        "abs_tol": "1e-04 * |ref|.max(), computed per shape",
+        "why_or": "large elements pass on relative error, near-zero elements on absolute \u2014 neither alone works",
+        "why_derived_abs_tol": "output magnitude spans seven orders across these 12 ops (dsa_attn 0.285, o_proj 564, index_score 1.5e7), so a fixed abs_tol cannot port"
+      },
+      {
+        "order": 3,
+        "check": "calc_diff <= diff_tol",
+        "diff_tol": 5e-06,
+        "formula": "||x-y||^2 / (||x||^2 + ||y||^2)",
+        "why": "scale-SENSITIVE, unlike cosine \u2014 a uniform k*reference is caught here (k=0.5 or 2 both give 0.2)"
+      }
+    ],
+    "post_timing_recheck": "correctness is re-checked on freshly built inputs after timing, to catch a kernel that mutates its inputs or drifts across the timed iterations"
+  },
+  "performance": {
+    "timing": "CUPTI cold-L2 device-kernel median: inputs cloned per iteration and L2 flushed before each, both outside the measured window",
+    "why_device_time": "the reward is a hardware-utilisation ratio, so it must be paired with device time; a per-call wall-clock timer reports ~99us for this op's ~47us kernel, and the difference is host dispatch stall",
+    "gate": "min over shapes of (reference fastest sample / candidate slowest sample) > 1.0",
+    "defaults": {
+      "warmup": 3,
+      "repeat": 10,
+      "iterations": 30
+    },
+    "repeat_note": "--repeat 1 is a probe, not a verdict: at 1 the conservative margin collapses to the median one and a candidate identical to the reference passes a >1.0 gate a good fraction of the time",
+    "reward": "bound-aware roofline utilisation: (flops/latency) / min(peak_flops, ai*peak_bw); unclamped",
+    "peaks": {
+      "gpu": "NVIDIA B200",
+      "hbm_bytes_per_s": 8000000000000.0,
+      "peak_flops_fp8": 4500000000000000.0,
+      "peak_flops_bf16": 2250000000000000.0,
+      "source": "rewardbench (PR2) + testbench/harness/profile.py; opbench/mfu.py's 7.7e12 not used"
+    }
+  },
+  "verdict": {
+    "exit_0": "correct on every shape AND performance gate met",
+    "exit_1": "correct on every shape, performance gate not met",
+    "exit_2": "incorrect, incomplete sweep, or correctness did not survive timing",
+    "exit_3": "infrastructure error, or task.json disagrees with glm52_ops"
+  },
+  "run": {
+    "gate": "./run.sh",
+    "describe": "./run.sh --describe        (this text)",
+    "describe_json": "./run.sh --describe --json",
+    "external_candidate": "./run.sh --candidate PATH",
+    "one_shape": "./run.sh --M <M>"
+  }
+}

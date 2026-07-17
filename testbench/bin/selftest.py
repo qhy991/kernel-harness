@@ -32,7 +32,7 @@ CONTRACT_FILES = ("definition.json", "reference.py", "solution.py",
 # testbench/harness/glm52_ops.py, and the task directory only names which problem
 # it is — there is no per-task definition.json/reference.py/solution.py to
 # validate, because there is no per-task definition. See sync_glm52_tasks.py.
-GLM52_CONTRACT_FILES = ("task.json", "workload.jsonl", "candidate.py",
+GLM52_CONTRACT_FILES = ("task.json", "problem.json", "workload.jsonl", "candidate.py",
                         "run.sh", "README.md")
 GLM52_OBSOLETE = ("definition.json", "reference.py", "solution.py",
                   "impl.py", "verify.py")

@@ -47,19 +47,19 @@ correlating launches to kernels and measuring only the device span.
 The real cold-vs-warm penalty, once dispatch is excluded, is ~12% for this op
 (53us cold vs 47us warm), not the ~2.4x a per-call event timer suggests.
 
-`--repeat K` (default 3) takes K samples per shape and gates on the worst-case
+`--repeat K` (default 10) takes K samples per shape and gates on the worst-case
 margin: candidate slowest vs reference fastest, mirroring evaluate.py. This is
 not pedantry. Measured noise here is +-5%, so at K=1 the conservative margin
 collapses to the median one and a candidate that *is* the reference scores
-0.947x-1.022x — passing a >1.0 gate roughly half the time. At K=3 that same
-candidate scores 0.909x and is correctly refused. Use --repeat 1 as a probe, not
-as a verdict.
+0.947x-1.022x — passing a >1.0 gate roughly half the time. At K>=3 that same
+candidate is refused. Use --repeat 1 as a probe, not as a verdict. Default
+warmup is 3.
 
 Unlike evaluate.py the samples are in-process, so they capture run-level but not
 process-level noise; result.json records this as repeat_scope="in-process".
 
-    ./run.sh --repeat 3
-    python testbench/harness/evaluate_task.py <task_dir> --repeat 3
+    ./run.sh
+    python testbench/harness/evaluate_task.py <task_dir>
 """
 from __future__ import annotations
 
@@ -221,9 +221,11 @@ def evaluate(task_dir: Path, args) -> tuple[dict, int]:
     device = torch.device(args.device)
     torch.cuda.set_device(device)
 
-    cand_fn, cand_label, cand_path = candidate_loader.load(task_dir, op, phase)
+    cand_fn, cand_label, cand_path = candidate_loader.resolve(
+        task_dir, op, phase, override=args.candidate)
     RH.check_monkey_patch()
     cand_sha = result_store.sha256_file(cand_path) if cand_path else None
+    # The run record must name the exact bytes that ran, not where we hoped they were.
 
     run_id = result_store.new_run_id()
     started = result_store.utc_now()
@@ -411,7 +413,9 @@ def evaluate(task_dir: Path, args) -> tuple[dict, int]:
             "reward_standard": "rewardbench bound-aware roofline (PR2)",
         },
         "candidate": {"path": cand_label, "sha256": cand_sha,
-                      "is_reference_fallback": cand_label == "reference"},
+                      "is_reference_fallback": cand_label == "reference",
+                      "external": bool(args.candidate),
+                      "_abspath": cand_path},
         "environment": result_store.capture_environment(),
         "cost_model": ops.PEAKS,
         "per_shape": per_shape,
@@ -425,20 +429,28 @@ def evaluate(task_dir: Path, args) -> tuple[dict, int]:
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
     ap.add_argument("task_dir", nargs="?", default=None)
-    # Default 3, not 1. At --repeat 1 the conservative margin collapses to the
+    # Default 10, not 1. At --repeat 1 the conservative margin collapses to the
     # median one, and measured noise on this hardware is +-5%: a candidate that
     # IS the reference then scores 0.947x-1.022x and passes the >1.0 gate about
-    # half the time. Three samples make the gate demand a real margin.
-    ap.add_argument("--repeat", type=int, default=3,
+    # half the time. Ten samples make the gate demand a real margin.
+    ap.add_argument("--repeat", type=int, default=10,
                     help="samples per shape; 1 is a probe and cannot gate a win")
     ap.add_argument("--iterations", type=int, default=30, help="cold-L2 reps per sample")
-    ap.add_argument("--warmup", type=int, default=5)
+    ap.add_argument("--warmup", type=int, default=3)
     ap.add_argument("--max-workloads", type=int, default=None)
+    ap.add_argument("--candidate", default=None, metavar="PATH",
+                    help="a .py defining run(inputs), or a directory holding "
+                         "candidate.py/solution.py/impl.py. May live anywhere — the "
+                         "kernel under test need not be in this repo, and testing it "
+                         "does not require editing the task. "
+                         "Default: <task_dir>/candidate.py")
     ap.add_argument("--M", type=int, default=None, help="single shape instead of the sweep")
     ap.add_argument("--device", default="cuda:0")
     ap.add_argument("--no-persist", action="store_true")
     ap.add_argument("--describe", action="store_true",
                     help="print the problem statement (generated from glm52_ops) and exit")
+    ap.add_argument("--json", action="store_true",
+                    help="with --describe: emit the problem definition as JSON")
     args = ap.parse_args()
 
     task_dir = Path(args.task_dir).resolve() if args.task_dir else Path.cwd()
@@ -455,7 +467,10 @@ def main() -> int:
         # off a real build_inputs call, which needs a GPU. Without it the contract
         # still prints, minus the shape table.
         dev = args.device if torch.cuda.is_available() else None
-        print(ops.describe(op, meta["phase"], device=dev))
+        if args.json:
+            print(json.dumps(ops.problem(op, meta["phase"], device=dev), indent=2))
+        else:
+            print(ops.describe(op, meta["phase"], device=dev))
         return 0
 
     if not torch.cuda.is_available():
@@ -478,13 +493,17 @@ def main() -> int:
     finally:
         sys.stdout = real_stdout
 
+    # A Path is not JSON-serialisable and this key is internal, so it has to leave
+    # `result` before persist() serialises it — but persist still needs the location
+    # to copy the exact bytes that ran into the run directory.
+    cand_abspath = result["candidate"].pop("_abspath", None)
+
     if not args.no_persist:
         try:
             d = result_store.persist(
                 result, model=result["task"]["model"], task=task_dir.name,
                 run_id=result["run"]["run_id"], stdout_text=tee.buffer_text.getvalue(),
-                candidate_path=(task_dir / Path(result["candidate"]["path"]).name
-                                if result["candidate"]["sha256"] else None))
+                candidate_path=cand_abspath)
             rel = d.relative_to(_REPO_ROOT)
             print(f"result={rel}/result.json")
             result["run"]["result_dir"] = str(rel)

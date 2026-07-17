@@ -5,6 +5,9 @@ glm52_ops is the only place an operator is defined. This tool projects it onto
 the task tree, so a task directory holds nothing it could disagree with:
 
     task.json       operator/phase/gate only — no restated shapes or thresholds
+    problem.json    the full problem definition, machine-readable; == `run.sh
+                    --describe --json`. Generated, so it is a projection of
+                    glm52_ops rather than a second copy that could contradict it.
     workload.jsonl  the sweep, read from glm52_ops
     candidate.py    the agent's file; NEVER overwritten if it already exists
     run.sh          the single entry point
@@ -75,10 +78,17 @@ OBSOLETE = ("impl.py", "verify.py", "solution.py", "definition.json", "reference
 RUN_SH = '''#!/usr/bin/env bash
 # The single entry point for this task.
 #
-#   ./run.sh --describe      # what is this problem? (generated from glm52_ops)
-#   ./run.sh                 # full sweep, 3 samples per shape — the gate
-#   ./run.sh --M {m}          # one shape
+#   ./run.sh --describe          # what is this problem? (generated from glm52_ops)
+#   ./run.sh --describe --json   # ...the same thing, machine-readable (== problem.json)
+#   ./run.sh                 # full sweep; defaults warmup=3, repeat=10
+#   ./run.sh --M {m}         # one shape
 #   ./run.sh --repeat 1      # fast probe. CANNOT gate a win.
+#
+# To test a kernel that is NOT this directory's candidate.py — the usual case, since
+# nothing should have to edit the task to be measured:
+#
+#   ./run.sh --candidate ~/my_kernels/o_proj.py    # any .py defining run(inputs)
+#   ./run.sh --candidate ~/my_kernels/             # or a dir holding candidate.py
 #
 # Exit: 0 correct+fast · 1 correct+not-faster · 2 incorrect · 3 infra/contract error
 set -euo pipefail
@@ -178,6 +188,10 @@ def _candidate_src(op: str, phase: str, device) -> str:
     table = "\n".join(tensors) or "    (run ./run.sh --describe on a GPU node for the tensor table)"
     doc = f'''"""GLM-5.2 {s['label']} ({phase}) — the one file to edit for this task.
 
+This file is the DEFAULT candidate, not the only one: `./run.sh --candidate PATH`
+tests any .py defining run(inputs), from anywhere on disk, without touching the task.
+Editing this file is just the convenient path.
+
 Run `./run.sh --describe` for the full contract. The short version:
 
 `inputs` is the frozen dict from glm52_ops.build_inputs. The very same dict feeds
@@ -200,7 +214,7 @@ NaN-poisons it before calling run(): returning it unwritten FAILS.
     doc += f'''
 Baseline to beat: the call below, timed CUPTI cold-L2 on these same inputs.
 
-    ./run.sh --repeat 3
+    ./run.sh
 """
 from __future__ import annotations
 
@@ -282,6 +296,7 @@ def main() -> int:
         d.mkdir(parents=True, exist_ok=True)
         want = {
             "task.json": _task_json(dirname, op, phase),
+            "problem.json": json.dumps(ops.problem(op, phase, device), indent=2) + "\n",
             "workload.jsonl": _workload(dirname, op, phase),
             "run.sh": RUN_SH.format(m=ops.spec(op, phase)["sweep"][0]),
             "README.md": _readme(dirname, op, phase, device),

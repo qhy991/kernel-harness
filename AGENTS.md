@@ -27,16 +27,37 @@ names which problem it is and nothing else, so it has nothing it could contradic
 testbench/tasks/glm52/<task>/
   task.json       operator + phase + the performance bar. Restating anything
                   glm52_ops owns is rejected with exit 3.
+  problem.json    the whole problem definition, machine-readable. Generated —
+                  read it, never edit it.
   workload.jsonl  the M sweep
-  candidate.py    the ONLY file you edit: run(inputs: dict) -> output
+  candidate.py    the default candidate: run(inputs: dict) -> output
   run.sh          the ONLY command
   README.md       generated; identical to `run.sh --describe`
 ```
 
 ```bash
-./testbench/tasks/glm52/o_proj_decode/run.sh --describe   # what is this problem?
-./testbench/tasks/glm52/o_proj_decode/run.sh --repeat 3   # the gate
+T=testbench/tasks/glm52/o_proj_decode
+
+$T/run.sh --describe          # what is this problem? (tensor table included)
+$T/run.sh --describe --json   # ...the same, machine-readable (== problem.json)
+$T/run.sh                     # the gate (warmup=3, repeat=10)
 ```
+
+The whole ABI is `run(inputs: dict) -> output`. You do **not** have to edit the task
+to be measured — `--candidate` takes any file or directory, anywhere on disk:
+
+```bash
+$T/run.sh --candidate ~/kernels/o_proj.py     # PyTorch, or Triton — both are just .py
+$T/run.sh --candidate ~/kernels/o_proj_cu/    # a dir: candidate.py compiles its .cu
+```
+
+Triton needs nothing special (`@triton.jit`/`@triton.autotune` live in that .py). A
+`.cu` goes through a candidate.py that `torch.utils.cpp_extension.load()`s it at
+import time, so compilation stays outside the timed window. A bare `.cu` cannot be
+passed: nothing in it says which `__global__` to launch, with what grid, or how the
+inputs map to its arguments — `run(inputs)` is exactly that missing statement.
+Worked, measured examples of both:
+[`testbench/docs/GLM52_CANDIDATES.md`](testbench/docs/GLM52_CANDIDATES.md).
 
 Exit codes: **0** correct and faster · **1** correct, not faster · **2** incorrect ·
 **3** infrastructure or contract error. One command reports correctness, latency,
@@ -53,7 +74,8 @@ Things that differ from the loop below, and will bite if you assume otherwise:
   anomaly positions, then per-element `abs OR rel`, then DeepGEMM's `calc_diff`.
   `--describe` prints the exact tolerances and where each came from.
 - `--repeat 1` is a probe, not a verdict: noise is ±4%, so a candidate identical to
-  the reference passes a `>1.0` gate a good fraction of the time. The default is 3.
+  the reference passes a `>1.0` gate a good fraction of the time. The default is
+  **warmup=3, repeat=10**.
 - The baseline is deep_gemm's f32-blockwise-scale path, which is **~1.6x slower than
   SGLang's production int32-ue8m0 dispatch**. A sub-1.6x speedup here does not mean
   you beat production. `--describe` repeats this warning per task.

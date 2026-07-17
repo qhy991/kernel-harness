@@ -91,34 +91,57 @@ def _adapt_positional(mod, fam: str, phase: str) -> Callable:
     raise ValueError(f"unknown family {fam}")
 
 
-def load(task_dir: Path, op: str, phase: str) -> tuple[Callable, str, Path | None]:
-    """Return (run_callable, source_label, source_path)."""
-    fam = ops.family(op)
+CANDIDATE_NAMES = ("candidate.py", "solution.py", "impl.py")
 
-    for name in ("candidate.py", "impl.py"):
+
+def _bind(path: Path, op: str, phase: str) -> tuple[Callable, str, Path]:
+    """Load one file and adapt whatever `run` it defines to run(inputs)."""
+    try:
+        mod = _load_module(path, f"cand_{path.parent.name}_{path.stem}")
+    except Exception as exc:
+        raise RuntimeError(f"cannot import {path}: {type(exc).__name__}: {exc}") from exc
+    if not hasattr(mod, "run"):
+        raise AttributeError(f"{path} defines no top-level run()")
+    fn = (mod.run if _takes_inputs_dict(mod.run)
+          else _adapt_positional(mod, ops.family(op), phase))
+    try:
+        label = str(path.relative_to(_REPO_ROOT))
+    except ValueError:
+        label = str(path)          # candidate lives outside the repo — that is fine
+    return fn, label, path
+
+
+def resolve(task_dir: Path, op: str, phase: str,
+            override: str | Path | None = None) -> tuple[Callable, str, Path | None]:
+    """Return (run_callable, source_label, source_path).
+
+    `override` (--candidate) accepts a .py file or a directory holding one of
+    CANDIDATE_NAMES, anywhere on disk — the kernel under test does not have to live
+    in this repo, and testing it must not require editing the task. Without it the
+    task's own candidate.py is used, and if even that is absent the reference stands
+    in, which measures the backend against itself: a meaningful baseline, not a pass.
+    """
+    if override is not None:
+        p = Path(override).expanduser().resolve()
+        if p.is_dir():
+            for name in CANDIDATE_NAMES:
+                if (p / name).is_file():
+                    p = p / name
+                    break
+            else:
+                raise FileNotFoundError(
+                    f"--candidate {override}: directory holds none of {CANDIDATE_NAMES}")
+        elif not p.is_file():
+            raise FileNotFoundError(f"--candidate {override}: no such file or directory")
+        return _bind(p, op, phase)
+
+    for name in CANDIDATE_NAMES:
         path = task_dir / name
         if path.is_file():
-            mod = _load_module(path, f"{name[:-3]}_{task_dir.name}")
-            if not hasattr(mod, "run"):
-                raise AttributeError(f"{path} defines no run(inputs)")
-            if not _takes_inputs_dict(mod.run):
-                raise TypeError(
-                    f"{path}: run() must take a single `inputs` dict "
-                    f"(got {list(inspect.signature(mod.run).parameters)})")
-            return mod.run, str(path.relative_to(_REPO_ROOT)), path
-
-    sol = task_dir / "solution.py"
-    if sol.is_file():
-        try:
-            mod = _load_module(sol, f"solution_{task_dir.name}")
-        except Exception as exc:
-            raise RuntimeError(
-                f"cannot import {sol} (legacy solution.py often pulls in sglang "
-                f"top-level imports). Port it to candidate.py with run(inputs)."
-            ) from exc
-        if not hasattr(mod, "run"):
-            raise AttributeError(f"{sol} defines no run()")
-        fn = mod.run if _takes_inputs_dict(mod.run) else _adapt_positional(mod, fam, phase)
-        return fn, str(sol.relative_to(_REPO_ROOT)), sol
+            return _bind(path, op, phase)
 
     return partial(ops.reference, op, phase), "reference", None
+
+
+# Back-compat alias for the original name.
+load = resolve

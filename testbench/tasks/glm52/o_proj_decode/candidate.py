@@ -22,7 +22,7 @@ no-op cannot inherit the reference's answer.
 
 Baseline to beat: the deep_gemm call below, timed cold-L2 on these same inputs.
 
-    ./run.sh --repeat 3
+    ./run.sh
 """
 from __future__ import annotations
 

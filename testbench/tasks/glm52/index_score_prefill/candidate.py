@@ -21,7 +21,7 @@ cosine alone is scale-blind, so both gate.
 
 Baseline to beat: the call below, timed CUPTI cold-L2 on these same inputs.
 
-    ./run.sh --repeat 3
+    ./run.sh
 """
 from __future__ import annotations
 

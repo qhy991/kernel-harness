@@ -615,84 +615,273 @@ def reward(latency_ms: float, flops: float, bytes_hbm: float, compute_dtype: str
 # ══════════════════════════════════════════════════════════════════════════
 # The agent-facing problem statement — generated, so it cannot drift
 # ══════════════════════════════════════════════════════════════════════════
-def describe(op: str, phase: str, device=None) -> str:
-    """Render the problem: what it is, the workload, the baseline, how it is judged.
+PROBLEM_SCHEMA_VERSION = "1.0"
+
+BASELINE_CAVEAT = (
+    "This is deep_gemm's f32-blockwise-scale path, NOT SGLang's production dispatch "
+    "(deepgemm_w8a8_block_fp8_linear_with_fallback, which passes int32-packed ue8m0 "
+    "scales to w8a8_block_fp8_matmul_deepgemm). Both land in deep_gemm; only the scale "
+    "representation differs. Measured on B200 under this exact timing protocol, o_proj "
+    "decode: production 33.1us vs this reference 53.3us at M=16 — production is ~1.6x "
+    "FASTER. So reproducing SGLang's production call scores a ~1.6x 'win' here having "
+    "improved nothing: a sub-1.6x speedup does not mean beating production. Kept "
+    "deliberately — opbench (PR1) and rewardbench (PR2) agree on this definition and it "
+    "is the frozen, verified standard."
+)
+
+ACCEPTED_CANDIDATE_FORMS = [
+    "Python / PyTorch — a .py defining run(inputs)",
+    "Triton — @triton.jit / @triton.autotune live in that same .py; nothing special needed",
+    "CUDA .cu — pass a directory holding candidate.py + the .cu, and let candidate.py "
+    "torch.utils.cpp_extension.load() it at import time (compilation happens outside the "
+    "timed window). A bare .cu cannot be passed: nothing in it says which __global__ to "
+    "launch, with what grid, or how the inputs dict maps to its arguments. run(inputs) is "
+    "that missing statement, and it is the whole ABI.",
+]
+
+
+def problem(op: str, phase: str, device=None) -> dict:
+    """The complete problem definition as data. `describe()` renders exactly this, so
+    the prose and the JSON cannot disagree.
 
     Tensor shapes and dtypes are read off a REAL build_inputs() call rather than
-    transcribed, so this cannot disagree with what the harness actually runs.
+    transcribed, so neither can disagree with what the harness actually runs. Pass
+    `device` to include them; without a GPU that section is omitted, not guessed.
     """
     s = spec(op, phase)
-    L = [f"TASK  {op}/{phase} — {s['label']}",
-         f"  GLM-5.2, B200, DP1/TP1/EP32.  family={s['family']}  S={s['S']}  seed={s['seed']}",
-         ""]
-    if s["family"] == "gemm":
+    fam = s["family"]
+
+    math_notes = []
+    if fam == "gemm":
         rows = "S" if s["rows"] == "S_or_M" and phase == "prefill" else "M"
-        L.append(f"  MATH   out[{rows},{s['N']}] = x_fp8[{rows},{s['K']}] @ w_fp8[{s['N']},{s['K']}].T")
+        expr = f"out[{rows},{s['N']}] = x_fp8[{rows},{s['K']}] @ w_fp8[{s['N']},{s['K']}].T"
+        dims = {"K": s["K"], "N": s["N"], "rows": rows}
         if rows == "S":
-            L.append(f"         NOTE rows = S = {s['S']} (every KV token), not M: all "
-                     f"prefill shapes are one GEMM.")
-    elif s["family"] == "bmm":
-        L.append(f"  MATH   out[{s['batch']},M,{s['N']}] = A[{s['batch']},M,{s['K']}] @ "
-                 f"B[{s['batch']},{s['K']},{s['N']}]   (per-tensor fp8 scales)")
-    elif s["family"] == "moe":
-        L.append(f"  MATH   masked grouped GEMM over E={s['E']} experts, "
-                 f"K={s['K']} N={s['N']}, top_k={s['experts_per_tok']}")
-        L.append(f"         rows are replicated M*{s['experts_per_tok']} and bucketed by a "
-                 f"seeded multinomial (masked_m).")
-    elif s["family"] == "mla":
-        L.append(f"  MATH   sparse MLA: q[M,{NUM_HEADS},{D_QK}] over top-{TOPK} of "
-                 f"kv[{s['S']},1,{D_QK}] -> out[M,{NUM_HEADS},{D_V}]")
+            math_notes.append(
+                f"rows = S = {s['S']} (every KV token), not M — all prefill shapes are "
+                f"the same single GEMM. Intended; PR1 and PR2 agree.")
+    elif fam == "bmm":
+        expr = (f"out[{s['batch']},M,{s['N']}] = A[{s['batch']},M,{s['K']}] @ "
+                f"B[{s['batch']},{s['K']},{s['N']}]")
+        dims = {"K": s["K"], "N": s["N"], "batch": s["batch"]}
+        math_notes.append("per-tensor fp8 scales (cuBLAS path), not blockwise")
+    elif fam == "moe":
+        expr = (f"masked grouped GEMM over E={s['E']} experts, K={s['K']} N={s['N']}, "
+                f"top_k={s['experts_per_tok']}")
+        dims = {"K": s["K"], "N": s["N"], "E": s["E"], "top_k": s["experts_per_tok"]}
+        math_notes.append(
+            f"rows are replicated M*{s['experts_per_tok']} and bucketed into experts by a "
+            f"seeded multinomial (masked_m); expected_m is the per-expert slab capacity "
+            f"and is sized to hold the largest bin.")
+    elif fam == "mla":
+        expr = (f"sparse MLA: q[M,{NUM_HEADS},{D_QK}] attends the top-{TOPK} of "
+                f"kv[{s['S']},1,{D_QK}] -> out[M,{NUM_HEADS},{D_V}]")
+        dims = {"heads": NUM_HEADS, "d_qk": D_QK, "d_v": D_V, "topk": TOPK}
     else:
-        L.append(f"  MATH   indexer logits[M,{s['S']}] = sum_h weights[M,h] * "
-                 f"(q[M,h,{INDEX_HEAD_DIM}] . k[{s['S']},{INDEX_HEAD_DIM}])   h={INDEX_N_HEADS}")
-        L.append(f"         weights already carries the per-token q_scale and "
-                 f"softmax_scale ({INDEX_HEAD_DIM}**-0.5), as sglang folds them.")
-    L += ["",
-          f"  WORKLOAD   M in {s['sweep']}   (every shape must pass and must be beaten)",
-          "",
-          f"  BASELINE   {s['backend']}",
-          "             glm52_ops.reference(op, phase, inputs) — the SAME call, on the SAME",
-          "             frozen inputs, timed under the SAME protocol. It is both the",
-          "             correctness oracle and the latency denominator.",
-          "             CAVEAT: this is deep_gemm's f32-blockwise-scale path, NOT sglang's",
-          "             production int32-packed-ue8m0 dispatch, which is ~1.6x faster on",
-          "             o_proj. A sub-1.6x speedup here does not mean beating production.",
-          "",
-          "  CONTRACT   edit candidate.py only; it must define run(inputs) -> output.",
-          f"             inputs = glm52_ops.build_inputs({op!r}, {phase!r}, M, S, device, seed)",
-          "             frozen and quantized once — do NOT re-quantize or re-seed inside run().",
-          ]
+        expr = (f"indexer logits[M,{s['S']}] = sum_h weights[M,h] * "
+                f"(q[M,h,{INDEX_HEAD_DIM}] . k[{s['S']},{INDEX_HEAD_DIM}]),  h={INDEX_N_HEADS}")
+        dims = {"heads": INDEX_N_HEADS, "head_dim": INDEX_HEAD_DIM}
+        math_notes.append(
+            f"`weights` already carries the per-token q_scale and the index softmax_scale "
+            f"({INDEX_HEAD_DIM}**-0.5): fp8_mqa_logits takes no separate q scale, and real "
+            f"sglang folds them in before the call. Do not apply them again.")
+
+    tensors, tensors_error = None, None
     if device is not None:
         try:
             M0 = s["sweep"][0]
             ins = build_inputs(op, phase, M0, s["S"], device, s["seed"])
-            L.append(f"             tensors at M={M0} (read from a real build_inputs call):")
+            tensors = {"at_M": M0, "read_from": "a real build_inputs() call", "items": []}
             for k, v in ins.items():
                 if torch.is_tensor(v):
-                    L.append(f"               {k:<18} {str(tuple(v.shape)):<26} {v.dtype}")
+                    tensors["items"].append({"name": k, "shape": list(v.shape),
+                                             "dtype": str(v.dtype).replace("torch.", "")})
                 elif not isinstance(v, torch.device):
-                    L.append(f"               {k:<18} {v!r}")
+                    tensors["items"].append({"name": k, "value": v})
         except Exception as e:
-            L.append(f"             (could not build inputs: {type(e).__name__}: {e})")
-    if s["has_output_buffer"]:
-        L += ["             inputs['out'] is pre-allocated and MAY be written in place, but is",
-              "             NaN-poisoned before run(): returning it unwritten FAILS."]
+            tensors_error = f"{type(e).__name__}: {e}"
+
+    return {
+        "schema_version": PROBLEM_SCHEMA_VERSION,
+        "generated_by": "testbench/harness/glm52_ops.py:problem() — do not hand-edit",
+        "operator": op,
+        "phase": phase,
+        "label": s["label"],
+        "family": fam,
+        "model": "GLM-5.2",
+        "deployment": "B200 DP1/TP1/EP32",
+        "S": s["S"],
+        "seed": s["seed"],
+
+        "math": {"expression": expr, "dims": dims, "notes": math_notes},
+
+        "workload": {
+            "axis": "M",
+            "sweep": s["sweep"],
+            "rule": "every shape must pass correctness AND be beaten on latency",
+        },
+
+        "baseline": {
+            "backend": s["backend"],
+            "call": f"glm52_ops.reference({op!r}, {phase!r}, inputs)",
+            "role": "the correctness oracle AND the latency denominator — the same call, "
+                    "on the same frozen inputs, timed under the same protocol",
+            "caveat": BASELINE_CAVEAT,
+        },
+
+        "contract": {
+            "entrypoint": "run(inputs: dict) -> output",
+            "where": "candidate.py in this directory, or any file/directory passed to "
+                     "--candidate (it may live anywhere; testing a kernel does not "
+                     "require editing the task)",
+            "inputs_call": f"glm52_ops.build_inputs({op!r}, {phase!r}, M, S, device, seed)",
+            "frozen": "the very same dict feeds the reference — do NOT re-quantize, "
+                      "re-seed, or rebuild any tensor inside run(), or you measure a "
+                      "different problem than the one the gate checked",
+            "tensors": tensors,
+            "tensors_error": tensors_error,
+            "output_buffer": (
+                {"key": "out",
+                 "may_write_in_place": True,
+                 "poisoned": "NaN-filled before run() is called",
+                 "why": "reference() writes into this shared buffer, so without poisoning "
+                        "a candidate whose whole body is `return inputs['out']` inherits "
+                        "the reference's answer and scores a perfect match having computed "
+                        "nothing. Returning it unwritten now FAILS."}
+                if s["has_output_buffer"] else None),
+            "accepted_forms": ACCEPTED_CANDIDATE_FORMS,
+        },
+
+        "correctness": {
+            "output_kind": s["output_kind"],
+            "structure": "FlashMLA kernelkit.check_is_allclose; the aggregate is "
+                         "deep_gemm.testing.numeric.calc_diff verbatim",
+            "layers": [
+                {"order": 1, "check": "inf / -inf / nan occupy the same positions in both"},
+                {"order": 2,
+                 "check": "every element: abs_err < abs_tol OR rel_err < rel_tol",
+                 "rel_tol": s["rel_tol"],
+                 "abs_tol": f"{s['abs_tol_factor']:.0e} * |ref|.max(), computed per shape",
+                 "why_or": "large elements pass on relative error, near-zero elements on "
+                           "absolute — neither alone works",
+                 "why_derived_abs_tol": "output magnitude spans seven orders across these "
+                                        "12 ops (dsa_attn 0.285, o_proj 564, index_score "
+                                        "1.5e7), so a fixed abs_tol cannot port"},
+                {"order": 3,
+                 "check": "calc_diff <= diff_tol",
+                 "diff_tol": s["diff_tol"],
+                 "formula": "||x-y||^2 / (||x||^2 + ||y||^2)",
+                 "why": "scale-SENSITIVE, unlike cosine — a uniform k*reference is caught "
+                        "here (k=0.5 or 2 both give 0.2)"},
+            ],
+            "post_timing_recheck": "correctness is re-checked on freshly built inputs "
+                                   "after timing, to catch a kernel that mutates its "
+                                   "inputs or drifts across the timed iterations",
+        },
+
+        "performance": {
+            "timing": "CUPTI cold-L2 device-kernel median: inputs cloned per iteration and "
+                      "L2 flushed before each, both outside the measured window",
+            "why_device_time": "the reward is a hardware-utilisation ratio, so it must be "
+                               "paired with device time; a per-call wall-clock timer "
+                               "reports ~99us for this op's ~47us kernel, and the "
+                               "difference is host dispatch stall",
+            "gate": "min over shapes of (reference fastest sample / candidate slowest "
+                    "sample) > 1.0",
+            "defaults": {"warmup": 3, "repeat": 10, "iterations": 30},
+            "repeat_note": "--repeat 1 is a probe, not a verdict: at 1 the conservative "
+                           "margin collapses to the median one and a candidate identical "
+                           "to the reference passes a >1.0 gate a good fraction of the time",
+            "reward": "bound-aware roofline utilisation: (flops/latency) / "
+                      "min(peak_flops, ai*peak_bw); unclamped",
+            "peaks": PEAKS,
+        },
+
+        "verdict": {
+            "exit_0": "correct on every shape AND performance gate met",
+            "exit_1": "correct on every shape, performance gate not met",
+            "exit_2": "incorrect, incomplete sweep, or correctness did not survive timing",
+            "exit_3": "infrastructure error, or task.json disagrees with glm52_ops",
+        },
+
+        "run": {
+            "gate": "./run.sh",
+            "describe": "./run.sh --describe        (this text)",
+            "describe_json": "./run.sh --describe --json",
+            "external_candidate": "./run.sh --candidate PATH",
+            "one_shape": "./run.sh --M <M>",
+        },
+    }
+
+
+def describe(op: str, phase: str, device=None) -> str:
+    """Render problem() as the text an agent or a human reads."""
+    p = problem(op, phase, device)
+    c, k, f = p["contract"], p["correctness"], p["performance"]
+    L = [f"TASK  {p['operator']}/{p['phase']} — {p['label']}",
+         f"  {p['model']}, {p['deployment']}.  family={p['family']}  S={p['S']}  seed={p['seed']}",
+         "",
+         f"  MATH   {p['math']['expression']}"]
+    for n in p["math"]["notes"]:
+        L += [f"         NOTE {line}" for line in _wrap(n, 66)]
     L += ["",
-          f"  CORRECT    masked by output_kind={s['output_kind']}, then all three, in order",
-          "             (the structure is FlashMLA's check_is_allclose; calc_diff is",
-          "              deep_gemm.testing.numeric.calc_diff verbatim):",
-          "               1. inf/-inf/nan must occupy the same positions in both",
-          f"               2. every element: abs_err < abs_tol  OR  rel_err < {s['rel_tol']:.4f}",
-          f"                  abs_tol = {s['abs_tol_factor']:.0e} * |ref|.max(), computed per shape —",
-          "                  output magnitude spans 7 orders across these 12 ops, so a",
-          "                  fixed abs_tol cannot port",
-          f"               3. calc_diff <= {s['diff_tol']:.0e}   == ||x-y||^2/(||x||^2+||y||^2),",
-          "                  scale-SENSITIVE, so a uniform k*reference is caught here",
-          "             re-checked on fresh inputs after timing.",
+          f"  WORKLOAD   M in {p['workload']['sweep']}   ({p['workload']['rule']})",
           "",
-          "  FAST       CUPTI cold-L2 device-kernel median; gate is the conservative margin",
-          "             (candidate slowest sample vs reference fastest) > 1.0 on EVERY shape.",
-          "",
-          "  RUN        ./run.sh --repeat 3      exit 0=correct+fast 1=correct 2=wrong 3=infra",
+          f"  BASELINE   {p['baseline']['backend']}",
+          f"             {p['baseline']['call']}"]
+    L += [f"             {line}" for line in _wrap(p["baseline"]["role"], 64)]
+    L += [f"             CAVEAT {line}" if i == 0 else f"                    {line}"
+          for i, line in enumerate(_wrap(p["baseline"]["caveat"], 60))]
+    L += ["",
+          f"  CONTRACT   {c['entrypoint']} — that function is the entire ABI."]
+    L += [f"             {line}" for line in _wrap(c["where"], 64)]
+    L += [f"             inputs = {c['inputs_call']}"]
+    L += [f"             {line}" for line in _wrap(c["frozen"], 64)]
+    if c["tensors"]:
+        L.append(f"             tensors at M={c['tensors']['at_M']} "
+                 f"(read from {c['tensors']['read_from']}):")
+        for t in c["tensors"]["items"]:
+            if "shape" in t:
+                L.append(f"               {t['name']:<18} {str(tuple(t['shape'])):<26} {t['dtype']}")
+            else:
+                L.append(f"               {t['name']:<18} {t['value']!r}")
+    elif c["tensors_error"]:
+        L.append(f"             (could not build inputs: {c['tensors_error']})")
+    if c["output_buffer"]:
+        L.append(f"             inputs['out'] is pre-allocated and MAY be written in place,")
+        L.append(f"             but is {c['output_buffer']['poisoned']}: returning it "
+                 f"unwritten FAILS.")
+    L.append("             accepted candidate forms:")
+    for form in c["accepted_forms"]:
+        w = _wrap(form, 60)
+        L.append(f"               - {w[0]}")
+        L += [f"                 {line}" for line in w[1:]]
+    L += ["",
+          f"  CORRECT    masked by output_kind={k['output_kind']}, then all three, in order"]
+    L += [f"             ({line})" for line in _wrap(k["structure"], 62)]
+    for lyr in k["layers"]:
+        L.append(f"               {lyr['order']}. {lyr['check']}")
+        for key in ("rel_tol", "abs_tol", "diff_tol", "formula"):
+            if key in lyr:
+                L.append(f"                  {key} = {lyr[key]}")
+        for key in ("why", "why_or", "why_derived_abs_tol"):
+            if key in lyr:
+                L += [f"                  {line}" for line in _wrap(lyr[key], 58)]
+    L += [f"             {line}" for line in _wrap(k["post_timing_recheck"], 64)]
+    L += ["", f"  FAST       {f['timing'].split(':')[0]}"]
+    L += [f"             gate: {f['gate']}"]
+    L += [f"             defaults: " + ", ".join(f"{a}={b}" for a, b in f["defaults"].items())]
+    L += ["",
+          "  RUN        ./run.sh                        the gate",
+          "             ./run.sh --describe [--json]    this text, or it as JSON",
+          "             ./run.sh --candidate PATH       any .py/dir defining run(inputs),",
+          "                                             from anywhere — no task edit needed",
+          "             ./run.sh --M <M>                one shape",
+          "             exit 0=correct+fast  1=correct  2=wrong  3=infra/contract",
           ]
     return "\n".join(L)
+
+
+def _wrap(text: str, width: int) -> list[str]:
+    import textwrap
+    return textwrap.wrap(text, width) or [""]
