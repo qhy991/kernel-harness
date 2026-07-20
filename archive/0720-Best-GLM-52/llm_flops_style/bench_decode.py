@@ -39,6 +39,16 @@ M_LIST = [16, 32]
 OUT_DIR = _HERE / "results"
 
 
+def _dims_for(name: str, kind: str, M: int, S: int):
+    if kind == "fp8_gemm":
+        return gemm_dims_for(lf, name, M, S, "decode")
+    if kind == "moe_masked":
+        return moe_dims_for(lf, name, M)
+    if kind in ("dsa", "score_mqa"):
+        return (M,)
+    raise ValueError(kind)
+
+
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--stock-only", action="store_true")
@@ -83,13 +93,10 @@ def main() -> int:
 
             try:
                 if use_swap:
-                    if kind == "fp8_gemm":
-                        dims = gemm_dims_for(lf, name, M, S, "decode")
-                    else:
-                        dims = moe_dims_for(lf, name, M)
+                    dims = _dims_for(name, kind, M, S)
                     info = bench_dropin(
                         lf, kind, harness_op, "decode", archive, dims,
-                        device, seed=args.seed + M)
+                        device, seed=args.seed + M, S=S)
                     avg_ms = float(info["avg_ms"])
                     stock_ms = float(info["stock_ms"])
                     protocol = info["protocol"]

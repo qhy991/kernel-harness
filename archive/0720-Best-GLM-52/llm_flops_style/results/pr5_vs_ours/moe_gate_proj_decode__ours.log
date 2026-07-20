@@ -1,0 +1,212 @@
+TASK moe_gate/decode  run=20260720T065429Z-d49811  candidate=archive/0720-Best-GLM-52/best/moe_gate_proj_decode_hbm40/candidate/candidate.py sha=399cc9816260
+     timing=cupti-cold-l2-device-kernel-median iters=30 warmup=3 repeat=10  S=65536 seed=0  device=cuda:0
+
+     roofline: fp8 peak 4.50 PFLOP/s, HBM 8.0 TB/s, ridge 562.5 FLOP/byte -> reward = utilisation of whichever resource binds
+
+  shape    ok  calc_diff   cand_us    ref_us  speedup  sp_cons  verdict      AI   bound   TFLOP/s     MFU      GB/s      BW   reward
+         WARN   timing samples spread 1.37x (cand 30.6-31.4us, ref 47.3-64.7us) — sp_cons unreliable, re-run before trusting it
+   M=16  PASS   0.00e+00     30.81     47.42   1.539x   1.527x      WIN    31.6  memory     104.6   2.32%    3311.6  41.39%   0.4139
+        └ ref   baseline                                                                     67.9   1.51%    2151.3  26.89%   0.2689
+   M=32  PASS   0.00e+00     30.70     47.07   1.533x   1.505x      WIN    62.3  memory     209.9   4.66%    3367.1  42.09%   0.4209
+        └ ref   baseline                                                                    136.9   3.04%    2195.7  27.45%   0.2745
+
+VERDICT: CORRECT
+2/2 shapes WIN, 0 regressed, 0 neutral   geomean_speedup=1.5364x  best_reward=0.4209
+performance_gate: >=1 win AND 0 regressions -> MET
+WARNING: unstable timing on glm52-moe_gate_proj_decode-M16 — the conservative margin above is not trustworthy; re-run.
+result=runs/glm52/moe_gate_proj_decode/20260720T065429Z-d49811/result.json
+
+RESULT_JSON_BEGIN
+{
+  "schema_version": "1.0",
+  "task": {
+    "name": "moe_gate_proj_decode",
+    "model": "glm52",
+    "operator": "moe_gate",
+    "phase": "decode",
+    "S": 65536,
+    "seed": 0,
+    "family": "moe",
+    "output_kind": "masked_grouped",
+    "backend": "deep_gemm.fp8_m_grouped_gemm_nt_masked",
+    "diff_tol": 5e-06,
+    "rel_tol": 0.015703125,
+    "abs_tol_factor": 0.0001,
+    "performance_gate": {
+      "min_speedup": 1.0,
+      "basis": "conservative (q=0.9)"
+    }
+  },
+  "run": {
+    "run_id": "20260720T065429Z-d49811",
+    "started_utc": "2026-07-20T06:54:29Z",
+    "finished_utc": "2026-07-20T06:54:35Z",
+    "repeat": 10,
+    "repeat_scope": "in-process",
+    "iterations": 30,
+    "warmup": 3,
+    "timing_protocol": "cupti-cold-l2-device-kernel-median",
+    "device": "cuda:0",
+    "correctness_standard": "FlashMLA check_is_allclose structure: anomaly positions + elementwise (abs OR rel) + DeepGEMM calc_diff, on a poisoned output buffer",
+    "reward_standard": "rewardbench bound-aware roofline (PR2)",
+    "result_dir": "runs/glm52/moe_gate_proj_decode/20260720T065429Z-d49811"
+  },
+  "candidate": {
+    "path": "archive/0720-Best-GLM-52/best/moe_gate_proj_decode_hbm40/candidate/candidate.py",
+    "sha256": "399cc98162605f91b67228493da50bcfe1f884cd23b92c4b19456f7053f2a009",
+    "is_reference_fallback": false,
+    "external": true
+  },
+  "environment": {
+    "hostname": "dry-vm-embraces-fin-03",
+    "python": "3.12.13",
+    "platform": "Linux-6.8.0-100-generic-x86_64-with-glibc2.39",
+    "git_sha": "71e9bb8a6580a9e836fcb819f18f92bcbc33d9ef",
+    "git_branch": "main",
+    "git_dirty": true,
+    "torch": "2.11.0+cu130",
+    "deep_gemm": "0.1.4",
+    "sgl_kernel": "0.4.4",
+    "cuda": "13.0",
+    "gpu": "NVIDIA B200",
+    "gpu_capability": "10.0",
+    "gpu_memory_gb": 191.5,
+    "gpu_count": 1,
+    "driver": "610.43.02\n610.43.02\n610.43.02\n610.43.02"
+  },
+  "cost_model": {
+    "gpu": "NVIDIA B200",
+    "hbm_bytes_per_s": 8000000000000.0,
+    "peak_flops_fp8": 4500000000000000.0,
+    "peak_flops_bf16": 2250000000000000.0,
+    "source": "rewardbench (PR2) + testbench/harness/profile.py; opbench/mfu.py's 7.7e12 not used"
+  },
+  "per_shape": [
+    {
+      "uuid": "glm52-moe_gate_proj_decode-M16",
+      "axes": {
+        "M": 16,
+        "S": 65536
+      },
+      "correct": true,
+      "output_kind": "masked_grouped",
+      "output_buffer_poisoned": true,
+      "calc_diff": 0.0,
+      "max_abs_err": 0.0,
+      "max_rel_err": 0.0,
+      "abs_tol": 0.0358,
+      "rel_tol": 0.015703125,
+      "diff_tol": 5e-06,
+      "elementwise_failed": 0,
+      "anomaly_ok": true,
+      "elements": 262144,
+      "cosine": 1.0,
+      "best_fit_scale": 1.0,
+      "timing_spread": 1.368,
+      "timing_unstable": true,
+      "post_timing_calc_diff": 0.0,
+      "post_timing_correct": true,
+      "flops": 3221225472.0,
+      "bytes_hbm": 102023168.0,
+      "compute_dtype": "fp8",
+      "candidate_us": 30.808,
+      "candidate_us_lo": 30.559,
+      "candidate_us_hi": 31.44,
+      "reference_us": 47.424,
+      "reference_us_lo": 47.28,
+      "reference_us_hi": 64.656,
+      "samples": 10,
+      "candidate_us_p90": 31.008,
+      "reference_us_p10": 47.338,
+      "conservative_quantile": 0.9,
+      "speedup": 1.5393,
+      "speedup_conservative": 1.5267,
+      "speedup_optimistic": 1.6187,
+      "shape_verdict": "win",
+      "bound": "memory",
+      "arithmetic_intensity": 31.57347037096515,
+      "ridge": 562.5,
+      "reward": 0.41394418702782526,
+      "reference_reward": 0.2689136983051741,
+      "achieved_tflops": 104.55723619485039,
+      "achieved_gbps": 3311.553496222602,
+      "compute_util": 0.02323494137663342,
+      "bw_util": 0.41394418702782526
+    },
+    {
+      "uuid": "glm52-moe_gate_proj_decode-M32",
+      "axes": {
+        "M": 32,
+        "S": 65536
+      },
+      "correct": true,
+      "output_kind": "masked_grouped",
+      "output_buffer_poisoned": true,
+      "calc_diff": 0.0,
+      "max_abs_err": 0.0,
+      "max_rel_err": 0.0,
+      "abs_tol": 0.0388,
+      "rel_tol": 0.015703125,
+      "diff_tol": 5e-06,
+      "elementwise_failed": 0,
+      "anomaly_ok": true,
+      "elements": 524288,
+      "cosine": 1.0,
+      "best_fit_scale": 1.0,
+      "timing_spread": 1.138,
+      "timing_unstable": false,
+      "post_timing_calc_diff": 0.0,
+      "post_timing_correct": true,
+      "flops": 6442450944.0,
+      "bytes_hbm": 103358464.0,
+      "compute_dtype": "fp8",
+      "candidate_us": 30.696,
+      "candidate_us_lo": 30.576,
+      "candidate_us_hi": 34.784,
+      "reference_us": 47.073,
+      "reference_us_lo": 46.865,
+      "reference_us_hi": 52.192,
+      "samples": 10,
+      "candidate_us_p90": 31.198,
+      "reference_us_p10": 46.964,
+      "conservative_quantile": 0.9,
+      "speedup": 1.5335,
+      "speedup_conservative": 1.5053,
+      "speedup_optimistic": 1.5666,
+      "shape_verdict": "win",
+      "bound": "memory",
+      "arithmetic_intensity": 62.33114052468891,
+      "ridge": 562.5,
+      "reward": 0.4208920633627886,
+      "reference_reward": 0.27446615327420465,
+      "achieved_tflops": 209.87745877753798,
+      "achieved_gbps": 3367.1365069023086,
+      "compute_util": 0.04663943528389733,
+      "bw_util": 0.42089206336278856
+    }
+  ],
+  "aggregate": {
+    "min_speedup": 1.5335,
+    "geomean_speedup": 1.5364,
+    "min_speedup_conservative": 1.5053,
+    "best_reward": 0.4209,
+    "worst_reward": 0.4139,
+    "worst_calc_diff": 0.0,
+    "shapes_evaluated": 2,
+    "complete_sweep": true,
+    "timing_unstable_shapes": [
+      "glm52-moe_gate_proj_decode-M16"
+    ],
+    "shapes_won": 2,
+    "shapes_regressed": 0,
+    "shapes_neutral": 0,
+    "regressed_shapes": []
+  },
+  "verdict": {
+    "correct": true,
+    "performance_ok": true,
+    "status": "CORRECT",
+    "exit_code": 0
+  }
+}
+RESULT_JSON_END

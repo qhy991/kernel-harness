@@ -65,16 +65,19 @@ candidate_loader = _load_harness("candidate_loader")
 # llm_flops name -> (harness_op | None, archive_ref, kind)
 # archive_ref: "best/<dir>" OR flat "<file>.py" under archive root
 # kind: fp8_gemm | moe_masked | bmm | dsa | score_mqa | bf16_gemm | None
+# After PR#5 vs ours CUPTI bake-off (see PR5_VS_OURS.md):
+#   PR5 wins: fused_qkv_a, index_q_upproj, dsa
+#   ours wins: q_b (DeepGEMM fork); moe_* tie → keep ours
 DECODE_SWAPS: dict[str, tuple[str | None, str | None, str | None]] = {
-    "fused_qkv_a_proj": ("fused_qkv_a", "best/fused_qkv_a_decode", "fp8_gemm"),
+    "fused_qkv_a_proj": ("fused_qkv_a", "best-hechenxi-0720/fused_qkv_a_decode", "fp8_gemm"),
     "q_b_proj": ("q_b", "best/q_b_decode", "fp8_gemm"),
     "absorbed_W_UK": (None, None, None),
     "absorbed_W_UV": (None, None, None),
     "o_proj": ("o_proj", "best/o_proj_decode_hbm35", "fp8_gemm"),
-    "dsa_decode_attn": (None, None, None),
+    "dsa_decode_attn": ("dsa_attn", "best-hechenxi-0720/dsa_decode_attn", "dsa"),
     "index_k_proj": ("index_k", "best/index_k_proj_decode", "fp8_gemm"),
-    "index_q_upproj": ("index_q_upproj", "best/index_q_upproj_decode_hbm15", "fp8_gemm"),
-    "index_weights_proj": (None, None, None),
+    "index_q_upproj": ("index_q_upproj", "best-hechenxi-0720/index_q_upproj_decode", "fp8_gemm"),
+    "index_weights_proj": (None, None, None),  # PR5 fused wk+weights needs different inputs
     "index_score": (None, None, None),
     "moe_gate_proj": ("moe_gate", "best/moe_gate_proj_decode_hbm40", "moe_masked"),
     "moe_up_proj": ("moe_up", "best/moe_up_proj_decode_hbm40", "moe_masked"),
@@ -139,18 +142,17 @@ def cuda_graph_bench(run_fn: Callable[[], None]) -> tuple[float, str]:
 
 
 def _resolve_path(archive_ref: str) -> Path:
-    """best/<name> -> best/<name>/candidate ; foo.py -> archive/foo.py"""
-    if archive_ref.startswith("best/"):
+    """Campaign dir -> .../candidate ; flat foo.py -> archive/foo.py"""
+    if archive_ref.startswith(("best/", "best-hechenxi-0720/")):
         p = _ARCHIVE / archive_ref / "candidate"
-        if not p.is_dir():
-            # allow best/<name>/candidate.py directly
-            cand = _ARCHIVE / archive_ref
-            if cand.is_dir() and (cand / "candidate.py").is_file():
-                return cand / "candidate.py"
-            if (cand / "candidate").is_dir():
-                return cand / "candidate"
-            raise FileNotFoundError(p)
-        return p
+        if p.is_dir():
+            return p
+        cand = _ARCHIVE / archive_ref
+        if cand.is_dir() and (cand / "candidate.py").is_file():
+            return cand / "candidate.py"
+        if (cand / "candidate").is_dir():
+            return cand / "candidate"
+        raise FileNotFoundError(_ARCHIVE / archive_ref / "candidate")
     p = _ARCHIVE / archive_ref
     if not p.is_file():
         raise FileNotFoundError(p)
