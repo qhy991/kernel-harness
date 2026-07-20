@@ -1,0 +1,92 @@
+[
+  {
+    "op": "absorbed_W_UV_decode_hbm86",
+    "kind": "NO_GO",
+    "has_candidate": true,
+    "headline": "## Verdict: NO-GO-CONFIRMED (first-class outcome per AC-6)"
+  },
+  {
+    "op": "dsa_attn_decode_hbm40",
+    "kind": "NO_GO",
+    "has_candidate": true,
+    "headline": "## VERDICT: NO-GO-CONFIRMED (reviewed, evidence-backed)"
+  },
+  {
+    "op": "index_k_prefill_bw70",
+    "kind": "WIN_MISS_TARGET",
+    "has_candidate": true,
+    "headline": "**FINAL VERDICT: TARGET NOT MET — evidence-backed no-go, bounded by the DeepGEMM GEMM"
+  },
+  {
+    "op": "index_q_upproj_decode_hbm15",
+    "kind": "WIN_MISS_TARGET",
+    "has_candidate": true,
+    "headline": ">15% target is exactly `latency < bytes_hbm / 1.2e12`:"
+  },
+  {
+    "op": "index_score_decode_hbm82",
+    "kind": "NO_GO",
+    "has_candidate": true,
+    "headline": "## Verdict: physical NO-GO on both shapes (independently confirmed)"
+  },
+  {
+    "op": "moe_down_proj_decode_hbm40",
+    "kind": "TARGET_MET",
+    "has_candidate": true,
+    "headline": "## Verdict: **TARGET MET** (both shapes ≥40% HBM)"
+  },
+  {
+    "op": "moe_down_proj_prefill_mfu65",
+    "kind": "PARTIAL_WIN",
+    "has_candidate": true,
+    "headline": "## Terminal Verdict: PARTIAL WIN + evidence-backed NO-GO on the hard 65% target"
+  },
+  {
+    "op": "moe_gate_proj_decode_hbm40",
+    "kind": "TARGET_MET",
+    "has_candidate": true,
+    "headline": "# RESULT — GLM-5.2 moe_gate_proj_decode HBM >=40%: **TARGET MET**"
+  },
+  {
+    "op": "moe_gate_proj_prefill_mfu",
+    "kind": "NO_GO",
+    "has_candidate": true,
+    "headline": "Verdict basis: per-shape medians over authoritative `./run.sh` gate runs on idle"
+  },
+  {
+    "op": "moe_up_proj_decode_hbm40",
+    "kind": "TARGET_MET",
+    "has_candidate": true,
+    "headline": "## Verdict"
+  },
+  {
+    "op": "o_proj_decode",
+    "kind": "WIN",
+    "has_candidate": true,
+    "headline": "**Verdict: WIN (gate exit 0, drop-in verified).** GLM-5.2-FP8 Attention O-Projection decode"
+  },
+  {
+    "op": "o_proj_decode_hbm35",
+    "kind": "TARGET_MET",
+    "has_candidate": true,
+    "headline": "Target (AC-3): `bw_util ≥ 0.35` on BOTH shapes, i.e. `candidate_us ≤ 36.13` (M=16) and"
+  },
+  {
+    "op": "o_proj_decode_hbm40_extreme",
+    "kind": "NO_GO",
+    "has_candidate": true,
+    "headline": "**TARGET NOT MET → evidence-backed NO-GO on both shapes.** See `docs/no_go_disposition.md` for the"
+  },
+  {
+    "op": "o_proj_prefill",
+    "kind": "PARTIAL_WIN",
+    "has_candidate": true,
+    "headline": "**Terminal verdict: PARTIAL WIN delivered · EVIDENCE-BACKED NO-GO on the all-shape hard target.**"
+  },
+  {
+    "op": "q_b_decode",
+    "kind": "TARGET_MET",
+    "has_candidate": true,
+    "headline": "## Verdict"
+  }
+]
