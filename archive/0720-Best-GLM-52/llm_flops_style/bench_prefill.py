@@ -1,13 +1,8 @@
 #!/usr/bin/env python3
-"""llm_flops PREFILL bench — true drop-in: stock & candidate share the same tensors.
+"""llm_flops PREFILL bench — drop-in with PR#3 + prior archive winners.
 
 Unswapped ops: llm_flops bench_* verbatim.
-Swapped ops: build with llm_flops quant helpers, time stock deep_gemm AND
-archive candidate.run on those frozen tensors (CUDA Graph).
-
-Usage:
-  CUDA_VISIBLE_DEVICES=0 .../python bench_prefill.py
-  .../bench_prefill.py --stock-only
+Swapped ops: same llm_flops tensors for stock and candidate.
 """
 from __future__ import annotations
 
@@ -26,6 +21,8 @@ from _common import (
     _LLM_FLOPS,
     _load_llm_flops_module,
     bench_dropin,
+    bf16_dims_for,
+    bmm_dims_for,
     gemm_dims_for,
     moe_dims_for,
     print_summary,
@@ -37,6 +34,20 @@ lf.NUM_RUNS = NUM_RUNS
 
 M_LIST = [1024, 2048, 4096]
 OUT_DIR = _HERE / "results"
+
+
+def _dims_for(name: str, kind: str, M: int, S: int):
+    if kind == "fp8_gemm":
+        return gemm_dims_for(lf, name, M, S, "prefill")
+    if kind == "moe_masked":
+        return moe_dims_for(lf, name, M)
+    if kind == "bmm":
+        return bmm_dims_for(lf, name, M)
+    if kind in ("dsa", "score_mqa"):
+        return (M,)
+    if kind == "bf16_gemm":
+        return bf16_dims_for(lf, name, M)
+    raise ValueError(kind)
 
 
 def main() -> int:
@@ -54,15 +65,17 @@ def main() -> int:
     OUT_DIR.mkdir(parents=True, exist_ok=True)
 
     print("=" * 130)
-    print("GLM-5.2 PREFILL — llm_flops DROP-IN (same tensors for stock & candidate)")
+    print("GLM-5.2 PREFILL — llm_flops DROP-IN (+ PR#3 胡延 kernels)")
     print("=" * 130)
     print(f"Timing: CUDA Graph (fallback Event)  warmup={NUM_WARMUP} runs={NUM_RUNS}")
     print(f"llm_flops: {_LLM_FLOPS}  seed={args.seed}")
     print(f"M={args.M}  S={args.S}")
     print(f"Mode: {'STOCK ONLY' if args.stock_only else 'DROP-IN SWAPS'}")
     if not args.stock_only:
-        active = [k for k, (_, a, _) in PREFILL_SWAPS.items() if a]
-        print(f"Swaps: {', '.join(active)}")
+        active = [f"{k}←{a}" for k, (_, a, _) in PREFILL_SWAPS.items() if a]
+        print("Swaps:")
+        for line in active:
+            print(f"  {line}")
     print("=" * 130)
 
     all_results = []
@@ -72,9 +85,9 @@ def main() -> int:
         print(f"\n{'=' * 130}")
         print(f"  M={M}, S={S}")
         print(f"{'=' * 130}")
-        print(f"  {'name':<24s} {'impl':<32s} {'avg(ms)':>10s} {'stock(ms)':>10s} "
-              f"{'spd':>7s} {'same':>5s} {'proto':<12s}")
-        print(f"  {'-' * 115}")
+        print(f"  {'name':<24s} {'impl':<40s} {'avg(ms)':>10s} {'stock(ms)':>10s} "
+              f"{'spd':>7s} {'proto':<12s}")
+        print(f"  {'-' * 120}")
 
         for name, category, bench_fn, shape_str in lf.get_all_operators(M, S):
             torch.cuda.empty_cache()
@@ -83,31 +96,26 @@ def main() -> int:
 
             try:
                 if use_swap:
-                    if kind == "fp8_gemm":
-                        dims = gemm_dims_for(lf, name, M, S, "prefill")
-                    else:
-                        dims = moe_dims_for(lf, name, M)
+                    dims = _dims_for(name, kind, M, S)
                     info = bench_dropin(
                         lf, kind, harness_op, "prefill", archive, dims,
-                        device, seed=args.seed + M)
+                        device, seed=args.seed + M, S=S)
                     avg_ms = float(info["avg_ms"])
                     stock_ms = float(info["stock_ms"])
                     protocol = info["protocol"]
                     impl = info["impl"]
-                    same = True
                     source = info["source"]
                 else:
                     stock_ms = float(bench_fn(device))
                     avg_ms = stock_ms
                     protocol = "cuda_graph"
                     impl = "llm_flops_stock"
-                    same = True
                     source = "llm_flops"
                     archive = None
 
                 spd = stock_ms / avg_ms if avg_ms > 0 else 0.0
-                print(f"  {name:<24s} {impl:<32s} {avg_ms:>10.4f} {stock_ms:>10.4f} "
-                      f"{spd:>6.2f}x {'Y' if same else 'N':>5s} {protocol:<12s}")
+                print(f"  {name:<24s} {impl:<40s} {avg_ms:>10.4f} {stock_ms:>10.4f} "
+                      f"{spd:>6.2f}x {protocol:<12s}")
                 all_results.append({
                     "name": name, "category": category, "M": M, "S": S,
                     "shape": shape_str, "avg_ms": avg_ms, "stock_ms": stock_ms,
