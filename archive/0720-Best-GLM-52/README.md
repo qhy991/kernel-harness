@@ -40,7 +40,7 @@
 | **o_proj_decode_hbm40_extreme** | NO_GO | ~38% 最好，>40% 不可达 |
 | **moe_down_proj_prefill_mfu65** | PARTIAL_WIN | 部分 shape WIN，65% NO-GO |
 | **moe_gate_proj_prefill_mfu** | NO_GO | 保留最好正确候选 |
-| **o_proj_prefill** | PARTIAL_WIN | 薄加速；`candidate/` 来自 task8 |
+| **o_proj_prefill** | PARTIAL_WIN | mnk+PDL ~1.01–1.03×；task8 Triton spike 仅作实验（已从 `candidate/` 移出） |
 | **index_score_decode_hbm82** | NO_GO | stock；≥82% 物理不可达 |
 | **dsa_attn_decode_hbm40** | NO_GO | stock；M16 gather floor |
 | **absorbed_W_UV_decode_hbm86** | NO_GO | stock；span floor |
@@ -61,3 +61,26 @@ H=/home/qinhaiyan/Kernel-Harness
 C=archive/0720-Best-GLM-52/best/moe_up_proj_decode_hbm40/candidate
 CUDA_VISIBLE_DEVICES=0 $H/testbench/tasks/glm52/moe_up_proj_decode/run.sh --candidate "$C"
 ```
+
+## Layer acceptance
+
+See [`accept_layer/REPORT.md`](accept_layer/REPORT.md) for `accept_layer.py` multi-swap decode gains (~1.28–1.31× winners-only).
+
+## vs llm_flops 延时对比（Harness CUPTI 协议）
+
+全量 archive best candidate 与 harness reference / llm_flops CSV 的对照：
+
+- [`vs_llm_flops/DECODE_REPORT.md`](vs_llm_flops/DECODE_REPORT.md)
+- [`vs_llm_flops/PREFILL_REPORT.md`](vs_llm_flops/PREFILL_REPORT.md)
+
+复现：`CUDA_VISIBLE_DEVICES=0 .venv/bin/python archive/0720-Best-GLM-52/bench_archive_vs_llm_flops.py`
+
+## llm_flops-style 层延时（CUDA Graph **DROP-IN**，严格可比）
+
+stock 与 candidate **共用 llm_flops 冻结 tensor**：
+
+- [`llm_flops_style/COMPARISON_TABLE.md`](llm_flops_style/COMPARISON_TABLE.md) — **关键算子延时对比表**
+- [`llm_flops_style/COLLAB.md`](llm_flops_style/COLLAB.md) — 协作：如何接入新 kernel
+- [`llm_flops_style/REPORT.md`](llm_flops_style/REPORT.md) — Decode **1.30–1.37×** / Prefill **~1.01×**
+- `llm_flops_style/bench_decode.py` / `bench_prefill.py`
+

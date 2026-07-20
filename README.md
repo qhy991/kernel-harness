@@ -14,6 +14,9 @@ $T/run.sh --describe                        # what is this problem?
 $T/run.sh --describe --json                 # ...machine-readable (== problem.json)
 $T/run.sh                                   # the gate
 $T/run.sh --candidate ~/kernels/mine.py     # test any kernel, without editing the task
+
+# acceptance only (not the gate): swap the candidate into the 12-op layer budget
+.venv/bin/python testbench/bin/accept_layer.py --M 32 --task o_proj_decode
 ```
 
 Exit codes: `0` correct and faster · `1` correct, not faster · `2` incorrect ·

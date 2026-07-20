@@ -14,6 +14,9 @@ $T/run.sh --describe                        # 这是什么问题？
 $T/run.sh --describe --json                 # 同上，机器可读（== problem.json）
 $T/run.sh                                   # 判定门
 $T/run.sh --candidate ~/kernels/mine.py     # 测任意 kernel，无需改动 task
+
+# 验收环节（不是判定门）：把候选换进 12 算子层预算，看端到端 delta
+.venv/bin/python testbench/bin/accept_layer.py --M 32 --task o_proj_decode
 ```
 
 退出码：`0` 正确且更快 · `1` 正确但没更快 · `2` 不正确 · `3` 基础设施/契约错误。

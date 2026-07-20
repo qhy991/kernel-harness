@@ -1,0 +1,151 @@
+{
+  "kind": "accept_layer",
+  "role": "acceptance",
+  "M": 16,
+  "phase": "decode",
+  "timing": "cupti-cold-l2-device-kernel-median",
+  "warmup": 3,
+  "iterations": 10,
+  "focus_op": null,
+  "focus_task": null,
+  "candidate_override": null,
+  "candidate_swaps": {
+    "q_b": "/home/qinhaiyan/Kernel-Harness/archive/0720-Best-GLM-52/best/q_b_decode/candidate",
+    "o_proj": "/home/qinhaiyan/Kernel-Harness/archive/0720-Best-GLM-52/best/o_proj_decode_hbm35/candidate",
+    "index_q_upproj": "/home/qinhaiyan/Kernel-Harness/archive/0720-Best-GLM-52/best/index_q_upproj_decode_hbm15/candidate",
+    "moe_gate": "/home/qinhaiyan/Kernel-Harness/archive/0720-Best-GLM-52/best/moe_gate_proj_decode_hbm40/candidate",
+    "moe_up": "/home/qinhaiyan/Kernel-Harness/archive/0720-Best-GLM-52/best/moe_up_proj_decode_hbm40/candidate",
+    "moe_down": "/home/qinhaiyan/Kernel-Harness/archive/0720-Best-GLM-52/best/moe_down_proj_decode_hbm40/candidate",
+    "index_score": "/home/qinhaiyan/Kernel-Harness/archive/0720-Best-GLM-52/best/index_score_decode_hbm82/candidate",
+    "dsa_attn": "/home/qinhaiyan/Kernel-Harness/archive/0720-Best-GLM-52/best/dsa_attn_decode_hbm40/candidate",
+    "absorbed_W_UV": "/home/qinhaiyan/Kernel-Harness/archive/0720-Best-GLM-52/best/absorbed_W_UV_decode_hbm86/candidate"
+  },
+  "n_candidates_active": 9,
+  "layer_total_backend_ms": 0.432609,
+  "layer_total_swapped_ms": 0.309435,
+  "layer_speedup": 1.398061,
+  "layer_delta_pct": 28.4724,
+  "ops": [
+    {
+      "op": "o_proj",
+      "cat": "GEMM",
+      "error": null,
+      "back": 0.062113,
+      "cand": 0.033424,
+      "used": "cand",
+      "speedup": 1.858348,
+      "source": "archive/0720-Best-GLM-52/best/o_proj_decode_hbm35/candidate/candidate.py"
+    },
+    {
+      "op": "moe_up",
+      "cat": "MoE",
+      "error": null,
+      "back": 0.047456,
+      "cand": 0.030832,
+      "used": "cand",
+      "speedup": 1.53918,
+      "source": "archive/0720-Best-GLM-52/best/moe_up_proj_decode_hbm40/candidate/candidate.py"
+    },
+    {
+      "op": "moe_gate",
+      "cat": "MoE",
+      "error": null,
+      "back": 0.04744,
+      "cand": 0.031006,
+      "used": "cand",
+      "speedup": 1.530026,
+      "source": "archive/0720-Best-GLM-52/best/moe_gate_proj_decode_hbm40/candidate/candidate.py"
+    },
+    {
+      "op": "moe_down",
+      "cat": "MoE",
+      "error": null,
+      "back": 0.047424,
+      "cand": 0.0356,
+      "used": "cand",
+      "speedup": 1.332154,
+      "source": "archive/0720-Best-GLM-52/best/moe_down_proj_decode_hbm40/candidate/candidate.py"
+    },
+    {
+      "op": "dsa_attn",
+      "cat": "MLA",
+      "error": null,
+      "back": 0.045872,
+      "cand": 0.045775,
+      "used": "cand",
+      "speedup": 1.002108,
+      "source": "archive/0720-Best-GLM-52/best/dsa_attn_decode_hbm40/candidate/candidate.py"
+    },
+    {
+      "op": "q_b",
+      "cat": "GEMM",
+      "error": null,
+      "back": 0.040336,
+      "cand": 0.011744,
+      "used": "cand",
+      "speedup": 3.434647,
+      "source": "archive/0720-Best-GLM-52/best/q_b_decode/candidate/candidate.py"
+    },
+    {
+      "op": "fused_qkv_a",
+      "cat": "GEMM",
+      "error": null,
+      "back": 0.036032,
+      "cand": null,
+      "used": "backend",
+      "speedup": null,
+      "source": "reference"
+    },
+    {
+      "op": "index_k",
+      "cat": "GEMM",
+      "error": null,
+      "back": 0.034145,
+      "cand": null,
+      "used": "backend",
+      "speedup": null,
+      "source": "reference"
+    },
+    {
+      "op": "index_score",
+      "cat": "Score",
+      "error": null,
+      "back": 0.031727,
+      "cand": 0.03299,
+      "used": "cand",
+      "speedup": 0.961731,
+      "source": "archive/0720-Best-GLM-52/best/index_score_decode_hbm82/candidate/candidate.py"
+    },
+    {
+      "op": "index_q_upproj",
+      "cat": "GEMM",
+      "error": null,
+      "back": 0.029376,
+      "cand": 0.007056,
+      "used": "cand",
+      "speedup": 4.163265,
+      "source": "archive/0720-Best-GLM-52/best/index_q_upproj_decode_hbm15/candidate/candidate.py"
+    },
+    {
+      "op": "absorbed_W_UK",
+      "cat": "BMM",
+      "error": null,
+      "back": 0.005504,
+      "cand": null,
+      "used": "backend",
+      "speedup": null,
+      "source": "reference"
+    },
+    {
+      "op": "absorbed_W_UV",
+      "cat": "BMM",
+      "error": null,
+      "back": 0.005184,
+      "cand": 0.005328,
+      "used": "cand",
+      "speedup": 0.972973,
+      "source": "archive/0720-Best-GLM-52/best/absorbed_W_UV_decode_hbm86/candidate/candidate.py"
+    }
+  ],
+  "note": "12 opbench/llm_flops ops; index_weights_proj (bf16) not modeled. Primary gate remains task run.sh / evaluate_task.py."
+}

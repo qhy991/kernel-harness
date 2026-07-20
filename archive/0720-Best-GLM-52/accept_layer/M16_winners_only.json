@@ -1,0 +1,147 @@
+{
+  "kind": "accept_layer",
+  "role": "acceptance",
+  "M": 16,
+  "phase": "decode",
+  "timing": "cupti-cold-l2-device-kernel-median",
+  "warmup": 3,
+  "iterations": 10,
+  "focus_op": null,
+  "focus_task": null,
+  "candidate_override": null,
+  "candidate_swaps": {
+    "q_b": "/home/qinhaiyan/Kernel-Harness/archive/0720-Best-GLM-52/best/q_b_decode/candidate",
+    "o_proj": "/home/qinhaiyan/Kernel-Harness/archive/0720-Best-GLM-52/best/o_proj_decode_hbm35/candidate",
+    "index_q_upproj": "/home/qinhaiyan/Kernel-Harness/archive/0720-Best-GLM-52/best/index_q_upproj_decode_hbm15/candidate",
+    "moe_gate": "/home/qinhaiyan/Kernel-Harness/archive/0720-Best-GLM-52/best/moe_gate_proj_decode_hbm40/candidate",
+    "moe_up": "/home/qinhaiyan/Kernel-Harness/archive/0720-Best-GLM-52/best/moe_up_proj_decode_hbm40/candidate"
+  },
+  "n_candidates_active": 5,
+  "layer_total_backend_ms": 0.406704,
+  "layer_total_swapped_ms": 0.31165,
+  "layer_speedup": 1.305002,
+  "layer_delta_pct": 23.3718,
+  "ops": [
+    {
+      "op": "o_proj",
+      "cat": "GEMM",
+      "error": null,
+      "back": 0.053935,
+      "cand": 0.033665,
+      "used": "cand",
+      "speedup": 1.602124,
+      "source": "archive/0720-Best-GLM-52/best/o_proj_decode_hbm35/candidate/candidate.py"
+    },
+    {
+      "op": "moe_up",
+      "cat": "MoE",
+      "error": null,
+      "back": 0.047616,
+      "cand": 0.030961,
+      "used": "cand",
+      "speedup": 1.537935,
+      "source": "archive/0720-Best-GLM-52/best/moe_up_proj_decode_hbm40/candidate/candidate.py"
+    },
+    {
+      "op": "moe_gate",
+      "cat": "MoE",
+      "error": null,
+      "back": 0.047552,
+      "cand": 0.03088,
+      "used": "cand",
+      "speedup": 1.539921,
+      "source": "archive/0720-Best-GLM-52/best/moe_gate_proj_decode_hbm40/candidate/candidate.py"
+    },
+    {
+      "op": "moe_down",
+      "cat": "MoE",
+      "error": null,
+      "back": 0.046384,
+      "cand": null,
+      "used": "backend",
+      "speedup": null,
+      "source": "reference"
+    },
+    {
+      "op": "dsa_attn",
+      "cat": "MLA",
+      "error": null,
+      "back": 0.046095,
+      "cand": null,
+      "used": "backend",
+      "speedup": null,
+      "source": "reference"
+    },
+    {
+      "op": "q_b",
+      "cat": "GEMM",
+      "error": null,
+      "back": 0.035616,
+      "cand": 0.01192,
+      "used": "cand",
+      "speedup": 2.987919,
+      "source": "archive/0720-Best-GLM-52/best/q_b_decode/candidate/candidate.py"
+    },
+    {
+      "op": "index_score",
+      "cat": "Score",
+      "error": null,
+      "back": 0.033457,
+      "cand": null,
+      "used": "backend",
+      "speedup": null,
+      "source": "reference"
+    },
+    {
+      "op": "fused_qkv_a",
+      "cat": "GEMM",
+      "error": null,
+      "back": 0.031616,
+      "cand": null,
+      "used": "backend",
+      "speedup": null,
+      "source": "reference"
+    },
+    {
+      "op": "index_k",
+      "cat": "GEMM",
+      "error": null,
+      "back": 0.028641,
+      "cand": null,
+      "used": "backend",
+      "speedup": null,
+      "source": "reference"
+    },
+    {
+      "op": "index_q_upproj",
+      "cat": "GEMM",
+      "error": null,
+      "back": 0.02512,
+      "cand": 0.00736,
+      "used": "cand",
+      "speedup": 3.413043,
+      "source": "archive/0720-Best-GLM-52/best/index_q_upproj_decode_hbm15/candidate/candidate.py"
+    },
+    {
+      "op": "absorbed_W_UV",
+      "cat": "BMM",
+      "error": null,
+      "back": 0.005552,
+      "cand": null,
+      "used": "backend",
+      "speedup": null,
+      "source": "reference"
+    },
+    {
+      "op": "absorbed_W_UK",
+      "cat": "BMM",
+      "error": null,
+      "back": 0.00512,
+      "cand": null,
+      "used": "backend",
+      "speedup": null,
+      "source": "reference"
+    }
+  ],
+  "note": "12 opbench/llm_flops ops; index_weights_proj (bf16) not modeled. Primary gate remains task run.sh / evaluate_task.py."
+}

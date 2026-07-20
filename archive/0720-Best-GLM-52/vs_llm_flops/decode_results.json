@@ -1,0 +1,740 @@
+{
+  "phase": "decode",
+  "timing": "cupti-cold-l2-device-kernel-median",
+  "warmup": 3,
+  "iterations": 10,
+  "shapes": [
+    16,
+    32
+  ],
+  "llm_flops_csv": "/home/qinhaiyan/llm_flops/runs/20260715-ue8m0/glm5_decode_perf.csv",
+  "reference_layer": {
+    "16": [
+      {
+        "op": "fused_qkv_a",
+        "M": 16,
+        "S": 65536,
+        "harness_ref_us": 33.44,
+        "harness_cand_us": null,
+        "speedup_vs_harness_ref": null,
+        "candidate_source": "reference",
+        "error": null,
+        "llm_flops_key": "fused_qkv_a_proj",
+        "llm_flops_us": 22.8,
+        "harness_vs_llm_flops_ratio": 1.4667
+      },
+      {
+        "op": "q_b",
+        "M": 16,
+        "S": 65536,
+        "harness_ref_us": 46.0,
+        "harness_cand_us": null,
+        "speedup_vs_harness_ref": null,
+        "candidate_source": "reference",
+        "error": null,
+        "llm_flops_key": "q_b_proj",
+        "llm_flops_us": 23.9,
+        "harness_vs_llm_flops_ratio": 1.9247
+      },
+      {
+        "op": "o_proj",
+        "M": 16,
+        "S": 65536,
+        "harness_ref_us": 83.376,
+        "harness_cand_us": null,
+        "speedup_vs_harness_ref": null,
+        "candidate_source": "reference",
+        "error": null,
+        "llm_flops_key": "o_proj",
+        "llm_flops_us": 43.9,
+        "harness_vs_llm_flops_ratio": 1.8992
+      },
+      {
+        "op": "index_q_upproj",
+        "M": 16,
+        "S": 65536,
+        "harness_ref_us": 56.399,
+        "harness_cand_us": null,
+        "speedup_vs_harness_ref": null,
+        "candidate_source": "reference",
+        "error": null,
+        "llm_flops_key": "index_q_upproj",
+        "llm_flops_us": 16.6,
+        "harness_vs_llm_flops_ratio": 3.3975
+      },
+      {
+        "op": "index_k",
+        "M": 16,
+        "S": 65536,
+        "harness_ref_us": 60.145,
+        "harness_cand_us": null,
+        "speedup_vs_harness_ref": null,
+        "candidate_source": "reference",
+        "error": null,
+        "llm_flops_key": "index_k_proj",
+        "llm_flops_us": 20.4,
+        "harness_vs_llm_flops_ratio": 2.9483
+      },
+      {
+        "op": "absorbed_W_UK",
+        "M": 16,
+        "S": 65536,
+        "harness_ref_us": 4.944,
+        "harness_cand_us": null,
+        "speedup_vs_harness_ref": null,
+        "candidate_source": "reference",
+        "error": null,
+        "llm_flops_key": "absorbed_W_UK",
+        "llm_flops_us": 2.5,
+        "harness_vs_llm_flops_ratio": 1.9776
+      },
+      {
+        "op": "absorbed_W_UV",
+        "M": 16,
+        "S": 65536,
+        "harness_ref_us": 5.296,
+        "harness_cand_us": null,
+        "speedup_vs_harness_ref": null,
+        "candidate_source": "reference",
+        "error": null,
+        "llm_flops_key": "absorbed_W_UV",
+        "llm_flops_us": 2.5,
+        "harness_vs_llm_flops_ratio": 2.1184
+      },
+      {
+        "op": "moe_gate",
+        "M": 16,
+        "S": 65536,
+        "harness_ref_us": 55.777,
+        "harness_cand_us": null,
+        "speedup_vs_harness_ref": null,
+        "candidate_source": "reference",
+        "error": null,
+        "llm_flops_key": "moe_gate_proj",
+        "llm_flops_us": 36.6,
+        "harness_vs_llm_flops_ratio": 1.524
+      },
+      {
+        "op": "moe_up",
+        "M": 16,
+        "S": 65536,
+        "harness_ref_us": 47.584,
+        "harness_cand_us": null,
+        "speedup_vs_harness_ref": null,
+        "candidate_source": "reference",
+        "error": null,
+        "llm_flops_key": "moe_up_proj",
+        "llm_flops_us": 36.7,
+        "harness_vs_llm_flops_ratio": 1.2966
+      },
+      {
+        "op": "moe_down",
+        "M": 16,
+        "S": 65536,
+        "harness_ref_us": 46.994,
+        "harness_cand_us": null,
+        "speedup_vs_harness_ref": null,
+        "candidate_source": "reference",
+        "error": null,
+        "llm_flops_key": "moe_down_proj",
+        "llm_flops_us": 38.2,
+        "harness_vs_llm_flops_ratio": 1.2302
+      },
+      {
+        "op": "dsa_attn",
+        "M": 16,
+        "S": 65536,
+        "harness_ref_us": 46.0,
+        "harness_cand_us": null,
+        "speedup_vs_harness_ref": null,
+        "candidate_source": "reference",
+        "error": null,
+        "llm_flops_key": {
+          "decode": "dsa_decode_attn",
+          "prefill": "dsa_prefill_attn"
+        },
+        "llm_flops_us": 38.8,
+        "harness_vs_llm_flops_ratio": 1.1856
+      },
+      {
+        "op": "index_score",
+        "M": 16,
+        "S": 65536,
+        "harness_ref_us": 33.456,
+        "harness_cand_us": null,
+        "speedup_vs_harness_ref": null,
+        "candidate_source": "reference",
+        "error": null,
+        "llm_flops_key": "index_score",
+        "llm_flops_us": 25.5,
+        "harness_vs_llm_flops_ratio": 1.312
+      }
+    ],
+    "32": [
+      {
+        "op": "fused_qkv_a",
+        "M": 32,
+        "S": 65536,
+        "harness_ref_us": 33.712,
+        "harness_cand_us": null,
+        "speedup_vs_harness_ref": null,
+        "candidate_source": "reference",
+        "error": null,
+        "llm_flops_key": "fused_qkv_a_proj",
+        "llm_flops_us": 22.8,
+        "harness_vs_llm_flops_ratio": 1.4786
+      },
+      {
+        "op": "q_b",
+        "M": 32,
+        "S": 65536,
+        "harness_ref_us": 35.153,
+        "harness_cand_us": null,
+        "speedup_vs_harness_ref": null,
+        "candidate_source": "reference",
+        "error": null,
+        "llm_flops_key": "q_b_proj",
+        "llm_flops_us": 24.3,
+        "harness_vs_llm_flops_ratio": 1.4466
+      },
+      {
+        "op": "o_proj",
+        "M": 32,
+        "S": 65536,
+        "harness_ref_us": 54.4,
+        "harness_cand_us": null,
+        "speedup_vs_harness_ref": null,
+        "candidate_source": "reference",
+        "error": null,
+        "llm_flops_key": "o_proj",
+        "llm_flops_us": 44.7,
+        "harness_vs_llm_flops_ratio": 1.217
+      },
+      {
+        "op": "index_q_upproj",
+        "M": 32,
+        "S": 65536,
+        "harness_ref_us": 33.808,
+        "harness_cand_us": null,
+        "speedup_vs_harness_ref": null,
+        "candidate_source": "reference",
+        "error": null,
+        "llm_flops_key": "index_q_upproj",
+        "llm_flops_us": 16.8,
+        "harness_vs_llm_flops_ratio": 2.0124
+      },
+      {
+        "op": "index_k",
+        "M": 32,
+        "S": 65536,
+        "harness_ref_us": 32.897,
+        "harness_cand_us": null,
+        "speedup_vs_harness_ref": null,
+        "candidate_source": "reference",
+        "error": null,
+        "llm_flops_key": "index_k_proj",
+        "llm_flops_us": 20.4,
+        "harness_vs_llm_flops_ratio": 1.6126
+      },
+      {
+        "op": "absorbed_W_UK",
+        "M": 32,
+        "S": 65536,
+        "harness_ref_us": 5.137,
+        "harness_cand_us": null,
+        "speedup_vs_harness_ref": null,
+        "candidate_source": "reference",
+        "error": null,
+        "llm_flops_key": "absorbed_W_UK",
+        "llm_flops_us": 2.8,
+        "harness_vs_llm_flops_ratio": 1.8346
+      },
+      {
+        "op": "absorbed_W_UV",
+        "M": 32,
+        "S": 65536,
+        "harness_ref_us": 5.504,
+        "harness_cand_us": null,
+        "speedup_vs_harness_ref": null,
+        "candidate_source": "reference",
+        "error": null,
+        "llm_flops_key": "absorbed_W_UV",
+        "llm_flops_us": 2.6,
+        "harness_vs_llm_flops_ratio": 2.1169
+      },
+      {
+        "op": "moe_gate",
+        "M": 32,
+        "S": 65536,
+        "harness_ref_us": 50.564,
+        "harness_cand_us": null,
+        "speedup_vs_harness_ref": null,
+        "candidate_source": "reference",
+        "error": null,
+        "llm_flops_key": "moe_gate_proj",
+        "llm_flops_us": 36.7,
+        "harness_vs_llm_flops_ratio": 1.3778
+      },
+      {
+        "op": "moe_up",
+        "M": 32,
+        "S": 65536,
+        "harness_ref_us": 57.589,
+        "harness_cand_us": null,
+        "speedup_vs_harness_ref": null,
+        "candidate_source": "reference",
+        "error": null,
+        "llm_flops_key": "moe_up_proj",
+        "llm_flops_us": 36.8,
+        "harness_vs_llm_flops_ratio": 1.5649
+      },
+      {
+        "op": "moe_down",
+        "M": 32,
+        "S": 65536,
+        "harness_ref_us": 46.642,
+        "harness_cand_us": null,
+        "speedup_vs_harness_ref": null,
+        "candidate_source": "reference",
+        "error": null,
+        "llm_flops_key": "moe_down_proj",
+        "llm_flops_us": 37.8,
+        "harness_vs_llm_flops_ratio": 1.2339
+      },
+      {
+        "op": "dsa_attn",
+        "M": 32,
+        "S": 65536,
+        "harness_ref_us": 46.944,
+        "harness_cand_us": null,
+        "speedup_vs_harness_ref": null,
+        "candidate_source": "reference",
+        "error": null,
+        "llm_flops_key": {
+          "decode": "dsa_decode_attn",
+          "prefill": "dsa_prefill_attn"
+        },
+        "llm_flops_us": 39.1,
+        "harness_vs_llm_flops_ratio": 1.2006
+      },
+      {
+        "op": "index_score",
+        "M": 32,
+        "S": 65536,
+        "harness_ref_us": 58.911,
+        "harness_cand_us": null,
+        "speedup_vs_harness_ref": null,
+        "candidate_source": "reference",
+        "error": null,
+        "llm_flops_key": "index_score",
+        "llm_flops_us": 46.7,
+        "harness_vs_llm_flops_ratio": 1.2615
+      }
+    ]
+  },
+  "layer_totals": {
+    "16": {
+      "harness_ref_layer_us": 519.411,
+      "llm_flops_layer_us_12ops": 308.4,
+      "note": "llm_flops layer excludes index_weights_proj (13th op in CSV)"
+    },
+    "32": {
+      "harness_ref_layer_us": 461.261,
+      "llm_flops_layer_us_12ops": 331.5,
+      "note": "llm_flops layer excludes index_weights_proj (13th op in CSV)"
+    }
+  },
+  "archive_candidates": [
+    {
+      "archive": "q_b_decode",
+      "task": "q_b_decode",
+      "operator": "q_b",
+      "kind": "TARGET_MET",
+      "candidate_dir": "/home/qinhaiyan/Kernel-Harness/archive/0720-Best-GLM-52/best/q_b_decode/candidate",
+      "per_shape": [
+        {
+          "op": "q_b",
+          "M": 16,
+          "S": 65536,
+          "harness_ref_us": 35.744,
+          "harness_cand_us": 11.664,
+          "speedup_vs_harness_ref": 3.0645,
+          "candidate_source": "archive/0720-Best-GLM-52/best/q_b_decode/candidate/candidate.py",
+          "error": null,
+          "llm_flops_key": "q_b_proj",
+          "llm_flops_us": 23.9,
+          "cand_vs_llm_flops_ratio": 0.488
+        },
+        {
+          "op": "q_b",
+          "M": 32,
+          "S": 65536,
+          "harness_ref_us": 45.024,
+          "harness_cand_us": 11.728,
+          "speedup_vs_harness_ref": 3.8389,
+          "candidate_source": "archive/0720-Best-GLM-52/best/q_b_decode/candidate/candidate.py",
+          "error": null,
+          "llm_flops_key": "q_b_proj",
+          "llm_flops_us": 24.3,
+          "cand_vs_llm_flops_ratio": 0.4826
+        }
+      ]
+    },
+    {
+      "archive": "o_proj_decode_hbm35",
+      "task": "o_proj_decode",
+      "operator": "o_proj",
+      "kind": "TARGET_MET",
+      "candidate_dir": "/home/qinhaiyan/Kernel-Harness/archive/0720-Best-GLM-52/best/o_proj_decode_hbm35/candidate",
+      "per_shape": [
+        {
+          "op": "o_proj",
+          "M": 16,
+          "S": 65536,
+          "harness_ref_us": 52.977,
+          "harness_cand_us": 33.698,
+          "speedup_vs_harness_ref": 1.5721,
+          "candidate_source": "archive/0720-Best-GLM-52/best/o_proj_decode_hbm35/candidate/candidate.py",
+          "error": null,
+          "llm_flops_key": "o_proj",
+          "llm_flops_us": 43.9,
+          "cand_vs_llm_flops_ratio": 0.7676
+        },
+        {
+          "op": "o_proj",
+          "M": 32,
+          "S": 65536,
+          "harness_ref_us": 54.321,
+          "harness_cand_us": 34.687,
+          "speedup_vs_harness_ref": 1.566,
+          "candidate_source": "archive/0720-Best-GLM-52/best/o_proj_decode_hbm35/candidate/candidate.py",
+          "error": null,
+          "llm_flops_key": "o_proj",
+          "llm_flops_us": 44.7,
+          "cand_vs_llm_flops_ratio": 0.776
+        }
+      ]
+    },
+    {
+      "archive": "o_proj_decode",
+      "task": "o_proj_decode",
+      "operator": "o_proj",
+      "kind": "WIN",
+      "candidate_dir": "/home/qinhaiyan/Kernel-Harness/archive/0720-Best-GLM-52/best/o_proj_decode/candidate",
+      "per_shape": [
+        {
+          "op": "o_proj",
+          "M": 16,
+          "S": 65536,
+          "harness_ref_us": 68.624,
+          "harness_cand_us": 62.288,
+          "speedup_vs_harness_ref": 1.1017,
+          "candidate_source": "archive/0720-Best-GLM-52/best/o_proj_decode/candidate/solution.py",
+          "error": null,
+          "llm_flops_key": "o_proj",
+          "llm_flops_us": 43.9,
+          "cand_vs_llm_flops_ratio": 1.4189
+        },
+        {
+          "op": "o_proj",
+          "M": 32,
+          "S": 65536,
+          "harness_ref_us": 54.016,
+          "harness_cand_us": 60.673,
+          "speedup_vs_harness_ref": 0.8903,
+          "candidate_source": "archive/0720-Best-GLM-52/best/o_proj_decode/candidate/solution.py",
+          "error": null,
+          "llm_flops_key": "o_proj",
+          "llm_flops_us": 44.7,
+          "cand_vs_llm_flops_ratio": 1.3573
+        }
+      ]
+    },
+    {
+      "archive": "o_proj_decode_hbm40_extreme",
+      "task": "o_proj_decode",
+      "operator": "o_proj",
+      "kind": "NO_GO",
+      "candidate_dir": "/home/qinhaiyan/Kernel-Harness/archive/0720-Best-GLM-52/best/o_proj_decode_hbm40_extreme/candidate",
+      "per_shape": [
+        {
+          "op": "o_proj",
+          "M": 16,
+          "S": 65536,
+          "harness_ref_us": 57.871,
+          "harness_cand_us": 34.495,
+          "speedup_vs_harness_ref": 1.6776,
+          "candidate_source": "archive/0720-Best-GLM-52/best/o_proj_decode_hbm40_extreme/candidate/candidate.py",
+          "error": null,
+          "llm_flops_key": "o_proj",
+          "llm_flops_us": 43.9,
+          "cand_vs_llm_flops_ratio": 0.7858
+        },
+        {
+          "op": "o_proj",
+          "M": 32,
+          "S": 65536,
+          "harness_ref_us": 65.421,
+          "harness_cand_us": 33.873,
+          "speedup_vs_harness_ref": 1.9314,
+          "candidate_source": "archive/0720-Best-GLM-52/best/o_proj_decode_hbm40_extreme/candidate/candidate.py",
+          "error": null,
+          "llm_flops_key": "o_proj",
+          "llm_flops_us": 44.7,
+          "cand_vs_llm_flops_ratio": 0.7578
+        }
+      ]
+    },
+    {
+      "archive": "index_q_upproj_decode_hbm15",
+      "task": "index_q_upproj_decode",
+      "operator": "index_q_upproj",
+      "kind": "WIN_MISS_TARGET",
+      "candidate_dir": "/home/qinhaiyan/Kernel-Harness/archive/0720-Best-GLM-52/best/index_q_upproj_decode_hbm15/candidate",
+      "per_shape": [
+        {
+          "op": "index_q_upproj",
+          "M": 16,
+          "S": 65536,
+          "harness_ref_us": 30.08,
+          "harness_cand_us": 7.392,
+          "speedup_vs_harness_ref": 4.0693,
+          "candidate_source": "archive/0720-Best-GLM-52/best/index_q_upproj_decode_hbm15/candidate/candidate.py",
+          "error": null,
+          "llm_flops_key": "index_q_upproj",
+          "llm_flops_us": 16.6,
+          "cand_vs_llm_flops_ratio": 0.4453
+        },
+        {
+          "op": "index_q_upproj",
+          "M": 32,
+          "S": 65536,
+          "harness_ref_us": 25.935,
+          "harness_cand_us": 8.337,
+          "speedup_vs_harness_ref": 3.111,
+          "candidate_source": "archive/0720-Best-GLM-52/best/index_q_upproj_decode_hbm15/candidate/candidate.py",
+          "error": null,
+          "llm_flops_key": "index_q_upproj",
+          "llm_flops_us": 16.8,
+          "cand_vs_llm_flops_ratio": 0.4962
+        }
+      ]
+    },
+    {
+      "archive": "moe_gate_proj_decode_hbm40",
+      "task": "moe_gate_proj_decode",
+      "operator": "moe_gate",
+      "kind": "TARGET_MET",
+      "candidate_dir": "/home/qinhaiyan/Kernel-Harness/archive/0720-Best-GLM-52/best/moe_gate_proj_decode_hbm40/candidate",
+      "per_shape": [
+        {
+          "op": "moe_gate",
+          "M": 16,
+          "S": 65536,
+          "harness_ref_us": 47.695,
+          "harness_cand_us": 30.976,
+          "speedup_vs_harness_ref": 1.5397,
+          "candidate_source": "archive/0720-Best-GLM-52/best/moe_gate_proj_decode_hbm40/candidate/candidate.py",
+          "error": null,
+          "llm_flops_key": "moe_gate_proj",
+          "llm_flops_us": 36.6,
+          "cand_vs_llm_flops_ratio": 0.8463
+        },
+        {
+          "op": "moe_gate",
+          "M": 32,
+          "S": 65536,
+          "harness_ref_us": 47.776,
+          "harness_cand_us": 30.832,
+          "speedup_vs_harness_ref": 1.5495,
+          "candidate_source": "archive/0720-Best-GLM-52/best/moe_gate_proj_decode_hbm40/candidate/candidate.py",
+          "error": null,
+          "llm_flops_key": "moe_gate_proj",
+          "llm_flops_us": 36.7,
+          "cand_vs_llm_flops_ratio": 0.8401
+        }
+      ]
+    },
+    {
+      "archive": "moe_up_proj_decode_hbm40",
+      "task": "moe_up_proj_decode",
+      "operator": "moe_up",
+      "kind": "TARGET_MET",
+      "candidate_dir": "/home/qinhaiyan/Kernel-Harness/archive/0720-Best-GLM-52/best/moe_up_proj_decode_hbm40/candidate",
+      "per_shape": [
+        {
+          "op": "moe_up",
+          "M": 16,
+          "S": 65536,
+          "harness_ref_us": 47.345,
+          "harness_cand_us": 30.945,
+          "speedup_vs_harness_ref": 1.53,
+          "candidate_source": "archive/0720-Best-GLM-52/best/moe_up_proj_decode_hbm40/candidate/candidate.py",
+          "error": null,
+          "llm_flops_key": "moe_up_proj",
+          "llm_flops_us": 36.7,
+          "cand_vs_llm_flops_ratio": 0.8432
+        },
+        {
+          "op": "moe_up",
+          "M": 32,
+          "S": 65536,
+          "harness_ref_us": 47.553,
+          "harness_cand_us": 31.12,
+          "speedup_vs_harness_ref": 1.5281,
+          "candidate_source": "archive/0720-Best-GLM-52/best/moe_up_proj_decode_hbm40/candidate/candidate.py",
+          "error": null,
+          "llm_flops_key": "moe_up_proj",
+          "llm_flops_us": 36.8,
+          "cand_vs_llm_flops_ratio": 0.8457
+        }
+      ]
+    },
+    {
+      "archive": "moe_down_proj_decode_hbm40",
+      "task": "moe_down_proj_decode",
+      "operator": "moe_down",
+      "kind": "TARGET_MET",
+      "candidate_dir": "/home/qinhaiyan/Kernel-Harness/archive/0720-Best-GLM-52/best/moe_down_proj_decode_hbm40/candidate",
+      "per_shape": [
+        {
+          "op": "moe_down",
+          "M": 16,
+          "S": 65536,
+          "harness_ref_us": 47.6,
+          "harness_cand_us": 31.088,
+          "speedup_vs_harness_ref": 1.5311,
+          "candidate_source": "archive/0720-Best-GLM-52/best/moe_down_proj_decode_hbm40/candidate/candidate.py",
+          "error": null,
+          "llm_flops_key": "moe_down_proj",
+          "llm_flops_us": 38.2,
+          "cand_vs_llm_flops_ratio": 0.8138
+        },
+        {
+          "op": "moe_down",
+          "M": 32,
+          "S": 65536,
+          "harness_ref_us": 47.217,
+          "harness_cand_us": 31.361,
+          "speedup_vs_harness_ref": 1.5056,
+          "candidate_source": "archive/0720-Best-GLM-52/best/moe_down_proj_decode_hbm40/candidate/candidate.py",
+          "error": null,
+          "llm_flops_key": "moe_down_proj",
+          "llm_flops_us": 37.8,
+          "cand_vs_llm_flops_ratio": 0.8297
+        }
+      ]
+    },
+    {
+      "archive": "index_score_decode_hbm82",
+      "task": "index_score_decode",
+      "operator": "index_score",
+      "kind": "NO_GO",
+      "candidate_dir": "/home/qinhaiyan/Kernel-Harness/archive/0720-Best-GLM-52/best/index_score_decode_hbm82/candidate",
+      "per_shape": [
+        {
+          "op": "index_score",
+          "M": 16,
+          "S": 65536,
+          "harness_ref_us": 32.575,
+          "harness_cand_us": 32.527,
+          "speedup_vs_harness_ref": 1.0015,
+          "candidate_source": "archive/0720-Best-GLM-52/best/index_score_decode_hbm82/candidate/candidate.py",
+          "error": null,
+          "llm_flops_key": "index_score",
+          "llm_flops_us": 25.5,
+          "cand_vs_llm_flops_ratio": 1.2756
+        },
+        {
+          "op": "index_score",
+          "M": 32,
+          "S": 65536,
+          "harness_ref_us": 58.465,
+          "harness_cand_us": 58.465,
+          "speedup_vs_harness_ref": 1.0,
+          "candidate_source": "archive/0720-Best-GLM-52/best/index_score_decode_hbm82/candidate/candidate.py",
+          "error": null,
+          "llm_flops_key": "index_score",
+          "llm_flops_us": 46.7,
+          "cand_vs_llm_flops_ratio": 1.2519
+        }
+      ]
+    },
+    {
+      "archive": "dsa_attn_decode_hbm40",
+      "task": "dsa_attn_decode",
+      "operator": "dsa_attn",
+      "kind": "NO_GO",
+      "candidate_dir": "/home/qinhaiyan/Kernel-Harness/archive/0720-Best-GLM-52/best/dsa_attn_decode_hbm40/candidate",
+      "per_shape": [
+        {
+          "op": "dsa_attn",
+          "M": 16,
+          "S": 65536,
+          "harness_ref_us": 46.048,
+          "harness_cand_us": 45.888,
+          "speedup_vs_harness_ref": 1.0035,
+          "candidate_source": "archive/0720-Best-GLM-52/best/dsa_attn_decode_hbm40/candidate/candidate.py",
+          "error": null,
+          "llm_flops_key": {
+            "decode": "dsa_decode_attn",
+            "prefill": "dsa_prefill_attn"
+          },
+          "llm_flops_us": 38.8,
+          "cand_vs_llm_flops_ratio": 1.1827
+        },
+        {
+          "op": "dsa_attn",
+          "M": 32,
+          "S": 65536,
+          "harness_ref_us": 47.135,
+          "harness_cand_us": 47.249,
+          "speedup_vs_harness_ref": 0.9976,
+          "candidate_source": "archive/0720-Best-GLM-52/best/dsa_attn_decode_hbm40/candidate/candidate.py",
+          "error": null,
+          "llm_flops_key": {
+            "decode": "dsa_decode_attn",
+            "prefill": "dsa_prefill_attn"
+          },
+          "llm_flops_us": 39.1,
+          "cand_vs_llm_flops_ratio": 1.2084
+        }
+      ]
+    },
+    {
+      "archive": "absorbed_W_UV_decode_hbm86",
+      "task": "absorbed_W_UV_decode",
+      "operator": "absorbed_W_UV",
+      "kind": "NO_GO",
+      "candidate_dir": "/home/qinhaiyan/Kernel-Harness/archive/0720-Best-GLM-52/best/absorbed_W_UV_decode_hbm86/candidate",
+      "per_shape": [
+        {
+          "op": "absorbed_W_UV",
+          "M": 16,
+          "S": 65536,
+          "harness_ref_us": 5.408,
+          "harness_cand_us": 5.232,
+          "speedup_vs_harness_ref": 1.0336,
+          "candidate_source": "archive/0720-Best-GLM-52/best/absorbed_W_UV_decode_hbm86/candidate/candidate.py",
+          "error": null,
+          "llm_flops_key": "absorbed_W_UV",
+          "llm_flops_us": 2.5,
+          "cand_vs_llm_flops_ratio": 2.0928
+        },
+        {
+          "op": "absorbed_W_UV",
+          "M": 32,
+          "S": 65536,
+          "harness_ref_us": 5.472,
+          "harness_cand_us": 5.552,
+          "speedup_vs_harness_ref": 0.9856,
+          "candidate_source": "archive/0720-Best-GLM-52/best/absorbed_W_UV_decode_hbm86/candidate/candidate.py",
+          "error": null,
+          "llm_flops_key": "absorbed_W_UV",
+          "llm_flops_us": 2.6,
+          "cand_vs_llm_flops_ratio": 2.1354
+        }
+      ]
+    }
+  ]
+}

@@ -17,6 +17,9 @@ testbench/
     sync_glm52_tasks.py projects glm52_ops onto the 24 task dirs (--check for CI;
                         never overwrites candidate.py)
     selftest.py         GPU-free structural pre-flight
+    accept_layer.py     acceptance only: swap a candidate into the 12-op layer
+                        budget (PR1 allLatency / llm_flops style) and report the
+                        end-to-end delta — does NOT gate a WIN
     inventory.py        list tasks by family
     knowledge.py        the recipe log
     check_env.py        verify GPU / CUDA / torch / deep_gemm / sgl_kernel

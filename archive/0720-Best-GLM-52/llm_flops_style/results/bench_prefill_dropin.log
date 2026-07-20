@@ -1,0 +1,131 @@
+==================================================================================================================================
+GLM-5.2 PREFILL — llm_flops DROP-IN (same tensors for stock & candidate)
+==================================================================================================================================
+Timing: CUDA Graph (fallback Event)  warmup=5 runs=20
+llm_flops: /home/qinhaiyan/llm_flops  seed=0
+M=[1024, 2048, 4096]  S=65536
+Mode: DROP-IN SWAPS
+Swaps: o_proj, index_k_proj, moe_down_proj
+==================================================================================================================================
+
+==================================================================================================================================
+  M=1024, S=65536
+==================================================================================================================================
+  name                     impl                                avg(ms)  stock(ms)     spd  same proto       
+  -------------------------------------------------------------------------------------------------------------------
+  fused_qkv_a_proj         llm_flops_stock                      0.0253     0.0253   1.00x     Y cuda_graph  
+  q_b_proj                 llm_flops_stock                      0.0421     0.0421   1.00x     Y cuda_graph  
+  absorbed_W_UK            llm_flops_stock                      0.0153     0.0153   1.00x     Y cuda_graph  
+  absorbed_W_UV            llm_flops_stock                      0.0106     0.0106   1.00x     Y cuda_graph  
+  o_proj                   dropin:o_proj_prefill                0.0852     0.0864   1.01x     Y cuda_graph  
+  dsa_prefill_attn         llm_flops_stock                      0.5397     0.5397   1.00x     Y cuda_graph  
+  index_k_proj             dropin:index_k_prefill_bw70          0.0730     0.0839   1.15x     Y cuda_graph  
+  index_q_upproj           llm_flops_stock                      0.0221     0.0221   1.00x     Y cuda_graph  
+  index_weights_proj       llm_flops_stock                      0.0168     0.0168   1.00x     Y cuda_graph  
+  index_score              llm_flops_stock                      0.2650     0.2650   1.00x     Y cuda_graph  
+  moe_gate_proj            llm_flops_stock                      0.1018     0.1018   1.00x     Y cuda_graph  
+  moe_up_proj              llm_flops_stock                      0.1031     0.1031   1.00x     Y cuda_graph  
+  moe_down_proj            dropin:moe_down_proj_prefill_mfu65     0.1016     0.1015   1.00x     Y cuda_graph  
+
+==================================================================================================================================
+  M=2048, S=65536
+==================================================================================================================================
+  name                     impl                                avg(ms)  stock(ms)     spd  same proto       
+  -------------------------------------------------------------------------------------------------------------------
+  fused_qkv_a_proj         llm_flops_stock                      0.0365     0.0365   1.00x     Y cuda_graph  
+  q_b_proj                 llm_flops_stock                      0.0695     0.0695   1.00x     Y cuda_graph  
+  absorbed_W_UK            llm_flops_stock                      0.0315     0.0315   1.00x     Y cuda_graph  
+  absorbed_W_UV            llm_flops_stock                      0.0228     0.0228   1.00x     Y cuda_graph  
+  o_proj                   dropin:o_proj_prefill                0.1564     0.1588   1.02x     Y cuda_graph  
+  dsa_prefill_attn         llm_flops_stock                      0.6012     0.6012   1.00x     Y cuda_graph  
+  index_k_proj             dropin:index_k_prefill_bw70          0.0728     0.0834   1.14x     Y cuda_graph  
+  index_q_upproj           llm_flops_stock                      0.0269     0.0269   1.00x     Y cuda_graph  
+  index_weights_proj       llm_flops_stock                      0.0168     0.0168   1.00x     Y cuda_graph  
+  index_score              llm_flops_stock                      0.5556     0.5556   1.00x     Y cuda_graph  
+  moe_gate_proj            llm_flops_stock                      0.1803     0.1803   1.00x     Y cuda_graph  
+  moe_up_proj              llm_flops_stock                      0.1813     0.1813   1.00x     Y cuda_graph  
+  moe_down_proj            dropin:moe_down_proj_prefill_mfu65     0.1841     0.1844   1.00x     Y cuda_graph  
+
+==================================================================================================================================
+  M=4096, S=65536
+==================================================================================================================================
+  name                     impl                                avg(ms)  stock(ms)     spd  same proto       
+  -------------------------------------------------------------------------------------------------------------------
+  fused_qkv_a_proj         llm_flops_stock                      0.0530     0.0530   1.00x     Y cuda_graph  
+  q_b_proj                 llm_flops_stock                      0.1152     0.1152   1.00x     Y cuda_graph  
+  absorbed_W_UK            llm_flops_stock                      0.0585     0.0585   1.00x     Y cuda_graph  
+  absorbed_W_UV            llm_flops_stock                      0.0443     0.0443   1.00x     Y cuda_graph  
+  o_proj                   dropin:o_proj_prefill                0.3115     0.3413   1.10x     Y cuda_graph  
+  dsa_prefill_attn         llm_flops_stock                      1.2680     1.2680   1.00x     Y cuda_graph  
+  index_k_proj             dropin:index_k_prefill_bw70          0.0723     0.0832   1.15x     Y cuda_graph  
+  index_q_upproj           llm_flops_stock                      0.0360     0.0360   1.00x     Y cuda_graph  
+  index_weights_proj       llm_flops_stock                      0.0168     0.0168   1.00x     Y cuda_graph  
+  index_score              llm_flops_stock                      1.1837     1.1837   1.00x     Y cuda_graph  
+  moe_gate_proj            llm_flops_stock                      0.3333     0.3333   1.00x     Y cuda_graph  
+  moe_up_proj              llm_flops_stock                      0.3332     0.3332   1.00x     Y cuda_graph  
+  moe_down_proj            dropin:moe_down_proj_prefill_mfu65     0.3559     0.3459   0.97x     Y cuda_graph  
+
+==================================================================================================================================
+  PREFILL Summary (M=1024, S=65536)  [drop-in: same llm_flops tensors]
+  layer TOTAL stock:   1.4138 ms
+  layer TOTAL swapped: 1.4018 ms  speedup=1.0086x
+==================================================================================================================================
+  rank   name                     impl                            avg(ms)  stock(ms)     spd     pct proto       
+  ------------------------------------------------------------------------------------------------------------------------
+  1      dsa_prefill_attn         llm_flops_stock                  0.5397     0.5397   1.00x   38.5% cuda_graph  
+  2      index_score              llm_flops_stock                  0.2650     0.2650   1.00x   18.9% cuda_graph  
+  3      moe_up_proj              llm_flops_stock                  0.1031     0.1031   1.00x    7.4% cuda_graph  
+  4      moe_gate_proj            llm_flops_stock                  0.1018     0.1018   1.00x    7.3% cuda_graph  
+  5      moe_down_proj            dropin:moe_down_proj_prefill_mfu65     0.1016     0.1015   1.00x    7.2% cuda_graph  
+  6      o_proj                   dropin:o_proj_prefill            0.0852     0.0864   1.01x    6.1% cuda_graph  
+  7      index_k_proj             dropin:index_k_prefill_bw70      0.0730     0.0839   1.15x    5.2% cuda_graph  
+  8      q_b_proj                 llm_flops_stock                  0.0421     0.0421   1.00x    3.0% cuda_graph  
+  9      fused_qkv_a_proj         llm_flops_stock                  0.0253     0.0253   1.00x    1.8% cuda_graph  
+  10     index_q_upproj           llm_flops_stock                  0.0221     0.0221   1.00x    1.6% cuda_graph  
+  11     index_weights_proj       llm_flops_stock                  0.0168     0.0168   1.00x    1.2% cuda_graph  
+  12     absorbed_W_UK            llm_flops_stock                  0.0153     0.0153   1.00x    1.1% cuda_graph  
+  13     absorbed_W_UV            llm_flops_stock                  0.0106     0.0106   1.00x    0.8% cuda_graph  
+
+==================================================================================================================================
+  PREFILL Summary (M=2048, S=65536)  [drop-in: same llm_flops tensors]
+  layer TOTAL stock:   2.1490 ms
+  layer TOTAL swapped: 2.1358 ms  speedup=1.0062x
+==================================================================================================================================
+  rank   name                     impl                            avg(ms)  stock(ms)     spd     pct proto       
+  ------------------------------------------------------------------------------------------------------------------------
+  1      dsa_prefill_attn         llm_flops_stock                  0.6012     0.6012   1.00x   28.2% cuda_graph  
+  2      index_score              llm_flops_stock                  0.5556     0.5556   1.00x   26.0% cuda_graph  
+  3      moe_down_proj            dropin:moe_down_proj_prefill_mfu65     0.1841     0.1844   1.00x    8.6% cuda_graph  
+  4      moe_up_proj              llm_flops_stock                  0.1813     0.1813   1.00x    8.5% cuda_graph  
+  5      moe_gate_proj            llm_flops_stock                  0.1803     0.1803   1.00x    8.4% cuda_graph  
+  6      o_proj                   dropin:o_proj_prefill            0.1564     0.1588   1.02x    7.3% cuda_graph  
+  7      index_k_proj             dropin:index_k_prefill_bw70      0.0728     0.0834   1.14x    3.4% cuda_graph  
+  8      q_b_proj                 llm_flops_stock                  0.0695     0.0695   1.00x    3.3% cuda_graph  
+  9      fused_qkv_a_proj         llm_flops_stock                  0.0365     0.0365   1.00x    1.7% cuda_graph  
+  10     absorbed_W_UK            llm_flops_stock                  0.0315     0.0315   1.00x    1.5% cuda_graph  
+  11     index_q_upproj           llm_flops_stock                  0.0269     0.0269   1.00x    1.3% cuda_graph  
+  12     absorbed_W_UV            llm_flops_stock                  0.0228     0.0228   1.00x    1.1% cuda_graph  
+  13     index_weights_proj       llm_flops_stock                  0.0168     0.0168   1.00x    0.8% cuda_graph  
+
+==================================================================================================================================
+  PREFILL Summary (M=4096, S=65536)  [drop-in: same llm_flops tensors]
+  layer TOTAL stock:   4.2124 ms
+  layer TOTAL swapped: 4.1818 ms  speedup=1.0073x
+==================================================================================================================================
+  rank   name                     impl                            avg(ms)  stock(ms)     spd     pct proto       
+  ------------------------------------------------------------------------------------------------------------------------
+  1      dsa_prefill_attn         llm_flops_stock                  1.2680     1.2680   1.00x   30.3% cuda_graph  
+  2      index_score              llm_flops_stock                  1.1837     1.1837   1.00x   28.3% cuda_graph  
+  3      moe_down_proj            dropin:moe_down_proj_prefill_mfu65     0.3559     0.3459   0.97x    8.5% cuda_graph  
+  4      moe_gate_proj            llm_flops_stock                  0.3333     0.3333   1.00x    8.0% cuda_graph  
+  5      moe_up_proj              llm_flops_stock                  0.3332     0.3332   1.00x    8.0% cuda_graph  
+  6      o_proj                   dropin:o_proj_prefill            0.3115     0.3413   1.10x    7.4% cuda_graph  
+  7      q_b_proj                 llm_flops_stock                  0.1152     0.1152   1.00x    2.8% cuda_graph  
+  8      index_k_proj             dropin:index_k_prefill_bw70      0.0723     0.0832   1.15x    1.7% cuda_graph  
+  9      absorbed_W_UK            llm_flops_stock                  0.0585     0.0585   1.00x    1.4% cuda_graph  
+  10     fused_qkv_a_proj         llm_flops_stock                  0.0530     0.0530   1.00x    1.3% cuda_graph  
+  11     absorbed_W_UV            llm_flops_stock                  0.0443     0.0443   1.00x    1.1% cuda_graph  
+  12     index_q_upproj           llm_flops_stock                  0.0360     0.0360   1.00x    0.9% cuda_graph  
+  13     index_weights_proj       llm_flops_stock                  0.0168     0.0168   1.00x    0.4% cuda_graph  
+
+Results: /home/qinhaiyan/Kernel-Harness/archive/0720-Best-GLM-52/llm_flops_style/results/glm5_prefill_swapped_perf.csv

@@ -1,0 +1,27 @@
+name,category,batch,S,shape,avg_ms,stock_ms,impl,protocol,archive,same_inputs,dropin
+fused_qkv_a_proj,Attention,16,65536,"[16, 6144]×[6144, 2624]  (DeepGEMM FP8)",0.023307,0.023307,llm_flops_stock,cuda_graph,,True,True
+q_b_proj,Attention,16,65536,"[16, 2048]×[2048, 16384]  (DeepGEMM FP8)",0.007486,0.024214,dropin:q_b_decode,cuda_graph,q_b_decode,True,True
+absorbed_W_UK,Attention,16,65536,"bmm_fp8 [64, 16, 192]×[192, 512]",0.002504,0.002504,llm_flops_stock,cuda_graph,,True,True
+absorbed_W_UV,Attention,16,65536,"bmm_fp8 [64, 16, 512]×[512, 256]",0.002435,0.002435,llm_flops_stock,cuda_graph,,True,True
+o_proj,Attention,16,65536,"[16, 16384]×[16384, 6144]  (DeepGEMM FP8)",0.021861,0.044018,dropin:o_proj_decode_hbm35,cuda_graph,o_proj_decode_hbm35,True,True
+dsa_decode_attn,DSA,16,65536,"flash_mla_sparse_fwd s_q=16 s_kv=65536 topk=2048 (decode batch)",0.039478,0.039478,llm_flops_stock,cuda_graph,,True,True
+index_k_proj,DSA Indexer,16,65536,"[16, 6144]×[6144, 128]  (DeepGEMM FP8)",0.021234,0.021234,llm_flops_stock,cuda_graph,,True,True
+index_q_upproj,DSA Indexer,16,65536,"[16, 2048]×[2048, 4096]  (DeepGEMM FP8)",0.005587,0.017200,dropin:index_q_upproj_decode_hbm15,cuda_graph,index_q_upproj_decode_hbm15,True,True
+index_weights_proj,DSA Indexer,16,65536,"[16, 6144]×[6144, 32]  (DeepGEMM BF16->F32)",0.013254,0.013254,llm_flops_stock,cuda_graph,,True,True
+index_score,DSA Indexer,16,65536,"fp8_paged_mqa_logits batch=16 s_kv=65536 (paged decode)",0.026408,0.026408,llm_flops_stock,cuda_graph,,True,True
+moe_gate_proj,MoE,16,65536,"masked [8x, 6144]×[6144, 2048]",0.025326,0.037696,dropin:moe_gate_proj_decode_hbm40,cuda_graph,moe_gate_proj_decode_hbm40,True,True
+moe_up_proj,MoE,16,65536,"masked [8x, 6144]×[6144, 2048]",0.025309,0.037640,dropin:moe_up_proj_decode_hbm40,cuda_graph,moe_up_proj_decode_hbm40,True,True
+moe_down_proj,MoE,16,65536,"masked [8x, 2048]×[2048, 6144]",0.025813,0.038798,dropin:moe_down_proj_decode_hbm40,cuda_graph,moe_down_proj_decode_hbm40,True,True
+fused_qkv_a_proj,Attention,32,65536,"[32, 6144]×[6144, 2624]  (DeepGEMM FP8)",0.023634,0.023634,llm_flops_stock,cuda_graph,,True,True
+q_b_proj,Attention,32,65536,"[32, 2048]×[2048, 16384]  (DeepGEMM FP8)",0.007181,0.024376,dropin:q_b_decode,cuda_graph,q_b_decode,True,True
+absorbed_W_UK,Attention,32,65536,"bmm_fp8 [64, 32, 192]×[192, 512]",0.002730,0.002730,llm_flops_stock,cuda_graph,,True,True
+absorbed_W_UV,Attention,32,65536,"bmm_fp8 [64, 32, 512]×[512, 256]",0.002549,0.002549,llm_flops_stock,cuda_graph,,True,True
+o_proj,Attention,32,65536,"[32, 16384]×[16384, 6144]  (DeepGEMM FP8)",0.027698,0.045109,dropin:o_proj_decode_hbm35,cuda_graph,o_proj_decode_hbm35,True,True
+dsa_decode_attn,DSA,32,65536,"flash_mla_sparse_fwd s_q=32 s_kv=65536 topk=2048 (decode batch)",0.039706,0.039706,llm_flops_stock,cuda_graph,,True,True
+index_k_proj,DSA Indexer,32,65536,"[32, 6144]×[6144, 128]  (DeepGEMM FP8)",0.021707,0.021707,llm_flops_stock,cuda_graph,,True,True
+index_q_upproj,DSA Indexer,32,65536,"[32, 2048]×[2048, 4096]  (DeepGEMM FP8)",0.007293,0.017318,dropin:index_q_upproj_decode_hbm15,cuda_graph,index_q_upproj_decode_hbm15,True,True
+index_weights_proj,DSA Indexer,32,65536,"[32, 6144]×[6144, 32]  (DeepGEMM BF16->F32)",0.013498,0.013498,llm_flops_stock,cuda_graph,,True,True
+index_score,DSA Indexer,32,65536,"fp8_paged_mqa_logits batch=32 s_kv=65536 (paged decode)",0.046834,0.046834,llm_flops_stock,cuda_graph,,True,True
+moe_gate_proj,MoE,32,65536,"masked [8x, 6144]×[6144, 2048]",0.025424,0.037642,dropin:moe_gate_proj_decode_hbm40,cuda_graph,moe_gate_proj_decode_hbm40,True,True
+moe_up_proj,MoE,32,65536,"masked [8x, 6144]×[6144, 2048]",0.025302,0.037771,dropin:moe_up_proj_decode_hbm40,cuda_graph,moe_up_proj_decode_hbm40,True,True
+moe_down_proj,MoE,32,65536,"masked [8x, 2048]×[2048, 6144]",0.026102,0.038427,dropin:moe_down_proj_decode_hbm40,cuda_graph,moe_down_proj_decode_hbm40,True,True

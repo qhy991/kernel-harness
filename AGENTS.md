@@ -41,6 +41,21 @@ the run under `runs/glm52/<task>/<run_id>/`.
 **Exit codes:** `0` correct and faster · `1` correct, not faster · `2` incorrect ·
 `3` infrastructure or contract error.
 
+### Acceptance (not the gate)
+
+After a per-op result, optionally measure what the candidate does to the **full
+12-op layer budget** (same operator set as llm_flops / PR1 `allLatency`):
+
+```bash
+.venv/bin/python testbench/bin/accept_layer.py --M 32 --task o_proj_decode
+.venv/bin/python testbench/bin/accept_layer.py --M 4096 --op o_proj \
+    --candidate ~/kernels/o_proj.py
+```
+
+This swaps only the focused op onto its candidate (the other 11 stay on the
+reference), reports layer total + end-to-end speedup, and exits 0 on a successful
+measurement. It does **not** check correctness and does **not** replace `run.sh`.
+
 ## Candidates
 
 The whole ABI is `run(inputs: dict) -> output`. You do **not** have to edit the task
@@ -114,6 +129,8 @@ List everything with `.venv/bin/python testbench/bin/inventory.py`.
 - Use only the repo-local `.venv` (`./testbench/setup_env.sh`).
 - Verify once before testing: `.venv/bin/python testbench/bin/check_env.py`.
 - Structural pre-flight runs anywhere, no GPU/venv: `python3 testbench/bin/selftest.py`.
+- Layer-swap acceptance (advisory, after a per-op result):
+  `.venv/bin/python testbench/bin/accept_layer.py --M 32 --task <task>`.
 - After changing `glm52_ops.py`, re-project it onto the tasks:
   `.venv/bin/python testbench/bin/sync_glm52_tasks.py` (`--check` for CI; it never
   overwrites `candidate.py`).

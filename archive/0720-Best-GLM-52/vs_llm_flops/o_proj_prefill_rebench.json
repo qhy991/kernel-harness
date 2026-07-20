@@ -1,0 +1,23 @@
+[
+  {
+    "M": 1024,
+    "ref_us": 91.871,
+    "cand_us": 90.463,
+    "speedup": 1.0156,
+    "source": "archive/0720-Best-GLM-52/best/o_proj_prefill/candidate/candidate.py"
+  },
+  {
+    "M": 2048,
+    "ref_us": 141.167,
+    "cand_us": 139.454,
+    "speedup": 1.0123,
+    "source": "archive/0720-Best-GLM-52/best/o_proj_prefill/candidate/candidate.py"
+  },
+  {
+    "M": 4096,
+    "ref_us": 270.359,
+    "cand_us": 269.267,
+    "speedup": 1.0041,
+    "source": "archive/0720-Best-GLM-52/best/o_proj_prefill/candidate/candidate.py"
+  }
+]
