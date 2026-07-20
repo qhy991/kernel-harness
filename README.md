@@ -47,3 +47,9 @@ an oracle for anything here.
   fall back to the reference where it cannot win, exactly as SGLang does.
 - **Every run is kept.** `runs/<model>/<task>/<run_id>/` holds `result.json`, the
   terminal log, the environment, and a byte-exact copy of the candidate that ran.
+
+## Related tools
+
+- [`rewardbench/`](rewardbench/README.md) — standalone **performance-reward** scoring for
+  a folder of already-optimized GLM-5 operators (bound-aware roofline utilization ∈
+  [0,1]). Complements the per-task gate; it does not replace `run.sh`.

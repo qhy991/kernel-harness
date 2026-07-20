@@ -135,6 +135,28 @@ List everything with `.venv/bin/python testbench/bin/inventory.py`.
   `.venv/bin/python testbench/bin/sync_glm52_tasks.py` (`--check` for CI; it never
   overwrites `candidate.py`).
 
+## Roofline-reward bench (folder of optimized ops → one CSV)
+
+[`rewardbench/`](rewardbench/README.md) is a standalone tool that scores a **folder of
+already-optimized GLM-5 operators** against the B200 roofline. Unlike the per-task gate
+(`run.sh` / CUPTI correctness + speedup), it is **performance-only** and reports a
+**bound-aware roofline-utilization reward ∈ [0,1]** per op: compute-util for
+compute-bound ops, HBM-bandwidth-util for memory-bound ops (auto-classified by
+arithmetic intensity). Two phase-specific scripts, prefill and decode:
+
+```bash
+cd rewardbench
+python bench_GLM5_ops_prefill.py --kernels-dir <dir>   # one candidate folder OR many
+python bench_GLM5_ops_decode.py  --kernels-dir <dir>
+```
+
+`--kernels-dir` accepts a parent folder of candidates or a single operator folder.
+Each candidate's rows print to the terminal (timestamped) and append to a
+`reward_bench.csv` inside that operator's own directory, plus an aggregate CSV. It
+never gates a WIN — `run.sh` remains the gate; this is for tracking how close a
+kernel is to the hardware ceiling. See its README for the CSV schema and the reward
+design.
+
 ## Knowledge base (recipes)
 
 `testbench/knowledge/` accumulates one structured entry per completed session: the
