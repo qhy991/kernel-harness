@@ -1,0 +1,214 @@
+TASK fused_qkv_a/decode  run=20260720T054249Z-256d51  candidate=archive/0720-Best-GLM-52/experiments/fused_qkv_a_decode_deepgemm_fused/candidate/candidate.py sha=54e30c64c530
+     timing=cupti-cold-l2-device-kernel-median iters=30 warmup=3 repeat=10  S=65536 seed=0  device=cuda:0
+
+     roofline: fp8 peak 4.50 PFLOP/s, HBM 8.0 TB/s, ridge 562.5 FLOP/byte -> reward = utilisation of whichever resource binds
+
+  shape    ok  calc_diff   cand_us    ref_us  speedup  sp_cons  verdict      AI   bound   TFLOP/s     MFU      GB/s      BW   reward
+         WARN   timing samples spread 2.98x (cand 17.7-17.9us, ref 29.7-88.5us) — sp_cons unreliable, re-run before trusting it
+   M=16  PASS   0.00e+00     17.82     29.90   1.678x   1.668x      WIN    31.6  memory      28.9   0.64%     915.2  11.44%   0.1144
+        └ ref   baseline                                                                     17.3   0.38%     545.4   6.82%   0.0682
+         WARN   timing samples spread 1.42x (cand 18.1-18.4us, ref 30.2-42.9us) — sp_cons unreliable, re-run before trusting it
+   M=32  PASS   0.00e+00     18.20     30.90   1.698x   1.654x      WIN    62.5  memory      56.7   1.26%     906.4  11.33%   0.1133
+        └ ref   baseline                                                                     33.4   0.74%     533.9   6.67%   0.0667
+
+VERDICT: CORRECT
+2/2 shapes WIN, 0 regressed, 0 neutral   geomean_speedup=1.6877x  best_reward=0.1144
+performance_gate: >=1 win AND 0 regressions -> MET
+WARNING: unstable timing on glm52-fused_qkv_a_decode-M16, glm52-fused_qkv_a_decode-M32 — the conservative margin above is not trustworthy; re-run.
+result=runs/glm52/fused_qkv_a_decode/20260720T054249Z-256d51/result.json
+
+RESULT_JSON_BEGIN
+{
+  "schema_version": "1.0",
+  "task": {
+    "name": "fused_qkv_a_decode",
+    "model": "glm52",
+    "operator": "fused_qkv_a",
+    "phase": "decode",
+    "S": 65536,
+    "seed": 0,
+    "family": "gemm",
+    "output_kind": "dense",
+    "backend": "deep_gemm.fp8_gemm_nt",
+    "diff_tol": 5e-06,
+    "rel_tol": 0.015703125,
+    "abs_tol_factor": 0.0001,
+    "performance_gate": {
+      "min_speedup": 1.0,
+      "basis": "conservative (q=0.9)"
+    }
+  },
+  "run": {
+    "run_id": "20260720T054249Z-256d51",
+    "started_utc": "2026-07-20T05:42:49Z",
+    "finished_utc": "2026-07-20T05:43:00Z",
+    "repeat": 10,
+    "repeat_scope": "in-process",
+    "iterations": 30,
+    "warmup": 3,
+    "timing_protocol": "cupti-cold-l2-device-kernel-median",
+    "device": "cuda:0",
+    "correctness_standard": "FlashMLA check_is_allclose structure: anomaly positions + elementwise (abs OR rel) + DeepGEMM calc_diff, on a poisoned output buffer",
+    "reward_standard": "rewardbench bound-aware roofline (PR2)",
+    "result_dir": "runs/glm52/fused_qkv_a_decode/20260720T054249Z-256d51"
+  },
+  "candidate": {
+    "path": "archive/0720-Best-GLM-52/experiments/fused_qkv_a_decode_deepgemm_fused/candidate/candidate.py",
+    "sha256": "54e30c64c530d900a6dd1bfcaec5327c797ab2784c251019ce55d50ae510c4e6",
+    "is_reference_fallback": false,
+    "external": true
+  },
+  "environment": {
+    "hostname": "dry-vm-embraces-fin-03",
+    "python": "3.12.13",
+    "platform": "Linux-6.8.0-100-generic-x86_64-with-glibc2.39",
+    "git_sha": "2f5c9119463fea81cfd893e3bf8fad534bf0ba26",
+    "git_branch": "main",
+    "git_dirty": true,
+    "torch": "2.11.0+cu130",
+    "deep_gemm": "0.1.4",
+    "sgl_kernel": "0.4.4",
+    "cuda": "13.0",
+    "gpu": "NVIDIA B200",
+    "gpu_capability": "10.0",
+    "gpu_memory_gb": 191.5,
+    "gpu_count": 1,
+    "driver": "610.43.02\n610.43.02\n610.43.02\n610.43.02"
+  },
+  "cost_model": {
+    "gpu": "NVIDIA B200",
+    "hbm_bytes_per_s": 8000000000000.0,
+    "peak_flops_fp8": 4500000000000000.0,
+    "peak_flops_bf16": 2250000000000000.0,
+    "source": "rewardbench (PR2) + testbench/harness/profile.py; opbench/mfu.py's 7.7e12 not used"
+  },
+  "per_shape": [
+    {
+      "uuid": "glm52-fused_qkv_a_decode-M16",
+      "axes": {
+        "M": 16,
+        "S": 65536
+      },
+      "correct": true,
+      "output_kind": "dense",
+      "output_buffer_poisoned": true,
+      "calc_diff": 0.0,
+      "max_abs_err": 0.0,
+      "max_rel_err": 0.0,
+      "abs_tol": 0.0362,
+      "rel_tol": 0.015703125,
+      "diff_tol": 5e-06,
+      "elementwise_failed": 0,
+      "anomaly_ok": true,
+      "elements": 41984,
+      "cosine": 1.0000000000000002,
+      "best_fit_scale": 1.0000000000000002,
+      "timing_spread": 2.983,
+      "timing_unstable": true,
+      "post_timing_calc_diff": 0.0,
+      "post_timing_correct": true,
+      "flops": 515899392.0,
+      "bytes_hbm": 16311232.0,
+      "compute_dtype": "fp8",
+      "candidate_us": 17.823,
+      "candidate_us_lo": 17.697,
+      "candidate_us_hi": 17.872,
+      "reference_us": 29.904,
+      "reference_us_lo": 29.68,
+      "reference_us_hi": 88.544,
+      "samples": 10,
+      "candidate_us_p90": 17.872,
+      "reference_us_p10": 29.802,
+      "conservative_quantile": 0.9,
+      "speedup": 1.6778,
+      "speedup_conservative": 1.6675,
+      "speedup_optimistic": 2.0432,
+      "shape_verdict": "win",
+      "bound": "memory",
+      "arithmetic_intensity": 31.628474906126037,
+      "ridge": 562.5,
+      "reward": 0.11439735173652024,
+      "reference_reward": 0.06818107794042652,
+      "achieved_tflops": 28.945710149806434,
+      "achieved_gbps": 915.1788138921619,
+      "compute_util": 0.006432380033290319,
+      "bw_util": 0.11439735173652023
+    },
+    {
+      "uuid": "glm52-fused_qkv_a_decode-M32",
+      "axes": {
+        "M": 32,
+        "S": 65536
+      },
+      "correct": true,
+      "output_kind": "dense",
+      "output_buffer_poisoned": true,
+      "calc_diff": 0.0,
+      "max_abs_err": 0.0,
+      "max_rel_err": 0.0,
+      "abs_tol": 0.0362,
+      "rel_tol": 0.015703125,
+      "diff_tol": 5e-06,
+      "elementwise_failed": 0,
+      "anomaly_ok": true,
+      "elements": 83968,
+      "cosine": 1.0,
+      "best_fit_scale": 1.0,
+      "timing_spread": 1.42,
+      "timing_unstable": true,
+      "post_timing_calc_diff": 0.0,
+      "post_timing_correct": true,
+      "flops": 1031798784.0,
+      "bytes_hbm": 16496576.0,
+      "compute_dtype": "fp8",
+      "candidate_us": 18.201,
+      "candidate_us_lo": 18.096,
+      "candidate_us_hi": 18.368,
+      "reference_us": 30.896,
+      "reference_us_lo": 30.225,
+      "reference_us_hi": 42.913,
+      "samples": 10,
+      "candidate_us_p90": 18.296,
+      "reference_us_p10": 30.254,
+      "conservative_quantile": 0.9,
+      "speedup": 1.6975,
+      "speedup_conservative": 1.6536,
+      "speedup_optimistic": 1.9625,
+      "shape_verdict": "win",
+      "bound": "memory",
+      "arithmetic_intensity": 62.54623892861161,
+      "ridge": 562.5,
+      "reward": 0.1132975467706931,
+      "reference_reward": 0.06674236147074054,
+      "achieved_tflops": 56.690683442762555,
+      "achieved_gbps": 906.3803741655448,
+      "compute_util": 0.012597929653947234,
+      "bw_util": 0.1132975467706931
+    }
+  ],
+  "aggregate": {
+    "min_speedup": 1.6778,
+    "geomean_speedup": 1.6877,
+    "min_speedup_conservative": 1.6536,
+    "best_reward": 0.1144,
+    "worst_reward": 0.1133,
+    "worst_calc_diff": 0.0,
+    "shapes_evaluated": 2,
+    "complete_sweep": true,
+    "timing_unstable_shapes": [
+      "glm52-fused_qkv_a_decode-M16",
+      "glm52-fused_qkv_a_decode-M32"
+    ],
+    "shapes_won": 2,
+    "shapes_regressed": 0,
+    "shapes_neutral": 0,
+    "regressed_shapes": []
+  },
+  "verdict": {
+    "correct": true,
+    "performance_ok": true,
+    "status": "CORRECT",
+    "exit_code": 0
+  }
+}
+RESULT_JSON_END

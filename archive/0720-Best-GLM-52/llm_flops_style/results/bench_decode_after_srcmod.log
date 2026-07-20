@@ -1,0 +1,91 @@
+==================================================================================================================================
+GLM-5.2 DECODE — llm_flops DROP-IN (same tensors for stock & candidate)
+==================================================================================================================================
+Timing: CUDA Graph (fallback Event)  warmup=5 runs=20
+llm_flops: /home/qinhaiyan/llm_flops  seed=0
+M=[16, 32]  S=65536
+Mode: DROP-IN SWAPS
+Swaps: fused_qkv_a_proj, q_b_proj, o_proj, index_k_proj, index_q_upproj, moe_gate_proj, moe_up_proj, moe_down_proj
+==================================================================================================================================
+
+==================================================================================================================================
+  batch=16, S=65536
+==================================================================================================================================
+  name                     impl                            avg(ms)  stock(ms)     spd  same proto       
+  --------------------------------------------------------------------------------------------------------------
+  fused_qkv_a_proj         dropin:best/fused_qkv_a_decode     0.0124     0.0233   1.88x     Y cuda_graph  
+  q_b_proj                 dropin:best/q_b_decode           0.0071     0.0239   3.38x     Y cuda_graph  
+  absorbed_W_UK            llm_flops_stock                  0.0026     0.0026   1.00x     Y cuda_graph  
+  absorbed_W_UV            llm_flops_stock                  0.0025     0.0025   1.00x     Y cuda_graph  
+  o_proj                   dropin:best/o_proj_decode_hbm35     0.0228     0.0443   1.95x     Y cuda_graph  
+  dsa_decode_attn          llm_flops_stock                  0.0395     0.0395   1.00x     Y cuda_graph  
+  index_k_proj             dropin:best/index_k_proj_decode     0.0089     0.0215   2.42x     Y cuda_graph  
+  index_q_upproj           dropin:best/index_q_upproj_decode_hbm15     0.0054     0.0173   3.19x     Y cuda_graph  
+  index_weights_proj       llm_flops_stock                  0.0128     0.0128   1.00x     Y cuda_graph  
+  index_score              llm_flops_stock                  0.0268     0.0268   1.00x     Y cuda_graph  
+  moe_gate_proj            dropin:best/moe_gate_proj_decode_hbm40     0.0253     0.0370   1.46x     Y cuda_graph  
+  moe_up_proj              dropin:best/moe_up_proj_decode_hbm40     0.0251     0.0370   1.47x     Y cuda_graph  
+  moe_down_proj            dropin:best/moe_down_proj_decode_hbm40     0.0249     0.0370   1.49x     Y cuda_graph  
+
+==================================================================================================================================
+  batch=32, S=65536
+==================================================================================================================================
+  name                     impl                            avg(ms)  stock(ms)     spd  same proto       
+  --------------------------------------------------------------------------------------------------------------
+  fused_qkv_a_proj         dropin:best/fused_qkv_a_decode     0.0125     0.0235   1.88x     Y cuda_graph  
+  q_b_proj                 dropin:best/q_b_decode           0.0074     0.0247   3.36x     Y cuda_graph  
+  absorbed_W_UK            llm_flops_stock                  0.0028     0.0028   1.00x     Y cuda_graph  
+  absorbed_W_UV            llm_flops_stock                  0.0026     0.0026   1.00x     Y cuda_graph  
+  o_proj                   dropin:best/o_proj_decode_hbm35     0.0279     0.0449   1.61x     Y cuda_graph  
+  dsa_decode_attn          llm_flops_stock                  0.0400     0.0400   1.00x     Y cuda_graph  
+  index_k_proj             dropin:best/index_k_proj_decode     0.0087     0.0212   2.44x     Y cuda_graph  
+  index_q_upproj           dropin:best/index_q_upproj_decode_hbm15     0.0072     0.0174   2.43x     Y cuda_graph  
+  index_weights_proj       llm_flops_stock                  0.0128     0.0128   1.00x     Y cuda_graph  
+  index_score              llm_flops_stock                  0.0474     0.0474   1.00x     Y cuda_graph  
+  moe_gate_proj            dropin:best/moe_gate_proj_decode_hbm40     0.0240     0.0366   1.52x     Y cuda_graph  
+  moe_up_proj              dropin:best/moe_up_proj_decode_hbm40     0.0242     0.0370   1.53x     Y cuda_graph  
+  moe_down_proj            dropin:best/moe_down_proj_decode_hbm40     0.0244     0.0366   1.50x     Y cuda_graph  
+
+==================================================================================================================================
+  DECODE Summary (M=16, S=65536)  [drop-in: same llm_flops tensors]
+  layer TOTAL stock:   0.3255 ms
+  layer TOTAL swapped: 0.2159 ms  speedup=1.5073x
+==================================================================================================================================
+  rank   name                     impl                                    avg(ms)  stock(ms)     spd     pct proto       
+  -----------------------------------------------------------------------------------------------------------------------------
+  1      dsa_decode_attn          llm_flops_stock                          0.0395     0.0395   1.00x   18.3% cuda_graph  
+  2      index_score              llm_flops_stock                          0.0268     0.0268   1.00x   12.4% cuda_graph  
+  3      moe_gate_proj            dropin:best/moe_gate_proj_decode_hbm40     0.0253     0.0370   1.46x   11.7% cuda_graph  
+  4      moe_up_proj              dropin:best/moe_up_proj_decode_hbm40     0.0251     0.0370   1.47x   11.6% cuda_graph  
+  5      moe_down_proj            dropin:best/moe_down_proj_decode_hbm40     0.0249     0.0370   1.49x   11.5% cuda_graph  
+  6      o_proj                   dropin:best/o_proj_decode_hbm35          0.0228     0.0443   1.95x   10.5% cuda_graph  
+  7      index_weights_proj       llm_flops_stock                          0.0128     0.0128   1.00x    5.9% cuda_graph  
+  8      fused_qkv_a_proj         dropin:best/fused_qkv_a_decode           0.0124     0.0233   1.88x    5.7% cuda_graph  
+  9      index_k_proj             dropin:best/index_k_proj_decode          0.0089     0.0215   2.42x    4.1% cuda_graph  
+  10     q_b_proj                 dropin:best/q_b_decode                   0.0071     0.0239   3.38x    3.3% cuda_graph  
+  11     index_q_upproj           dropin:best/index_q_upproj_decode_hbm15     0.0054     0.0173   3.19x    2.5% cuda_graph  
+  12     absorbed_W_UK            llm_flops_stock                          0.0026     0.0026   1.00x    1.2% cuda_graph  
+  13     absorbed_W_UV            llm_flops_stock                          0.0025     0.0025   1.00x    1.1% cuda_graph  
+
+==================================================================================================================================
+  DECODE Summary (M=32, S=65536)  [drop-in: same llm_flops tensors]
+  layer TOTAL stock:   0.3475 ms
+  layer TOTAL swapped: 0.2419 ms  speedup=1.4369x
+==================================================================================================================================
+  rank   name                     impl                                    avg(ms)  stock(ms)     spd     pct proto       
+  -----------------------------------------------------------------------------------------------------------------------------
+  1      index_score              llm_flops_stock                          0.0474     0.0474   1.00x   19.6% cuda_graph  
+  2      dsa_decode_attn          llm_flops_stock                          0.0400     0.0400   1.00x   16.5% cuda_graph  
+  3      o_proj                   dropin:best/o_proj_decode_hbm35          0.0279     0.0449   1.61x   11.5% cuda_graph  
+  4      moe_down_proj            dropin:best/moe_down_proj_decode_hbm40     0.0244     0.0366   1.50x   10.1% cuda_graph  
+  5      moe_up_proj              dropin:best/moe_up_proj_decode_hbm40     0.0242     0.0370   1.53x   10.0% cuda_graph  
+  6      moe_gate_proj            dropin:best/moe_gate_proj_decode_hbm40     0.0240     0.0366   1.52x    9.9% cuda_graph  
+  7      index_weights_proj       llm_flops_stock                          0.0128     0.0128   1.00x    5.3% cuda_graph  
+  8      fused_qkv_a_proj         dropin:best/fused_qkv_a_decode           0.0125     0.0235   1.88x    5.2% cuda_graph  
+  9      index_k_proj             dropin:best/index_k_proj_decode          0.0087     0.0212   2.44x    3.6% cuda_graph  
+  10     q_b_proj                 dropin:best/q_b_decode                   0.0074     0.0247   3.36x    3.0% cuda_graph  
+  11     index_q_upproj           dropin:best/index_q_upproj_decode_hbm15     0.0072     0.0174   2.43x    3.0% cuda_graph  
+  12     absorbed_W_UK            llm_flops_stock                          0.0028     0.0028   1.00x    1.2% cuda_graph  
+  13     absorbed_W_UV            llm_flops_stock                          0.0026     0.0026   1.00x    1.1% cuda_graph  
+
+Results: /home/qinhaiyan/Kernel-Harness/archive/0720-Best-GLM-52/llm_flops_style/results/glm5_decode_swapped_perf.csv

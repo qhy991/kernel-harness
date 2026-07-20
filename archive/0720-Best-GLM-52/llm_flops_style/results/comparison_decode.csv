@@ -1,29 +1,29 @@
 phase,op,category,M,S,stock_ms,ours_ms,speedup,impl,archive,protocol,same_inputs
-decode,fused_qkv_a_proj,Attention,16,65536,0.023307,0.023307,1.0,llm_flops_stock,,cuda_graph,True
-decode,q_b_proj,Attention,16,65536,0.024214,0.007486,3.2346,dropin:q_b_decode,q_b_decode,cuda_graph,True
-decode,absorbed_W_UK,Attention,16,65536,0.002504,0.002504,1.0,llm_flops_stock,,cuda_graph,True
-decode,absorbed_W_UV,Attention,16,65536,0.002435,0.002435,1.0,llm_flops_stock,,cuda_graph,True
-decode,o_proj,Attention,16,65536,0.044018,0.021861,2.0135,dropin:o_proj_decode_hbm35,o_proj_decode_hbm35,cuda_graph,True
-decode,dsa_decode_attn,DSA,16,65536,0.039478,0.039478,1.0,llm_flops_stock,,cuda_graph,True
-decode,index_k_proj,DSA Indexer,16,65536,0.021234,0.021234,1.0,llm_flops_stock,,cuda_graph,True
-decode,index_q_upproj,DSA Indexer,16,65536,0.0172,0.005587,3.0786,dropin:index_q_upproj_decode_hbm15,index_q_upproj_decode_hbm15,cuda_graph,True
-decode,index_weights_proj,DSA Indexer,16,65536,0.013254,0.013254,1.0,llm_flops_stock,,cuda_graph,True
-decode,index_score,DSA Indexer,16,65536,0.026408,0.026408,1.0,llm_flops_stock,,cuda_graph,True
-decode,moe_gate_proj,MoE,16,65536,0.037696,0.025326,1.4884,dropin:moe_gate_proj_decode_hbm40,moe_gate_proj_decode_hbm40,cuda_graph,True
-decode,moe_up_proj,MoE,16,65536,0.03764,0.025309,1.4872,dropin:moe_up_proj_decode_hbm40,moe_up_proj_decode_hbm40,cuda_graph,True
-decode,moe_down_proj,MoE,16,65536,0.038798,0.025813,1.503,dropin:moe_down_proj_decode_hbm40,moe_down_proj_decode_hbm40,cuda_graph,True
-decode,fused_qkv_a_proj,Attention,32,65536,0.023634,0.023634,1.0,llm_flops_stock,,cuda_graph,True
-decode,q_b_proj,Attention,32,65536,0.024376,0.007181,3.3945,dropin:q_b_decode,q_b_decode,cuda_graph,True
-decode,absorbed_W_UK,Attention,32,65536,0.00273,0.00273,1.0,llm_flops_stock,,cuda_graph,True
-decode,absorbed_W_UV,Attention,32,65536,0.002549,0.002549,1.0,llm_flops_stock,,cuda_graph,True
-decode,o_proj,Attention,32,65536,0.045109,0.027698,1.6286,dropin:o_proj_decode_hbm35,o_proj_decode_hbm35,cuda_graph,True
-decode,dsa_decode_attn,DSA,32,65536,0.039706,0.039706,1.0,llm_flops_stock,,cuda_graph,True
-decode,index_k_proj,DSA Indexer,32,65536,0.021707,0.021707,1.0,llm_flops_stock,,cuda_graph,True
-decode,index_q_upproj,DSA Indexer,32,65536,0.017318,0.007293,2.3746,dropin:index_q_upproj_decode_hbm15,index_q_upproj_decode_hbm15,cuda_graph,True
-decode,index_weights_proj,DSA Indexer,32,65536,0.013498,0.013498,1.0,llm_flops_stock,,cuda_graph,True
-decode,index_score,DSA Indexer,32,65536,0.046834,0.046834,1.0,llm_flops_stock,,cuda_graph,True
-decode,moe_gate_proj,MoE,32,65536,0.037642,0.025424,1.4806,dropin:moe_gate_proj_decode_hbm40,moe_gate_proj_decode_hbm40,cuda_graph,True
-decode,moe_up_proj,MoE,32,65536,0.037771,0.025302,1.4928,dropin:moe_up_proj_decode_hbm40,moe_up_proj_decode_hbm40,cuda_graph,True
-decode,moe_down_proj,MoE,32,65536,0.038427,0.026102,1.4722,dropin:moe_down_proj_decode_hbm40,moe_down_proj_decode_hbm40,cuda_graph,True
-decode,__LAYER_TOTAL__,layer,16,65536,0.328186,0.240002,1.3674,sum_of_ops,,cuda_graph,True
-decode,__LAYER_TOTAL__,layer,32,65536,0.351301,0.269658,1.3028,sum_of_ops,,cuda_graph,True
+decode,fused_qkv_a_proj,Attention,16,65536,0.023322,0.012378,1.8841,dropin:best/fused_qkv_a_decode,best/fused_qkv_a_decode,cuda_graph,True
+decode,q_b_proj,Attention,16,65536,0.023939,0.007078,3.3822,dropin:best/q_b_decode,best/q_b_decode,cuda_graph,True
+decode,absorbed_W_UK,Attention,16,65536,0.002565,0.002565,1.0,llm_flops_stock,,cuda_graph,True
+decode,absorbed_W_UV,Attention,16,65536,0.002453,0.002453,1.0,llm_flops_stock,,cuda_graph,True
+decode,o_proj,Attention,16,65536,0.04432,0.022752,1.948,dropin:best/o_proj_decode_hbm35,best/o_proj_decode_hbm35,cuda_graph,True
+decode,dsa_decode_attn,DSA,16,65536,0.039517,0.039517,1.0,llm_flops_stock,,cuda_graph,True
+decode,index_k_proj,DSA Indexer,16,65536,0.021507,0.008902,2.416,dropin:best/index_k_proj_decode,best/index_k_proj_decode,cuda_graph,True
+decode,index_q_upproj,DSA Indexer,16,65536,0.017304,0.005429,3.1873,dropin:best/index_q_upproj_decode_hbm15,best/index_q_upproj_decode_hbm15,cuda_graph,True
+decode,index_weights_proj,DSA Indexer,16,65536,0.012816,0.012816,1.0,llm_flops_stock,,cuda_graph,True
+decode,index_score,DSA Indexer,16,65536,0.026827,0.026827,1.0,llm_flops_stock,,cuda_graph,True
+decode,moe_gate_proj,MoE,16,65536,0.036998,0.025278,1.4636,dropin:best/moe_gate_proj_decode_hbm40,best/moe_gate_proj_decode_hbm40,cuda_graph,True
+decode,moe_up_proj,MoE,16,65536,0.03695,0.02507,1.4739,dropin:best/moe_up_proj_decode_hbm40,best/moe_up_proj_decode_hbm40,cuda_graph,True
+decode,moe_down_proj,MoE,16,65536,0.03697,0.024878,1.4861,dropin:best/moe_down_proj_decode_hbm40,best/moe_down_proj_decode_hbm40,cuda_graph,True
+decode,fused_qkv_a_proj,Attention,32,65536,0.023533,0.012509,1.8813,dropin:best/fused_qkv_a_decode,best/fused_qkv_a_decode,cuda_graph,True
+decode,q_b_proj,Attention,32,65536,0.024747,0.007355,3.3646,dropin:best/q_b_decode,best/q_b_decode,cuda_graph,True
+decode,absorbed_W_UK,Attention,32,65536,0.002832,0.002832,1.0,llm_flops_stock,,cuda_graph,True
+decode,absorbed_W_UV,Attention,32,65536,0.002622,0.002622,1.0,llm_flops_stock,,cuda_graph,True
+decode,o_proj,Attention,32,65536,0.044851,0.027922,1.6063,dropin:best/o_proj_decode_hbm35,best/o_proj_decode_hbm35,cuda_graph,True
+decode,dsa_decode_attn,DSA,32,65536,0.040026,0.040026,1.0,llm_flops_stock,,cuda_graph,True
+decode,index_k_proj,DSA Indexer,32,65536,0.02119,0.008682,2.4407,dropin:best/index_k_proj_decode,best/index_k_proj_decode,cuda_graph,True
+decode,index_q_upproj,DSA Indexer,32,65536,0.017387,0.00715,2.4317,dropin:best/index_q_upproj_decode_hbm15,best/index_q_upproj_decode_hbm15,cuda_graph,True
+decode,index_weights_proj,DSA Indexer,32,65536,0.012786,0.012786,1.0,llm_flops_stock,,cuda_graph,True
+decode,index_score,DSA Indexer,32,65536,0.047394,0.047394,1.0,llm_flops_stock,,cuda_graph,True
+decode,moe_gate_proj,MoE,32,65536,0.036557,0.024048,1.5202,dropin:best/moe_gate_proj_decode_hbm40,best/moe_gate_proj_decode_hbm40,cuda_graph,True
+decode,moe_up_proj,MoE,32,65536,0.036968,0.024162,1.53,dropin:best/moe_up_proj_decode_hbm40,best/moe_up_proj_decode_hbm40,cuda_graph,True
+decode,moe_down_proj,MoE,32,65536,0.036626,0.024374,1.5027,dropin:best/moe_down_proj_decode_hbm40,best/moe_down_proj_decode_hbm40,cuda_graph,True
+decode,__LAYER__,layer,16,65536,0.325488,0.215943,1.5073,sum,,cuda_graph,True
+decode,__LAYER__,layer,32,65536,0.347519,0.241862,1.4368,sum,,cuda_graph,True

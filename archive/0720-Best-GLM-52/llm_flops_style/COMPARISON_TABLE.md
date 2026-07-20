@@ -1,12 +1,13 @@
-# GLM-5.2 关键算子延时对比（llm_flops DROP-IN）
+# GLM-5.2 单算子延时对比（llm_flops DROP-IN）
 
 协议：**CUDA Graph**（warmup=5, runs=20），stock 与 candidate **同一冻结 tensor**。  
 单位：ms。speedup = stock / ours（>1 为加速）。
 
-- Decode winners：`best/*` archive  
-- Prefill：含 **PR#3 胡延 10 算子** + 既有 `best/index_k` / `best/o_proj_prefill`
+- Decode：含本轮新晋 `best/fused_qkv_a_decode`（DeepGEMM fork fused）+ `best/index_k_proj_decode`
+- Prefill：含 **PR#3 胡延 10 算子** + 既有 `best/index_k` / `best/o_proj_prefill`  
+  （`moe_gate` pack 仅 CUPTI 有收益，Graph 大 M 回退，**不默认 swap**）
 
-复现：`llm_flops_style/bench_{decode,prefill}.py` · 协作：[`COLLAB.md`](COLLAB.md)
+复现：`llm_flops_style/bench_{decode,prefill}.py` · 源码尝试：[`../SOURCE_MOD_ANALYSIS.md`](../SOURCE_MOD_ANALYSIS.md)
 
 ---
 
@@ -14,26 +15,34 @@
 
 | Phase | M | stock 层 (ms) | swapped 层 (ms) | 层加速 |
 |-------|--:|-------------:|----------------:|-------:|
-| Decode | 16 | 0.3282 | 0.2400 | **1.37×** |
-| Decode | 32 | 0.3513 | 0.2697 | **1.30×** |
-| Prefill (+PR#3) | 1024 | 1.1343 | 1.0913 | **1.040×** |
-| Prefill (+PR#3) | 2048 | 2.1705 | 2.1240 | **1.022×** |
-| Prefill (+PR#3) | 4096 | 4.1832 | 4.1745 | **1.002×** |
+| Decode | 16 | 0.3255 | 0.2159 | **1.51×** |
+| Decode | 32 | 0.3475 | 0.2419 | **1.44×** |
+| Prefill (+PR#3) | 1024 | 1.1643 | 1.1452 | **1.017×** |
+| Prefill (+PR#3) | 2048 | 2.9817† | 2.8954 | **1.030×** |
+| Prefill (+PR#3) | 4096 | 4.2332 | 4.1988 | **1.008×** |
+
+† M=2048 本次 stock 受 `dsa_prefill_attn` 抖动抬高（~1.39 ms vs 常态 ~0.60 ms）；层加速方向仍约 1×，勿与上一版绝对 ms 直接比。
+
+Decode 层加速相对上一版（1.37× / 1.30×）再抬 **~0.14×**，主要来自 `fused_qkv_a` + `index_k`。
 
 ---
 
-## Decode — 已优化算子
+## Decode — 已优化算子（本轮新增标 ★）
 
 | op | M | stock (ms) | ours (ms) | speedup | source |
 |----|--:|-----------:|----------:|--------:|--------|
-| q_b_proj | 16 | 0.0242 | 0.0075 | **3.23×** | `best/q_b_decode` |
-| q_b_proj | 32 | 0.0244 | 0.0072 | **3.39×** | `best/q_b_decode` |
-| o_proj | 16 | 0.0440 | 0.0219 | **2.01×** | `best/o_proj_decode_hbm35` |
-| o_proj | 32 | 0.0451 | 0.0277 | **1.63×** | `best/o_proj_decode_hbm35` |
-| index_q_upproj | 16 | 0.0172 | 0.0056 | **3.08×** | `best/index_q_upproj_decode_hbm15` |
-| index_q_upproj | 32 | 0.0173 | 0.0073 | **2.37×** | `best/index_q_upproj_decode_hbm15` |
-| moe_gate/up/down | 16 | ~0.038 | ~0.025 | **~1.49×** | `best/moe_*_decode_hbm40` |
-| moe_gate/up/down | 32 | ~0.038 | ~0.025 | **~1.48×** | `best/moe_*_decode_hbm40` |
+| ★ fused_qkv_a_proj | 16 | 0.0233 | 0.0124 | **1.88×** | `best/fused_qkv_a_decode` |
+| ★ fused_qkv_a_proj | 32 | 0.0235 | 0.0125 | **1.88×** | `best/fused_qkv_a_decode` |
+| q_b_proj | 16 | 0.0239 | 0.0071 | **3.38×** | `best/q_b_decode` |
+| q_b_proj | 32 | 0.0247 | 0.0074 | **3.36×** | `best/q_b_decode` |
+| o_proj | 16 | 0.0443 | 0.0228 | **1.95×** | `best/o_proj_decode_hbm35` |
+| o_proj | 32 | 0.0449 | 0.0279 | **1.61×** | `best/o_proj_decode_hbm35` |
+| ★ index_k_proj | 16 | 0.0215 | 0.0089 | **2.42×** | `best/index_k_proj_decode` |
+| ★ index_k_proj | 32 | 0.0212 | 0.0087 | **2.44×** | `best/index_k_proj_decode` |
+| index_q_upproj | 16 | 0.0173 | 0.0054 | **3.19×** | `best/index_q_upproj_decode_hbm15` |
+| index_q_upproj | 32 | 0.0174 | 0.0072 | **2.43×** | `best/index_q_upproj_decode_hbm15` |
+| moe_gate/up/down | 16 | ~0.037 | ~0.025 | **~1.47×** | `best/moe_*_decode_hbm40` |
+| moe_gate/up/down | 32 | ~0.037 | ~0.024 | **~1.52×** | `best/moe_*_decode_hbm40` |
 
 ---
 
@@ -41,53 +50,28 @@
 
 | op | M=1024 spd | M=2048 spd | M=4096 spd | source |
 |----|----------:|----------:|----------:|--------|
-| **fused_qkv_a_proj** | **1.67×** | **1.37×** | **1.17×** | PR#3 `fused_qkv_a_prefill.py` |
-| **q_b_proj** | **1.63×** | **1.34×** | **1.18×** | PR#3 `q_b_prefill.py` |
-| **index_q_upproj** | **1.88×** | **1.55×** | **1.34×** | PR#3 `index_q_upproj_prefill.py` |
-| **index_weights_proj** | **1.58×** | **1.33×** | **1.60×** | PR#3 `index_weights_proj.py`† |
-| **index_k_proj** | **1.16×** | **1.18×** | **1.18×** | `best/index_k_prefill_bw70` |
-| absorbed_W_UK | 1.00× | 1.00× | 1.00× | PR#3（预分配 out） |
-| absorbed_W_UV | 1.00× | 0.99× | 1.00× | PR#3（≈stock） |
-| dsa_prefill_attn | 0.98× | 1.01× | 1.01× | PR#3（≈stock） |
-| index_score | 0.98× | 0.98× | 1.01× | PR#3（PDL） |
-| o_proj | 1.00× | 0.99× | 0.94× | `best/o_proj_prefill` |
-| moe_up_proj | 1.00× | 0.99× | 0.92× | PR#3 `moe_up_proj_prefill.py` |
-| moe_down_proj | 1.00× | 1.00× | 0.94× | PR#3 `moe_down_proj_prefill.py` |
-| moe_gate_proj | 1.00× | 1.00× | 1.00× | llm_flops stock（无候选） |
+| **fused_qkv_a_proj** | **~1.6×** | **~1.35×** | **~1.15×** | PR#3 |
+| **q_b_proj** | **~1.6×** | **~1.3×** | **~1.15×** | PR#3 |
+| **index_q_upproj** | **~1.8×** | **~1.55×** | **~1.3×** | PR#3 |
+| **index_weights_proj** | **~1.9×** | **~1.3×** | **~1.6×** | PR#3 † |
+| **index_k_proj** | **~1.19×** | **~1.15×** | **~1.17×** | `best/index_k_prefill_bw70` |
+| moe_gate_proj | stock | stock | stock | CUPTI pack 见 `best/moe_gate_proj_prefill_pack`（不默认 swap） |
 
-† `index_weights_proj` 内部自建 CUDA Graph，外层 Graph 捕获失败 → 回退 **cuda_event**；数字仍为同输入对比。
+其余算子 ≈ stock；DSA + index_score 仍占层时间 ~50%+。
 
-### Prefill 绝对延时（ms）— 有实质加速的算子
-
-| op | M | stock | ours | speedup |
-|----|--:|------:|-----:|--------:|
-| fused_qkv_a_proj | 1024 | 0.0249 | 0.0149 | **1.67×** |
-| fused_qkv_a_proj | 2048 | 0.0367 | 0.0268 | **1.37×** |
-| fused_qkv_a_proj | 4096 | 0.0540 | 0.0461 | **1.17×** |
-| q_b_proj | 1024 | 0.0413 | 0.0253 | **1.63×** |
-| q_b_proj | 2048 | 0.0697 | 0.0519 | **1.34×** |
-| q_b_proj | 4096 | 0.1148 | 0.0975 | **1.18×** |
-| index_q_upproj | 1024 | 0.0212 | 0.0113 | **1.88×** |
-| index_q_upproj | 2048 | 0.0267 | 0.0172 | **1.55×** |
-| index_q_upproj | 4096 | 0.0361 | 0.0270 | **1.34×** |
-| index_weights_proj | 1024 | 0.0168 | 0.0106 | **1.58×** |
-| index_weights_proj | 2048 | 0.0167 | 0.0126 | **1.33×** |
-| index_weights_proj | 4096 | 0.0170 | 0.0106 | **1.60×** |
-| index_k_proj | 1024 | 0.0850 | 0.0735 | **1.16×** |
-| index_k_proj | 2048 | 0.0856 | 0.0728 | **1.18×** |
-| index_k_proj | 4096 | 0.0854 | 0.0726 | **1.18×** |
+† `index_weights_proj` 外层 Graph 捕获失败 → **cuda_event**。
 
 ---
 
-## 解读
+## 本轮源码/移植实验结论
 
-- **Decode**：层加速仍主要来自 6 个 GEMM/MoE winners（1.30–1.37×）。
-- **Prefill + PR#3**：真正拉动层时间的是 `fused_qkv_a` / `q_b` / `index_q_upproj` / `index_weights` / `index_k`；DSA+index_score 仍占 ~50%+，几乎无加速，故层总加速仅 **~1–4%**。
-- M=4096 上 `moe_up/down`、`o_proj` 偶发 <1.0×，偏噪声/PDL 全局状态，建议复测确认。
+| 尝试 | CUPTI | DROP-IN Graph | 处置 |
+|------|-------|---------------|------|
+| fused_qkv_a DeepGEMM fused | **1.69×** | **1.88×** | 晋升 + decode swap |
+| fused_qkv_a task-local pack | FAIL（N%128≠0） | — | 保留失败实验 |
+| index_k decode Triton pack | **2.67×** | **2.4×** | 晋升 + decode swap |
+| moe_gate prefill pack+PDL | **1.12×** | 1.10/1.04/**0.95×** | 晋升候选；**不**默认 swap |
 
-原始 CSV：
-- `results/comparison_decode.csv` — Decode 全算子对比（含层合计）
-- `results/comparison_prefill.csv` — Prefill 全算子对比（含层合计）
-- `results/comparison_all.csv` — 合并版
-- `results/glm5_{decode,prefill}_swapped_perf.csv` — bench 原始输出
+详见 [`SOURCE_MOD_ANALYSIS.md`](../SOURCE_MOD_ANALYSIS.md)。
 
+原始 CSV：`results/comparison_{decode,prefill,all}.csv` · `results/glm5_*_swapped_perf.csv`

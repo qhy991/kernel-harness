@@ -1,43 +1,43 @@
 phase,op,category,M,S,stock_ms,ours_ms,speedup,impl,archive,protocol,same_inputs
-prefill,fused_qkv_a_proj,Attention,1024,65536,0.024926,0.014882,1.6749,dropin:fused_qkv_a_prefill.py,fused_qkv_a_prefill.py,cuda_graph,True
-prefill,q_b_proj,Attention,1024,65536,0.041282,0.025261,1.6342,dropin:q_b_prefill.py,q_b_prefill.py,cuda_graph,True
-prefill,absorbed_W_UK,Attention,1024,65536,0.014984,0.014984,1.0,dropin:absorbed_W_UK_prefill.py,absorbed_W_UK_prefill.py,cuda_graph,True
-prefill,absorbed_W_UV,Attention,1024,65536,0.010179,0.010198,0.9981,dropin:absorbed_W_UV_prefill.py,absorbed_W_UV_prefill.py,cuda_graph,True
-prefill,o_proj,Attention,1024,65536,0.086214,0.086437,0.9974,dropin:best/o_proj_prefill,best/o_proj_prefill,cuda_graph,True
-prefill,dsa_prefill_attn,DSA,1024,65536,0.278629,0.284294,0.9801,dropin:dsa_prefill_attn.py,dsa_prefill_attn.py,cuda_graph,True
-prefill,index_k_proj,DSA Indexer,1024,65536,0.084976,0.073544,1.1554,dropin:best/index_k_prefill_bw70,best/index_k_prefill_bw70,cuda_graph,True
-prefill,index_q_upproj,DSA Indexer,1024,65536,0.021192,0.01128,1.8787,dropin:index_q_upproj_prefill.py,index_q_upproj_prefill.py,cuda_graph,True
-prefill,index_weights_proj,DSA Indexer,1024,65536,0.016795,0.010645,1.5777,dropin:index_weights_proj.py,index_weights_proj.py,cuda_event,True
-prefill,index_score,DSA Indexer,1024,65536,0.256898,0.261422,0.9827,dropin:index_score_prefill.py,index_score_prefill.py,cuda_graph,True
-prefill,moe_gate_proj,MoE,1024,65536,0.101824,0.101824,1.0,llm_flops_stock,,cuda_graph,True
-prefill,moe_up_proj,MoE,1024,65536,0.095134,0.095261,0.9987,dropin:moe_up_proj_prefill.py,moe_up_proj_prefill.py,cuda_graph,True
-prefill,moe_down_proj,MoE,1024,65536,0.101293,0.10124,1.0005,dropin:moe_down_proj_prefill.py,moe_down_proj_prefill.py,cuda_graph,True
-prefill,fused_qkv_a_proj,Attention,2048,65536,0.036672,0.026845,1.3661,dropin:fused_qkv_a_prefill.py,fused_qkv_a_prefill.py,cuda_graph,True
-prefill,q_b_proj,Attention,2048,65536,0.069662,0.051853,1.3435,dropin:q_b_prefill.py,q_b_prefill.py,cuda_graph,True
-prefill,absorbed_W_UK,Attention,2048,65536,0.031253,0.03117,1.0027,dropin:absorbed_W_UK_prefill.py,absorbed_W_UK_prefill.py,cuda_graph,True
-prefill,absorbed_W_UV,Attention,2048,65536,0.022606,0.022846,0.9895,dropin:absorbed_W_UV_prefill.py,absorbed_W_UV_prefill.py,cuda_graph,True
-prefill,o_proj,Attention,2048,65536,0.152986,0.154198,0.9921,dropin:best/o_proj_prefill,best/o_proj_prefill,cuda_graph,True
-prefill,dsa_prefill_attn,DSA,2048,65536,0.628701,0.623362,1.0086,dropin:dsa_prefill_attn.py,dsa_prefill_attn.py,cuda_graph,True
-prefill,index_k_proj,DSA Indexer,2048,65536,0.085645,0.072805,1.1764,dropin:best/index_k_prefill_bw70,best/index_k_prefill_bw70,cuda_graph,True
-prefill,index_q_upproj,DSA Indexer,2048,65536,0.026678,0.017245,1.547,dropin:index_q_upproj_prefill.py,index_q_upproj_prefill.py,cuda_graph,True
-prefill,index_weights_proj,DSA Indexer,2048,65536,0.016715,0.01256,1.3308,dropin:index_weights_proj.py,index_weights_proj.py,cuda_event,True
-prefill,index_score,DSA Indexer,2048,65536,0.564955,0.575085,0.9824,dropin:index_score_prefill.py,index_score_prefill.py,cuda_graph,True
-prefill,moe_gate_proj,MoE,2048,65536,0.179547,0.179547,1.0,llm_flops_stock,,cuda_graph,True
-prefill,moe_up_proj,MoE,2048,65536,0.171491,0.172571,0.9937,dropin:moe_up_proj_prefill.py,moe_up_proj_prefill.py,cuda_graph,True
-prefill,moe_down_proj,MoE,2048,65536,0.183629,0.18388,0.9986,dropin:moe_down_proj_prefill.py,moe_down_proj_prefill.py,cuda_graph,True
-prefill,fused_qkv_a_proj,Attention,4096,65536,0.053974,0.046133,1.17,dropin:fused_qkv_a_prefill.py,fused_qkv_a_prefill.py,cuda_graph,True
-prefill,q_b_proj,Attention,4096,65536,0.11479,0.09753,1.177,dropin:q_b_prefill.py,q_b_prefill.py,cuda_graph,True
-prefill,absorbed_W_UK,Attention,4096,65536,0.058582,0.058734,0.9974,dropin:absorbed_W_UK_prefill.py,absorbed_W_UK_prefill.py,cuda_graph,True
-prefill,absorbed_W_UV,Attention,4096,65536,0.044174,0.044197,0.9995,dropin:absorbed_W_UV_prefill.py,absorbed_W_UV_prefill.py,cuda_graph,True
-prefill,o_proj,Attention,4096,65536,0.294283,0.312886,0.9405,dropin:best/o_proj_prefill,best/o_proj_prefill,cuda_graph,True
-prefill,dsa_prefill_attn,DSA,4096,65536,1.268309,1.250411,1.0143,dropin:dsa_prefill_attn.py,dsa_prefill_attn.py,cuda_graph,True
-prefill,index_k_proj,DSA Indexer,4096,65536,0.085419,0.072586,1.1768,dropin:best/index_k_prefill_bw70,best/index_k_prefill_bw70,cuda_graph,True
-prefill,index_q_upproj,DSA Indexer,4096,65536,0.03612,0.026966,1.3395,dropin:index_q_upproj_prefill.py,index_q_upproj_prefill.py,cuda_graph,True
-prefill,index_weights_proj,DSA Indexer,4096,65536,0.016955,0.01061,1.598,dropin:index_weights_proj.py,index_weights_proj.py,cuda_event,True
-prefill,index_score,DSA Indexer,4096,65536,1.189141,1.181136,1.0068,dropin:index_score_prefill.py,index_score_prefill.py,cuda_graph,True
-prefill,moe_gate_proj,MoE,4096,65536,0.355547,0.355547,1.0,llm_flops_stock,,cuda_graph,True
-prefill,moe_up_proj,MoE,4096,65536,0.323242,0.352469,0.9171,dropin:moe_up_proj_prefill.py,moe_up_proj_prefill.py,cuda_graph,True
-prefill,moe_down_proj,MoE,4096,65536,0.342619,0.365278,0.938,dropin:moe_down_proj_prefill.py,moe_down_proj_prefill.py,cuda_graph,True
-prefill,__LAYER_TOTAL__,layer,1024,65536,1.134326,1.091272,1.0395,sum_of_ops,,cuda_graph,True
-prefill,__LAYER_TOTAL__,layer,2048,65536,2.17054,2.123967,1.0219,sum_of_ops,,cuda_graph,True
-prefill,__LAYER_TOTAL__,layer,4096,65536,4.183155,4.174483,1.0021,sum_of_ops,,cuda_graph,True
+prefill,fused_qkv_a_proj,Attention,1024,65536,0.024424,0.015949,1.5314,dropin:fused_qkv_a_prefill.py,fused_qkv_a_prefill.py,cuda_graph,True
+prefill,q_b_proj,Attention,1024,65536,0.043214,0.026866,1.6085,dropin:q_b_prefill.py,q_b_prefill.py,cuda_graph,True
+prefill,absorbed_W_UK,Attention,1024,65536,0.015117,0.015214,0.9936,dropin:absorbed_W_UK_prefill.py,absorbed_W_UK_prefill.py,cuda_graph,True
+prefill,absorbed_W_UV,Attention,1024,65536,0.011024,0.010125,1.0888,dropin:absorbed_W_UV_prefill.py,absorbed_W_UV_prefill.py,cuda_graph,True
+prefill,o_proj,Attention,1024,65536,0.088202,0.087746,1.0052,dropin:best/o_proj_prefill,best/o_proj_prefill,cuda_graph,True
+prefill,dsa_prefill_attn,DSA,1024,65536,0.287323,0.312304,0.92,dropin:dsa_prefill_attn.py,dsa_prefill_attn.py,cuda_graph,True
+prefill,index_k_proj,DSA Indexer,1024,65536,0.084739,0.07333,1.1556,dropin:best/index_k_prefill_bw70,best/index_k_prefill_bw70,cuda_graph,True
+prefill,index_q_upproj,DSA Indexer,1024,65536,0.020725,0.011288,1.836,dropin:index_q_upproj_prefill.py,index_q_upproj_prefill.py,cuda_graph,True
+prefill,index_weights_proj,DSA Indexer,1024,65536,0.016688,0.008645,1.9304,dropin:index_weights_proj.py,index_weights_proj.py,cuda_event,True
+prefill,index_score,DSA Indexer,1024,65536,0.264755,0.275466,0.9611,dropin:index_score_prefill.py,index_score_prefill.py,cuda_graph,True
+prefill,moe_gate_proj,MoE,1024,65536,0.105488,0.105488,1.0,llm_flops_stock,,cuda_graph,True
+prefill,moe_up_proj,MoE,1024,65536,0.098453,0.098533,0.9992,dropin:moe_up_proj_prefill.py,moe_up_proj_prefill.py,cuda_graph,True
+prefill,moe_down_proj,MoE,1024,65536,0.104099,0.104291,0.9982,dropin:moe_down_proj_prefill.py,moe_down_proj_prefill.py,cuda_graph,True
+prefill,fused_qkv_a_proj,Attention,2048,65536,0.036178,0.026952,1.3423,dropin:fused_qkv_a_prefill.py,fused_qkv_a_prefill.py,cuda_graph,True
+prefill,q_b_proj,Attention,2048,65536,0.069094,0.053602,1.289,dropin:q_b_prefill.py,q_b_prefill.py,cuda_graph,True
+prefill,absorbed_W_UK,Attention,2048,65536,0.031082,0.031093,0.9996,dropin:absorbed_W_UK_prefill.py,absorbed_W_UK_prefill.py,cuda_graph,True
+prefill,absorbed_W_UV,Attention,2048,65536,0.022706,0.022982,0.988,dropin:absorbed_W_UV_prefill.py,absorbed_W_UV_prefill.py,cuda_graph,True
+prefill,o_proj,Attention,2048,65536,0.157528,0.153627,1.0254,dropin:best/o_proj_prefill,best/o_proj_prefill,cuda_graph,True
+prefill,dsa_prefill_attn,DSA,2048,65536,1.394112,1.357986,1.0266,dropin:dsa_prefill_attn.py,dsa_prefill_attn.py,cuda_graph,True
+prefill,index_k_proj,DSA Indexer,2048,65536,0.083198,0.073661,1.1295,dropin:best/index_k_prefill_bw70,best/index_k_prefill_bw70,cuda_graph,True
+prefill,index_q_upproj,DSA Indexer,2048,65536,0.027,0.017301,1.5606,dropin:index_q_upproj_prefill.py,index_q_upproj_prefill.py,cuda_graph,True
+prefill,index_weights_proj,DSA Indexer,2048,65536,0.01671,0.012586,1.3277,dropin:index_weights_proj.py,index_weights_proj.py,cuda_event,True
+prefill,index_score,DSA Indexer,2048,65536,0.590933,0.590443,1.0008,dropin:index_score_prefill.py,index_score_prefill.py,cuda_graph,True
+prefill,moe_gate_proj,MoE,2048,65536,0.185829,0.185829,1.0,llm_flops_stock,,cuda_graph,True
+prefill,moe_up_proj,MoE,2048,65536,0.177307,0.177266,1.0002,dropin:moe_up_proj_prefill.py,moe_up_proj_prefill.py,cuda_graph,True
+prefill,moe_down_proj,MoE,2048,65536,0.190067,0.192102,0.9894,dropin:moe_down_proj_prefill.py,moe_down_proj_prefill.py,cuda_graph,True
+prefill,fused_qkv_a_proj,Attention,4096,65536,0.054894,0.047987,1.1439,dropin:fused_qkv_a_prefill.py,fused_qkv_a_prefill.py,cuda_graph,True
+prefill,q_b_proj,Attention,4096,65536,0.118418,0.101856,1.1626,dropin:q_b_prefill.py,q_b_prefill.py,cuda_graph,True
+prefill,absorbed_W_UK,Attention,4096,65536,0.058523,0.058387,1.0023,dropin:absorbed_W_UK_prefill.py,absorbed_W_UK_prefill.py,cuda_graph,True
+prefill,absorbed_W_UV,Attention,4096,65536,0.044552,0.044786,0.9948,dropin:absorbed_W_UV_prefill.py,absorbed_W_UV_prefill.py,cuda_graph,True
+prefill,o_proj,Attention,4096,65536,0.303878,0.306752,0.9906,dropin:best/o_proj_prefill,best/o_proj_prefill,cuda_graph,True
+prefill,dsa_prefill_attn,DSA,4096,65536,1.292818,1.286654,1.0048,dropin:dsa_prefill_attn.py,dsa_prefill_attn.py,cuda_graph,True
+prefill,index_k_proj,DSA Indexer,4096,65536,0.084773,0.073475,1.1538,dropin:best/index_k_prefill_bw70,best/index_k_prefill_bw70,cuda_graph,True
+prefill,index_q_upproj,DSA Indexer,4096,65536,0.03568,0.027638,1.291,dropin:index_q_upproj_prefill.py,index_q_upproj_prefill.py,cuda_graph,True
+prefill,index_weights_proj,DSA Indexer,4096,65536,0.016867,0.010608,1.59,dropin:index_weights_proj.py,index_weights_proj.py,cuda_event,True
+prefill,index_score,DSA Indexer,4096,65536,1.188053,1.179818,1.007,dropin:index_score_prefill.py,index_score_prefill.py,cuda_graph,True
+prefill,moe_gate_proj,MoE,4096,65536,0.344744,0.344744,1.0,llm_flops_stock,,cuda_graph,True
+prefill,moe_up_proj,MoE,4096,65536,0.332379,0.341976,0.9719,dropin:moe_up_proj_prefill.py,moe_up_proj_prefill.py,cuda_graph,True
+prefill,moe_down_proj,MoE,4096,65536,0.357627,0.374107,0.9559,dropin:moe_down_proj_prefill.py,moe_down_proj_prefill.py,cuda_graph,True
+prefill,__LAYER__,layer,1024,65536,1.164251,1.145245,1.0166,sum,,cuda_graph,True
+prefill,__LAYER__,layer,2048,65536,2.981744,2.89543,1.0298,sum,,cuda_graph,True
+prefill,__LAYER__,layer,4096,65536,4.233206,4.198788,1.0082,sum,,cuda_graph,True

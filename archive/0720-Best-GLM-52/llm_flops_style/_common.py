@@ -66,13 +66,13 @@ candidate_loader = _load_harness("candidate_loader")
 # archive_ref: "best/<dir>" OR flat "<file>.py" under archive root
 # kind: fp8_gemm | moe_masked | bmm | dsa | score_mqa | bf16_gemm | None
 DECODE_SWAPS: dict[str, tuple[str | None, str | None, str | None]] = {
-    "fused_qkv_a_proj": (None, None, None),
+    "fused_qkv_a_proj": ("fused_qkv_a", "best/fused_qkv_a_decode", "fp8_gemm"),
     "q_b_proj": ("q_b", "best/q_b_decode", "fp8_gemm"),
     "absorbed_W_UK": (None, None, None),
     "absorbed_W_UV": (None, None, None),
     "o_proj": ("o_proj", "best/o_proj_decode_hbm35", "fp8_gemm"),
     "dsa_decode_attn": (None, None, None),
-    "index_k_proj": (None, None, None),
+    "index_k_proj": ("index_k", "best/index_k_proj_decode", "fp8_gemm"),
     "index_q_upproj": ("index_q_upproj", "best/index_q_upproj_decode_hbm15", "fp8_gemm"),
     "index_weights_proj": (None, None, None),
     "index_score": (None, None, None),
@@ -93,6 +93,8 @@ PREFILL_SWAPS: dict[str, tuple[str | None, str | None, str | None]] = {
     "index_q_upproj": ("index_q_upproj", "index_q_upproj_prefill.py", "fp8_gemm"),
     "index_weights_proj": ("index_weights_proj", "index_weights_proj.py", "bf16_gemm"),
     "index_score": ("index_score", "index_score_prefill.py", "score_mqa"),
+    # CUPTI pack+PDL wins (~1.06–1.19×); CUDA Graph drop-in regresses at M=4096
+    # (~0.95×) — keep candidate in best/ but do not default-swap for layer tables.
     "moe_gate_proj": (None, None, None),
     "moe_up_proj": ("moe_up", "moe_up_proj_prefill.py", "moe_masked"),
     "moe_down_proj": ("moe_down", "moe_down_proj_prefill.py", "moe_masked"),

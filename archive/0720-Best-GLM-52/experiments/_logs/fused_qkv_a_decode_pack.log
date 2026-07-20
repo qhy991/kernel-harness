@@ -1,0 +1,120 @@
+TASK fused_qkv_a/decode  run=20260720T054246Z-cea168  candidate=archive/0720-Best-GLM-52/experiments/fused_qkv_a_decode_pack/candidate/candidate.py sha=545c8f71ce68
+     timing=cupti-cold-l2-device-kernel-median iters=30 warmup=3 repeat=10  S=65536 seed=0  device=cuda:0
+
+     roofline: fp8 peak 4.50 PFLOP/s, HBM 8.0 TB/s, ridge 562.5 FLOP/byte -> reward = utilisation of whichever resource binds
+
+  shape    ok  calc_diff   cand_us    ref_us  speedup  sp_cons  verdict      AI   bound   TFLOP/s     MFU      GB/s      BW   reward
+    M=16    ERROR  RuntimeError: Assertion error (/deepgemm/csrc/apis/../jit_ke
+    M=32    ERROR  RuntimeError: Assertion error (/deepgemm/csrc/apis/../jit_ke
+
+VERDICT: INCORRECT
+result=runs/glm52/fused_qkv_a_decode/20260720T054246Z-cea168/result.json
+
+RESULT_JSON_BEGIN
+{
+  "schema_version": "1.0",
+  "task": {
+    "name": "fused_qkv_a_decode",
+    "model": "glm52",
+    "operator": "fused_qkv_a",
+    "phase": "decode",
+    "S": 65536,
+    "seed": 0,
+    "family": "gemm",
+    "output_kind": "dense",
+    "backend": "deep_gemm.fp8_gemm_nt",
+    "diff_tol": 5e-06,
+    "rel_tol": 0.015703125,
+    "abs_tol_factor": 0.0001,
+    "performance_gate": {
+      "min_speedup": 1.0,
+      "basis": "conservative (q=0.9)"
+    }
+  },
+  "run": {
+    "run_id": "20260720T054246Z-cea168",
+    "started_utc": "2026-07-20T05:42:46Z",
+    "finished_utc": "2026-07-20T05:42:46Z",
+    "repeat": 10,
+    "repeat_scope": "in-process",
+    "iterations": 30,
+    "warmup": 3,
+    "timing_protocol": "cupti-cold-l2-device-kernel-median",
+    "device": "cuda:0",
+    "correctness_standard": "FlashMLA check_is_allclose structure: anomaly positions + elementwise (abs OR rel) + DeepGEMM calc_diff, on a poisoned output buffer",
+    "reward_standard": "rewardbench bound-aware roofline (PR2)",
+    "result_dir": "runs/glm52/fused_qkv_a_decode/20260720T054246Z-cea168"
+  },
+  "candidate": {
+    "path": "archive/0720-Best-GLM-52/experiments/fused_qkv_a_decode_pack/candidate/candidate.py",
+    "sha256": "545c8f71ce68e1b1905d39187e012256df948f01cb5f332603b07be46a57b9ec",
+    "is_reference_fallback": false,
+    "external": true
+  },
+  "environment": {
+    "hostname": "dry-vm-embraces-fin-03",
+    "python": "3.12.13",
+    "platform": "Linux-6.8.0-100-generic-x86_64-with-glibc2.39",
+    "git_sha": "2f5c9119463fea81cfd893e3bf8fad534bf0ba26",
+    "git_branch": "main",
+    "git_dirty": true,
+    "torch": "2.11.0+cu130",
+    "deep_gemm": "0.1.4",
+    "sgl_kernel": "0.4.4",
+    "cuda": "13.0",
+    "gpu": "NVIDIA B200",
+    "gpu_capability": "10.0",
+    "gpu_memory_gb": 191.5,
+    "gpu_count": 1,
+    "driver": "610.43.02\n610.43.02\n610.43.02\n610.43.02"
+  },
+  "cost_model": {
+    "gpu": "NVIDIA B200",
+    "hbm_bytes_per_s": 8000000000000.0,
+    "peak_flops_fp8": 4500000000000000.0,
+    "peak_flops_bf16": 2250000000000000.0,
+    "source": "rewardbench (PR2) + testbench/harness/profile.py; opbench/mfu.py's 7.7e12 not used"
+  },
+  "per_shape": [
+    {
+      "uuid": "glm52-fused_qkv_a_decode-M16",
+      "axes": {
+        "M": 16,
+        "S": 65536
+      },
+      "correct": false,
+      "error": "RuntimeError: Assertion error (/deepgemm/csrc/apis/../jit_kernels/impls/../heuristics/../../utils/layout.hpp:97): sf.size(-2) == ceil_div(mn, gran_mn)"
+    },
+    {
+      "uuid": "glm52-fused_qkv_a_decode-M32",
+      "axes": {
+        "M": 32,
+        "S": 65536
+      },
+      "correct": false,
+      "error": "RuntimeError: Assertion error (/deepgemm/csrc/apis/../jit_kernels/impls/../heuristics/../../utils/layout.hpp:97): sf.size(-2) == ceil_div(mn, gran_mn)"
+    }
+  ],
+  "aggregate": {
+    "min_speedup": null,
+    "geomean_speedup": null,
+    "min_speedup_conservative": null,
+    "best_reward": null,
+    "worst_reward": null,
+    "worst_calc_diff": null,
+    "shapes_evaluated": 2,
+    "complete_sweep": true,
+    "timing_unstable_shapes": [],
+    "shapes_won": 0,
+    "shapes_regressed": 0,
+    "shapes_neutral": 0,
+    "regressed_shapes": []
+  },
+  "verdict": {
+    "correct": false,
+    "performance_ok": false,
+    "status": "INCORRECT",
+    "exit_code": 2
+  }
+}
+RESULT_JSON_END

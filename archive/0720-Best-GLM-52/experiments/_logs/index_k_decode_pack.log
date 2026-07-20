@@ -1,0 +1,212 @@
+TASK index_k/decode  run=20260720T054203Z-361400  candidate=archive/0720-Best-GLM-52/experiments/index_k_decode_pack/candidate/candidate.py sha=1bb94628853a
+     timing=cupti-cold-l2-device-kernel-median iters=30 warmup=3 repeat=10  S=65536 seed=0  device=cuda:0
+
+     roofline: fp8 peak 4.50 PFLOP/s, HBM 8.0 TB/s, ridge 562.5 FLOP/byte -> reward = utilisation of whichever resource binds
+
+  shape    ok  calc_diff   cand_us    ref_us  speedup  sp_cons  verdict      AI   bound   TFLOP/s     MFU      GB/s      BW   reward
+         WARN   timing samples spread 7.25x (cand 9.1-66.0us, ref 24.7-39.0us) — sp_cons unreliable, re-run before trusting it
+   M=16  PASS   0.00e+00      9.87     25.98   2.631x   1.365x      WIN    28.2  memory       2.5   0.06%      90.4   1.13%   0.0113
+        └ ref   baseline                                                                      1.0   0.02%      34.3   0.43%   0.0043
+   M=32  PASS   0.00e+00      9.59     25.90   2.701x   2.616x      WIN    50.5  memory       5.2   0.12%     104.0   1.30%   0.0130
+        └ ref   baseline                                                                      1.9   0.04%      38.5   0.48%   0.0048
+
+VERDICT: CORRECT
+2/2 shapes WIN, 0 regressed, 0 neutral   geomean_speedup=2.6657x  best_reward=0.013
+performance_gate: >=1 win AND 0 regressions -> MET
+WARNING: unstable timing on glm52-index_k_proj_decode-M16 — the conservative margin above is not trustworthy; re-run.
+result=runs/glm52/index_k_proj_decode/20260720T054203Z-361400/result.json
+
+RESULT_JSON_BEGIN
+{
+  "schema_version": "1.0",
+  "task": {
+    "name": "index_k_proj_decode",
+    "model": "glm52",
+    "operator": "index_k",
+    "phase": "decode",
+    "S": 65536,
+    "seed": 0,
+    "family": "gemm",
+    "output_kind": "dense",
+    "backend": "deep_gemm.fp8_gemm_nt",
+    "diff_tol": 5e-06,
+    "rel_tol": 0.015703125,
+    "abs_tol_factor": 0.0001,
+    "performance_gate": {
+      "min_speedup": 1.0,
+      "basis": "conservative (q=0.9)"
+    }
+  },
+  "run": {
+    "run_id": "20260720T054203Z-361400",
+    "started_utc": "2026-07-20T05:42:03Z",
+    "finished_utc": "2026-07-20T05:42:16Z",
+    "repeat": 10,
+    "repeat_scope": "in-process",
+    "iterations": 30,
+    "warmup": 3,
+    "timing_protocol": "cupti-cold-l2-device-kernel-median",
+    "device": "cuda:0",
+    "correctness_standard": "FlashMLA check_is_allclose structure: anomaly positions + elementwise (abs OR rel) + DeepGEMM calc_diff, on a poisoned output buffer",
+    "reward_standard": "rewardbench bound-aware roofline (PR2)",
+    "result_dir": "runs/glm52/index_k_proj_decode/20260720T054203Z-361400"
+  },
+  "candidate": {
+    "path": "archive/0720-Best-GLM-52/experiments/index_k_decode_pack/candidate/candidate.py",
+    "sha256": "1bb94628853a1739a4b1fea55ac71f5ee15bfac0d1301be63801ffdb81fd036e",
+    "is_reference_fallback": false,
+    "external": true
+  },
+  "environment": {
+    "hostname": "dry-vm-embraces-fin-03",
+    "python": "3.12.13",
+    "platform": "Linux-6.8.0-100-generic-x86_64-with-glibc2.39",
+    "git_sha": "2f5c9119463fea81cfd893e3bf8fad534bf0ba26",
+    "git_branch": "main",
+    "git_dirty": true,
+    "torch": "2.11.0+cu130",
+    "deep_gemm": "0.1.4",
+    "sgl_kernel": "0.4.4",
+    "cuda": "13.0",
+    "gpu": "NVIDIA B200",
+    "gpu_capability": "10.0",
+    "gpu_memory_gb": 191.5,
+    "gpu_count": 1,
+    "driver": "610.43.02\n610.43.02\n610.43.02\n610.43.02"
+  },
+  "cost_model": {
+    "gpu": "NVIDIA B200",
+    "hbm_bytes_per_s": 8000000000000.0,
+    "peak_flops_fp8": 4500000000000000.0,
+    "peak_flops_bf16": 2250000000000000.0,
+    "source": "rewardbench (PR2) + testbench/harness/profile.py; opbench/mfu.py's 7.7e12 not used"
+  },
+  "per_shape": [
+    {
+      "uuid": "glm52-index_k_proj_decode-M16",
+      "axes": {
+        "M": 16,
+        "S": 65536
+      },
+      "correct": true,
+      "output_kind": "dense",
+      "output_buffer_poisoned": true,
+      "calc_diff": 0.0,
+      "max_abs_err": 0.0,
+      "max_rel_err": 0.0,
+      "abs_tol": 0.030600000000000002,
+      "rel_tol": 0.015703125,
+      "diff_tol": 5e-06,
+      "elementwise_failed": 0,
+      "anomaly_ok": true,
+      "elements": 2048,
+      "cosine": 1.0,
+      "best_fit_scale": 1.0,
+      "timing_spread": 7.246,
+      "timing_unstable": true,
+      "post_timing_calc_diff": 0.0,
+      "post_timing_correct": true,
+      "flops": 25165824.0,
+      "bytes_hbm": 892096.0,
+      "compute_dtype": "fp8",
+      "candidate_us": 9.872,
+      "candidate_us_lo": 9.104,
+      "candidate_us_hi": 65.969,
+      "reference_us": 25.976,
+      "reference_us_lo": 24.671,
+      "reference_us_hi": 38.975,
+      "samples": 10,
+      "candidate_us_p90": 18.088,
+      "reference_us_p10": 24.686,
+      "conservative_quantile": 0.9,
+      "speedup": 2.6312,
+      "speedup_conservative": 1.3648,
+      "speedup_optimistic": 3.4896,
+      "shape_verdict": "win",
+      "bound": "memory",
+      "arithmetic_intensity": 28.20977114570629,
+      "ridge": 562.5,
+      "reward": 0.011295500012661754,
+      "reference_reward": 0.004292968374044772,
+      "achieved_tflops": 2.549147762668085,
+      "achieved_gbps": 90.36400010129405,
+      "compute_util": 0.0005664772805929078,
+      "bw_util": 0.011295500012661757
+    },
+    {
+      "uuid": "glm52-index_k_proj_decode-M32",
+      "axes": {
+        "M": 32,
+        "S": 65536
+      },
+      "correct": true,
+      "output_kind": "dense",
+      "output_buffer_poisoned": true,
+      "calc_diff": 0.0,
+      "max_abs_err": 0.0,
+      "max_rel_err": 0.0,
+      "abs_tol": 0.030600000000000002,
+      "rel_tol": 0.015703125,
+      "diff_tol": 5e-06,
+      "elementwise_failed": 0,
+      "anomaly_ok": true,
+      "elements": 4096,
+      "cosine": 0.9999999999999999,
+      "best_fit_scale": 0.9999999999999999,
+      "timing_spread": 1.046,
+      "timing_unstable": false,
+      "post_timing_calc_diff": 0.0,
+      "post_timing_correct": true,
+      "flops": 50331648.0,
+      "bytes_hbm": 997568.0,
+      "compute_dtype": "fp8",
+      "candidate_us": 9.592,
+      "candidate_us_lo": 9.488,
+      "candidate_us_hi": 9.856,
+      "reference_us": 25.904,
+      "reference_us_lo": 25.555,
+      "reference_us_hi": 26.72,
+      "samples": 10,
+      "candidate_us_p90": 9.784,
+      "reference_us_p10": 25.595,
+      "conservative_quantile": 0.9,
+      "speedup": 2.7006,
+      "speedup_conservative": 2.6161,
+      "speedup_optimistic": 2.7634,
+      "shape_verdict": "win",
+      "bound": "memory",
+      "arithmetic_intensity": 50.45435298646308,
+      "ridge": 562.5,
+      "reward": 0.013,
+      "reference_reward": 0.004813681020672083,
+      "achieved_tflops": 5.24725271059216,
+      "achieved_gbps": 104.0,
+      "compute_util": 0.001166056157909369,
+      "bw_util": 0.013
+    }
+  ],
+  "aggregate": {
+    "min_speedup": 2.6312,
+    "geomean_speedup": 2.6657,
+    "min_speedup_conservative": 1.3648,
+    "best_reward": 0.013,
+    "worst_reward": 0.0113,
+    "worst_calc_diff": 0.0,
+    "shapes_evaluated": 2,
+    "complete_sweep": true,
+    "timing_unstable_shapes": [
+      "glm52-index_k_proj_decode-M16"
+    ],
+    "shapes_won": 2,
+    "shapes_regressed": 0,
+    "shapes_neutral": 0,
+    "regressed_shapes": []
+  },
+  "verdict": {
+    "correct": true,
+    "performance_ok": true,
+    "status": "CORRECT",
+    "exit_code": 0
+  }
+}
+RESULT_JSON_END

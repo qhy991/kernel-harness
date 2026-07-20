@@ -1,0 +1,145 @@
+/home/qinhaiyan/Kernel-Harness/.venv/lib/python3.12/site-packages/torch/cuda/graphs.py:126: UserWarning: The CUDA Graph is empty. This usually means that the graph was attempted to be captured on wrong device or stream. (Triggered internally at /pytorch/aten/src/ATen/cuda/CUDAGraph.cpp:147.)
+  super().capture_end()
+==================================================================================================================================
+GLM-5.2 PREFILL — llm_flops DROP-IN (+ PR#3 胡延 kernels)
+==================================================================================================================================
+Timing: CUDA Graph (fallback Event)  warmup=5 runs=20
+llm_flops: /home/qinhaiyan/llm_flops  seed=0
+M=[1024, 2048, 4096]  S=65536
+Mode: DROP-IN SWAPS
+Swaps:
+  fused_qkv_a_proj←fused_qkv_a_prefill.py
+  q_b_proj←q_b_prefill.py
+  absorbed_W_UK←absorbed_W_UK_prefill.py
+  absorbed_W_UV←absorbed_W_UV_prefill.py
+  o_proj←best/o_proj_prefill
+  dsa_prefill_attn←dsa_prefill_attn.py
+  index_k_proj←best/index_k_prefill_bw70
+  index_q_upproj←index_q_upproj_prefill.py
+  index_weights_proj←index_weights_proj.py
+  index_score←index_score_prefill.py
+  moe_up_proj←moe_up_proj_prefill.py
+  moe_down_proj←moe_down_proj_prefill.py
+==================================================================================================================================
+
+==================================================================================================================================
+  M=1024, S=65536
+==================================================================================================================================
+  name                     impl                                        avg(ms)  stock(ms)     spd proto       
+  ------------------------------------------------------------------------------------------------------------------------
+  fused_qkv_a_proj         dropin:fused_qkv_a_prefill.py                0.0159     0.0244   1.53x cuda_graph  
+  q_b_proj                 dropin:q_b_prefill.py                        0.0269     0.0432   1.61x cuda_graph  
+  absorbed_W_UK            dropin:absorbed_W_UK_prefill.py              0.0152     0.0151   0.99x cuda_graph  
+  absorbed_W_UV            dropin:absorbed_W_UV_prefill.py              0.0101     0.0110   1.09x cuda_graph  
+  o_proj                   dropin:best/o_proj_prefill                   0.0877     0.0882   1.01x cuda_graph  
+  dsa_prefill_attn         dropin:dsa_prefill_attn.py                   0.3123     0.2873   0.92x cuda_graph  
+  index_k_proj             dropin:best/index_k_prefill_bw70             0.0733     0.0847   1.16x cuda_graph  
+  index_q_upproj           dropin:index_q_upproj_prefill.py             0.0113     0.0207   1.84x cuda_graph  
+  index_weights_proj       dropin:index_weights_proj.py                 0.0086     0.0167   1.93x cuda_event  
+  index_score              dropin:index_score_prefill.py                0.2755     0.2648   0.96x cuda_graph  
+  moe_gate_proj            llm_flops_stock                              0.1055     0.1055   1.00x cuda_graph  
+  moe_up_proj              dropin:moe_up_proj_prefill.py                0.0985     0.0985   1.00x cuda_graph  
+  moe_down_proj            dropin:moe_down_proj_prefill.py              0.1043     0.1041   1.00x cuda_graph  
+
+==================================================================================================================================
+  M=2048, S=65536
+==================================================================================================================================
+  name                     impl                                        avg(ms)  stock(ms)     spd proto       
+  ------------------------------------------------------------------------------------------------------------------------
+  fused_qkv_a_proj         dropin:fused_qkv_a_prefill.py                0.0270     0.0362   1.34x cuda_graph  
+  q_b_proj                 dropin:q_b_prefill.py                        0.0536     0.0691   1.29x cuda_graph  
+  absorbed_W_UK            dropin:absorbed_W_UK_prefill.py              0.0311     0.0311   1.00x cuda_graph  
+  absorbed_W_UV            dropin:absorbed_W_UV_prefill.py              0.0230     0.0227   0.99x cuda_graph  
+  o_proj                   dropin:best/o_proj_prefill                   0.1536     0.1575   1.03x cuda_graph  
+  dsa_prefill_attn         dropin:dsa_prefill_attn.py                   1.3580     1.3941   1.03x cuda_graph  
+  index_k_proj             dropin:best/index_k_prefill_bw70             0.0737     0.0832   1.13x cuda_graph  
+  index_q_upproj           dropin:index_q_upproj_prefill.py             0.0173     0.0270   1.56x cuda_graph  
+  index_weights_proj       dropin:index_weights_proj.py                 0.0126     0.0167   1.33x cuda_event  
+  index_score              dropin:index_score_prefill.py                0.5904     0.5909   1.00x cuda_graph  
+  moe_gate_proj            llm_flops_stock                              0.1858     0.1858   1.00x cuda_graph  
+  moe_up_proj              dropin:moe_up_proj_prefill.py                0.1773     0.1773   1.00x cuda_graph  
+  moe_down_proj            dropin:moe_down_proj_prefill.py              0.1921     0.1901   0.99x cuda_graph  
+
+==================================================================================================================================
+  M=4096, S=65536
+==================================================================================================================================
+  name                     impl                                        avg(ms)  stock(ms)     spd proto       
+  ------------------------------------------------------------------------------------------------------------------------
+  fused_qkv_a_proj         dropin:fused_qkv_a_prefill.py                0.0480     0.0549   1.14x cuda_graph  
+  q_b_proj                 dropin:q_b_prefill.py                        0.1019     0.1184   1.16x cuda_graph  
+  absorbed_W_UK            dropin:absorbed_W_UK_prefill.py              0.0584     0.0585   1.00x cuda_graph  
+  absorbed_W_UV            dropin:absorbed_W_UV_prefill.py              0.0448     0.0446   0.99x cuda_graph  
+  o_proj                   dropin:best/o_proj_prefill                   0.3068     0.3039   0.99x cuda_graph  
+  dsa_prefill_attn         dropin:dsa_prefill_attn.py                   1.2867     1.2928   1.00x cuda_graph  
+  index_k_proj             dropin:best/index_k_prefill_bw70             0.0735     0.0848   1.15x cuda_graph  
+  index_q_upproj           dropin:index_q_upproj_prefill.py             0.0276     0.0357   1.29x cuda_graph  
+  index_weights_proj       dropin:index_weights_proj.py                 0.0106     0.0169   1.59x cuda_event  
+  index_score              dropin:index_score_prefill.py                1.1798     1.1881   1.01x cuda_graph  
+  moe_gate_proj            llm_flops_stock                              0.3447     0.3447   1.00x cuda_graph  
+  moe_up_proj              dropin:moe_up_proj_prefill.py                0.3420     0.3324   0.97x cuda_graph  
+  moe_down_proj            dropin:moe_down_proj_prefill.py              0.3741     0.3576   0.96x cuda_graph  
+
+==================================================================================================================================
+  PREFILL Summary (M=1024, S=65536)  [drop-in: same llm_flops tensors]
+  layer TOTAL stock:   1.1643 ms
+  layer TOTAL swapped: 1.1452 ms  speedup=1.0166x
+==================================================================================================================================
+  rank   name                     impl                                    avg(ms)  stock(ms)     spd     pct proto       
+  -----------------------------------------------------------------------------------------------------------------------------
+  1      dsa_prefill_attn         dropin:dsa_prefill_attn.py               0.3123     0.2873   0.92x   27.3% cuda_graph  
+  2      index_score              dropin:index_score_prefill.py            0.2755     0.2648   0.96x   24.1% cuda_graph  
+  3      moe_gate_proj            llm_flops_stock                          0.1055     0.1055   1.00x    9.2% cuda_graph  
+  4      moe_down_proj            dropin:moe_down_proj_prefill.py          0.1043     0.1041   1.00x    9.1% cuda_graph  
+  5      moe_up_proj              dropin:moe_up_proj_prefill.py            0.0985     0.0985   1.00x    8.6% cuda_graph  
+  6      o_proj                   dropin:best/o_proj_prefill               0.0877     0.0882   1.01x    7.7% cuda_graph  
+  7      index_k_proj             dropin:best/index_k_prefill_bw70         0.0733     0.0847   1.16x    6.4% cuda_graph  
+  8      q_b_proj                 dropin:q_b_prefill.py                    0.0269     0.0432   1.61x    2.3% cuda_graph  
+  9      fused_qkv_a_proj         dropin:fused_qkv_a_prefill.py            0.0159     0.0244   1.53x    1.4% cuda_graph  
+  10     absorbed_W_UK            dropin:absorbed_W_UK_prefill.py          0.0152     0.0151   0.99x    1.3% cuda_graph  
+  11     index_q_upproj           dropin:index_q_upproj_prefill.py         0.0113     0.0207   1.84x    1.0% cuda_graph  
+  12     absorbed_W_UV            dropin:absorbed_W_UV_prefill.py          0.0101     0.0110   1.09x    0.9% cuda_graph  
+  13     index_weights_proj       dropin:index_weights_proj.py             0.0086     0.0167   1.93x    0.8% cuda_event  
+
+==================================================================================================================================
+  PREFILL Summary (M=2048, S=65536)  [drop-in: same llm_flops tensors]
+  layer TOTAL stock:   2.9817 ms
+  layer TOTAL swapped: 2.8954 ms  speedup=1.0298x
+==================================================================================================================================
+  rank   name                     impl                                    avg(ms)  stock(ms)     spd     pct proto       
+  -----------------------------------------------------------------------------------------------------------------------------
+  1      dsa_prefill_attn         dropin:dsa_prefill_attn.py               1.3580     1.3941   1.03x   46.9% cuda_graph  
+  2      index_score              dropin:index_score_prefill.py            0.5904     0.5909   1.00x   20.4% cuda_graph  
+  3      moe_down_proj            dropin:moe_down_proj_prefill.py          0.1921     0.1901   0.99x    6.6% cuda_graph  
+  4      moe_gate_proj            llm_flops_stock                          0.1858     0.1858   1.00x    6.4% cuda_graph  
+  5      moe_up_proj              dropin:moe_up_proj_prefill.py            0.1773     0.1773   1.00x    6.1% cuda_graph  
+  6      o_proj                   dropin:best/o_proj_prefill               0.1536     0.1575   1.03x    5.3% cuda_graph  
+  7      index_k_proj             dropin:best/index_k_prefill_bw70         0.0737     0.0832   1.13x    2.5% cuda_graph  
+  8      q_b_proj                 dropin:q_b_prefill.py                    0.0536     0.0691   1.29x    1.9% cuda_graph  
+  9      absorbed_W_UK            dropin:absorbed_W_UK_prefill.py          0.0311     0.0311   1.00x    1.1% cuda_graph  
+  10     fused_qkv_a_proj         dropin:fused_qkv_a_prefill.py            0.0270     0.0362   1.34x    0.9% cuda_graph  
+  11     absorbed_W_UV            dropin:absorbed_W_UV_prefill.py          0.0230     0.0227   0.99x    0.8% cuda_graph  
+  12     index_q_upproj           dropin:index_q_upproj_prefill.py         0.0173     0.0270   1.56x    0.6% cuda_graph  
+  13     index_weights_proj       dropin:index_weights_proj.py             0.0126     0.0167   1.33x    0.4% cuda_event  
+
+==================================================================================================================================
+  PREFILL Summary (M=4096, S=65536)  [drop-in: same llm_flops tensors]
+  layer TOTAL stock:   4.2332 ms
+  layer TOTAL swapped: 4.1988 ms  speedup=1.0082x
+==================================================================================================================================
+  rank   name                     impl                                    avg(ms)  stock(ms)     spd     pct proto       
+  -----------------------------------------------------------------------------------------------------------------------------
+  1      dsa_prefill_attn         dropin:dsa_prefill_attn.py               1.2867     1.2928   1.00x   30.6% cuda_graph  
+  2      index_score              dropin:index_score_prefill.py            1.1798     1.1881   1.01x   28.1% cuda_graph  
+  3      moe_down_proj            dropin:moe_down_proj_prefill.py          0.3741     0.3576   0.96x    8.9% cuda_graph  
+  4      moe_gate_proj            llm_flops_stock                          0.3447     0.3447   1.00x    8.2% cuda_graph  
+  5      moe_up_proj              dropin:moe_up_proj_prefill.py            0.3420     0.3324   0.97x    8.1% cuda_graph  
+  6      o_proj                   dropin:best/o_proj_prefill               0.3068     0.3039   0.99x    7.3% cuda_graph  
+  7      q_b_proj                 dropin:q_b_prefill.py                    0.1019     0.1184   1.16x    2.4% cuda_graph  
+  8      index_k_proj             dropin:best/index_k_prefill_bw70         0.0735     0.0848   1.15x    1.7% cuda_graph  
+  9      absorbed_W_UK            dropin:absorbed_W_UK_prefill.py          0.0584     0.0585   1.00x    1.4% cuda_graph  
+  10     fused_qkv_a_proj         dropin:fused_qkv_a_prefill.py            0.0480     0.0549   1.14x    1.1% cuda_graph  
+  11     absorbed_W_UV            dropin:absorbed_W_UV_prefill.py          0.0448     0.0446   0.99x    1.1% cuda_graph  
+  12     index_q_upproj           dropin:index_q_upproj_prefill.py         0.0276     0.0357   1.29x    0.7% cuda_graph  
+  13     index_weights_proj       dropin:index_weights_proj.py             0.0106     0.0169   1.59x    0.3% cuda_event  
+
+Results: /home/qinhaiyan/Kernel-Harness/archive/0720-Best-GLM-52/llm_flops_style/results/glm5_prefill_swapped_perf.csv
