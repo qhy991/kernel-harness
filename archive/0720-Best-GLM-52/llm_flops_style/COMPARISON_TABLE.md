@@ -85,4 +85,9 @@
 - **Prefill + PR#3**：真正拉动层时间的是 `fused_qkv_a` / `q_b` / `index_q_upproj` / `index_weights` / `index_k`；DSA+index_score 仍占 ~50%+，几乎无加速，故层总加速仅 **~1–4%**。
 - M=4096 上 `moe_up/down`、`o_proj` 偶发 <1.0×，偏噪声/PDL 全局状态，建议复测确认。
 
-原始 CSV：`results/glm5_{decode,prefill}_swapped_perf.csv`
+原始 CSV：
+- `results/comparison_decode.csv` — Decode 全算子对比（含层合计）
+- `results/comparison_prefill.csv` — Prefill 全算子对比（含层合计）
+- `results/comparison_all.csv` — 合并版
+- `results/glm5_{decode,prefill}_swapped_perf.csv` — bench 原始输出
+
