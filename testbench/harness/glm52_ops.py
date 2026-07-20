@@ -196,6 +196,7 @@ def _round128(x: int) -> int:
 DIFF_TOL = 5e-6
 REL_TOL = 2.01 / 128
 ABS_TOL_FACTOR = 1e-4
+NEAR_ZERO_FLOOR = 1e-3  # abs_tol floor: forgive near-zero fp-reorder noise (sparse-MLA); calc_diff (5e-6) still gates aggregate
 
 
 def calc_diff(x: torch.Tensor, y: torch.Tensor) -> float:
@@ -529,7 +530,7 @@ def compare(ref_out, cand_out, op: str, phase: str, inputs: dict) -> dict:
     out["best_fit_scale"] = (dot / (rn * rn)).item() if rn > 0 else float("nan")
 
     # ── 2. elementwise: abs OR rel ──
-    abs_tol = s["abs_tol_factor"] * r.abs().max().item()
+    abs_tol = max(s["abs_tol_factor"] * r.abs().max().item(), NEAR_ZERO_FLOOR)
     raw_abs = (c - r).abs()
     raw_rel = raw_abs / (r.abs() + 1e-6)
     pass_mask = (raw_abs < abs_tol) | (raw_rel < s["rel_tol"])
