@@ -165,6 +165,10 @@ with a one-sentence "why" — the final measured result, and a transferable less
 Schema and honesty rules:
 [`testbench/knowledge/README.md`](testbench/knowledge/README.md).
 
+- **Warm-start every session with one command** — best prior run + prior recipes
+  (what was tried + why) + the library-kernel-first ledger + KernelWiki prior-art:
+  `python3 testbench/bin/brief.py <task>` (e.g. `brief.py o_proj_decode`). Do this
+  before touching the kernel so you build on the frontier, not rediscover it.
 - Query it before editing; write one entry when the session ends:
   draft the JSON, then `python3 testbench/bin/knowledge.py add <file>`.
 - Every number must come from the run's `RESULT_JSON` / `result.json` — never an

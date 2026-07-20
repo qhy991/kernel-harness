@@ -18,9 +18,15 @@ from __future__ import annotations
 import argparse
 import datetime
 import json
+import os
 import re
 import sys
 from pathlib import Path
+
+try:  # optional: prior-art bridge (stdlib-only sibling; absent-safe)
+    import kwiki_bridge
+except Exception:  # pragma: no cover - bridge is best-effort
+    kwiki_bridge = None
 
 BOTTLENECKS = {"memory-bandwidth", "compute", "launch-overhead", "kernel-count",
                "quantization-overhead", "occupancy", "synchronization",
@@ -161,6 +167,27 @@ def _entries_dir(root: Path) -> Path:
     return root / "entries"
 
 
+def _default_root() -> Path:
+    """Knowledge-base root. $KH_KNOWLEDGE_ROOT lets a whole fleet of worktrees share
+    one bank (recipes learned in one worktree are visible to the others); otherwise
+    the in-repo testbench/knowledge is used."""
+    env = os.environ.get("KH_KNOWLEDGE_ROOT")
+    if env:
+        return Path(env).expanduser()
+    return Path(__file__).resolve().parent.parent / "knowledge"
+
+
+def _load_candidates(root: Path) -> dict:
+    """Library-kernel-first ledger: per-op current best library drop-in. JSON (not
+    yaml) to keep this tool stdlib-only. Empty dict if absent/unreadable."""
+    f = root / "candidates.json"
+    try:
+        data = json.loads(f.read_text())
+        return data if isinstance(data, dict) else {}
+    except Exception:
+        return {}
+
+
 def _load_all(root: Path):
     out = []
     for f in sorted(_entries_dir(root).glob("*.json")):
@@ -262,11 +289,135 @@ def cmd_query(args, root: Path) -> int:
     return 0
 
 
+def _fmt_entry(e) -> str:
+    res = e.get("result") or {}
+    lines = [f"{e.get('id')}  [{res.get('status')} geo={res.get('geomean_speedup')} "
+             f"minc={res.get('min_speedup_conservative')}]  "
+             f"bottleneck={(e.get('bottleneck') or {}).get('kind')}",
+             f"    lesson: {e.get('lesson')}"]
+    for a in e.get("approaches", []):
+        if isinstance(a, dict):
+            gs = a.get("geomean_speedup")
+            lines.append(f"    - {a.get('technique')} [{a.get('outcome')}"
+                         f"{' ' + str(gs) if gs is not None else ''}]: {a.get('why')}")
+    return "\n".join(lines)
+
+
+def _op_slug(task_token: str | None) -> str:
+    """o_proj_decode -> o_proj ; glm52/o_proj_prefill -> o_proj."""
+    t = (task_token or "").split("/")[-1]
+    for suf in ("_decode", "_prefill"):
+        if t.endswith(suf):
+            return t[:-len(suf)]
+    return t
+
+
+def cmd_brief(args, root: Path) -> int:
+    """Warm-start digest for a task: internal recipes + library ledger + KernelWiki
+    prior-art. The one call a session runs before touching a kernel, so retrieval is
+    load-bearing instead of discretionary. Keyed on the task-dir token (e.g.
+    o_proj_decode), which matches entries by task/op substring — entries store `op`
+    as a descriptive name, so exact --op matching is unreliable."""
+    token = args.task or args.op
+    tok = (token or "").lower()
+    slug = _op_slug(token)
+    entries = [e for _, e in _load_all(root) if "__parse_error__" not in e]
+
+    def _match(e) -> bool:
+        if tok and tok not in (e.get("task") or "").lower() \
+                and slug not in (e.get("task") or "").lower():
+            return False
+        if args.phase and (e.get("phase") or "") != args.phase:
+            return False
+        if args.bottleneck and (e.get("bottleneck") or {}).get("kind", "") != args.bottleneck:
+            return False
+        return True
+
+    hits = sorted((e for e in entries if _match(e)),
+                  key=lambda e: (e.get("date", ""), e.get("id", "")), reverse=True)
+    # Infer the bottleneck from the newest hit when the caller didn't pass one, so the
+    # KernelWiki query still targets the right pattern.
+    bottleneck = args.bottleneck or ((hits[0].get("bottleneck") or {}).get("kind") if hits else None)
+
+    print(f"== internal recipes ({len(hits)}/{len(entries)})  "
+          f"task~{token or '*'} phase={args.phase or '*'} bottleneck={bottleneck or '*'} ==")
+    for e in hits[:args.limit]:
+        print(_fmt_entry(e))
+    if not hits:
+        print("  (none — this is new ground; write one at session end)")
+
+    entry = _load_candidates(root).get(slug)
+    if entry:
+        print(f"\n== library-kernel-first ledger: {slug} ==")
+        for k in ("best_library", "call", "dtype", "layout", "wins_where",
+                  "handwrite_where", "source"):
+            if entry.get(k):
+                print(f"    {k}: {entry[k]}")
+
+    if not args.no_external and kwiki_bridge is not None:
+        techs = [a.get("technique") for e in hits[:2]
+                 for a in e.get("approaches", []) if isinstance(a, dict)]
+        ext = kwiki_bridge.query(op=slug, bottleneck=bottleneck, techniques=techs,
+                                 limit=args.limit)
+        print("\n== KernelWiki prior-art ==")
+        print(ext if ext else "  (KernelWiki unavailable or no match — internal-only)")
+    return 0
+
+
+def _group_index(entries, key_fn) -> str:
+    groups: dict = {}
+    for e in entries:
+        for key in key_fn(e):
+            groups.setdefault(key, []).append(e)
+    out = []
+    for key in sorted(groups):
+        out.append(f"## {key}\n")
+        for e in sorted(groups[key], key=lambda x: (x.get("date", ""), x.get("id", "")),
+                        reverse=True):
+            res = e.get("result") or {}
+            out.append(f"- `{e.get('id')}` [{res.get('status')}] "
+                       f"{e.get('op')}/{e.get('phase')} — {e.get('lesson')}")
+        out.append("")
+    return "\n".join(out).rstrip() + "\n"
+
+
+def cmd_index(args, root: Path) -> int:
+    """Generate cross-reference indices (mirrors KernelWiki's queries/). --check
+    verifies they are up to date (for CI) without writing."""
+    entries = [e for _, e in _load_all(root) if "__parse_error__" not in e]
+    header = "<!-- generated by knowledge.py index; do not edit by hand -->\n\n"
+    indices = {
+        "by-op.md": _group_index(entries, lambda e: [e.get("op") or "unknown"]),
+        "by-bottleneck.md": _group_index(
+            entries, lambda e: [(e.get("bottleneck") or {}).get("kind") or "unknown"]),
+        "by-technique.md": _group_index(
+            entries, lambda e: sorted({a.get("technique") for a in e.get("approaches", [])
+                                       if isinstance(a, dict) and a.get("technique")}) or ["unknown"]),
+    }
+    qdir = root / "queries"
+    stale = 0
+    for name, body in indices.items():
+        content = header + f"# {name[:-3]}\n\n" + body
+        dest = qdir / name
+        if args.check:
+            cur = dest.read_text() if dest.exists() else ""
+            if cur != content:
+                print(f"stale: {dest}")
+                stale += 1
+        else:
+            qdir.mkdir(parents=True, exist_ok=True)
+            dest.write_text(content)
+            print(f"wrote {dest}")
+    if args.check:
+        print(f"index --check: {stale} stale")
+        return 1 if stale else 0
+    return 0
+
+
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
-    ap.add_argument("--root", type=Path,
-                    default=Path(__file__).resolve().parent.parent / "knowledge",
-                    help="knowledge-base root (default: testbench/knowledge)")
+    ap.add_argument("--root", type=Path, default=_default_root(),
+                    help="knowledge-base root (default: $KH_KNOWLEDGE_ROOT or testbench/knowledge)")
     sub = ap.add_subparsers(dest="cmd", required=True)
     a = sub.add_parser("add", help="validate an entry file and install it")
     a.add_argument("entry")
@@ -279,8 +430,16 @@ def main() -> int:
     q.add_argument("--sm", help="substring match, e.g. sm_100")
     q.add_argument("--technique", help="substring match over approach techniques")
     q.add_argument("--json", action="store_true", help="print matches as JSON")
+    b = sub.add_parser("brief", help="warm-start: internal recipes + ledger + KernelWiki")
+    for flag in ("op", "phase", "task", "bottleneck"):
+        b.add_argument(f"--{flag}")
+    b.add_argument("--limit", type=int, default=6)
+    b.add_argument("--no-external", action="store_true", help="skip the KernelWiki bridge")
+    ix = sub.add_parser("index", help="(re)generate queries/*.md cross-reference indices")
+    ix.add_argument("--check", action="store_true", help="verify up-to-date, do not write")
     args = ap.parse_args()
-    return {"add": cmd_add, "lint": cmd_lint, "query": cmd_query}[args.cmd](args, args.root)
+    return {"add": cmd_add, "lint": cmd_lint, "query": cmd_query,
+            "brief": cmd_brief, "index": cmd_index}[args.cmd](args, args.root)
 
 
 if __name__ == "__main__":

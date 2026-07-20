@@ -114,6 +114,7 @@ candidate_loader = _sibling("candidate_loader")
 result_store = _sibling("result_store")
 RH = _sibling("reward_hack")
 tb_timing = _sibling("timing")       # testbench CUPTI timer
+gpu_lease = _sibling("gpu_lease")    # free-GPU pick + per-GPU timing flock
 
 TIMING_PROTOCOL = ("cupti-cold-l2-device-kernel-median" if tb_timing._HAVE_CUPTI
                    else "event-cold-l2-median-NO-CUPTI")
@@ -244,6 +245,10 @@ def evaluate(task_dir: Path, args) -> tuple[dict, int]:
     seed = int(meta.get("seed", op_meta["seed"]))
     min_speedup_gate = float(meta.get("performance_gate", {}).get("min_speedup", 1.0))
 
+    # Pick the least-busy GPU when asked, so the agent never hand-manages
+    # CUDA_VISIBLE_DEVICES and campaign waves don't collide on one device.
+    if getattr(args, "auto_gpu", False):
+        args.device = f"cuda:{gpu_lease.pick_idle_gpu(gpu_lease.device_index(args.device))}"
     device = torch.device(args.device)
     torch.cuda.set_device(device)
 
@@ -318,13 +323,16 @@ def evaluate(task_dir: Path, args) -> tuple[dict, int]:
         ref_fn = partial(ops.reference, op, phase)
         setup = lambda: clone_inputs(inputs)  # noqa: E731 — cost is not timed
         cand_s, ref_s = [], []
-        for _ in range(args.repeat):
-            cand_s.append(tb_timing.time_runnable(cand_fn, setup=setup,
-                                                  warmup=args.warmup,
-                                                  rep=args.iterations, device=device))
-            ref_s.append(tb_timing.time_runnable(ref_fn, setup=setup,
-                                                 warmup=args.warmup,
-                                                 rep=args.iterations, device=device))
+        # Hold the per-GPU timing lock across the whole sweep so a co-tenant gate
+        # run can't inflate these device-span medians. Opt out with --no-gpu-lock.
+        with gpu_lease.gpu_timing_lock(device, enabled=not getattr(args, "no_gpu_lock", False)):
+            for _ in range(args.repeat):
+                cand_s.append(tb_timing.time_runnable(cand_fn, setup=setup,
+                                                      warmup=args.warmup,
+                                                      rep=args.iterations, device=device))
+                ref_s.append(tb_timing.time_runnable(ref_fn, setup=setup,
+                                                     warmup=args.warmup,
+                                                     rep=args.iterations, device=device))
         RH.check_monkey_patch()
 
         c_lo, c_med, c_hi = min(cand_s), statistics.median(cand_s), max(cand_s)
@@ -540,6 +548,10 @@ def main() -> int:
                          "Default: <task_dir>/candidate.py")
     ap.add_argument("--M", type=int, default=None, help="single shape instead of the sweep")
     ap.add_argument("--device", default="cuda:0")
+    ap.add_argument("--auto-gpu", action="store_true",
+                    help="pick the least-busy GPU via nvidia-smi (overrides --device index)")
+    ap.add_argument("--no-gpu-lock", action="store_true",
+                    help="do not hold the per-GPU flock around the timed sweep")
     ap.add_argument("--no-persist", action="store_true")
     ap.add_argument("--describe", action="store_true",
                     help="print the problem statement (generated from glm52_ops) and exit")

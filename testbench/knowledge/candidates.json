@@ -1,0 +1,12 @@
+{
+  "_README": "Library-kernel-first ledger. Per-op current best LIBRARY drop-in (deep_gemm / cuBLAS / sgl_kernel / flashinfer), its call signature, and the scale/layout contract, plus where a library kernel wins vs where hand-writing is needed. Surfaced by `knowledge.py brief --task <op>_<phase>`, so 'which library kernel and how do I call it' is a lookup, not a rediscovery — the runtime-alignment step the traces show is the single most error-prone. Keyed by op slug (o_proj_decode -> o_proj). JSON, not yaml, to keep knowledge.py stdlib-only. `source` points at the knowledge entry id backing the claim.",
+  "o_proj": {
+    "best_library": "deep_gemm w8a8_block_fp8 (blackwell)",
+    "call": "sglang deepgemm_w8a8_block_fp8_linear_with_fallback",
+    "dtype": "per-token-activation + per-block-weight fp8, ue8m0 power-of-2 block scale (REQUIRED on Blackwell; violating it crashes smxx_layout.cuh:232)",
+    "layout": "weight [N,K] block-scaled; activation per-token scaled at runtime (not cacheable)",
+    "wins_where": "the reference itself; decode M=16/32 is memory-bandwidth bound near roof",
+    "handwrite_where": "tiny-M dispatch-bound shapes where deep_gemm's ~12us launch floor dominates",
+    "source": "glm52--o_proj_decode--b200--20260714a"
+  }
+}

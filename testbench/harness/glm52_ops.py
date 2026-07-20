@@ -623,18 +623,25 @@ def cost(op: str, phase: str, M: int, S: int = DEFAULT_S):
     return 2.0 * M * S * h * hd, float(byts), "fp8"
 
 
-def reward(latency_ms: float, flops: float, bytes_hbm: float, compute_dtype: str) -> dict:
+def reward(latency_ms: float, flops: float, bytes_hbm: float, compute_dtype: str,
+           attainable_bw: float | None = None) -> dict:
     """Bound-aware roofline utilisation (PR2). Collapses exactly to compute_util
     when compute-bound and bw_util when memory-bound. NOT clamped: a value > 1
     means the byte model undercounts real traffic, and callers should surface it
-    rather than hide it."""
+    rather than hide it.
+
+    `attainable_bw` (bytes/s), when given, is a measured pure-copy ceiling for this
+    byte footprint (see bin/bw_ceiling.py). It adds achievability-honest fields
+    ALONGSIDE the spec-peak reward — small transfers cannot reach spec HBM, so a
+    memory-bound op near its attainable ceiling is at its real roof — and never
+    changes the existing reward number."""
     peak = PEAK_FLOPS[compute_dtype]
     lat_s = latency_ms * 1e-3
     ai = flops / bytes_hbm
     ridge = peak / HBM_BYTES_PER_S
     achieved_flops, achieved_bw = flops / lat_s, bytes_hbm / lat_s
     ceiling = min(peak, ai * HBM_BYTES_PER_S)
-    return {
+    out = {
         "latency_ms": latency_ms, "tflops": achieved_flops / 1e12,
         "gbps": achieved_bw / 1e9, "arithmetic_intensity": ai, "ridge": ridge,
         "bound": "compute" if ai >= ridge else "memory",
@@ -642,6 +649,13 @@ def reward(latency_ms: float, flops: float, bytes_hbm: float, compute_dtype: str
         "reward": achieved_flops / ceiling if ceiling > 0 else 0.0,
         "compute_dtype": compute_dtype,
     }
+    if attainable_bw and attainable_bw > 0:
+        out["attainable_bw_gbps"] = attainable_bw / 1e9
+        out["attainable_frac_of_peak"] = attainable_bw / HBM_BYTES_PER_S
+        # honest memory-bound utilisation: achieved vs what a pure copy of this
+        # footprint actually sustains, not vs the physically-unreachable spec peak.
+        out["bw_util_attainable"] = achieved_bw / attainable_bw
+    return out
 
 
 # ══════════════════════════════════════════════════════════════════════════
