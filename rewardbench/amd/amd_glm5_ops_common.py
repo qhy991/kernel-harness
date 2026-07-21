@@ -76,8 +76,8 @@ def _add_source_tree(env_name: str, default: str, suffix: str = "") -> None:
 
 
 def _sglang_fp8_linear():
-    _add_source_tree("SGLANG_ROOT", "/opt/devmachine/lichangye/repos/sglang", "python")
-    _add_source_tree("AITER_ROOT", "/opt/devmachine/lichangye/repos/aiter")
+    _add_source_tree("SGLANG_DIR", str(_REPO.parent / "sglang"), "python")
+    _add_source_tree("AITER_PATH", str(_REPO.parent / "aiter"))
     try:
         from sglang.srt.layers.quantization.fp8_utils import (
             aiter_w8a8_block_fp8_linear,
@@ -88,7 +88,7 @@ def _sglang_fp8_linear():
 
 
 def _sglang_tilelang_sparse_fwd():
-    _add_source_tree("SGLANG_ROOT", "/opt/devmachine/lichangye/repos/sglang", "python")
+    _add_source_tree("SGLANG_DIR", str(_REPO.parent / "sglang"), "python")
     try:
         from sglang.srt.layers.attention.dsa.tilelang_kernel import tilelang_sparse_fwd
     except Exception:
@@ -97,7 +97,7 @@ def _sglang_tilelang_sparse_fwd():
 
 
 def _aiter_mqa_logits():
-    _add_source_tree("AITER_ROOT", "/opt/devmachine/lichangye/repos/aiter")
+    _add_source_tree("AITER_PATH", str(_REPO.parent / "aiter"))
     try:
         from aiter.ops.triton.fp8_mqa_logits import fp8_mqa_logits
     except Exception:
@@ -106,7 +106,7 @@ def _aiter_mqa_logits():
 
 
 def _ensure_sglang_server_args():
-    _add_source_tree("SGLANG_ROOT", "/opt/devmachine/lichangye/repos/sglang", "python")
+    _add_source_tree("SGLANG_DIR", str(_REPO.parent / "sglang"), "python")
     try:
         from sglang.srt.server_args import (
             ServerArgs,
@@ -125,7 +125,7 @@ def _ensure_sglang_server_args():
 
 
 def _sglang_fused_moe_deps():
-    _add_source_tree("SGLANG_ROOT", "/opt/devmachine/lichangye/repos/sglang", "python")
+    _add_source_tree("SGLANG_DIR", str(_REPO.parent / "sglang"), "python")
     try:
         from sglang.srt.layers.moe.moe_runner import MoeRunnerConfig
         from sglang.srt.layers.moe.moe_runner.triton_utils.fused_moe import fused_moe

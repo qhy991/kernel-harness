@@ -26,8 +26,8 @@ from typing import Any, Callable
 
 REPO = Path(__file__).resolve().parents[2]
 DEFAULT_TASKSET = REPO / "tasksets" / "glm52_rocm_local.json"
-SGLANG_ROOT = Path(os.environ.get("SGLANG_ROOT", "/opt/devmachine/lichangye/repos/sglang"))
-AITER_ROOT = Path(os.environ.get("AITER_ROOT", "/opt/devmachine/lichangye/repos/aiter"))
+SGLANG_ROOT = Path(os.environ.get("SGLANG_DIR", str(REPO.parent / "sglang")))
+AITER_ROOT = Path(os.environ.get("AITER_PATH", str(REPO.parent / "aiter")))
 
 # These must be set before importing SGLang fp8_utils.
 os.environ.setdefault("KERNEL_HARNESS_PLATFORM", "rocm")

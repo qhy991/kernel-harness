@@ -165,8 +165,8 @@ def _add_source_tree(env_name: str, default: str, suffix: str = "") -> None:
 
 @lru_cache(maxsize=1)
 def _sglang_gemm_fn():
-    _add_source_tree("SGLANG_ROOT", "/opt/devmachine/lichangye/repos/sglang", "python")
-    _add_source_tree("AITER_ROOT", "/opt/devmachine/lichangye/repos/aiter")
+    _add_source_tree("SGLANG_DIR", str(_REPO.parent / "sglang"), "python")
+    _add_source_tree("AITER_PATH", str(_REPO.parent / "aiter"))
     try:
         from sglang.srt.layers.quantization.fp8_utils import (
             aiter_w8a8_block_fp8_linear,
@@ -211,7 +211,7 @@ def _normalize_tilelang_sparse_out(out: torch.Tensor) -> torch.Tensor:
 
 @lru_cache(maxsize=1)
 def _tilelang_sparse_fwd_fn():
-    _add_source_tree("SGLANG_ROOT", "/opt/devmachine/lichangye/repos/sglang", "python")
+    _add_source_tree("SGLANG_DIR", str(_REPO.parent / "sglang"), "python")
     try:
         from sglang.srt.layers.attention.dsa.tilelang_kernel import (
             tilelang_sparse_fwd,
@@ -366,7 +366,7 @@ class AmdRewardbenchProvider:
 
     def version_info(self):
         return {
-            "aiter": _pkg_version("aiter"),
+            "aiter": _pkg_version("aiter") or _pkg_version("amd-aiter"),
             "torch": torch.__version__,
             "hip": getattr(torch.version, "hip", None),
         }
@@ -413,7 +413,7 @@ def _moe_reference(inputs: dict):
 
 @lru_cache(maxsize=1)
 def _aiter_mqa_logits_fn():
-    _add_source_tree("AITER_ROOT", "/opt/devmachine/lichangye/repos/aiter")
+    _add_source_tree("AITER_PATH", str(_REPO.parent / "aiter"))
     try:
         from aiter.ops.triton.fp8_mqa_logits import fp8_mqa_logits
     except Exception:
@@ -447,7 +447,7 @@ def _try_aiter_mqa_logits(inputs: dict):
 
 
 def _ensure_sglang_server_args() -> None:
-    _add_source_tree("SGLANG_ROOT", "/opt/devmachine/lichangye/repos/sglang", "python")
+    _add_source_tree("SGLANG_DIR", str(_REPO.parent / "sglang"), "python")
     from sglang.srt.server_args import (
         ServerArgs,
         get_global_server_args,

@@ -13,8 +13,8 @@ run() — that would measure a different problem than the one the gate checked.
 Tensors at M=1024:
 
     hidden_states    (1024, 6144)             torch.bfloat16
-    w1               (8, 4096, 6144)          torch.float8_e4m3fn
-    w2               (8, 6144, 2048)          torch.float8_e4m3fn
+    w1               (8, 4096, 6144)          torch.float8_e4m3fnuz
+    w2               (8, 6144, 2048)          torch.float8_e4m3fnuz
     topk_weights     (1024, 8)                torch.float32
     topk_ids         (1024, 8)                torch.int32
     router_logits    (1024, 8)                torch.float32
@@ -29,7 +29,7 @@ abs_err < abs_tol OR rel_err < 0.0157, then DeepGEMM's calc_diff
 <= 5e-06. `./run.sh --describe` prints all of it.
 
 Baseline to beat: the call below, timed by the selected backend protocol:
-CUPTI cold-L2 device-kernel median: inputs cloned per iteration and L2 flushed before each, both outside the measured window
+HIP-graph capture+replay median (HIP-event timing fallback): setup/cloning is outside the measured region
 
     ./run.sh
 """
