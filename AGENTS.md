@@ -135,6 +135,13 @@ List everything with `.venv/bin/python testbench/bin/inventory.py`.
   `.venv/bin/python testbench/bin/sync_glm52_tasks.py` (`--check` for CI; it never
   overwrites `candidate.py`).
 
+## Backends
+
+Hardware peaks, reference kernels, and timing protocols live under
+[`testbench/harness/backends/`](testbench/harness/backends/). The default bundle is
+`cuda/cuda-b200/deep-gemm-sgl-kernel`. See
+[`testbench/docs/BACKENDS.md`](testbench/docs/BACKENDS.md). ROCm/AITER is not
+registered yet — requesting it fails loudly.
 ## Roofline-reward bench (folder of optimized ops → one CSV)
 
 [`rewardbench/`](rewardbench/README.md) is a standalone tool that scores a **folder of

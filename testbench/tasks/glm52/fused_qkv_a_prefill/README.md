@@ -36,14 +36,6 @@ TASK  fused_qkv_a/prefill — Fused QKV-A Projection
              the very same dict feeds the reference — do NOT re-quantize, re-
              seed, or rebuild any tensor inside run(), or you measure a
              different problem than the one the gate checked
-             tensors at M=1024 (read from a real build_inputs() call):
-               x_fp8              (1024, 6144)               float8_e4m3fn
-               x_scale            (1024, 48)                 float32
-               w_fp8              (2624, 6144)               float8_e4m3fn
-               w_scale            (21, 48)                   float32
-               rows               1024
-               N                  2624
-               out                (1024, 2624)               bfloat16
              inputs['out'] is pre-allocated and MAY be written in place,
              but is NaN-filled before run() is called: returning it unwritten FAILS.
              accepted candidate forms:

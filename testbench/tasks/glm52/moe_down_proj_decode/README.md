@@ -39,16 +39,6 @@ TASK  moe_down/decode — MoE Down Projection
              the very same dict feeds the reference — do NOT re-quantize, re-
              seed, or rebuild any tensor inside run(), or you measure a
              different problem than the one the gate checked
-             tensors at M=16 (read from a real build_inputs() call):
-               x_fp8              (8, 128, 2048)             float8_e4m3fn
-               x_scale            (8, 128, 16)               float32
-               w_fp8              (8, 6144, 2048)            float8_e4m3fn
-               w_scale            (8, 48, 16)                float32
-               masked_m           (8,)                       int32
-               expected_m         128
-               E                  8
-               N                  6144
-               out                (8, 128, 6144)             bfloat16
              inputs['out'] is pre-allocated and MAY be written in place,
              but is NaN-filled before run() is called: returning it unwritten FAILS.
              accepted candidate forms:

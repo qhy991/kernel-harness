@@ -14,7 +14,7 @@ TASK  index_score/prefill — Indexer Score (MQA logits)
 
   WORKLOAD   M in [1024, 2048, 4096]   (every shape must pass correctness AND be beaten on latency)
 
-  BASELINE   deep_gemm.fp8_mqa_logits / fp8_paged_mqa_logits
+  BASELINE   deep_gemm.fp8_mqa_logits
              glm52_ops.reference('index_score', 'prefill', inputs)
              the correctness oracle AND the latency denominator — the same
              call, on the same frozen inputs, timed under the same protocol
@@ -40,13 +40,6 @@ TASK  index_score/prefill — Indexer Score (MQA logits)
              the very same dict feeds the reference — do NOT re-quantize, re-
              seed, or rebuild any tensor inside run(), or you measure a
              different problem than the one the gate checked
-             tensors at M=1024 (read from a real build_inputs() call):
-               q_fp8              (1024, 32, 128)            float8_e4m3fn
-               k_fp8              (65536, 128)               float8_e4m3fn
-               k_scale            (65536,)                   float32
-               weights            (1024, 32)                 float32
-               ks                 (1024,)                    int32
-               ke                 (1024,)                    int32
              accepted candidate forms:
                - Python / PyTorch — a .py defining run(inputs)
                - Triton — @triton.jit / @triton.autotune live in that same
