@@ -1,0 +1,9 @@
+op,phase,M,variant,reward,pct_roofline,bound,speedup_vs_ref,lat_us,geomean_reward
+o_proj,prefill,1024,fp8_dot,0.16223,16.22,compute,3.643,485.97,0.18649
+o_proj,prefill,2048,fp8_dot,0.17264,17.26,compute,3.5,913.35,0.18649
+o_proj,prefill,4096,fp8_dot,0.23158,23.16,compute,4.465,1361.76,0.18649
+index_k,prefill,1024,fp8_dot,0.28771,28.77,memory,2.933,283.82,0.28792
+index_k,prefill,2048,fp8_dot,0.28755,28.76,memory,2.926,283.98,0.28792
+index_k,prefill,4096,fp8_dot,0.28849,28.85,memory,2.947,283.06,0.28792
+dsa_attn,decode,16,flash_split,0.06141,6.14,memory,2.089,123.22,0.08476
+dsa_attn,decode,32,flash_split,0.11697,11.7,memory,2.974,129.39,0.08476
