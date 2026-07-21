@@ -95,6 +95,7 @@ _REPO_ROOT = _HARNESS_DIR.parents[1]
 # sglang, so this must go before any third-party import happens.
 sys.path[:] = [p for p in sys.path
                if p and Path(p).resolve() != _HARNESS_DIR]
+sys.path.insert(0, str(_REPO_ROOT))
 
 
 def _sibling(name: str):
@@ -108,6 +109,7 @@ def _sibling(name: str):
 
 
 import torch  # noqa: E402
+from testbench.harness.backends import get_backend  # noqa: E402
 
 ops = _sibling("glm52_ops")          # the single source of truth for all 12 ops
 candidate_loader = _sibling("candidate_loader")
@@ -116,8 +118,8 @@ RH = _sibling("reward_hack")
 tb_timing = _sibling("timing")       # testbench CUPTI timer
 gpu_lease = _sibling("gpu_lease")    # free-GPU pick + per-GPU timing flock
 
-TIMING_PROTOCOL = ("cupti-cold-l2-device-kernel-median" if tb_timing._HAVE_CUPTI
-                   else "event-cold-l2-median-NO-CUPTI")
+BACKEND_BUNDLE = get_backend()
+TIMING_PROTOCOL = BACKEND_BUNDLE.timer.id
 
 
 def clone_inputs(d: dict) -> dict:
@@ -493,6 +495,7 @@ def evaluate(task_dir: Path, args) -> tuple[dict, int]:
 
     result = {
         "schema_version": result_store.SCHEMA_VERSION,
+        "backend": BACKEND_BUNDLE.identity(),
         "task": {
             "name": task_dir.name, "model": meta.get("model", "glm52"),
             "operator": op, "phase": phase, "S": S, "seed": seed,
@@ -549,7 +552,8 @@ def main() -> int:
     ap.add_argument("--M", type=int, default=None, help="single shape instead of the sweep")
     ap.add_argument("--device", default="cuda:0")
     ap.add_argument("--auto-gpu", action="store_true",
-                    help="pick the least-busy GPU via nvidia-smi (overrides --device index)")
+                    help="pick the least-busy GPU via nvidia-smi/rocm-smi "
+                         "(overrides --device index)")
     ap.add_argument("--no-gpu-lock", action="store_true",
                     help="do not hold the per-GPU flock around the timed sweep")
     ap.add_argument("--no-persist", action="store_true")

@@ -36,12 +36,6 @@ TASK  dsa_attn/decode — DSA Sparse Attention
              the very same dict feeds the reference — do NOT re-quantize, re-
              seed, or rebuild any tensor inside run(), or you measure a
              different problem than the one the gate checked
-             tensors at M=16 (read from a real build_inputs() call):
-               q                  (16, 64, 576)              bfloat16
-               kv                 (65536, 1, 576)            bfloat16
-               indices            (16, 1, 2048)              int32
-               sm_scale           0.041666666666666664
-               d_v                512
              accepted candidate forms:
                - Python / PyTorch — a .py defining run(inputs)
                - Triton — @triton.jit / @triton.autotune live in that same

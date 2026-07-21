@@ -36,14 +36,6 @@ TASK  o_proj/decode — Attention O Projection
              the very same dict feeds the reference — do NOT re-quantize, re-
              seed, or rebuild any tensor inside run(), or you measure a
              different problem than the one the gate checked
-             tensors at M=16 (read from a real build_inputs() call):
-               x_fp8              (16, 16384)                float8_e4m3fn
-               x_scale            (16, 128)                  float32
-               w_fp8              (6144, 16384)              float8_e4m3fn
-               w_scale            (48, 128)                  float32
-               rows               16
-               N                  6144
-               out                (16, 6144)                 bfloat16
              inputs['out'] is pre-allocated and MAY be written in place,
              but is NaN-filled before run() is called: returning it unwritten FAILS.
              accepted candidate forms:

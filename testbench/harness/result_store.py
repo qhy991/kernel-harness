@@ -25,7 +25,7 @@ import subprocess
 import sys
 from pathlib import Path
 
-SCHEMA_VERSION = "1.0"
+SCHEMA_VERSION = "1.1"
 
 _REPO_ROOT = Path(__file__).resolve().parents[2]
 RUNS_ROOT = _REPO_ROOT / "runs"
@@ -76,18 +76,32 @@ def capture_environment() -> dict:
         "torch": _pkg_version("torch"),
         "deep_gemm": _pkg_version("deep_gemm"),
         "sgl_kernel": _pkg_version("sgl_kernel"),
+        "aiter": _pkg_version("aiter"),
+        "kernel_harness_platform": os.environ.get("KERNEL_HARNESS_PLATFORM", "cuda"),
+        "kernel_harness_profile": os.environ.get("KERNEL_HARNESS_PROFILE", "cuda-b200"),
+        "kernel_harness_provider": os.environ.get(
+            "KERNEL_HARNESS_PROVIDER", "deep-gemm-sgl-kernel"
+        ),
+        "kernel_harness_timer": os.environ.get("KERNEL_HARNESS_TIMER", "auto"),
     }
     try:
         import torch
         env["cuda"] = torch.version.cuda
+        env["hip"] = getattr(torch.version, "hip", None)
         if torch.cuda.is_available():
             props = torch.cuda.get_device_properties(0)
             env["gpu"] = props.name
-            env["gpu_capability"] = f"{props.major}.{props.minor}"
+            if env["hip"]:
+                env["gpu_arch"] = getattr(props, "gcnArchName", None)
+            else:
+                env["gpu_capability"] = f"{props.major}.{props.minor}"
             env["gpu_memory_gb"] = round(props.total_memory / 1e9, 1)
             env["gpu_count"] = torch.cuda.device_count()
-            env["driver"] = _cmd(["nvidia-smi", "--query-gpu=driver_version",
-                                  "--format=csv,noheader"])
+            env["driver"] = (
+                _cmd(["rocm-smi", "--showdriverversion"]) if env["hip"] else
+                _cmd(["nvidia-smi", "--query-gpu=driver_version",
+                      "--format=csv,noheader"])
+            )
     except Exception as exc:
         env["environment_error"] = str(exc)[:200]
     return env

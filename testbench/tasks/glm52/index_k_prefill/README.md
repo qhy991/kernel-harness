@@ -38,14 +38,6 @@ TASK  index_k/prefill — Indexer K Projection
              the very same dict feeds the reference — do NOT re-quantize, re-
              seed, or rebuild any tensor inside run(), or you measure a
              different problem than the one the gate checked
-             tensors at M=1024 (read from a real build_inputs() call):
-               x_fp8              (65536, 6144)              float8_e4m3fn
-               x_scale            (65536, 48)                float32
-               w_fp8              (128, 6144)                float8_e4m3fn
-               w_scale            (1, 48)                    float32
-               rows               65536
-               N                  128
-               out                (65536, 128)               bfloat16
              inputs['out'] is pre-allocated and MAY be written in place,
              but is NaN-filled before run() is called: returning it unwritten FAILS.
              accepted candidate forms:

@@ -283,6 +283,23 @@ def _readme(dirname: str, op: str, phase: str, device) -> str:
             "```text\n" + ops.describe(op, phase, device=device) + "\n```\n")
 
 
+def _problem_json(dirname: str, op: str, phase: str, device) -> str:
+    """Project problem(); when no GPU, keep previously captured tensor tables."""
+    problem = ops.problem(op, phase, device)
+    if device is None:
+        prev_path = _TASKS / dirname / "problem.json"
+        if prev_path.is_file():
+            try:
+                prev = json.loads(prev_path.read_text())
+                prev_tensors = (prev.get("contract") or {}).get("tensors")
+                if prev_tensors and not (problem.get("contract") or {}).get("tensors"):
+                    problem.setdefault("contract", {})["tensors"] = prev_tensors
+                    problem["contract"]["tensors_error"] = None
+            except Exception:
+                pass
+    return json.dumps(problem, indent=2) + "\n"
+
+
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--check", action="store_true", help="exit 1 if stale; write nothing")
@@ -302,7 +319,7 @@ def main() -> int:
         d.mkdir(parents=True, exist_ok=True)
         want = {
             "task.json": _task_json(dirname, op, phase),
-            "problem.json": json.dumps(ops.problem(op, phase, device), indent=2) + "\n",
+            "problem.json": _problem_json(dirname, op, phase, device),
             "workload.jsonl": _workload(dirname, op, phase),
             "run.sh": RUN_SH.format(m=ops.spec(op, phase)["sweep"][0]),
             "README.md": _readme(dirname, op, phase, device),

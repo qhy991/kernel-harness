@@ -165,6 +165,10 @@ def bench_time_with_cuda_events(fn: Callable, warmup=10, rep=100, setup=None,
 
 
 def time_runnable(fn: Callable, setup=None, warmup=10, rep=100, device="cuda") -> float:
-    """Median device-kernel latency in ms (CUPTI when available, else CUDA events)."""
-    bench = bench_gpu_time_with_cupti if _HAVE_CUPTI else bench_time_with_cuda_events
-    return statistics.median(bench(fn, warmup=warmup, rep=rep, setup=setup, device=device))
+    """Median latency through the selected backend's timing protocol."""
+    from testbench.harness.backends import get_backend
+
+    samples = get_backend().timer.measure(
+        fn, setup=setup, warmup=warmup, rep=rep, device=device
+    )
+    return statistics.median(samples)

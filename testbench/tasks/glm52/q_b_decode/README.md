@@ -36,14 +36,6 @@ TASK  q_b/decode — Q-B Projection
              the very same dict feeds the reference — do NOT re-quantize, re-
              seed, or rebuild any tensor inside run(), or you measure a
              different problem than the one the gate checked
-             tensors at M=16 (read from a real build_inputs() call):
-               x_fp8              (16, 2048)                 float8_e4m3fn
-               x_scale            (16, 16)                   float32
-               w_fp8              (16384, 2048)              float8_e4m3fn
-               w_scale            (128, 16)                  float32
-               rows               16
-               N                  16384
-               out                (16, 16384)                bfloat16
              inputs['out'] is pre-allocated and MAY be written in place,
              but is NaN-filled before run() is called: returning it unwritten FAILS.
              accepted candidate forms:

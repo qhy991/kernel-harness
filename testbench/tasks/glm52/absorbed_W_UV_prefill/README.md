@@ -37,11 +37,6 @@ TASK  absorbed_W_UV/prefill — Absorbed W_UV BMM
              the very same dict feeds the reference — do NOT re-quantize, re-
              seed, or rebuild any tensor inside run(), or you measure a
              different problem than the one the gate checked
-             tensors at M=1024 (read from a real build_inputs() call):
-               A_fp8              (64, 1024, 512)            float8_e4m3fn
-               B_fp8              (64, 512, 256)             float8_e4m3fn
-               A_scale            (1,)                       float32
-               B_scale            (1,)                       float32
              accepted candidate forms:
                - Python / PyTorch — a .py defining run(inputs)
                - Triton — @triton.jit / @triton.autotune live in that same

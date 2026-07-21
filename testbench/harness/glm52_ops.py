@@ -59,16 +59,22 @@ from __future__ import annotations
 
 import math
 import random
+import sys
+from pathlib import Path
 
 import torch
-import deep_gemm
-from sgl_kernel import bmm_fp8
-from sgl_kernel.flash_mla import flash_mla_sparse_fwd
-from deep_gemm.utils.layout import get_mn_major_tma_aligned_tensor
-from deep_gemm.utils.math import (
-    per_token_cast_to_fp8 as _dg_per_token_cast,
-    per_block_cast_to_fp8 as _dg_per_block_cast,
-)
+
+# evaluate_task loads this file via importlib path; ensure package imports work.
+_REPO_ROOT = Path(__file__).resolve().parents[2]
+if str(_REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(_REPO_ROOT))
+
+from testbench.harness.backends import get_backend
+
+BACKEND_BUNDLE = get_backend()
+DEVICE_PROFILE = BACKEND_BUNDLE.profile
+OPERATOR_PROVIDER = BACKEND_BUNDLE.provider
+FP8_DTYPE = getattr(torch, DEVICE_PROFILE.fp8_dtype_name)
 
 # ── model constants (GLM-5.2) — identical in PR1 and PR2 (9/9 verified) ──
 HIDDEN_SIZE = 6144
@@ -90,22 +96,19 @@ FUSED_QKV_A_OUT = 2624
 BLOCK_SIZE_KV = 64
 HEAD_DIM_WITH_SF = 132    # 128 fp8 bytes + 4-byte inline f32 scale
 
-FP8_MAX = torch.finfo(torch.float8_e4m3fn).max  # 448.0
+FP8_MAX = torch.finfo(FP8_DTYPE).max
 DEFAULT_S = 65536
 DEFAULT_SEED = 0
 DEFAULT_SWEEP = {"prefill": (1024, 2048, 4096), "decode": (16, 32)}
 
-# ── roofline peaks (PR2 + testbench/harness/profile.py) ──
+# ── roofline peaks — selected device profile, not part of the model contract ──
 FP8_B, BF16_B, F32_B = 1, 2, 4
-HBM_BYTES_PER_S = 8.0e12
-PEAK_FLOPS = {"fp8": 4.5e15, "bf16": 2.25e15}
-PEAKS = {
-    "gpu": "NVIDIA B200",
-    "hbm_bytes_per_s": HBM_BYTES_PER_S,
-    "peak_flops_fp8": PEAK_FLOPS["fp8"],
-    "peak_flops_bf16": PEAK_FLOPS["bf16"],
-    "source": "rewardbench (PR2) + testbench/harness/profile.py; opbench/mfu.py's 7.7e12 not used",
+HBM_BYTES_PER_S = DEVICE_PROFILE.peaks["hbm_bytes_per_s"]
+PEAK_FLOPS = {
+    "fp8": DEVICE_PROFILE.peaks["fp8"],
+    "bf16": DEVICE_PROFILE.peaks["bf16"],
 }
+PEAKS = DEVICE_PROFILE.as_dict()
 
 # ── operator tables ──
 GEMM_OPS = {
@@ -131,14 +134,6 @@ MLA_OPS = ("dsa_attn",)
 SCORE_OPS = ("index_score",)
 
 ALL_OPS = list(GEMM_OPS) + list(BMM_OPS) + list(MOE_OPS) + list(MLA_OPS) + list(SCORE_OPS)
-
-BACKEND = {
-    "gemm":  "deep_gemm.fp8_gemm_nt",
-    "bmm":   "sgl_kernel.bmm_fp8",
-    "moe":   "deep_gemm.fp8_m_grouped_gemm_nt_masked",
-    "mla":   "sgl_kernel.flash_mla.flash_mla_sparse_fwd",
-    "score": "deep_gemm.fp8_mqa_logits / fp8_paged_mqa_logits",
-}
 
 _LABEL = {
     "fused_qkv_a": "Fused QKV-A Projection", "q_b": "Q-B Projection",
@@ -221,7 +216,7 @@ def spec(op: str, phase: str) -> dict:
             "mla": "mla_sparse"}.get(fam) or (
         "logits_ksrange" if phase == "prefill" else "logits_paged")
     d = dict(op=op, phase=phase, label=_LABEL[op], family=fam,
-             backend=BACKEND[fam], output_kind=kind,
+             backend=OPERATOR_PROVIDER.baseline_name(fam, phase), output_kind=kind,
              peak_dtype="bf16" if fam == "mla" else "fp8",
              diff_tol=DIFF_TOL, rel_tol=REL_TOL, abs_tol_factor=ABS_TOL_FACTOR,
              sweep=list(DEFAULT_SWEEP[phase]), S=DEFAULT_S, seed=DEFAULT_SEED,
@@ -244,7 +239,7 @@ def cast_to_fp8_per_tensor(x: torch.Tensor):
     and PR2's quant_per_tensor are the same math; this is it."""
     amax = x.abs().float().amax()
     scale = (amax / FP8_MAX).float().clamp(min=1e-12)
-    return (x.float() / scale).to(torch.float8_e4m3fn), scale.view(1).to(x.device)
+    return (x.float() / scale).to(FP8_DTYPE), scale.view(1).to(x.device)
 
 
 # ══════════════════════════════════════════════════════════════════════════
@@ -268,10 +263,10 @@ def _build_gemm(op, phase, M, S, device):
     K, N = cfg["K"], cfg["N"]
     rows = S if (cfg["rows"] == "S_or_M" and phase == "prefill") else M
     x_bf16 = torch.randn(rows, K, dtype=torch.bfloat16, device=device)
-    x_fp8, x_scale = _dg_per_token_cast(x_bf16, use_ue8m0=True)
-    x_scale = get_mn_major_tma_aligned_tensor(x_scale)
+    x_fp8, x_scale = OPERATOR_PROVIDER.per_token_cast(x_bf16, use_ue8m0=True)
+    x_scale = OPERATOR_PROVIDER.align_scale(x_scale)
     w_bf16 = torch.randn(N, K, dtype=torch.bfloat16, device=device)
-    w_fp8, w_scale = _dg_per_block_cast(w_bf16, use_ue8m0=True)
+    w_fp8, w_scale = OPERATOR_PROVIDER.per_block_cast(w_bf16, use_ue8m0=True)
     # Pre-allocated so the timed call does not also measure an allocation. It is
     # poisoned between the reference and the candidate — see poison().
     out = torch.empty(rows, N, dtype=torch.bfloat16, device=device)
@@ -308,15 +303,19 @@ def _build_moe(op, M, device):
     # without this guard. PR1 lacks it.
     expected_m = _round128(max((total_m + E - 1) // E, max(counts)))
     x_bf16 = torch.randn(E, expected_m, K, dtype=torch.bfloat16, device=device)
-    x_fp8 = torch.empty_like(x_bf16, dtype=torch.float8_e4m3fn)
+    x_fp8 = torch.empty_like(x_bf16, dtype=FP8_DTYPE)
     x_scale = torch.empty(E, expected_m, K // 128, dtype=torch.float32, device=device)
     for e in range(E):
-        x_fp8[e], x_scale[e] = _dg_per_token_cast(x_bf16[e], use_ue8m0=True)
+        x_fp8[e], x_scale[e] = OPERATOR_PROVIDER.per_token_cast(
+            x_bf16[e], use_ue8m0=True
+        )
     w_bf16 = torch.randn(E, N, K, dtype=torch.bfloat16, device=device)
-    w_fp8 = torch.empty(E, N, K, dtype=torch.float8_e4m3fn, device=device)
+    w_fp8 = torch.empty(E, N, K, dtype=FP8_DTYPE, device=device)
     w_scale = torch.empty(E, _round128(N) // 128, K // 128, dtype=torch.float32, device=device)
     for e in range(E):
-        w_fp8[e], w_scale[e] = _dg_per_block_cast(w_bf16[e], use_ue8m0=True)
+        w_fp8[e], w_scale[e] = OPERATOR_PROVIDER.per_block_cast(
+            w_bf16[e], use_ue8m0=True
+        )
     out = torch.empty(E, expected_m, N, dtype=torch.bfloat16, device=device)
     return dict(x_fp8=x_fp8, x_scale=x_scale, w_fp8=w_fp8, w_scale=w_scale,
                 masked_m=torch.tensor(counts, dtype=torch.int32, device=device),
@@ -339,12 +338,12 @@ def _build_score(phase, M, S, device):
                              dtype=torch.bfloat16, device=device)
         q_view = q_bf16.view(M, INDEX_N_HEADS, INDEX_HEAD_DIM // 128, 128)
         q_scale = (q_view.abs().float().amax(dim=-1) / FP8_MAX).clamp(min=1e-12)
-        q_fp8 = (q_view.float() / q_scale.unsqueeze(-1)).to(torch.float8_e4m3fn).view(
+        q_fp8 = (q_view.float() / q_scale.unsqueeze(-1)).to(FP8_DTYPE).view(
             M, INDEX_N_HEADS, INDEX_HEAD_DIM)
         k_bf16 = torch.randn(S, INDEX_HEAD_DIM, dtype=torch.bfloat16, device=device)
         k_view = k_bf16.view(S, INDEX_HEAD_DIM // 128, 128)
         k_scale = (k_view.abs().float().amax(dim=-1) / FP8_MAX).clamp(min=1e-12)
-        k_fp8 = (k_view.float() / k_scale.unsqueeze(-1)).to(torch.float8_e4m3fn).view(
+        k_fp8 = (k_view.float() / k_scale.unsqueeze(-1)).to(FP8_DTYPE).view(
             S, INDEX_HEAD_DIM)
         # PR1's fold, adopted. fp8_mqa_logits takes NO separate q scale: real
         # sglang (dsa_indexer.py) folds the per-token q_scale and the index
@@ -365,12 +364,12 @@ def _build_score(phase, M, S, device):
                          dtype=torch.bfloat16, device=device)
     q_view = q_bf16.view(M * INDEX_N_HEADS, INDEX_HEAD_DIM // 128, 128)
     q_scale = (q_view.abs().float().amax(dim=-1) / FP8_MAX).clamp(min=1e-12)
-    q_fp8 = (q_view.float() / q_scale.unsqueeze(-1)).to(torch.float8_e4m3fn).view(
+    q_fp8 = (q_view.float() / q_scale.unsqueeze(-1)).to(FP8_DTYPE).view(
         M, 1, INDEX_N_HEADS, INDEX_HEAD_DIM)
     # Build the paged cache from REAL fp8-quantized data with scale=1.0: random
     # uint8 would contain fp8-NaN bit patterns and every logit would come back NaN.
     data = torch.randn(total_blocks, BLOCK_SIZE_KV, 1, 128, dtype=torch.bfloat16,
-                       device=device).to(torch.float8_e4m3fn).view(torch.uint8)
+                       device=device).to(FP8_DTYPE).view(torch.uint8)
     sf = torch.ones(total_blocks, BLOCK_SIZE_KV, 1, dtype=torch.float32,
                     device=device).view(torch.uint8).reshape(total_blocks, BLOCK_SIZE_KV, 1, 4)
     kv_cache_fp8 = torch.cat([data, sf], dim=-1).contiguous()
@@ -379,8 +378,7 @@ def _build_score(phase, M, S, device):
     seqlens = torch.full((M, 1), S, dtype=torch.int32, device=device)
     block_tables = torch.arange(total_blocks, dtype=torch.int32,
                                 device=device).view(M, nbps)
-    sched = deep_gemm.get_paged_mqa_logits_metadata(
-        seqlens, BLOCK_SIZE_KV, deep_gemm.get_num_sms())
+    sched = OPERATOR_PROVIDER.paged_mqa_metadata(seqlens, BLOCK_SIZE_KV)
     return dict(q_fp8=q_fp8, kv_cache_fp8=kv_cache_fp8, weights=weights,
                 seqlens=seqlens, block_tables=block_tables, schedule_metadata=sched,
                 max_seq_len=nbps * BLOCK_SIZE_KV)
@@ -391,31 +389,11 @@ def _build_score(phase, M, S, device):
 # ══════════════════════════════════════════════════════════════════════════
 def reference(op: str, phase: str, inputs: dict):
     fam = family(op)
-    if fam == "gemm":
-        out = inputs["out"]
-        deep_gemm.fp8_gemm_nt((inputs["x_fp8"], inputs["x_scale"]),
-                              (inputs["w_fp8"], inputs["w_scale"]), out)
-        return out
-    if fam == "bmm":
-        return bmm_fp8(inputs["A_fp8"], inputs["B_fp8"],
-                       inputs["A_scale"], inputs["B_scale"], torch.bfloat16)
-    if fam == "moe":
-        out = inputs["out"]
-        deep_gemm.fp8_m_grouped_gemm_nt_masked(
-            (inputs["x_fp8"], inputs["x_scale"]), (inputs["w_fp8"], inputs["w_scale"]),
-            out, inputs["masked_m"], inputs["expected_m"])
-        return out
-    if fam == "mla":
-        return flash_mla_sparse_fwd(inputs["q"], inputs["kv"], inputs["indices"],
-                                    inputs["sm_scale"], inputs["d_v"])
-    if phase == "prefill":
-        return deep_gemm.fp8_mqa_logits(
-            inputs["q_fp8"], (inputs["k_fp8"], inputs["k_scale"]), inputs["weights"],
-            inputs["ks"], inputs["ke"], clean_logits=False)
-    return deep_gemm.fp8_paged_mqa_logits(
-        inputs["q_fp8"], inputs["kv_cache_fp8"], inputs["weights"], inputs["seqlens"],
-        inputs["block_tables"], inputs["schedule_metadata"], inputs["max_seq_len"],
-        clean_logits=False)
+    if not OPERATOR_PROVIDER.supports(op, phase):
+        raise NotImplementedError(
+            f"provider {OPERATOR_PROVIDER.id!r} does not support {op}/{phase}"
+        )
+    return OPERATOR_PROVIDER.reference(op, phase, fam, inputs)
 
 
 def poison(inputs: dict) -> bool:
@@ -663,27 +641,8 @@ def reward(latency_ms: float, flops: float, bytes_hbm: float, compute_dtype: str
 # ══════════════════════════════════════════════════════════════════════════
 PROBLEM_SCHEMA_VERSION = "1.0"
 
-BASELINE_CAVEAT = (
-    "This is deep_gemm's f32-blockwise-scale path, NOT SGLang's production dispatch "
-    "(deepgemm_w8a8_block_fp8_linear_with_fallback, which passes int32-packed ue8m0 "
-    "scales to w8a8_block_fp8_matmul_deepgemm). Both land in deep_gemm; only the scale "
-    "representation differs. Measured on B200 under this exact timing protocol, o_proj "
-    "decode: production 33.1us vs this reference 53.3us at M=16 — production is ~1.6x "
-    "FASTER. So reproducing SGLang's production call scores a ~1.6x 'win' here having "
-    "improved nothing: a sub-1.6x speedup does not mean beating production. Kept "
-    "deliberately — opbench (PR1) and rewardbench (PR2) agree on this definition and it "
-    "is the frozen, verified standard."
-)
-
-ACCEPTED_CANDIDATE_FORMS = [
-    "Python / PyTorch — a .py defining run(inputs)",
-    "Triton — @triton.jit / @triton.autotune live in that same .py; nothing special needed",
-    "CUDA .cu — pass a directory holding candidate.py + the .cu, and let candidate.py "
-    "torch.utils.cpp_extension.load() it at import time (compilation happens outside the "
-    "timed window). A bare .cu cannot be passed: nothing in it says which __global__ to "
-    "launch, with what grid, or how the inputs dict maps to its arguments. run(inputs) is "
-    "that missing statement, and it is the whole ABI.",
-]
+BASELINE_CAVEAT = OPERATOR_PROVIDER.baseline_caveat
+ACCEPTED_CANDIDATE_FORMS = list(OPERATOR_PROVIDER.accepted_candidate_forms)
 
 
 def problem(op: str, phase: str, device=None) -> dict:
@@ -755,7 +714,7 @@ def problem(op: str, phase: str, device=None) -> dict:
         "label": s["label"],
         "family": fam,
         "model": "GLM-5.2",
-        "deployment": "B200 DP1/TP1/EP32",
+        "deployment": DEVICE_PROFILE.deployment,
         "S": s["S"],
         "seed": s["seed"],
 
@@ -769,6 +728,9 @@ def problem(op: str, phase: str, device=None) -> dict:
 
         "baseline": {
             "backend": s["backend"],
+            "platform": DEVICE_PROFILE.platform,
+            "profile": DEVICE_PROFILE.id,
+            "provider": OPERATOR_PROVIDER.id,
             "call": f"glm52_ops.reference({op!r}, {phase!r}, inputs)",
             "role": "the correctness oracle AND the latency denominator — the same call, "
                     "on the same frozen inputs, timed under the same protocol",
@@ -838,8 +800,12 @@ def problem(op: str, phase: str, device=None) -> dict:
         },
 
         "performance": {
-            "timing": "CUPTI cold-L2 device-kernel median: inputs cloned per iteration and "
-                      "L2 flushed before each, both outside the measured window",
+            "timing": getattr(
+                BACKEND_BUNDLE.timer, "contract_description", BACKEND_BUNDLE.timer.description
+            ),
+            "timer_id": getattr(
+                BACKEND_BUNDLE.timer, "contract_id", BACKEND_BUNDLE.timer.id
+            ),
             "why_device_time": "the reward is a hardware-utilisation ratio, so it must be "
                                "paired with device time; a per-call wall-clock timer "
                                "reports ~99us for this op's ~47us kernel, and the "
