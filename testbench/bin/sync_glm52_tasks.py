@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-"""Regenerate the 24 GLM-5.2 task directories from glm52_ops.
+"""Regenerate the GLM-5.2 task directories from glm52_ops.
 
 glm52_ops is the only place an operator is defined. This tool projects it onto
 the task tree, so a task directory holds nothing it could disagree with:
@@ -25,6 +25,7 @@ from __future__ import annotations
 import argparse
 import importlib.util
 import json
+import os
 import shutil
 import sys
 from pathlib import Path
@@ -62,6 +63,8 @@ TASKS: list[tuple[str, str, str]] = [
     ("moe_up_proj_decode",     "moe_up",         "decode"),
     ("moe_down_proj_prefill",  "moe_down",       "prefill"),
     ("moe_down_proj_decode",   "moe_down",       "decode"),
+    ("moe_total_prefill",      "moe_total",      "prefill"),
+    ("moe_total_decode",       "moe_total",      "decode"),
     ("dsa_prefill_attn",       "dsa_attn",       "prefill"),
     ("dsa_attn_decode",        "dsa_attn",       "decode"),
     ("index_score_prefill",    "index_score",    "prefill"),
@@ -95,87 +98,26 @@ set -euo pipefail
 HERE="$(cd "$(dirname "${{BASH_SOURCE[0]}}")" && pwd)"
 TESTBENCH="$(cd "$HERE/../../.." && pwd)"
 REPO="$(cd "$TESTBENCH/.." && pwd)"
-PYTHON="${{REPO}}/.venv/bin/python"
+PYTHON="${{ROCM_TORCH_PYTHON:-}}"
+if [[ -z "$PYTHON" && -n "${{ROCM_TORCH_VENV:-}}" && -x "${{ROCM_TORCH_VENV}}/bin/python" ]]; then
+  PYTHON="${{ROCM_TORCH_VENV}}/bin/python"
+fi
+if [[ -z "$PYTHON" ]]; then
+  PYTHON="${{REPO}}/.venv/bin/python"
+fi
 if [[ ! -x "$PYTHON" ]]; then
   PYTHON="$(command -v python3)"
 fi
+export KERNEL_HARNESS_PLATFORM="${{KERNEL_HARNESS_PLATFORM:-{platform}}}"
+export KERNEL_HARNESS_PROFILE="${{KERNEL_HARNESS_PROFILE:-{profile}}}"
+export KERNEL_HARNESS_PROVIDER="${{KERNEL_HARNESS_PROVIDER:-{provider}}}"
+export KERNEL_HARNESS_TIMER="${{KERNEL_HARNESS_TIMER:-{timer}}}"
+export SGLANG_USE_AITER="${{SGLANG_USE_AITER:-1}}"
 exec "$PYTHON" "$TESTBENCH/harness/evaluate_task.py" "$HERE" "$@"
 '''
 
-# Per-family default candidate: the real backend call, spelled out, so the agent
-# starts from the baseline it has to beat rather than from an indirection.
-_BODY = {
-    "gemm": '''import deep_gemm
-
-
-def run(inputs: dict):
-    # Starting point: the reference call itself — correct, speedup ~1.0. Replace it.
-    out = inputs["out"]
-    deep_gemm.fp8_gemm_nt(
-        (inputs["x_fp8"], inputs["x_scale"]),
-        (inputs["w_fp8"], inputs["w_scale"]),
-        out,
-    )
-    return out
-''',
-    "bmm": '''import torch
-from sgl_kernel import bmm_fp8
-
-
-def run(inputs: dict):
-    # Starting point: the reference call itself — correct, speedup ~1.0. Replace it.
-    return bmm_fp8(inputs["A_fp8"], inputs["B_fp8"],
-                   inputs["A_scale"], inputs["B_scale"], torch.bfloat16)
-''',
-    "moe": '''import deep_gemm
-
-
-def run(inputs: dict):
-    # Starting point: the reference call itself — correct, speedup ~1.0. Replace it.
-    out = inputs["out"]
-    deep_gemm.fp8_m_grouped_gemm_nt_masked(
-        (inputs["x_fp8"], inputs["x_scale"]),
-        (inputs["w_fp8"], inputs["w_scale"]),
-        out, inputs["masked_m"], inputs["expected_m"],
-    )
-    return out
-''',
-    "mla": '''from sgl_kernel.flash_mla import flash_mla_sparse_fwd
-
-
-def run(inputs: dict):
-    # Starting point: the reference call itself — correct, speedup ~1.0. Replace it.
-    return flash_mla_sparse_fwd(inputs["q"], inputs["kv"], inputs["indices"],
-                                inputs["sm_scale"], inputs["d_v"])
-''',
-    "score_prefill": '''import deep_gemm
-
-
-def run(inputs: dict):
-    # Starting point: the reference call itself — correct, speedup ~1.0. Replace it.
-    return deep_gemm.fp8_mqa_logits(
-        inputs["q_fp8"], (inputs["k_fp8"], inputs["k_scale"]), inputs["weights"],
-        inputs["ks"], inputs["ke"], clean_logits=False,
-    )
-''',
-    "score_decode": '''import deep_gemm
-
-
-def run(inputs: dict):
-    # Starting point: the reference call itself — correct, speedup ~1.0. Replace it.
-    return deep_gemm.fp8_paged_mqa_logits(
-        inputs["q_fp8"], inputs["kv_cache_fp8"], inputs["weights"], inputs["seqlens"],
-        inputs["block_tables"], inputs["schedule_metadata"], inputs["max_seq_len"],
-        clean_logits=False,
-    )
-''',
-}
-
-
 def _candidate_src(op: str, phase: str, device) -> str:
     s = ops.spec(op, phase)
-    fam = s["family"]
-    key = f"score_{phase}" if fam == "score" else fam
     tensors = []
     try:
         ins = ops.build_inputs(op, phase, s["sweep"][0], s["S"], device, s["seed"])
@@ -212,15 +154,31 @@ abs_err < abs_tol OR rel_err < {s['rel_tol']:.4f}, then DeepGEMM's calc_diff
 `inputs["out"]` is pre-allocated and may be written in place, but the harness
 NaN-poisons it before calling run(): returning it unwritten FAILS.
 '''
+    timing = getattr(
+        ops.BACKEND_BUNDLE.timer,
+        "contract_description",
+        ops.BACKEND_BUNDLE.timer.description,
+    )
     doc += f'''
-Baseline to beat: the call below, timed CUPTI cold-L2 on these same inputs.
+Baseline to beat: the call below, timed by the selected backend protocol:
+{timing}
 
     ./run.sh
 """
 from __future__ import annotations
 
 '''
-    return doc + _BODY[key]
+    return doc + f'''from testbench.harness import glm52_ops
+
+
+OP = {op!r}
+PHASE = {phase!r}
+
+
+def run(inputs: dict):
+    # Starting point: the reference call itself - correct, speedup ~1.0. Replace it.
+    return glm52_ops.reference(OP, PHASE, inputs)
+'''
 
 
 def _task_json(dirname: str, op: str, phase: str) -> str:
@@ -248,7 +206,7 @@ def _task_json(dirname: str, op: str, phase: str) -> str:
                  f"contract."),
         "entrypoint": "candidate.py",
         "runner": "testbench/harness/evaluate_task.py",
-        "deployment": "B200-DP1-TP1-EP32",
+        "deployment": ops.DEVICE_PROFILE.deployment,
         "performance_gate": {
             "min_speedup": 1.0,
             "basis": "conservative",
@@ -291,8 +249,12 @@ def _problem_json(dirname: str, op: str, phase: str, device) -> str:
         if prev_path.is_file():
             try:
                 prev = json.loads(prev_path.read_text())
+                same_backend = (
+                    (prev.get("baseline") or {}).get("platform") == ops.DEVICE_PROFILE.platform
+                    and (prev.get("baseline") or {}).get("profile") == ops.DEVICE_PROFILE.id
+                )
                 prev_tensors = (prev.get("contract") or {}).get("tensors")
-                if prev_tensors and not (problem.get("contract") or {}).get("tensors"):
+                if same_backend and prev_tensors and not (problem.get("contract") or {}).get("tensors"):
                     problem.setdefault("contract", {})["tensors"] = prev_tensors
                     problem["contract"]["tensors_error"] = None
             except Exception:
@@ -311,7 +273,7 @@ def main() -> int:
     import torch
     device = args.device if torch.cuda.is_available() else None
     if device is None:
-        print("warning: no CUDA — README tensor tables will be omitted", file=sys.stderr)
+        print("warning: no GPU - README tensor tables will be omitted", file=sys.stderr)
 
     stale, wrote, removed = [], 0, 0
     for dirname, op, phase in TASKS:
@@ -321,7 +283,13 @@ def main() -> int:
             "task.json": _task_json(dirname, op, phase),
             "problem.json": _problem_json(dirname, op, phase, device),
             "workload.jsonl": _workload(dirname, op, phase),
-            "run.sh": RUN_SH.format(m=ops.spec(op, phase)["sweep"][0]),
+            "run.sh": RUN_SH.format(
+                m=ops.spec(op, phase)["sweep"][0],
+                platform=ops.DEVICE_PROFILE.platform,
+                profile=ops.DEVICE_PROFILE.id,
+                provider=ops.OPERATOR_PROVIDER.id,
+                timer=os.environ.get("KERNEL_HARNESS_TIMER", "auto").lower(),
+            ),
             "README.md": _readme(dirname, op, phase, device),
         }
         cand = d / "candidate.py"

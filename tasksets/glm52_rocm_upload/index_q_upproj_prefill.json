@@ -1,0 +1,53 @@
+{
+  "version": 1,
+  "name": "glm52_rocm_upload_index_q_upproj_prefill",
+  "description": "Single upload task for GLM-5.2 ROCm: Indexer Q Up-Projection (index_q_upproj_prefill).",
+  "hardware": {
+    "platform": "rocm",
+    "profile": "amd-mi300x",
+    "provider": "aiter-torch-reference",
+    "timer": "event"
+  },
+  "defaults": {
+    "S": 65536,
+    "prefill_M": [
+      1024,
+      2048,
+      4096
+    ],
+    "decode_M": [
+      1,
+      4,
+      8,
+      16,
+      32,
+      64
+    ],
+    "smoke": {
+      "prefill_M": 1024,
+      "decode_M": 16
+    }
+  },
+  "axis_semantics": {
+    "S": "Fixed KV context length.",
+    "prefill_M": "Prefill token count / sequence length. These are the visible input shapes 1024, 2048, and 4096.",
+    "decode_M": "Decode batch size / active query count for one decode step. This is a different axis from prefill sequence length."
+  },
+  "upload_policy": {
+    "upload_unit": "single_task",
+    "task_id": "index_q_upproj_prefill",
+    "do_not_bundle_with_other_tasks": true,
+    "local_aggregate_taskset": "tasksets/glm52_rocm_local.json"
+  },
+  "tasks": [
+    {
+      "id": "index_q_upproj_prefill",
+      "label": "Indexer Q Up-Projection",
+      "category": "DSA-Indexer",
+      "phase": "prefill",
+      "harness_task": "index_q_upproj_prefill",
+      "harness_operator": "index_q_upproj",
+      "reward_operator": "index_q_upproj"
+    }
+  ]
+}

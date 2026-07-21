@@ -1,0 +1,245 @@
+{
+  "version": 1,
+  "name": "glm52_rocm_local",
+  "description": "Local GLM-5.2 ROCm aggregate taskset: 11 separate upload tasks plus fused MoE total rollups used only for local calibration and official total reporting.",
+  "hardware": {
+    "platform": "rocm",
+    "profile": "amd-mi300x",
+    "provider": "aiter-torch-reference",
+    "timer": "event"
+  },
+  "defaults": {
+    "S": 65536,
+    "prefill_M": [
+      1024,
+      2048,
+      4096
+    ],
+    "decode_M": [
+      1,
+      4,
+      8,
+      16,
+      32,
+      64
+    ],
+    "smoke": {
+      "prefill_M": 1024,
+      "decode_M": 16
+    }
+  },
+  "axis_semantics": {
+    "S": "Fixed KV context length.",
+    "prefill_M": "Prefill token count / sequence length. These are the visible input shapes 1024, 2048, and 4096.",
+    "decode_M": "Decode batch size / active query count for one decode step. This is a different axis from prefill sequence length."
+  },
+  "score_model": {
+    "official_metrics": [
+      "dsa_prefill_attn",
+      "index_score_prefill",
+      "moe_total_prefill",
+      "moe_total_decode"
+    ],
+    "moe_metrics": {
+      "rule": "Keep the production-equivalent fused Routed Expert Gate+Up/Down total and the three split diagnostics. The fused total is the leaderboard/official MoE metric; gate, up, and down remain separate diagnostic metrics for attribution.",
+      "prefill": {
+        "total": {
+          "id": "moe_total_prefill",
+          "label": "Routed Expert Gate+Up/Down Total",
+          "score_scope": "official_total",
+          "production_equivalent": true,
+          "components": [
+            "moe_gate_proj_prefill",
+            "moe_up_proj_prefill",
+            "moe_down_proj_prefill"
+          ],
+          "status": "uses fused SGLang MoE ABI benchmark for leaderboard/official use"
+        },
+        "diagnostics": [
+          "moe_gate_proj_prefill",
+          "moe_up_proj_prefill",
+          "moe_down_proj_prefill"
+        ]
+      },
+      "decode": {
+        "total": {
+          "id": "moe_total_decode",
+          "label": "Routed Expert Gate+Up/Down Decode Total",
+          "score_scope": "official_total",
+          "production_equivalent": true,
+          "components": [
+            "routed_expert_gate_up_decode",
+            "routed_expert_down_decode"
+          ],
+          "status": "uses fused SGLang MoE ABI benchmark for leaderboard/official use; routed gate/up and down remain diagnostics"
+        },
+        "diagnostics": [
+          "routed_expert_gate_up_decode",
+          "routed_expert_down_decode"
+        ]
+      }
+    }
+  },
+  "tasks": [
+    {
+      "id": "fused_qkv_a_prefill",
+      "label": "Fused QKV-A Projection",
+      "category": "Attention",
+      "phase": "prefill",
+      "harness_task": "fused_qkv_a_prefill",
+      "harness_operator": "fused_qkv_a",
+      "reward_operator": "fused_qkv_a_proj"
+    },
+    {
+      "id": "q_b_prefill",
+      "label": "Q-B Projection",
+      "category": "Attention",
+      "phase": "prefill",
+      "harness_task": "q_b_prefill",
+      "harness_operator": "q_b",
+      "reward_operator": "q_b_proj"
+    },
+    {
+      "id": "o_proj_prefill",
+      "label": "Attention O Projection",
+      "category": "Attention",
+      "phase": "prefill",
+      "harness_task": "o_proj_prefill",
+      "harness_operator": "o_proj",
+      "reward_operator": "o_proj"
+    },
+    {
+      "id": "index_q_upproj_prefill",
+      "label": "Indexer Q Up-Projection",
+      "category": "DSA-Indexer",
+      "phase": "prefill",
+      "harness_task": "index_q_upproj_prefill",
+      "harness_operator": "index_q_upproj",
+      "reward_operator": "index_q_upproj"
+    },
+    {
+      "id": "index_score_prefill",
+      "label": "Indexer Score",
+      "category": "DSA-Indexer",
+      "phase": "prefill",
+      "harness_task": "index_score_prefill",
+      "harness_operator": "index_score",
+      "reward_operator": "index_score",
+      "score_scope": "official_task",
+      "production_equivalent": true
+    },
+    {
+      "id": "moe_gate_proj_prefill",
+      "label": "Routed Expert Gate Projection",
+      "category": "MoE",
+      "phase": "prefill",
+      "harness_task": "moe_gate_proj_prefill",
+      "harness_operator": "moe_gate",
+      "reward_operator": "moe_gate_proj",
+      "score_scope": "diagnostic_component",
+      "metric_group": "moe_total_prefill",
+      "metric_component": "gate",
+      "production_equivalent": false
+    },
+    {
+      "id": "moe_up_proj_prefill",
+      "label": "Routed Expert Up Projection",
+      "category": "MoE",
+      "phase": "prefill",
+      "harness_task": "moe_up_proj_prefill",
+      "harness_operator": "moe_up",
+      "reward_operator": "moe_up_proj",
+      "score_scope": "diagnostic_component",
+      "metric_group": "moe_total_prefill",
+      "metric_component": "up",
+      "production_equivalent": false
+    },
+    {
+      "id": "moe_down_proj_prefill",
+      "label": "Routed Expert Down Projection",
+      "category": "MoE",
+      "phase": "prefill",
+      "harness_task": "moe_down_proj_prefill",
+      "harness_operator": "moe_down",
+      "reward_operator": "moe_down_proj",
+      "score_scope": "diagnostic_component",
+      "metric_group": "moe_total_prefill",
+      "metric_component": "down",
+      "production_equivalent": false
+    },
+    {
+      "id": "moe_total_prefill",
+      "label": "Routed Expert Gate+Up/Down Total",
+      "category": "MoE",
+      "phase": "prefill",
+      "harness_task": "moe_total_prefill",
+      "harness_operator": "moe_total",
+      "reward_operator": "moe_total",
+      "score_scope": "official_total",
+      "metric_group": "moe_total_prefill",
+      "production_equivalent": true,
+      "notes": "Production-equivalent fused SGLang MoE path over gate/up, activation, routed weights, and down. Gate/up/down split tasks remain diagnostic components in the same metric_group."
+    },
+    {
+      "id": "dsa_prefill_attn",
+      "label": "DSA Prefill Attention",
+      "category": "DSA",
+      "phase": "prefill",
+      "harness_task": "dsa_prefill_attn",
+      "harness_operator": "dsa_attn",
+      "reward_operator": "dsa_prefill_attn",
+      "score_scope": "official_task",
+      "production_equivalent": true
+    },
+    {
+      "id": "routed_expert_gate_up_decode",
+      "label": "Routed Expert Gate/Up Decode",
+      "category": "MoE",
+      "phase": "decode",
+      "harness_task": "moe_gate_proj_decode",
+      "harness_operator": "moe_gate",
+      "reward_operator": "moe_gate_proj",
+      "score_scope": "diagnostic_component",
+      "metric_group": "moe_total_decode",
+      "metric_component": "gate_up",
+      "production_equivalent": false,
+      "notes": "Represents the gate side of the runtime gate/up fused MoE path; add moe_up_proj_decode separately if the up half must be scored independently."
+    },
+    {
+      "id": "routed_expert_down_decode",
+      "label": "Routed Expert Down Decode",
+      "category": "MoE",
+      "phase": "decode",
+      "harness_task": "moe_down_proj_decode",
+      "harness_operator": "moe_down",
+      "reward_operator": "moe_down_proj",
+      "score_scope": "diagnostic_component",
+      "metric_group": "moe_total_decode",
+      "metric_component": "down",
+      "production_equivalent": false
+    },
+    {
+      "id": "moe_total_decode",
+      "label": "Routed Expert Gate+Up/Down Decode Total",
+      "category": "MoE",
+      "phase": "decode",
+      "harness_task": "moe_total_decode",
+      "harness_operator": "moe_total",
+      "reward_operator": "moe_total",
+      "score_scope": "official_total",
+      "metric_group": "moe_total_decode",
+      "production_equivalent": true,
+      "notes": "Production-equivalent fused SGLang MoE decode total. The routed gate/up and down decode rows remain diagnostic components."
+    }
+  ],
+  "upload_policy": {
+    "local_unified_taskset": true,
+    "upload_unit": "tasksets/glm52_rocm_upload/<task_id>.json",
+    "upload_task_count": 11,
+    "rollups_are_upload_tasks": false,
+    "rollup_task_ids": [
+      "moe_total_prefill",
+      "moe_total_decode"
+    ]
+  }
+}

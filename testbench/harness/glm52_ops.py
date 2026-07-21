@@ -1,4 +1,4 @@
-"""GLM-5.2 operator definitions — the single source of truth for all 12 ops.
+"""GLM-5.2 operator definitions — the single source of truth for all GLM-5.2 ops.
 
 One file owns everything a task needs, so a task directory carries no definition
 of its own and cannot drift from what actually runs:
@@ -37,23 +37,20 @@ is right about both:
              gate, so it never noticed. PR1's fold is adopted here.
 
 Cost model and peaks follow PR2 (verified bit-exact against rewardbench across
-all 12 ops x 5 shapes): its byte model additionally counts the fp8 scale
+all original ops x 5 shapes): its byte model additionally counts the fp8 scale
 side-bands and the MLA index buffer that PR1 omits (+0.00%..+5.19%). Peaks are
 HBM 8.0e12 / FP8 4.5e15 / BF16 2.25e15 — PR2 and testbench/harness/profile.py
 agree on 8.0e12; opbench/mfu.py's 7.7e12 is the lone outlier.
 
 Baseline caveat
 ---------------
-`reference` is deep_gemm's native f32-blockwise-scale path, NOT SGLang's
-production dispatch. SGLang runs deepgemm_w8a8_block_fp8_linear_with_fallback
-(fp8_utils.py:740), which hands int32-PACKED ue8m0 scales of shape
-(N, K//block_k//4) to w8a8_block_fp8_matmul_deepgemm. Both land in deep_gemm;
-only the scale representation differs. Measured on B200 (CUPTI cold-L2
-device-kernel median), o_proj decode: production 33.1us vs this 53.3us at M=16 —
-production is ~1.6x FASTER. A candidate that merely reproduces SGLang's
-production call therefore scores a ~1.6x "win" here having improved nothing.
-Kept deliberately: PR1 and PR2 agree on this definition and it is the frozen,
-verified standard. Read sub-1.6x speedups with that in mind.
+The backend provider owns the production baseline. On AMD/ROCm the MI300X
+provider routes dense FP8 GEMM through SGLang's
+`aiter_w8a8_block_fp8_linear` wrapper, so the benchmark measures the same
+gfx942 AITER Triton path SGLang dispatches at runtime instead of the faster
+AITER CK proxy. If the SGLang source tree is unavailable, the provider may fall
+back to AITER CK or torch-native kernels, and calibration will mark that as not
+a full SGLang baseline reproduction.
 """
 from __future__ import annotations
 
@@ -75,6 +72,8 @@ BACKEND_BUNDLE = get_backend()
 DEVICE_PROFILE = BACKEND_BUNDLE.profile
 OPERATOR_PROVIDER = BACKEND_BUNDLE.provider
 FP8_DTYPE = getattr(torch, DEVICE_PROFILE.fp8_dtype_name)
+IS_ROCM = DEVICE_PROFILE.platform == "rocm"
+USE_UE8M0 = DEVICE_PROFILE.platform == "cuda"
 
 # ── model constants (GLM-5.2) — identical in PR1 and PR2 (9/9 verified) ──
 HIDDEN_SIZE = 6144
@@ -96,7 +95,7 @@ FUSED_QKV_A_OUT = 2624
 BLOCK_SIZE_KV = 64
 HEAD_DIM_WITH_SF = 132    # 128 fp8 bytes + 4-byte inline f32 scale
 
-FP8_MAX = torch.finfo(FP8_DTYPE).max
+FP8_MAX = 224.0 if IS_ROCM else torch.finfo(FP8_DTYPE).max
 DEFAULT_S = 65536
 DEFAULT_SEED = 0
 DEFAULT_SWEEP = {"prefill": (1024, 2048, 4096), "decode": (16, 32)}
@@ -130,10 +129,20 @@ MOE_OPS = {
     "moe_up":   dict(K=HIDDEN_SIZE,           N=MOE_INTERMEDIATE_SIZE),
     "moe_down": dict(K=MOE_INTERMEDIATE_SIZE, N=HIDDEN_SIZE),
 }
+MOE_FUSED_OPS = {
+    "moe_total": dict(K=HIDDEN_SIZE, I=MOE_INTERMEDIATE_SIZE, E=N_EXPERT),
+}
 MLA_OPS = ("dsa_attn",)
 SCORE_OPS = ("index_score",)
 
-ALL_OPS = list(GEMM_OPS) + list(BMM_OPS) + list(MOE_OPS) + list(MLA_OPS) + list(SCORE_OPS)
+ALL_OPS = (
+    list(GEMM_OPS)
+    + list(BMM_OPS)
+    + list(MOE_OPS)
+    + list(MOE_FUSED_OPS)
+    + list(MLA_OPS)
+    + list(SCORE_OPS)
+)
 
 _LABEL = {
     "fused_qkv_a": "Fused QKV-A Projection", "q_b": "Q-B Projection",
@@ -141,6 +150,7 @@ _LABEL = {
     "index_k": "Indexer K Projection", "absorbed_W_UK": "Absorbed W_UK BMM",
     "absorbed_W_UV": "Absorbed W_UV BMM", "moe_gate": "MoE Gate Projection",
     "moe_up": "MoE Up Projection", "moe_down": "MoE Down Projection",
+    "moe_total": "Routed Expert Gate+Up/Down Total",
     "dsa_attn": "DSA Sparse Attention", "index_score": "Indexer Score (MQA logits)",
 }
 
@@ -149,6 +159,7 @@ def family(op: str) -> str:
     if op in GEMM_OPS:  return "gemm"
     if op in BMM_OPS:   return "bmm"
     if op in MOE_OPS:   return "moe"
+    if op in MOE_FUSED_OPS: return "moe_fused"
     if op in MLA_OPS:   return "mla"
     if op in SCORE_OPS: return "score"
     raise KeyError(f"unknown op {op!r}; known: {', '.join(ALL_OPS)}")
@@ -180,7 +191,7 @@ def _round128(x: int) -> int:
 #   exactly two ulps), leaving 2x. Being dtype-derived, it ports across ops.
 #
 # ABS_TOL_FACTOR — abs_tol CANNOT be a constant. Output magnitude spans seven
-#   orders across these 12 ops (|ref|max: dsa_attn 0.285, o_proj 564,
+#   orders across these GLM-5.2 ops (|ref|max: dsa_attn 0.285, o_proj 564,
 #   index_score 1.5e7 in f32), because build_inputs draws weights from a plain
 #   randn with no 1/sqrt(K) scaling. FlashMLA's fixed 1e-3 is calibrated for O(1)
 #   attention output and would forgive nothing at o_proj's scale. So abs_tol is
@@ -213,12 +224,14 @@ def spec(op: str, phase: str) -> dict:
     """The complete contract for one (op, phase). Nothing else may declare these."""
     fam = family(op)
     kind = {"gemm": "dense", "bmm": "dense", "moe": "masked_grouped",
+            "moe_fused": "dense",
             "mla": "mla_sparse"}.get(fam) or (
-        "logits_ksrange" if phase == "prefill" else "logits_paged")
+        "logits_ksrange" if (phase == "prefill" or IS_ROCM) else "logits_paged")
     d = dict(op=op, phase=phase, label=_LABEL[op], family=fam,
              backend=OPERATOR_PROVIDER.baseline_name(fam, phase), output_kind=kind,
              peak_dtype="bf16" if fam == "mla" else "fp8",
              diff_tol=DIFF_TOL, rel_tol=REL_TOL, abs_tol_factor=ABS_TOL_FACTOR,
+             elementwise_gate=True,
              sweep=list(DEFAULT_SWEEP[phase]), S=DEFAULT_S, seed=DEFAULT_SEED,
              has_output_buffer=fam in ("gemm", "moe"))
     if fam == "gemm":
@@ -228,6 +241,10 @@ def spec(op: str, phase: str) -> dict:
     elif fam == "moe":
         d.update(K=MOE_OPS[op]["K"], N=MOE_OPS[op]["N"], E=N_EXPERT,
                  experts_per_tok=EXPERTS_PER_TOK)
+    elif fam == "moe_fused":
+        d.update(diff_tol=1e-5, elementwise_gate=False)
+        d.update(K=HIDDEN_SIZE, N=HIDDEN_SIZE, intermediate=MOE_INTERMEDIATE_SIZE,
+                 E=N_EXPERT, experts_per_tok=EXPERTS_PER_TOK)
     return d
 
 
@@ -239,7 +256,7 @@ def cast_to_fp8_per_tensor(x: torch.Tensor):
     and PR2's quant_per_tensor are the same math; this is it."""
     amax = x.abs().float().amax()
     scale = (amax / FP8_MAX).float().clamp(min=1e-12)
-    return (x.float() / scale).to(FP8_DTYPE), scale.view(1).to(x.device)
+    return (x.float() / scale).clamp(-FP8_MAX, FP8_MAX).to(FP8_DTYPE), scale.view(1).to(x.device)
 
 
 # ══════════════════════════════════════════════════════════════════════════
@@ -254,6 +271,7 @@ def build_inputs(op: str, phase: str, M: int, S: int = DEFAULT_S,
     if fam == "gemm":  return _build_gemm(op, phase, M, S, device)
     if fam == "bmm":   return _build_bmm(op, M, device)
     if fam == "moe":   return _build_moe(op, M, device)
+    if fam == "moe_fused": return _build_moe_total(M, device)
     if fam == "mla":   return _build_mla(M, S, device)
     return _build_score(phase, M, S, device)
 
@@ -263,10 +281,12 @@ def _build_gemm(op, phase, M, S, device):
     K, N = cfg["K"], cfg["N"]
     rows = S if (cfg["rows"] == "S_or_M" and phase == "prefill") else M
     x_bf16 = torch.randn(rows, K, dtype=torch.bfloat16, device=device)
-    x_fp8, x_scale = OPERATOR_PROVIDER.per_token_cast(x_bf16, use_ue8m0=True)
+    x_fp8, x_scale = OPERATOR_PROVIDER.per_token_cast(x_bf16, use_ue8m0=USE_UE8M0)
     x_scale = OPERATOR_PROVIDER.align_scale(x_scale)
     w_bf16 = torch.randn(N, K, dtype=torch.bfloat16, device=device)
-    w_fp8, w_scale = OPERATOR_PROVIDER.per_block_cast(w_bf16, use_ue8m0=True)
+    if IS_ROCM:
+        w_bf16 = w_bf16 * (K ** -0.5)
+    w_fp8, w_scale = OPERATOR_PROVIDER.per_block_cast(w_bf16, use_ue8m0=USE_UE8M0)
     # Pre-allocated so the timed call does not also measure an allocation. It is
     # poisoned between the reference and the candidate — see poison().
     out = torch.empty(rows, N, dtype=torch.bfloat16, device=device)
@@ -292,8 +312,9 @@ def _build_moe(op, M, device):
     E = N_EXPERT
     total_m = M * EXPERTS_PER_TOK
     counts = [0] * E
+    rng = random.Random(M) if IS_ROCM else random
     for _ in range(total_m):
-        counts[random.randint(0, E - 1)] += 1
+        counts[rng.randint(0, E - 1)] += 1
     # PR2's fix, adopted. deep_gemm's masked kernel walks ceil(masked_m[e]/BLOCK_M)
     # M-blocks for expert e and indexes into [E, expected_m, .]; sizing the slab to
     # ceil(total_m/E) alone overflows whenever the multinomial is skewed, which it
@@ -304,35 +325,130 @@ def _build_moe(op, M, device):
     expected_m = _round128(max((total_m + E - 1) // E, max(counts)))
     x_bf16 = torch.randn(E, expected_m, K, dtype=torch.bfloat16, device=device)
     x_fp8 = torch.empty_like(x_bf16, dtype=FP8_DTYPE)
-    x_scale = torch.empty(E, expected_m, K // 128, dtype=torch.float32, device=device)
-    for e in range(E):
-        x_fp8[e], x_scale[e] = OPERATOR_PROVIDER.per_token_cast(
-            x_bf16[e], use_ue8m0=True
-        )
+    if IS_ROCM:
+        x_scale = torch.empty(E, 1, dtype=torch.float32, device=device)
+        for e in range(E):
+            x_fp8[e], x_scale[e] = cast_to_fp8_per_tensor(x_bf16[e])
+    else:
+        x_scale = torch.empty(E, expected_m, K // 128, dtype=torch.float32, device=device)
+        for e in range(E):
+            x_fp8[e], x_scale[e] = OPERATOR_PROVIDER.per_token_cast(
+                x_bf16[e], use_ue8m0=USE_UE8M0
+            )
     w_bf16 = torch.randn(E, N, K, dtype=torch.bfloat16, device=device)
     w_fp8 = torch.empty(E, N, K, dtype=FP8_DTYPE, device=device)
-    w_scale = torch.empty(E, _round128(N) // 128, K // 128, dtype=torch.float32, device=device)
-    for e in range(E):
-        w_fp8[e], w_scale[e] = OPERATOR_PROVIDER.per_block_cast(
-            w_bf16[e], use_ue8m0=True
-        )
+    if IS_ROCM:
+        w_scale = torch.empty(E, 1, dtype=torch.float32, device=device)
+        for e in range(E):
+            w_fp8[e], w_scale[e] = cast_to_fp8_per_tensor(w_bf16[e])
+    else:
+        w_scale = torch.empty(E, _round128(N) // 128, K // 128, dtype=torch.float32, device=device)
+        for e in range(E):
+            w_fp8[e], w_scale[e] = OPERATOR_PROVIDER.per_block_cast(
+                w_bf16[e], use_ue8m0=USE_UE8M0
+            )
     out = torch.empty(E, expected_m, N, dtype=torch.bfloat16, device=device)
     return dict(x_fp8=x_fp8, x_scale=x_scale, w_fp8=w_fp8, w_scale=w_scale,
                 masked_m=torch.tensor(counts, dtype=torch.int32, device=device),
                 expected_m=expected_m, E=E, N=N, device=device, out=out)
 
 
+def _cast_to_fp8_rows(x: torch.Tensor):
+    scale = x.abs().float().amax(dim=-1, keepdim=True).clamp(min=1e-12) / FP8_MAX
+    q = (x.float() / scale).clamp(-FP8_MAX, FP8_MAX).to(FP8_DTYPE)
+    return q.contiguous(), scale.squeeze(-1).contiguous()
+
+
+def _build_moe_total(M, device):
+    E, H, I, topk = N_EXPERT, HIDDEN_SIZE, MOE_INTERMEDIATE_SIZE, EXPERTS_PER_TOK
+    hidden_states = torch.randn(M, H, dtype=torch.bfloat16, device=device)
+    w1 = torch.randn(E, 2 * I, H, dtype=torch.bfloat16, device=device).to(FP8_DTYPE).contiguous()
+    w2 = torch.randn(E, H, I, dtype=torch.bfloat16, device=device).to(FP8_DTYPE).contiguous()
+    topk_ids = torch.arange(E, dtype=torch.int32, device=device).repeat(M, 1)
+    topk_weights = torch.softmax(
+        torch.randn(M, topk, dtype=torch.float32, device=device), dim=-1
+    ).contiguous()
+    router_logits = torch.zeros(M, E, dtype=torch.float32, device=device)
+    moe_config_kwargs = dict(
+        num_experts=E,
+        num_local_experts=E,
+        hidden_size=H,
+        intermediate_size_per_partition=I,
+        top_k=topk,
+        activation="silu",
+        is_gated=True,
+        inplace=False,
+    )
+    helpers = {}
+    try:
+        from sglang.srt.layers.moe.moe_runner import MoeRunnerConfig
+        from sglang.srt.layers.moe.topk import StandardTopKOutput
+
+        helpers["topk_output"] = StandardTopKOutput(
+            topk_weights,
+            topk_ids,
+            router_logits,
+        )
+        helpers["moe_runner_config"] = MoeRunnerConfig(
+            **moe_config_kwargs,
+            params_dtype=hidden_states.dtype,
+        )
+    except Exception:
+        pass
+    return dict(
+        hidden_states=hidden_states,
+        w1=w1,
+        w2=w2,
+        topk_weights=topk_weights,
+        topk_ids=topk_ids,
+        router_logits=router_logits,
+        w1_scale=torch.ones(E, dtype=torch.float32, device=device),
+        w2_scale=torch.ones(E, dtype=torch.float32, device=device),
+        a1_scale=torch.ones(1, dtype=torch.float32, device=device),
+        a2_scale=torch.ones(1, dtype=torch.float32, device=device),
+        moe_config_kwargs=moe_config_kwargs,
+        **helpers,
+    )
+
+
 def _build_mla(M, S, device):
     q = torch.randn(M, NUM_HEADS, D_QK, dtype=torch.bfloat16, device=device)
-    kv = torch.randn(S, 1, D_QK, dtype=torch.bfloat16, device=device)
+    kv_shape = (S, D_QK) if IS_ROCM else (S, 1, D_QK)
+    kv = torch.randn(*kv_shape, dtype=torch.bfloat16, device=device)
     tk = min(TOPK, S)
     indices = torch.stack([torch.randperm(S, device=device)[:tk]
-                           for _ in range(M)]).view(M, 1, tk).to(torch.int32)
+                           for _ in range(M)])
+    if IS_ROCM:
+        indices = indices.to(torch.int64)
+    else:
+        indices = indices.view(M, 1, tk).to(torch.int32)
     return dict(q=q, kv=kv, indices=indices, sm_scale=D_QK ** -0.5, d_v=D_V)
+
+
+def _build_rocm_mqa_score(M, S, device):
+    q_bf16 = torch.randn(M, INDEX_N_HEADS, INDEX_HEAD_DIM,
+                         dtype=torch.bfloat16, device=device)
+    q_fp8, q_scale = _cast_to_fp8_rows(q_bf16.reshape(
+        M * INDEX_N_HEADS, INDEX_HEAD_DIM))
+    q_fp8 = q_fp8.view(M, INDEX_N_HEADS, INDEX_HEAD_DIM)
+    q_scale = q_scale.view(M, INDEX_N_HEADS)
+    k_bf16 = torch.randn(S, INDEX_HEAD_DIM, dtype=torch.bfloat16, device=device)
+    k_fp8, k_scale = _cast_to_fp8_rows(k_bf16)
+    weights = (
+        torch.randn(M, INDEX_N_HEADS, dtype=torch.float32, device=device)
+        * q_scale
+        * (INDEX_HEAD_DIM ** -0.5)
+    ).unsqueeze(-1)
+    return dict(q_fp8=q_fp8, q_scale=q_scale, k_fp8=k_fp8, k_scale=k_scale,
+                weights=weights,
+                ks=torch.zeros(M, dtype=torch.int32, device=device),
+                ke=torch.full((M,), S, dtype=torch.int32, device=device))
 
 
 def _build_score(phase, M, S, device):
     softmax_scale = INDEX_HEAD_DIM ** -0.5
+    if IS_ROCM:
+        return _build_rocm_mqa_score(M, S, device)
     if phase == "prefill":
         q_bf16 = torch.randn(M, INDEX_N_HEADS, INDEX_HEAD_DIM,
                              dtype=torch.bfloat16, device=device)
@@ -494,8 +610,8 @@ def compare(ref_out, cand_out, op: str, phase: str, inputs: dict) -> dict:
     # ── diagnostic only: cosine + best-fit scale ──
     # Cosine is NOT a gate here, and cannot be: it is scale-invariant, so
     # reference*k scores 1.000000 for every positive k (verified at k = 0.5, 2.0,
-    # 1000.0), and a dropped 448.0 or a wrong ue8m0 exponent is exactly that shape of
-    # bug. But paired with calc_diff it *names* the failure, which neither does alone:
+    # 1000.0), and a wrong FP8 scale convention is exactly that shape of bug. But
+    # paired with calc_diff it *names* the failure, which neither does alone:
     # direction right + magnitude wrong is a scale error, direction wrong is an
     # algorithm/indexing/layout error, and those want completely different fixes.
     # best_fit_scale is the least-squares k for cand ~= k*ref, so a scale error reports
@@ -519,8 +635,10 @@ def compare(ref_out, cand_out, op: str, phase: str, inputs: dict) -> dict:
 
     # ── 3. aggregate ──
     out["calc_diff"] = calc_diff(r, c)
+    elementwise_gate = bool(s.get("elementwise_gate", True))
+    out["elementwise_gate"] = elementwise_gate
 
-    if n_fail:
+    if n_fail and elementwise_gate:
         bad = ~pass_mask
         out.update(pass_=False, reason=(
             f"{n_fail}/{int(r.numel())} elements fail both tolerances "
@@ -545,7 +663,8 @@ def _diagnose(out: dict) -> str:
     if cos > 0.999:
         return (f". Direction is right (cosine {cos:.6f}) and the output is ~{k:.4g}x the "
                 f"reference — a magnitude error, not an algorithm one. Look at the "
-                f"dequant scale, the ue8m0 exponent, or a dropped 448.0")
+                f"dequant scale, the UE8M0 exponent, or the FP8 max "
+                f"({FP8_MAX:g} for this backend)")
     return (f". Direction is wrong (cosine {cos:.6f}), so this is not a scale error — "
             f"look at the algorithm, the indexing, or the layout")
 
@@ -556,7 +675,7 @@ def _finish(out: dict) -> dict:
 
 
 # ══════════════════════════════════════════════════════════════════════════
-# Cost model (PR2) — verified bit-exact against rewardbench, 12 ops x 5 shapes
+# Cost model (PR2) — original ops verified bit-exact against rewardbench.
 # ══════════════════════════════════════════════════════════════════════════
 def cost(op: str, phase: str, M: int, S: int = DEFAULT_S):
     """(flops, bytes_hbm, compute_dtype) for one shape."""
@@ -582,6 +701,21 @@ def cost(op: str, phase: str, M: int, S: int = DEFAULT_S):
                 + total_m * (K // 128) * F32_B
                 + E * math.ceil(N / 128) * (K // 128) * F32_B)
         return 2.0 * total_m * K * N, float(byts), "fp8"
+    if fam == "moe_fused":
+        E, H, I, topk = N_EXPERT, HIDDEN_SIZE, MOE_INTERMEDIATE_SIZE, EXPERTS_PER_TOK
+        total_m = M * topk
+        flops = 2.0 * total_m * H * (2 * I) + 2.0 * total_m * I * H
+        byts = (
+            M * H * BF16_B
+            + E * (2 * I) * H * FP8_B
+            + E * H * I * FP8_B
+            + total_m * (2 * I) * BF16_B
+            + total_m * I * BF16_B
+            + M * H * BF16_B
+            + E * F32_B * 2
+            + 2 * F32_B
+        )
+        return flops, float(byts), "fp8"
     if fam == "mla":
         tk = min(TOPK, S)
         # KV dedup: gathered rows saturate at the latent cache, so KV traffic stops
@@ -678,18 +812,46 @@ def problem(op: str, phase: str, device=None) -> dict:
             f"rows are replicated M*{s['experts_per_tok']} and bucketed into experts by a "
             f"seeded multinomial (masked_m); expected_m is the per-expert slab capacity "
             f"and is sized to hold the largest bin.")
+    elif fam == "moe_fused":
+        expr = (
+            f"SGLang fused MoE total: hidden[M,{HIDDEN_SIZE}] -> "
+            f"w1[E,{2 * MOE_INTERMEDIATE_SIZE},{HIDDEN_SIZE}] -> SiLU*Up -> "
+            f"w2[E,{HIDDEN_SIZE},{MOE_INTERMEDIATE_SIZE}] -> out[M,{HIDDEN_SIZE}], "
+            f"top_k={s['experts_per_tok']}"
+        )
+        dims = {
+            "hidden": HIDDEN_SIZE,
+            "intermediate": MOE_INTERMEDIATE_SIZE,
+            "E": s["E"],
+            "top_k": s["experts_per_tok"],
+        }
+        math_notes.append(
+            "This is the production-equivalent total Routed Expert Gate+Up/Down metric. "
+            "The split gate/up/down tasks remain diagnostics only and should not be "
+            "reported as the fused MoE total.")
     elif fam == "mla":
+        kv_expr = f"kv[{s['S']},{D_QK}]" if IS_ROCM else f"kv[{s['S']},1,{D_QK}]"
         expr = (f"sparse MLA: q[M,{NUM_HEADS},{D_QK}] attends the top-{TOPK} of "
-                f"kv[{s['S']},1,{D_QK}] -> out[M,{NUM_HEADS},{D_V}]")
+                f"{kv_expr} -> out[M,{NUM_HEADS},{D_V}]")
         dims = {"heads": NUM_HEADS, "d_qk": D_QK, "d_v": D_V, "topk": TOPK}
     else:
-        expr = (f"indexer logits[M,{s['S']}] = sum_h weights[M,h] * "
-                f"(q[M,h,{INDEX_HEAD_DIM}] . k[{s['S']},{INDEX_HEAD_DIM}]),  h={INDEX_N_HEADS}")
+        if IS_ROCM:
+            expr = (f"indexer logits[M,{s['S']}] = sum_h weights[M,h,1] * "
+                    f"(q[M*h,{INDEX_HEAD_DIM}] . k[{s['S']},{INDEX_HEAD_DIM}]),  h={INDEX_N_HEADS}")
+        else:
+            expr = (f"indexer logits[M,{s['S']}] = sum_h weights[M,h] * "
+                    f"(q[M,h,{INDEX_HEAD_DIM}] . k[{s['S']},{INDEX_HEAD_DIM}]),  h={INDEX_N_HEADS}")
         dims = {"heads": INDEX_N_HEADS, "head_dim": INDEX_HEAD_DIM}
-        math_notes.append(
-            f"`weights` already carries the per-token q_scale and the index softmax_scale "
-            f"({INDEX_HEAD_DIM}**-0.5): fp8_mqa_logits takes no separate q scale, and real "
-            f"sglang folds them in before the call. Do not apply them again.")
+        if IS_ROCM:
+            math_notes.append(
+                "AMD/SGLang index_score uses aiter.ops.triton.fp8_mqa_logits. "
+                "Q is shaped [M,h,128], K has per-row fp32 scales, and `weights` "
+                "already folds q_scale and softmax_scale, matching dsa_indexer.py.")
+        else:
+            math_notes.append(
+                f"`weights` already carries the per-token q_scale and the index softmax_scale "
+                f"({INDEX_HEAD_DIM}**-0.5): fp8_mqa_logits takes no separate q scale, and real "
+                f"sglang folds them in before the call. Do not apply them again.")
 
     tensors, tensors_error = None, None
     if device is not None:
@@ -768,12 +930,13 @@ def problem(op: str, phase: str, device=None) -> dict:
                 {"order": 1, "check": "inf / -inf / nan occupy the same positions in both"},
                 {"order": 2,
                  "check": "every element: abs_err < abs_tol OR rel_err < rel_tol",
+                 "gate": bool(s.get("elementwise_gate", True)),
                  "rel_tol": s["rel_tol"],
                  "abs_tol": f"{s['abs_tol_factor']:.0e} * |ref|.max(), computed per shape",
                  "why_or": "large elements pass on relative error, near-zero elements on "
                            "absolute — neither alone works",
                  "why_derived_abs_tol": "output magnitude spans seven orders across these "
-                                        "12 ops (dsa_attn 0.285, o_proj 564, index_score "
+                                        "GLM-5.2 ops (dsa_attn 0.285, o_proj 564, index_score "
                                         "1.5e7), so a fixed abs_tol cannot port"},
                 {"order": 3,
                  "check": "calc_diff <= diff_tol",
@@ -792,10 +955,11 @@ def problem(op: str, phase: str, device=None) -> dict:
                 "best_fit_scale": "least-squares k for candidate ~= k*reference",
                 "why": "paired with calc_diff they name the failure: cosine ~1 with a "
                        "large calc_diff is a magnitude error (check the dequant scale, "
-                       "the ue8m0 exponent, a dropped 448.0) and best_fit_scale is the "
-                       "factor to look for; a low cosine is an algorithm, indexing or "
-                       "layout error instead. calc_diff alone cannot tell them apart — "
-                       "flipping the output and dividing it by 448 both score ~0.995",
+                       "the UE8M0 exponent, or the backend FP8 max) and best_fit_scale "
+                       "is the factor to look for; a low cosine is an algorithm, "
+                       "indexing or layout error instead. calc_diff alone cannot tell "
+                       "them apart — flipping the output and applying a uniform FP8 "
+                       "scale error both score similarly badly",
             },
         },
 

@@ -8,7 +8,7 @@
   "goal": "Optimize candidate.py for GLM-5.2 MoE Down Projection (decode). It must match glm52_ops.reference on every shape, and beat its latency on at least one shape without regressing on any. Run `./run.sh --describe` for the contract.",
   "entrypoint": "candidate.py",
   "runner": "testbench/harness/evaluate_task.py",
-  "deployment": "B200-DP1-TP1-EP32",
+  "deployment": "MI300X-DP1-TP1-EP32",
   "performance_gate": {
     "min_speedup": 1.0,
     "basis": "conservative",

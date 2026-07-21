@@ -1,0 +1,60 @@
+{
+  "version": 1,
+  "name": "glm52_rocm_upload_routed_expert_gate_up_decode",
+  "description": "Single upload task for GLM-5.2 ROCm: Routed Expert Gate/Up Decode (routed_expert_gate_up_decode).",
+  "hardware": {
+    "platform": "rocm",
+    "profile": "amd-mi300x",
+    "provider": "aiter-torch-reference",
+    "timer": "event"
+  },
+  "defaults": {
+    "S": 65536,
+    "prefill_M": [
+      1024,
+      2048,
+      4096
+    ],
+    "decode_M": [
+      1,
+      4,
+      8,
+      16,
+      32,
+      64
+    ],
+    "smoke": {
+      "prefill_M": 1024,
+      "decode_M": 16
+    }
+  },
+  "axis_semantics": {
+    "S": "Fixed KV context length.",
+    "prefill_M": "Prefill token count / sequence length. These are the visible input shapes 1024, 2048, and 4096.",
+    "decode_M": "Decode batch size / active query count for one decode step. This is a different axis from prefill sequence length."
+  },
+  "upload_policy": {
+    "upload_unit": "single_task",
+    "task_id": "routed_expert_gate_up_decode",
+    "do_not_bundle_with_other_tasks": true,
+    "local_aggregate_taskset": "tasksets/glm52_rocm_local.json",
+    "local_rollup_metric_group": "moe_total_decode",
+    "production_equivalent_component": false
+  },
+  "tasks": [
+    {
+      "id": "routed_expert_gate_up_decode",
+      "label": "Routed Expert Gate/Up Decode",
+      "category": "MoE",
+      "phase": "decode",
+      "harness_task": "moe_gate_proj_decode",
+      "harness_operator": "moe_gate",
+      "reward_operator": "moe_gate_proj",
+      "score_scope": "diagnostic_component",
+      "metric_group": "moe_total_decode",
+      "metric_component": "gate_up",
+      "production_equivalent": false,
+      "notes": "Represents the gate side of the runtime gate/up fused MoE path; add moe_up_proj_decode separately if the up half must be scored independently."
+    }
+  ]
+}

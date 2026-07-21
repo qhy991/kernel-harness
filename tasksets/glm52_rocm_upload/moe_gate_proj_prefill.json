@@ -1,0 +1,59 @@
+{
+  "version": 1,
+  "name": "glm52_rocm_upload_moe_gate_proj_prefill",
+  "description": "Single upload task for GLM-5.2 ROCm: Routed Expert Gate Projection (moe_gate_proj_prefill).",
+  "hardware": {
+    "platform": "rocm",
+    "profile": "amd-mi300x",
+    "provider": "aiter-torch-reference",
+    "timer": "event"
+  },
+  "defaults": {
+    "S": 65536,
+    "prefill_M": [
+      1024,
+      2048,
+      4096
+    ],
+    "decode_M": [
+      1,
+      4,
+      8,
+      16,
+      32,
+      64
+    ],
+    "smoke": {
+      "prefill_M": 1024,
+      "decode_M": 16
+    }
+  },
+  "axis_semantics": {
+    "S": "Fixed KV context length.",
+    "prefill_M": "Prefill token count / sequence length. These are the visible input shapes 1024, 2048, and 4096.",
+    "decode_M": "Decode batch size / active query count for one decode step. This is a different axis from prefill sequence length."
+  },
+  "upload_policy": {
+    "upload_unit": "single_task",
+    "task_id": "moe_gate_proj_prefill",
+    "do_not_bundle_with_other_tasks": true,
+    "local_aggregate_taskset": "tasksets/glm52_rocm_local.json",
+    "local_rollup_metric_group": "moe_total_prefill",
+    "production_equivalent_component": false
+  },
+  "tasks": [
+    {
+      "id": "moe_gate_proj_prefill",
+      "label": "Routed Expert Gate Projection",
+      "category": "MoE",
+      "phase": "prefill",
+      "harness_task": "moe_gate_proj_prefill",
+      "harness_operator": "moe_gate",
+      "reward_operator": "moe_gate_proj",
+      "score_scope": "diagnostic_component",
+      "metric_group": "moe_total_prefill",
+      "metric_component": "gate",
+      "production_equivalent": false
+    }
+  ]
+}

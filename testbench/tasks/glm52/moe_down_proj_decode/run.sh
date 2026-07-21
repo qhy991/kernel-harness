@@ -18,8 +18,19 @@ set -euo pipefail
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 TESTBENCH="$(cd "$HERE/../../.." && pwd)"
 REPO="$(cd "$TESTBENCH/.." && pwd)"
-PYTHON="${REPO}/.venv/bin/python"
+PYTHON="${ROCM_TORCH_PYTHON:-}"
+if [[ -z "$PYTHON" && -n "${ROCM_TORCH_VENV:-}" && -x "${ROCM_TORCH_VENV}/bin/python" ]]; then
+  PYTHON="${ROCM_TORCH_VENV}/bin/python"
+fi
+if [[ -z "$PYTHON" ]]; then
+  PYTHON="${REPO}/.venv/bin/python"
+fi
 if [[ ! -x "$PYTHON" ]]; then
   PYTHON="$(command -v python3)"
 fi
+export KERNEL_HARNESS_PLATFORM="${KERNEL_HARNESS_PLATFORM:-rocm}"
+export KERNEL_HARNESS_PROFILE="${KERNEL_HARNESS_PROFILE:-amd-mi300x}"
+export KERNEL_HARNESS_PROVIDER="${KERNEL_HARNESS_PROVIDER:-aiter-torch-reference}"
+export KERNEL_HARNESS_TIMER="${KERNEL_HARNESS_TIMER:-event}"
+export SGLANG_USE_AITER="${SGLANG_USE_AITER:-1}"
 exec "$PYTHON" "$TESTBENCH/harness/evaluate_task.py" "$HERE" "$@"

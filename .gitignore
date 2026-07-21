@@ -22,6 +22,10 @@ logs/local_*
 logs/*.tmp.*
 logs/results.json
 logs/results.csv
+reports/
+amd_glm5_ops_taskset*.csv
+amd_glm5_ops_local_taskset*.csv
+amd_glm5_*_perf.csv
 
 # Per-machine evaluation run store (evaluate_task.py); append-only, not portable
 runs/

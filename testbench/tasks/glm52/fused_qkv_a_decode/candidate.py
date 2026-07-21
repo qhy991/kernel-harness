@@ -12,11 +12,7 @@ run() — that would measure a different problem than the one the gate checked.
 
 Tensors at M=16:
 
-    x_fp8            (16, 6144)               torch.float8_e4m3fn
-    x_scale          (16, 48)                 torch.float32
-    w_fp8            (2624, 6144)             torch.float8_e4m3fn
-    w_scale          (21, 48)                 torch.float32
-    out              (16, 2624)               torch.bfloat16
+    (run ./run.sh --describe on a GPU node for the tensor table)
 
 Return the output. Correctness against glm52_ops.reference on these inputs is
 FlashMLA's three-layer check: matching inf/nan positions, then every element
@@ -26,21 +22,20 @@ abs_err < abs_tol OR rel_err < 0.0157, then DeepGEMM's calc_diff
 `inputs["out"]` is pre-allocated and may be written in place, but the harness
 NaN-poisons it before calling run(): returning it unwritten FAILS.
 
-Baseline to beat: the call below, timed CUPTI cold-L2 on these same inputs.
+Baseline to beat: the call below, timed by the selected backend protocol:
+HIP graph capture+replay by default, falling back to HIP event timing; setup/cloning is outside the measured region
 
     ./run.sh
 """
 from __future__ import annotations
 
-import deep_gemm
+from testbench.harness import glm52_ops
+
+
+OP = 'fused_qkv_a'
+PHASE = 'decode'
 
 
 def run(inputs: dict):
-    # Starting point: the reference call itself — correct, speedup ~1.0. Replace it.
-    out = inputs["out"]
-    deep_gemm.fp8_gemm_nt(
-        (inputs["x_fp8"], inputs["x_scale"]),
-        (inputs["w_fp8"], inputs["w_scale"]),
-        out,
-    )
-    return out
+    # Starting point: the reference call itself - correct, speedup ~1.0. Replace it.
+    return glm52_ops.reference(OP, PHASE, inputs)

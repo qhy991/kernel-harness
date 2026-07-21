@@ -6,11 +6,11 @@
   "label": "DSA Sparse Attention",
   "family": "mla",
   "model": "GLM-5.2",
-  "deployment": "B200 DP1/TP1/EP32",
+  "deployment": "MI300X-DP1-TP1-EP32",
   "S": 65536,
   "seed": 0,
   "math": {
-    "expression": "sparse MLA: q[M,64,576] attends the top-2048 of kv[65536,1,576] -> out[M,64,512]",
+    "expression": "sparse MLA: q[M,64,576] attends the top-2048 of kv[65536,576] -> out[M,64,512]",
     "dims": {
       "heads": 64,
       "d_qk": 576,
@@ -29,13 +29,13 @@
     "rule": "every shape must pass correctness AND be beaten on latency"
   },
   "baseline": {
-    "backend": "sgl_kernel.flash_mla.flash_mla_sparse_fwd",
-    "platform": "cuda",
-    "profile": "cuda-b200",
-    "provider": "deep-gemm-sgl-kernel",
+    "backend": "sglang.tilelang_sparse_fwd / gather+chunked fallback",
+    "platform": "rocm",
+    "profile": "amd-mi300x",
+    "provider": "aiter-torch-reference",
     "call": "glm52_ops.reference('dsa_attn', 'prefill', inputs)",
     "role": "the correctness oracle AND the latency denominator \u2014 the same call, on the same frozen inputs, timed under the same protocol",
-    "caveat": "This is deep_gemm's f32-blockwise-scale path, NOT SGLang's production dispatch (deepgemm_w8a8_block_fp8_linear_with_fallback, which passes int32-packed ue8m0 scales to w8a8_block_fp8_matmul_deepgemm). Both land in deep_gemm; only the scale representation differs. Measured on B200 under this exact timing protocol, o_proj decode: production 33.1us vs this reference 53.3us at M=16 \u2014 production is ~1.6x FASTER. So reproducing SGLang's production call scores a ~1.6x 'win' here having improved nothing: a sub-1.6x speedup does not mean beating production. Kept deliberately \u2014 opbench (PR1) and rewardbench (PR2) agree on this definition and it is the frozen, verified standard."
+    "caveat": "AMD/SGLang MI300X baseline: FP8 fnuz with FP8_MAX=224.0 and plain fp32 scales (no UE8M0). Dense FP8 GEMM is routed through sglang.srt.layers.quantization.fp8_utils.aiter_w8a8_block_fp8_linear, which selects AITER Triton blockscale GEMM on gfx942. Sparse MLA attempts SGLang's AMD default tilelang DSA backend. Torch/AITER CK fallbacks are kept only to keep the harness debuggable when the production modules are not importable."
   },
   "contract": {
     "entrypoint": "run(inputs: dict) -> output",
@@ -59,7 +59,6 @@
           "name": "kv",
           "shape": [
             65536,
-            1,
             576
           ],
           "dtype": "bfloat16"
@@ -68,10 +67,9 @@
           "name": "indices",
           "shape": [
             1024,
-            1,
             2048
           ],
-          "dtype": "int32"
+          "dtype": "int64"
         },
         {
           "name": "sm_scale",
@@ -86,9 +84,8 @@
     "tensors_error": null,
     "output_buffer": null,
     "accepted_forms": [
-      "Python / PyTorch \u2014 a .py defining run(inputs)",
-      "Triton \u2014 @triton.jit / @triton.autotune live in that same .py; nothing special needed",
-      "CUDA .cu \u2014 pass a directory holding candidate.py + the .cu, and let candidate.py torch.utils.cpp_extension.load() it at import time (compilation happens outside the timed window). A bare .cu cannot be passed: nothing in it says which __global__ to launch, with what grid, or how the inputs dict maps to its arguments. run(inputs) is that missing statement, and it is the whole ABI."
+      "Python / PyTorch / Triton ROCm - a .py defining run(inputs)",
+      "HIP/C++ extension - a directory holding candidate.py plus extension sources; candidate.py owns compilation/import outside the timed kernel body"
     ]
   },
   "correctness": {
@@ -102,10 +99,11 @@
       {
         "order": 2,
         "check": "every element: abs_err < abs_tol OR rel_err < rel_tol",
+        "gate": true,
         "rel_tol": 0.015703125,
         "abs_tol": "1e-04 * |ref|.max(), computed per shape",
         "why_or": "large elements pass on relative error, near-zero elements on absolute \u2014 neither alone works",
-        "why_derived_abs_tol": "output magnitude spans seven orders across these 12 ops (dsa_attn 0.285, o_proj 564, index_score 1.5e7), so a fixed abs_tol cannot port"
+        "why_derived_abs_tol": "output magnitude spans seven orders across these GLM-5.2 ops (dsa_attn 0.285, o_proj 564, index_score 1.5e7), so a fixed abs_tol cannot port"
       },
       {
         "order": 3,
@@ -119,12 +117,12 @@
     "diagnostics": {
       "cosine": "reported, never gated \u2014 it is scale-invariant, so reference*k scores 1.000000 for every k and it cannot catch the likeliest FP8 bug on its own",
       "best_fit_scale": "least-squares k for candidate ~= k*reference",
-      "why": "paired with calc_diff they name the failure: cosine ~1 with a large calc_diff is a magnitude error (check the dequant scale, the ue8m0 exponent, a dropped 448.0) and best_fit_scale is the factor to look for; a low cosine is an algorithm, indexing or layout error instead. calc_diff alone cannot tell them apart \u2014 flipping the output and dividing it by 448 both score ~0.995"
+      "why": "paired with calc_diff they name the failure: cosine ~1 with a large calc_diff is a magnitude error (check the dequant scale, the UE8M0 exponent, or the backend FP8 max) and best_fit_scale is the factor to look for; a low cosine is an algorithm, indexing or layout error instead. calc_diff alone cannot tell them apart \u2014 flipping the output and applying a uniform FP8 scale error both score similarly badly"
     }
   },
   "performance": {
-    "timing": "CUPTI cold-L2 device-kernel median: inputs cloned per iteration and L2 flushed before each, both outside the measured window",
-    "timer_id": "cupti-cold-l2-device-kernel-median",
+    "timing": "HIP graph capture+replay by default, falling back to HIP event timing; setup/cloning is outside the measured region",
+    "timer_id": "hipgraph-or-event-median",
     "why_device_time": "the reward is a hardware-utilisation ratio, so it must be paired with device time; a per-call wall-clock timer reports ~99us for this op's ~47us kernel, and the difference is host dispatch stall",
     "gate": "at least one shape WINS and no shape REGRESSES",
     "shape_verdict": {
@@ -143,15 +141,15 @@
     "repeat_note": "--repeat 1 is a probe, not a verdict: at 1 the conservative margin collapses to the median one and a candidate identical to the reference passes a >1.0 gate a good fraction of the time",
     "reward": "bound-aware roofline utilisation: (flops/latency) / min(peak_flops, ai*peak_bw); unclamped",
     "peaks": {
-      "id": "cuda-b200",
-      "platform": "cuda",
-      "gpu": "NVIDIA B200",
-      "deployment": "B200 DP1/TP1/EP32",
-      "fp8_dtype": "float8_e4m3fn",
-      "hbm_bytes_per_s": 8000000000000.0,
-      "peak_flops_fp8": 4500000000000000.0,
-      "peak_flops_bf16": 2250000000000000.0,
-      "source": "rewardbench (PR2) + testbench/harness/profile.py; opbench/mfu.py's 7.7e12 not used"
+      "id": "amd-mi300x",
+      "platform": "rocm",
+      "gpu": "AMD MI300X",
+      "deployment": "MI300X-DP1-TP1-EP32",
+      "fp8_dtype": "float8_e4m3fnuz",
+      "hbm_bytes_per_s": 5300000000000.0,
+      "peak_flops_fp8": 2614900000000000.0,
+      "peak_flops_bf16": 1307400000000000.0,
+      "source": "rewardbench/amd MI300X constants: HBM 5.3 TB/s, FP8 e4m3 2614.9 TFLOP/s, BF16 1307.4 TFLOP/s"
     }
   },
   "verdict": {
