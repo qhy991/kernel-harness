@@ -1,11 +1,13 @@
 #!/usr/bin/env python3
 """GLM-5.2 PREFILL operator benchmark on **AMD MI300X (ROCm)**.
 
-A-card port of llm_flops/bench_glm5_prefill.py. Same 13 operators, same GLM-5.2 shapes,
+A-card port of llm_flops/bench_glm5_prefill.py. Same GLM-5.2 shapes,
 same M sweep {1024,2048,4096} / S=65536 — but every kernel is the sglang-ROCm / AMD
 backend (aiter or hipBLASLt via torch._scaled_mm) instead of DeepGEMM / FlashMLA /
-sgl_kernel. Emits latency, TFLOP/s, GB/s, arithmetic intensity, roofline bound and the
-MI300X bound-aware roofline reward per operator, and writes a CSV.
+sgl_kernel. It keeps the original split MoE diagnostics and adds the fused SGLang MoE
+total metric for objective leaderboard/rollup use. Emits latency, TFLOP/s, GB/s,
+arithmetic intensity, roofline bound and the MI300X bound-aware roofline reward per
+operator, and writes a CSV.
 
 Operator -> AMD backend map (see operator_mapping.md for the full table):
   fused_qkv_a_proj / q_b_proj / o_proj   deep_gemm.fp8_gemm_nt   -> aiter.gemm_a8w8_blockscale | hipBLASLt _scaled_mm
@@ -13,8 +15,9 @@ Operator -> AMD backend map (see operator_mapping.md for the full table):
   dsa_prefill_attn                       flash_mla_sparse_fwd    -> aiter MLA | gather+SDPA (bf16)
   index_k_proj / index_q_upproj          deep_gemm.fp8_gemm_nt   -> aiter.gemm_a8w8_blockscale | hipBLASLt _scaled_mm
   index_weights_proj                     deep_gemm.bf16_gemm_nt  -> torch.mm (bf16->f32)
-  index_score                            deep_gemm.fp8_mqa_logits-> per-head hipBLASLt _scaled_mm + weighted sum
+  index_score                            deep_gemm.fp8_mqa_logits-> aiter.ops.triton.fp8_mqa_logits
   moe_gate/up/down_proj                  fp8_m_grouped_gemm...   -> aiter fmoe | per-expert hipBLASLt loop
+  moe_total                              fused runtime MoE       -> sglang fused_moe
 
 Run:  python amd_bench_glm5_prefill.py                       # full M sweep
       python amd_bench_glm5_prefill.py --m 4096              # single M
@@ -27,7 +30,7 @@ import amd_glm5_ops_common as C
 
 
 def build_ops():
-    """13 GLM-5.2 prefill ops as (name, category, backend_label, cost_fn, run_builder)."""
+    """GLM-5.2 prefill ops as (name, category, backend_label, cost_fn, run_builder)."""
     H, QL, KVL = C.HIDDEN_SIZE, C.Q_LORA_RANK, C.KV_LORA_RANK
     NH, QKH, VH, QKN = C.NUM_HEADS, C.QK_HEAD_DIM, C.V_HEAD_DIM, C.QK_NOPE_HEAD_DIM
     FUSED = C.FUSED_QKV_A_OUT
@@ -78,6 +81,9 @@ def build_ops():
         ("moe_down_proj", "MoE", "moe_grouped(aiter/hipBLASLt)",
          lambda a: C.moe_grouped_cost(a["M"], MOE, H),
          lambda a, d: C.build_moe_grouped(a["M"], MOE, H, d, tag="moe_down_proj")),
+        ("moe_total", "MoE", "sglang.fused_moe(total)",
+         lambda a: C.moe_fused_total_cost(a["M"]),
+         lambda a, d: C.build_moe_fused_total(a["M"], d, tag="moe_total")),
     ]
 
 

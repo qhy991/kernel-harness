@@ -15,12 +15,14 @@ This is the A-card (MI300X) port of kernel-harness/rewardbench/glm5_ops_common.p
 Two things change from the CUDA/B200 original, everything else is identical:
   1. Roofline peaks are MI300X (HBM 5.3 TB/s, FP8 e4m3 2.615 PFLOP/s, BF16 1.307 PFLOP/s).
   2. Backend kernels are AMD:
-       deep_gemm.fp8_gemm_nt                 -> aiter.gemm_a8w8_blockscale  (fallback: torch._scaled_mm / hipBLASLt)
+       deep_gemm.fp8_gemm_nt                 -> sglang fp8_utils aiter_w8a8_block_fp8_linear
+                                                  (gfx942: AITER Triton blockscale; fallback: AITER CK / torch._scaled_mm)
        deep_gemm.bf16_gemm_nt                -> torch.mm (bf16 -> f32)
        sgl_kernel.bmm_fp8                    -> per-head torch._scaled_mm loop (hipBLASLt)
        deep_gemm.fp8_m_grouped_gemm_nt_masked-> aiter.fmoe / per-expert torch._scaled_mm loop
+       fused runtime MoE total               -> sglang fused_moe
        sgl_kernel.flash_mla_sparse_fwd       -> aiter MLA (fallback: gather + SDPA, bf16)
-       deep_gemm.fp8_mqa_logits              -> torch._scaled_mm logits + weighted sum
+       deep_gemm.fp8_mqa_logits              -> aiter.ops.triton.fp8_mqa_logits
   The analytic FLOP/byte cost model is hardware-agnostic and is copied verbatim, so a
   reward computed here is directly comparable to the B200 rewardbench numbers.
 
@@ -31,9 +33,16 @@ the fnuz variant on MI300X.
 
 import math
 import os
+import sys
+from pathlib import Path
 import torch
 
 os.environ.setdefault("PYTORCH_ROCM_ARCH", "gfx942")  # MI300X target (harmless on CUDA)
+os.environ.setdefault("SGLANG_USE_AITER", "1")
+_REPO = Path(__file__).resolve().parents[2]
+_LOCAL_MOE_CONFIG_DIR = _REPO / "rewardbench" / "amd" / "sglang_moe_configs"
+if _LOCAL_MOE_CONFIG_DIR.exists():
+    os.environ.setdefault("SGLANG_MOE_CONFIG_DIR", str(_LOCAL_MOE_CONFIG_DIR))
 
 # ══════════════════════════════════════════════════════════════════════════════
 # Backend detection: ROCm vs CUDA, aiter availability, FP8 dtype
@@ -57,6 +66,73 @@ except Exception:
 
 # Which backend each builder actually used this process (for provenance in the CSV).
 BUILD_BACKEND: dict = {}
+
+
+def _add_source_tree(env_name: str, default: str, suffix: str = "") -> None:
+    root = Path(os.environ.get(env_name, default)).expanduser()
+    path = root / suffix if suffix else root
+    if path.exists() and str(path) not in sys.path:
+        sys.path.insert(0, str(path))
+
+
+def _sglang_fp8_linear():
+    _add_source_tree("SGLANG_ROOT", "/opt/devmachine/lichangye/repos/sglang", "python")
+    _add_source_tree("AITER_ROOT", "/opt/devmachine/lichangye/repos/aiter")
+    try:
+        from sglang.srt.layers.quantization.fp8_utils import (
+            aiter_w8a8_block_fp8_linear,
+        )
+    except Exception:
+        return None
+    return aiter_w8a8_block_fp8_linear
+
+
+def _sglang_tilelang_sparse_fwd():
+    _add_source_tree("SGLANG_ROOT", "/opt/devmachine/lichangye/repos/sglang", "python")
+    try:
+        from sglang.srt.layers.attention.dsa.tilelang_kernel import tilelang_sparse_fwd
+    except Exception:
+        return None
+    return tilelang_sparse_fwd
+
+
+def _aiter_mqa_logits():
+    _add_source_tree("AITER_ROOT", "/opt/devmachine/lichangye/repos/aiter")
+    try:
+        from aiter.ops.triton.fp8_mqa_logits import fp8_mqa_logits
+    except Exception:
+        return None
+    return fp8_mqa_logits
+
+
+def _ensure_sglang_server_args():
+    _add_source_tree("SGLANG_ROOT", "/opt/devmachine/lichangye/repos/sglang", "python")
+    try:
+        from sglang.srt.server_args import (
+            ServerArgs,
+            get_global_server_args,
+            set_global_server_args_for_scheduler,
+        )
+    except Exception:
+        return False
+    try:
+        get_global_server_args()
+    except ValueError:
+        set_global_server_args_for_scheduler(
+            ServerArgs(model_path=os.environ.get("SGLANG_DUMMY_MODEL_PATH", "dummy"))
+        )
+    return True
+
+
+def _sglang_fused_moe_deps():
+    _add_source_tree("SGLANG_ROOT", "/opt/devmachine/lichangye/repos/sglang", "python")
+    try:
+        from sglang.srt.layers.moe.moe_runner import MoeRunnerConfig
+        from sglang.srt.layers.moe.moe_runner.triton_utils.fused_moe import fused_moe
+        from sglang.srt.layers.moe.topk import StandardTopKOutput
+    except Exception:
+        return None
+    return fused_moe, MoeRunnerConfig, StandardTopKOutput
 
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -281,6 +357,23 @@ def moe_grouped_cost(M, K, N, top_k=NUM_EXPERTS_PER_TOK, n_expert=N_EXPERT):
     return flops, bytes_hbm, "fp8"
 
 
+def moe_fused_total_cost(M, top_k=NUM_EXPERTS_PER_TOK, n_expert=N_EXPERT):
+    total_m = M * top_k
+    h, inter = HIDDEN_SIZE, MOE_INTERMEDIATE_SIZE
+    flops = 2 * total_m * h * (2 * inter) + 2 * total_m * inter * h
+    bytes_hbm = (
+        M * h * BF16_B
+        + n_expert * (2 * inter) * h * FP8_B
+        + n_expert * h * inter * FP8_B
+        + total_m * (2 * inter) * BF16_B
+        + total_m * inter * BF16_B
+        + M * h * BF16_B
+        + n_expert * F32_B * 2
+        + 2 * F32_B
+    )
+    return flops, bytes_hbm, "fp8"
+
+
 # ══════════════════════════════════════════════════════════════════════════════
 # AMD kernel-call builders — build inputs once, return a no-arg callable.
 # Each targets the sglang-ROCm production path (aiter) with a torch-native hipBLASLt
@@ -293,18 +386,26 @@ def _scaled_mm(x_fp8, w_fp8, x_scale, w_scale, out_dtype=torch.bfloat16):
 
 
 def build_fp8_gemm(M, K, N, device, tag="fp8_gemm"):
-    """Blockwise-FP8 GEMM [M,K]x[N,K]->[M,N] bf16. Prefer aiter.gemm_a8w8_blockscale;
-    fall back to per-tensor torch._scaled_mm (hipBLASLt)."""
+    """Blockwise-FP8 GEMM [M,K]x[N,K]->[M,N] bf16.
+
+    Prefer the SGLang production wrapper, which selects AITER Triton blockscale
+    GEMM on gfx942. AITER CK and torch fallbacks are only for local debugging
+    when the production source trees are not importable.
+    """
     x_bf16 = torch.randn(M, K, dtype=torch.bfloat16, device=device)
     w_bf16 = torch.randn(N, K, dtype=torch.bfloat16, device=device) * (K ** -0.5)
+    sglang_linear = _sglang_fp8_linear()
+    if sglang_linear is not None:
+        x_fp8, x_scale = quant_token_blockwise(x_bf16)
+        w_fp8, w_scale = quant_block_blockwise(w_bf16)
+        BUILD_BACKEND[tag] = "sglang.fp8_utils.aiter_w8a8_block_fp8_linear"
+        return lambda: sglang_linear(x_fp8, w_fp8, [128, 128], w_scale, x_scale)
     if HAVE_AITER:
         try:
-            # Exact sglang-ROCm production call (qhy bench_aiter_vs_pytorch.py:75,106):
-            #   gemm_a8w8_blockscale(x_fp8, w_fp8, x_scale, w_scale, dtype=bf16) -> [M,N] bf16
             from aiter.ops.gemm_op_a8w8 import gemm_a8w8_blockscale
             x_fp8, x_scale = quant_token_blockwise(x_bf16)   # [M,K], scale [M,K/128]
             w_fp8, w_scale = quant_block_blockwise(w_bf16)   # [N,K], scale [ceil(N/128),K/128]
-            BUILD_BACKEND[tag] = "aiter.gemm_a8w8_blockscale(CK)"
+            BUILD_BACKEND[tag] = "aiter.gemm_a8w8_blockscale(CK fallback)"
             return lambda: gemm_a8w8_blockscale(x_fp8, w_fp8, x_scale, w_scale,
                                                 dtype=torch.bfloat16)
         except Exception:
@@ -377,17 +478,84 @@ def build_moe_grouped(M, K, N, device, tag="moe_grouped"):
     return run
 
 
+def build_moe_fused_total(M, device, tag="moe_total"):
+    deps = _sglang_fused_moe_deps()
+    if deps is None or not _ensure_sglang_server_args():
+        raise RuntimeError("SGLang fused_moe is unavailable")
+    fused_moe, MoeRunnerConfig, StandardTopKOutput = deps
+    h, inter, e, topk = HIDDEN_SIZE, MOE_INTERMEDIATE_SIZE, N_EXPERT, NUM_EXPERTS_PER_TOK
+    hidden_states = torch.randn(M, h, dtype=torch.bfloat16, device=device)
+    w1 = torch.randn(e, 2 * inter, h, dtype=torch.bfloat16, device=device).to(FP8_DTYPE).contiguous()
+    w2 = torch.randn(e, h, inter, dtype=torch.bfloat16, device=device).to(FP8_DTYPE).contiguous()
+    topk_ids = torch.arange(e, dtype=torch.int32, device=device).repeat(M, 1)
+    topk_weights = torch.softmax(
+        torch.randn(M, topk, dtype=torch.float32, device=device), dim=-1
+    ).contiguous()
+    topk_output = StandardTopKOutput(
+        topk_weights,
+        topk_ids,
+        torch.zeros(M, e, dtype=torch.float32, device=device),
+    )
+    cfg = MoeRunnerConfig(
+        num_experts=e,
+        num_local_experts=e,
+        hidden_size=h,
+        intermediate_size_per_partition=inter,
+        top_k=topk,
+        params_dtype=hidden_states.dtype,
+        activation="silu",
+        is_gated=True,
+        inplace=False,
+    )
+    w1_scale = torch.ones(e, dtype=torch.float32, device=device)
+    w2_scale = torch.ones(e, dtype=torch.float32, device=device)
+    a1_scale = torch.ones(1, dtype=torch.float32, device=device)
+    a2_scale = torch.ones(1, dtype=torch.float32, device=device)
+    BUILD_BACKEND[tag] = "sglang.fused_moe(fp8_w8a8,total)"
+
+    return lambda: fused_moe(
+        hidden_states=hidden_states,
+        w1=w1,
+        w2=w2,
+        topk_output=topk_output,
+        moe_runner_config=cfg,
+        use_fp8_w8a8=True,
+        w1_scale=w1_scale,
+        w2_scale=w2_scale,
+        a1_scale=a1_scale,
+        a2_scale=a2_scale,
+    )
+
+
 def build_sparse_mla(s_q, s_kv, device, tag="sparse_mla"):
     """DSA sparse MLA (bf16): each query gathers topk KV rows then attends (MQA, h_kv=1).
-    Prefer aiter MLA; fall back to a memory-bounded chunked explicit attention. We tile
-    over queries so the score tensor stays O(chunk*H*tk) instead of materializing the
-    full [s_q, H, tk, D_QK] broadcast (which OOMs)."""
+    Prefer SGLang's AMD default tilelang backend; fall back to a memory-bounded
+    chunked explicit attention. We tile over queries so the score tensor stays
+    O(chunk*H*tk) instead of materializing the full [s_q, H, tk, D_QK] broadcast
+    (which OOMs)."""
     tk = min(TOPK, s_kv)
     q = torch.randn(s_q, NUM_HEADS, D_QK, dtype=torch.bfloat16, device=device)
     kv = torch.randn(s_kv, D_QK, dtype=torch.bfloat16, device=device)     # shared latent (h_kv=1)
     indices = torch.stack([torch.randperm(s_kv, device=device)[:tk]
                            for _ in range(s_q)]).to(torch.int64)           # [s_q, tk]
     sm_scale = D_QK ** -0.5
+    tilelang_sparse_fwd = _sglang_tilelang_sparse_fwd()
+    if tilelang_sparse_fwd is not None and tk == TOPK and s_q >= 16:
+        kv_tl = kv.unsqueeze(1)
+        indices_tl = indices.unsqueeze(1).to(torch.int32)
+        BUILD_BACKEND[tag] = "sglang.tilelang_sparse_fwd"
+
+        def run_tilelang():
+            tilelang_sparse_fwd(
+                q=q,
+                kv=kv_tl,
+                indices=indices_tl,
+                sm_scale=sm_scale,
+                d_v=D_V,
+            )
+
+        return run_tilelang
+
     CHUNK = 256 if s_q >= 256 else s_q
     BUILD_BACKEND[tag] = "gather+chunked-attn(bf16)"
 
@@ -403,24 +571,24 @@ def build_sparse_mla(s_q, s_kv, device, tag="sparse_mla"):
 
 
 def build_mqa_logits(M, S, device, tag="mqa_logits"):
-    """DSA indexer score: logits[M,S] = sum_h w[m,h]*(q[m,h].k[s]).
-    Portable: ONE batched fp8 GEMM q[M*h,hd] @ k[S,hd].t() (hipBLASLt), tiled over S to
-    bound the logits tensor, weighted-summed over the 32 index heads."""
+    """DSA indexer score using SGLang HIP's AITER fp8_mqa_logits production kernel."""
     h, hd = INDEX_N_HEADS, INDEX_HEAD_DIM
     q_bf16 = torch.randn(M, h, hd, dtype=torch.bfloat16, device=device)
     k_bf16 = torch.randn(S, hd, dtype=torch.bfloat16, device=device)
-    q_fp8, q_scale = quant_per_tensor(q_bf16.reshape(M * h, hd))   # [M*h, hd]
-    k_fp8, k_scale = quant_per_tensor(k_bf16)                      # [S, hd]
-    weights = torch.randn(M, h, 1, dtype=torch.float32, device=device)
-    SCHUNK = 8192
-    BUILD_BACKEND[tag] = "batched _scaled_mm + weighted-sum (mqa logits)"
+    q_fp8, q_scale = quant_per_token(q_bf16.reshape(M * h, hd))
+    q_fp8 = q_fp8.view(M, h, hd)
+    q_scale = q_scale.view(M, h)
+    k_fp8, k_scale = quant_per_token(k_bf16)
+    weights = torch.randn(M, h, dtype=torch.float32, device=device) * q_scale * (hd ** -0.5)
+    ks = torch.zeros(M, dtype=torch.int32, device=device)
+    ke = torch.full((M,), S, dtype=torch.int32, device=device)
+    fn = _aiter_mqa_logits()
+    if fn is None:
+        raise RuntimeError("aiter.ops.triton.fp8_mqa_logits is unavailable")
+    BUILD_BACKEND[tag] = "aiter.fp8_mqa_logits"
 
     def run():
-        for s0 in range(0, S, SCHUNK):
-            kc = k_fp8[s0:s0 + SCHUNK]                             # [cs, hd]
-            lg = _scaled_mm(q_fp8, kc, q_scale, k_scale, out_dtype=torch.bfloat16)  # [M*h, cs]
-            lg = lg.view(M, h, -1).float()                        # [M, h, cs]
-            (lg * weights).sum(dim=1)                             # [M, cs] weighted logits
+        fn(q_fp8, k_fp8, k_scale, weights, ks, ke)
     return run
 
 
@@ -455,7 +623,8 @@ def roofline_reward(latency_ms, flops, bytes_hbm, compute_dtype):
 # Driver: run a list of ops, compute rewards, print + CSV (mirrors rewardbench.run_ops).
 # ops: list of (name, category, backend_label, cost_fn(axes), run_builder(axes,device)).
 # ══════════════════════════════════════════════════════════════════════════════
-def run_ops(ops, sweep_axes, device, phase, csv_path):
+def run_ops(ops, sweep_axes, device, phase, csv_path, row_metadata=None):
+    row_metadata = row_metadata or {}
     header = (f"{'operator':<20s} {'cat':<12s} {'backend':<34s} {'lat(ms)':>9s} "
               f"{'TFLOP/s':>9s} {'GB/s':>8s} {'AI':>8s} {'bound':>7s} {'util%':>7s} {'reward':>7s}")
     rows = []
@@ -480,20 +649,25 @@ def run_ops(ops, sweep_axes, device, phase, csv_path):
                       f"{r['bound']:>7s} {util*100:>6.1f}% {r['reward']:>7.3f}")
                 rec = {"operator": name, "category": category, "backend": real_backend,
                        "phase": phase, "timing": method,
+                       **row_metadata.get(name, {}),
                        **{f"axis_{k}": v for k, v in axes.items()}, **r}
                 rows.append(rec)
             except Exception as e:
                 print(f"  {name:<20s} {category:<12s} {backend:<34s}   FAILED: {str(e)[:56]}")
                 rows.append({"operator": name, "category": category, "backend": backend,
-                             "phase": phase, **{f"axis_{k}": v for k, v in axes.items()},
+                             "phase": phase, **row_metadata.get(name, {}),
+                             **{f"axis_{k}": v for k, v in axes.items()},
                              "error": str(e)})
     import csv
-    keys = ["operator", "category", "backend", "phase", "timing"] + \
+    metadata_keys = sorted({k for r in rows for k in r if k.startswith("metric_")}) + [
+        k for k in ("score_scope", "production_equivalent") if any(k in r for r in rows)
+    ]
+    keys = ["operator", "category", "backend", "phase", "timing"] + metadata_keys + \
            sorted({k for r in rows for k in r if k.startswith("axis_")}) + \
            ["latency_ms", "tflops", "gbps", "ai", "ridge", "bound", "compute_util",
             "bw_util", "reward", "compute_dtype", "error"]
     with open(csv_path, "w", newline="") as f:
-        w = csv.DictWriter(f, fieldnames=keys, extrasaction="ignore")
+        w = csv.DictWriter(f, fieldnames=keys, extrasaction="ignore", lineterminator="\n")
         w.writeheader()
         for r in rows:
             w.writerow(r)

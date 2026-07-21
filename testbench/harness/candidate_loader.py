@@ -122,6 +122,8 @@ def resolve(task_dir: Path, op: str, phase: str,
     in, which measures the backend against itself: a meaningful baseline, not a pass.
     """
     if override is not None:
+        if str(override).lower() in ("reference", "baseline"):
+            return partial(ops.reference, op, phase), "reference", None
         p = Path(override).expanduser().resolve()
         if p.is_dir():
             for name in CANDIDATE_NAMES:

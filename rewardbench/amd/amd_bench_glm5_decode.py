@@ -8,7 +8,8 @@ utilization — exactly the regime where MI300X's 5.3 TB/s HBM3 and the CK (vs A
 choice matter (qhy: CK wins small-M, ASM wins M>=4096).
 
 Only difference from prefill: index_score uses the PAGED cost model (paged fp8 KV read
-dominates at decode). Same builders otherwise.
+dominates at decode). Same builders otherwise, including the fused SGLang MoE total
+metric used to tie split MoE diagnostics back to the production ABI.
 
 Run:  python amd_bench_glm5_decode.py                # batch sweep 1,4,8,16,32,64
       python amd_bench_glm5_decode.py --m 32         # single batch
@@ -20,7 +21,7 @@ import amd_glm5_ops_common as C
 
 
 def build_ops():
-    """13 GLM-5.2 decode ops (identical to prefill except index_score = paged)."""
+    """GLM-5.2 decode ops (identical to prefill except index_score = paged)."""
     H, QL, KVL = C.HIDDEN_SIZE, C.Q_LORA_RANK, C.KV_LORA_RANK
     NH, QKH, VH, QKN = C.NUM_HEADS, C.QK_HEAD_DIM, C.V_HEAD_DIM, C.QK_NOPE_HEAD_DIM
     FUSED = C.FUSED_QKV_A_OUT
@@ -67,6 +68,9 @@ def build_ops():
         ("moe_down_proj", "MoE", "moe_grouped(aiter/hipBLASLt)",
          lambda a: C.moe_grouped_cost(a["M"], MOE, H),
          lambda a, d: C.build_moe_grouped(a["M"], MOE, H, d, tag="moe_down_proj")),
+        ("moe_total", "MoE", "sglang.fused_moe(total)",
+         lambda a: C.moe_fused_total_cost(a["M"]),
+         lambda a, d: C.build_moe_fused_total(a["M"], d, tag="moe_total")),
     ]
 
 

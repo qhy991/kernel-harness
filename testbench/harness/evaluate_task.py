@@ -584,7 +584,7 @@ def main() -> int:
         return 0
 
     if not torch.cuda.is_available():
-        print("ERROR: CUDA required", file=sys.stderr)
+        print("ERROR: GPU runtime required (CUDA or ROCm through torch.cuda)", file=sys.stderr)
         return 3
 
     real_stdout = sys.stdout
