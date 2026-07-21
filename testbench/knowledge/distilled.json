@@ -1,0 +1,434 @@
+{
+  "generated_from_entries": 12,
+  "mistakes": [
+    {
+      "class": "launch-overhead::integration-empty-expert-diagnosis",
+      "bottleneck": "launch-overhead",
+      "technique": "integration-empty-expert-diagnosis",
+      "count": 2,
+      "distinct_entries": 2,
+      "ops": [
+        "Routed Expert Down"
+      ],
+      "outcomes": [
+        "abandoned"
+      ],
+      "whys": [
+        "The integration recipe compares separate uninitialized output buffers for empty experts that DeepGEMM intentionally leaves untouched; computed expert rows match, but empty rows contain unrelated memory.",
+        "The integration recipe compares separate uninitialized output buffers for empty experts that DeepGEMM intentionally leaves untouched; computed expert rows match, but empty rows contain unrelated memory."
+      ],
+      "suggested_owner": "doc|reviewer",
+      "promoted": false,
+      "recurring": true
+    },
+    {
+      "class": "launch-overhead::explicit-deepgemm-recipe",
+      "bottleneck": "launch-overhead",
+      "technique": "explicit-deepgemm-recipe",
+      "count": 2,
+      "distinct_entries": 2,
+      "ops": [
+        "Routed Expert Down"
+      ],
+      "outcomes": [
+        "error"
+      ],
+      "whys": [
+        "The task inputs already carry TMA-transformed scale tensors; the explicit recipe made DeepGEMM reinterpret their layout and failed the scale-shape assertion.",
+        "The task inputs already carry TMA-transformed scale tensors; the explicit recipe made DeepGEMM reinterpret their layout and failed the scale-shape assertion."
+      ],
+      "suggested_owner": "typed-boundary|diagnostic",
+      "promoted": false,
+      "recurring": true
+    },
+    {
+      "class": "launch-overhead::baseline-pass-through",
+      "bottleneck": "launch-overhead",
+      "technique": "baseline-pass-through",
+      "count": 2,
+      "distinct_entries": 2,
+      "ops": [
+        "Routed Expert Gate+Up NVFP4"
+      ],
+      "outcomes": [
+        "slower"
+      ],
+      "whys": [
+        "Run-to-run noise plus clone/setup variation made the pass-through candidate slightly slower than the cached reference; no algorithmic optimization was attempted yet.",
+        "The pass-through candidate was correct but slightly slower than the live reference under repeat-3 noise."
+      ],
+      "suggested_owner": "doc|reviewer",
+      "promoted": false,
+      "recurring": true
+    },
+    {
+      "class": "synchronization::routing-method-topk-type-1",
+      "bottleneck": "synchronization",
+      "technique": "routing-method-topk-type-1",
+      "count": 1,
+      "distinct_entries": 1,
+      "ops": [
+        "Routed Expert Gate+Up NVFP4"
+      ],
+      "outcomes": [
+        "slower"
+      ],
+      "whys": [
+        "Correctness passed, but repeat-3 regressed/noised out: geomean speedup 1.002 and conservative min speedup 0.8679. Keep routing_method_type=2 for this task."
+      ],
+      "suggested_owner": "doc|reviewer",
+      "promoted": false,
+      "recurring": false
+    },
+    {
+      "class": "other::triton-direct-active-row-kernel",
+      "bottleneck": "other",
+      "technique": "triton-direct-active-row-kernel",
+      "count": 1,
+      "distinct_entries": 1,
+      "ops": [
+        "Routed Expert SwiGLU+FP8 Quant"
+      ],
+      "outcomes": [
+        "slower"
+      ],
+      "whys": [
+        "Although it avoided the production prefix-scan mapping, Triton generated a heavier per-row vector program and measured about 52.5 us on both shapes in correctness-only evaluation, slower than the ~42 us baseline."
+      ],
+      "suggested_owner": "doc|reviewer",
+      "promoted": false,
+      "recurring": false
+    },
+    {
+      "class": "other::fixed-sequence-flag",
+      "bottleneck": "other",
+      "technique": "fixed-sequence-flag",
+      "count": 1,
+      "distinct_entries": 1,
+      "ops": [
+        "Sparse MLA Decode"
+      ],
+      "outcomes": [
+        "slower"
+      ],
+      "whys": [
+        "The flag did not improve the generated TRT-LLM sparse decode path and regressed conservative timing, with final min_speedup_conservative 0.7876."
+      ],
+      "suggested_owner": "doc|reviewer",
+      "promoted": false,
+      "recurring": false
+    },
+    {
+      "class": "other::effective-topk-table-slice",
+      "bottleneck": "other",
+      "technique": "effective-topk-table-slice",
+      "count": 1,
+      "distinct_entries": 1,
+      "ops": [
+        "Sparse MLA Decode"
+      ],
+      "outcomes": [
+        "slower"
+      ],
+      "whys": [
+        "FlashInfer requires the page-table width to equal sparse_mla_top_k, and the valid sliced version was slower on the smoke row while deviating numerically from the production-shaped call."
+      ],
+      "suggested_owner": "doc|reviewer",
+      "promoted": false,
+      "recurring": false
+    },
+    {
+      "class": "other::cuda-vectorized-bf16x2-fp8x2-kernel",
+      "bottleneck": "other",
+      "technique": "cuda-vectorized-bf16x2-fp8x2-kernel",
+      "count": 1,
+      "distinct_entries": 1,
+      "ops": [
+        "Routed Expert SwiGLU+FP8 Quant"
+      ],
+      "outcomes": [
+        "slower"
+      ],
+      "whys": [
+        "The vectorized extension was correct but the authoritative repeat-3 gate measured 43.95/44.86 us against 41.74/43.55 us, so it still lost both shapes conservatively."
+      ],
+      "suggested_owner": "doc|reviewer",
+      "promoted": false,
+      "recurring": false
+    },
+    {
+      "class": "other::cuda-direct-expert-token-kernel",
+      "bottleneck": "other",
+      "technique": "cuda-direct-expert-token-kernel",
+      "count": 1,
+      "distinct_entries": 1,
+      "ops": [
+        "Routed Expert SwiGLU+FP8 Quant"
+      ],
+      "outcomes": [
+        "slower"
+      ],
+      "whys": [
+        "The direct grid removed prefix-scan work but scalar conversion and store code measured 47.2 us on M=16, still slower than SGLang's vectorized production kernel."
+      ],
+      "suggested_owner": "doc|reviewer",
+      "promoted": false,
+      "recurring": false
+    },
+    {
+      "class": "memory-bandwidth::sglang-triton-w8a8-block-fp8",
+      "bottleneck": "memory-bandwidth",
+      "technique": "sglang-triton-w8a8-block-fp8",
+      "count": 1,
+      "distinct_entries": 1,
+      "ops": [
+        "Attention O Projection"
+      ],
+      "outcomes": [
+        "incorrect"
+      ],
+      "whys": [
+        "The Triton path interpreted the packed UE8M0 scales incorrectly and produced very large output errors on the quick check."
+      ],
+      "suggested_owner": "typed-boundary|diagnostic",
+      "promoted": false,
+      "recurring": false
+    },
+    {
+      "class": "memory-bandwidth::restore-production-wrapper",
+      "bottleneck": "memory-bandwidth",
+      "technique": "restore-production-wrapper",
+      "count": 1,
+      "distinct_entries": 1,
+      "ops": [
+        "Attention O Projection"
+      ],
+      "outcomes": [
+        "slower"
+      ],
+      "whys": [
+        "The final repeat-3 gate was correct but did not beat every shape; M=16 had conservative speedup 0.987 while M=32 was only slightly above baseline."
+      ],
+      "suggested_owner": "doc|reviewer",
+      "promoted": false,
+      "recurring": false
+    },
+    {
+      "class": "memory-bandwidth::raw-deepgemm-fp8-gemm-nt",
+      "bottleneck": "memory-bandwidth",
+      "technique": "raw-deepgemm-fp8-gemm-nt",
+      "count": 1,
+      "distinct_entries": 1,
+      "ops": [
+        "Attention O Projection"
+      ],
+      "outcomes": [
+        "error"
+      ],
+      "whys": [
+        "The raw DeepGEMM API expects a different scale layout and failed its scale-shape assertion for the SGLang-packed tensors."
+      ],
+      "suggested_owner": "typed-boundary|diagnostic",
+      "promoted": false,
+      "recurring": false
+    },
+    {
+      "class": "memory-bandwidth::packed-deepgemm-lower-op",
+      "bottleneck": "memory-bandwidth",
+      "technique": "packed-deepgemm-lower-op",
+      "count": 1,
+      "distinct_entries": 1,
+      "ops": [
+        "Attention O Projection"
+      ],
+      "outcomes": [
+        "slower"
+      ],
+      "whys": [
+        "The harness times device-kernel spans with CUPTI, so removing Python wrapper work does not help the measured kernel and repeat-3 evaluation regressed at M=16."
+      ],
+      "suggested_owner": "doc|reviewer",
+      "promoted": false,
+      "recurring": false
+    },
+    {
+      "class": "memory-bandwidth::deepgemm-num-sms-sweep",
+      "bottleneck": "memory-bandwidth",
+      "technique": "deepgemm-num-sms-sweep",
+      "count": 1,
+      "distinct_entries": 1,
+      "ops": [
+        "Attention O Projection"
+      ],
+      "outcomes": [
+        "abandoned"
+      ],
+      "whys": [
+        "The quick no-baseline sweep showed no credible dual-shape direction: lower SM counts hurt M=16 or only tied M=32 within noise, so no setting justified a final merge."
+      ],
+      "suggested_owner": "doc|reviewer",
+      "promoted": false,
+      "recurring": false
+    },
+    {
+      "class": "kernel-count::sgl-kernel-fused-swiglu-quant",
+      "bottleneck": "kernel-count",
+      "technique": "sgl-kernel-fused-swiglu-quant",
+      "count": 1,
+      "distinct_entries": 1,
+      "ops": [
+        "Routed Expert SwiGLU+FP8 Quant"
+      ],
+      "outcomes": [
+        "incorrect"
+      ],
+      "whys": [
+        "The fused v2 quant kernel uses a different SwiGLU convention/rounding path and failed the 0.999 matched-ratio tolerance despite close cosine similarity."
+      ],
+      "suggested_owner": "typed-boundary|diagnostic",
+      "promoted": false,
+      "recurring": false
+    },
+    {
+      "class": "kernel-count::dsv4-swizzle-template",
+      "bottleneck": "kernel-count",
+      "technique": "dsv4-swizzle-template",
+      "count": 1,
+      "distinct_entries": 1,
+      "ops": [
+        "Routed Expert SwiGLU+FP8 Quant"
+      ],
+      "outcomes": [
+        "error"
+      ],
+      "whys": [
+        "The swizzled DSV4 kernel requires a different scale tensor layout and rejected the task buffer with a TensorMatcher stride/size error."
+      ],
+      "suggested_owner": "typed-boundary|diagnostic",
+      "promoted": false,
+      "recurring": false
+    }
+  ],
+  "learnings": [
+    {
+      "class": "launch-overhead::decode-specialized-dispatch",
+      "bottleneck": "launch-overhead",
+      "technique": "decode-specialized-dispatch",
+      "count": 3,
+      "ops": [
+        "Routed Expert Down"
+      ],
+      "median_geomean": 1.2379
+    },
+    {
+      "class": "launch-overhead::separate-nvfp4-task-contract",
+      "bottleneck": "launch-overhead",
+      "technique": "separate-nvfp4-task-contract",
+      "count": 2,
+      "ops": [
+        "Routed Expert Gate+Up NVFP4"
+      ],
+      "median_geomean": 1.0072
+    },
+    {
+      "class": "kernel-count::direct-output-two-stage-fallback",
+      "bottleneck": "kernel-count",
+      "technique": "direct-output-two-stage-fallback",
+      "count": 2,
+      "ops": [
+        "Routed Expert SwiGLU+FP8 Quant"
+      ],
+      "median_geomean": 1.9974
+    },
+    {
+      "class": "synchronization::preserve-device-tensor-scales",
+      "bottleneck": "synchronization",
+      "technique": "preserve-device-tensor-scales",
+      "count": 1,
+      "ops": [
+        "Sparse MLA Decode"
+      ],
+      "median_geomean": 1.0611
+    },
+    {
+      "class": "synchronization::flashinfer-tune-max-num-tokens-8192",
+      "bottleneck": "synchronization",
+      "technique": "flashinfer-tune-max-num-tokens-8192",
+      "count": 1,
+      "ops": [
+        "Routed Expert Gate+Up NVFP4"
+      ],
+      "median_geomean": 1.7089
+    },
+    {
+      "class": "synchronization::flashinfer-pdl-enable",
+      "bottleneck": "synchronization",
+      "technique": "flashinfer-pdl-enable",
+      "count": 1,
+      "ops": [
+        "Routed Expert Gate+Up NVFP4"
+      ],
+      "median_geomean": 1.7089
+    },
+    {
+      "class": "synchronization::avoid-hotpath-cuda-scalar-item",
+      "bottleneck": "synchronization",
+      "technique": "avoid-hotpath-cuda-scalar-item",
+      "count": 1,
+      "ops": [
+        "Routed Expert Gate+Up NVFP4"
+      ],
+      "median_geomean": 1.7089
+    },
+    {
+      "class": "other::restore-production-dispatch",
+      "bottleneck": "other",
+      "technique": "restore-production-dispatch",
+      "count": 1,
+      "ops": [
+        "Routed Expert SwiGLU+FP8 Quant"
+      ],
+      "median_geomean": 0.9959
+    },
+    {
+      "class": "other::flashinfer-tensor-bmm1-scale",
+      "bottleneck": "other",
+      "technique": "flashinfer-tensor-bmm1-scale",
+      "count": 1,
+      "ops": [
+        "Sparse MLA Decode"
+      ],
+      "median_geomean": 1.0611
+    },
+    {
+      "class": "launch-overhead::harness-integrate-active-rows-fix",
+      "bottleneck": "launch-overhead",
+      "technique": "harness-integrate-active-rows-fix",
+      "count": 1,
+      "ops": [
+        "Routed Expert Down"
+      ],
+      "median_geomean": 1.2379
+    },
+    {
+      "class": "launch-overhead::flashinfer-pdl-enable",
+      "bottleneck": "launch-overhead",
+      "technique": "flashinfer-pdl-enable",
+      "count": 1,
+      "ops": [
+        "Routed Expert Gate+Up NVFP4"
+      ],
+      "median_geomean": 1.0171
+    },
+    {
+      "class": "kernel-count::harness-integrate-fp8-compare-fix",
+      "bottleneck": "kernel-count",
+      "technique": "harness-integrate-fp8-compare-fix",
+      "count": 1,
+      "ops": [
+        "Routed Expert SwiGLU+FP8 Quant"
+      ],
+      "median_geomean": 1.9974
+    }
+  ]
+}

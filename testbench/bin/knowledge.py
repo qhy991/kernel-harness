@@ -354,6 +354,19 @@ def cmd_brief(args, root: Path) -> int:
             if entry.get(k):
                 print(f"    {k}: {entry[k]}")
 
+    # Recurring dead-ends for this bottleneck (from `distill`), so the feedback loop
+    # closes back at warm-start: don't re-try what already failed across sessions.
+    dist = _load_json(root, "distilled.json")
+    if dist:
+        pit = [m for m in dist.get("mistakes", [])
+               if m.get("recurring") and (not bottleneck or m["bottleneck"] == bottleneck)]
+        if pit:
+            print("\n== recurring pitfalls (already-tried dead ends — avoid) ==")
+            for m in pit[:args.limit]:
+                flag = "[promoted]" if m.get("promoted") else f"[promote→{m['suggested_owner']}]"
+                why = m["whys"][0] if m.get("whys") else ""
+                print(f"    {m['technique']} ×{m['count']} ({m['bottleneck']}) {flag}: {why}")
+
     if not args.no_external and kwiki_bridge is not None:
         techs = [a.get("technique") for e in hits[:2]
                  for a in e.get("approaches", []) if isinstance(a, dict)]
@@ -414,6 +427,160 @@ def cmd_index(args, root: Path) -> int:
     return 0
 
 
+FAIL_OUTCOMES = {"slower", "incorrect", "error", "abandoned"}
+PROMOTION_OWNERS = {"prompt", "doc", "reviewer", "diagnostic", "typed-boundary", "lint"}
+
+
+def _norm_tech(t) -> str:
+    t = re.sub(r"[^a-z0-9]+", "-", (t or "").strip().lower()).strip("-")
+    return t or "unknown"
+
+
+def _median(xs):
+    s = sorted(xs)
+    n = len(s)
+    if not n:
+        return None
+    return s[n // 2] if n % 2 else (s[n // 2 - 1] + s[n // 2]) / 2
+
+
+def _load_json(root: Path, name: str):
+    try:
+        return json.loads((root / name).read_text())
+    except Exception:
+        return None
+
+
+def _suggest_owner(outcomes: set) -> str:
+    # A wrong-result class wants to become unavailable/loud (typed boundary or an
+    # actionable gate diagnostic); a strategy dead-end wants to warn the next session.
+    if outcomes & {"incorrect", "error"}:
+        return "typed-boundary|diagnostic"
+    return "doc|reviewer"
+
+
+def _distill(root: Path) -> dict:
+    """Aggregate the bank into recurring failure-classes (mistakes) and proven
+    techniques (learnings), keyed by bottleneck::technique. This is the sensor half
+    of turn-feedback-into-infrastructure: it surfaces the governing failure class so
+    a lesson can be promoted to its smallest durable owner instead of re-learned."""
+    entries = [e for _, e in _load_all(root) if "__parse_error__" not in e]
+    mistakes: dict = {}
+    learnings: dict = {}
+    for e in entries:
+        bk = (e.get("bottleneck") or {}).get("kind") or "unknown"
+        for a in e.get("approaches", []):
+            if not isinstance(a, dict):
+                continue
+            key = f"{bk}::{_norm_tech(a.get('technique'))}"
+            out = a.get("outcome")
+            if out in FAIL_OUTCOMES:
+                m = mistakes.setdefault(key, {"bottleneck": bk, "technique": _norm_tech(a.get("technique")),
+                                              "count": 0, "entries": set(), "ops": set(),
+                                              "outcomes": set(), "whys": []})
+                m["count"] += 1
+                m["entries"].add(e.get("id"))
+                m["ops"].add(e.get("op"))
+                m["outcomes"].add(out)
+                if a.get("why") and len(m["whys"]) < 3:
+                    m["whys"].append(a["why"])
+            elif out in ("win", "partial"):
+                lr = learnings.setdefault(key, {"bottleneck": bk, "technique": _norm_tech(a.get("technique")),
+                                                "count": 0, "ops": set(), "geos": []})
+                lr["count"] += 1
+                lr["ops"].add(e.get("op"))
+                if _num(a.get("geomean_speedup")):
+                    lr["geos"].append(a["geomean_speedup"])
+    promoted = {p.get("class") for p in (_load_json(root, "promotions.json") or []) if isinstance(p, dict)}
+
+    def mrec(k, m):
+        return {"class": k, "bottleneck": m["bottleneck"], "technique": m["technique"],
+                "count": m["count"], "distinct_entries": len(m["entries"]),
+                "ops": sorted(x for x in m["ops"] if x), "outcomes": sorted(m["outcomes"]),
+                "whys": m["whys"], "suggested_owner": _suggest_owner(m["outcomes"]),
+                "promoted": k in promoted,
+                "recurring": len(m["entries"]) >= 2 or m["count"] >= 2}
+
+    def lrec(k, lr):
+        return {"class": k, "bottleneck": lr["bottleneck"], "technique": lr["technique"],
+                "count": lr["count"], "ops": sorted(x for x in lr["ops"] if x),
+                "median_geomean": (round(_median(lr["geos"]), 4) if lr["geos"] else None)}
+
+    return {
+        "generated_from_entries": len(entries),
+        "mistakes": sorted((mrec(k, m) for k, m in mistakes.items()),
+                           key=lambda r: (r["recurring"], r["count"], r["class"]), reverse=True),
+        "learnings": sorted((lrec(k, lr) for k, lr in learnings.items()),
+                            key=lambda r: (r["count"], r["class"]), reverse=True),
+    }
+
+
+def _distilled_md(data: dict) -> str:
+    out = ["<!-- generated by knowledge.py distill; do not edit by hand -->\n",
+           f"# distilled — recurring failure-classes & proven techniques "
+           f"({data['generated_from_entries']} entries)\n",
+           "## Recurring mistakes (promotion candidates)\n"]
+    rec = [m for m in data["mistakes"] if m["recurring"]]
+    for m in rec or [None]:
+        if m is None:
+            out.append("- (none recurring yet)")
+            break
+        flag = "promoted" if m["promoted"] else f"PROMOTE → {m['suggested_owner']}"
+        out.append(f"- **{m['technique']}** ({m['bottleneck']}) ×{m['count']} over "
+                   f"{m['distinct_entries']} entries {m['ops']} — {flag}\n"
+                   f"  - {' '.join(m['whys'][:2])}")
+    out.append("\n## Proven techniques (by bottleneck)\n")
+    for lr in data["learnings"] or []:
+        out.append(f"- **{lr['technique']}** ({lr['bottleneck']}) ×{lr['count']} "
+                   f"geo~{lr['median_geomean']} {lr['ops']}")
+    return "\n".join(out).rstrip() + "\n"
+
+
+def cmd_distill(args, root: Path) -> int:
+    data = _distill(root)
+    payload = json.dumps(data, indent=2) + "\n"
+    md_payload = _distilled_md(data)
+    if args.json:
+        print(payload, end="")
+        return 0
+    jdst, mdst = root / "distilled.json", root / "distilled.md"
+    if args.check:
+        stale = []
+        if (jdst.read_text() if jdst.exists() else "") != payload:
+            stale.append("distilled.json")
+        if (mdst.read_text() if mdst.exists() else "") != md_payload:
+            stale.append("distilled.md")
+        if stale:
+            print(f"stale: {', '.join(stale)} (run `knowledge.py distill`)")
+            return 1
+        print("distill --check: up to date")
+        return 0
+    jdst.write_text(payload)
+    mdst.write_text(md_payload)
+    rec = sum(1 for m in data["mistakes"] if m["recurring"] and not m["promoted"])
+    print(f"wrote {jdst} and {mdst}: {len(data['mistakes'])} mistake-classes "
+          f"({rec} recurring & un-promoted), {len(data['learnings'])} proven techniques")
+    return 0
+
+
+def cmd_promote(args, root: Path) -> int:
+    """Record that a recurring lesson has been promoted to its smallest durable owner
+    (the promotion ladder: prompt → doc → reviewer → diagnostic → typed-boundary →
+    lint). Append-only ledger; distill/brief read it to stop re-surfacing solved gaps."""
+    if args.to not in PROMOTION_OWNERS:
+        print(f"error: --to must be one of {sorted(PROMOTION_OWNERS)}", file=sys.stderr)
+        return 2
+    promos = _load_json(root, "promotions.json") or []
+    if not isinstance(promos, list):
+        promos = []
+    promos.append({"class": args.klass, "to": args.to, "owner_path": args.owner_path or "",
+                   "note": args.note or "", "date": datetime.date.today().isoformat()})
+    (root / "promotions.json").write_text(json.dumps(promos, indent=2) + "\n")
+    print(f"promoted {args.klass!r} -> {args.to}"
+          f"{f' ({args.owner_path})' if args.owner_path else ''}")
+    return 0
+
+
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("--root", type=Path, default=_default_root(),
@@ -437,9 +604,18 @@ def main() -> int:
     b.add_argument("--no-external", action="store_true", help="skip the KernelWiki bridge")
     ix = sub.add_parser("index", help="(re)generate queries/*.md cross-reference indices")
     ix.add_argument("--check", action="store_true", help="verify up-to-date, do not write")
+    d = sub.add_parser("distill", help="mine recurring failure-classes + proven techniques")
+    d.add_argument("--json", action="store_true", help="print to stdout, do not write files")
+    d.add_argument("--check", action="store_true", help="verify distilled.json/md up-to-date")
+    pr = sub.add_parser("promote", help="record a lesson promoted to its smallest durable owner")
+    pr.add_argument("--class", dest="klass", required=True, help="failure-class key from distill")
+    pr.add_argument("--to", required=True, help="|".join(sorted(PROMOTION_OWNERS)))
+    pr.add_argument("--owner-path", help="the file/check that now owns it")
+    pr.add_argument("--note")
     args = ap.parse_args()
     return {"add": cmd_add, "lint": cmd_lint, "query": cmd_query,
-            "brief": cmd_brief, "index": cmd_index}[args.cmd](args, args.root)
+            "brief": cmd_brief, "index": cmd_index,
+            "distill": cmd_distill, "promote": cmd_promote}[args.cmd](args, args.root)
 
 
 if __name__ == "__main__":
