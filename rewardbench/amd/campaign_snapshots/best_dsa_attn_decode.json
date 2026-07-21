@@ -1,0 +1,31 @@
+{
+  "geomean_reward": 0.08475508687364912,
+  "variant": "flash_split",
+  "cfg": {
+    "NS": 8,
+    "BH": 64,
+    "BK": 16,
+    "BH2": 16,
+    "num_warps": 4,
+    "num_stages": 1,
+    "waves_per_eu": 1
+  },
+  "per_shape": {
+    "16": {
+      "lat_us": 123.22,
+      "reward": 0.06141,
+      "pct_roofline": 6.14,
+      "bound": "memory",
+      "speedup_vs_ref": 2.089,
+      "reward_vs_ref": 2.089
+    },
+    "32": {
+      "lat_us": 129.39,
+      "reward": 0.11697,
+      "pct_roofline": 11.7,
+      "bound": "memory",
+      "speedup_vs_ref": 2.974,
+      "reward_vs_ref": 2.974
+    }
+  }
+}
