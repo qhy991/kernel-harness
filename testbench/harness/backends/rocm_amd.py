@@ -232,15 +232,20 @@ def _try_sglang_tilelang_sparse_mla(inputs: dict):
     indices = inputs["indices"]
     if indices.ndim == 2:
         indices = indices.unsqueeze(1)
-    return _normalize_tilelang_sparse_out(
-        fn(
-            q=inputs["q"],
-            kv=kv,
-            indices=indices.to(torch.int32),
-            sm_scale=float(inputs["sm_scale"]),
-            d_v=int(inputs["d_v"]),
+    try:
+        return _normalize_tilelang_sparse_out(
+            fn(
+                q=inputs["q"],
+                kv=kv,
+                indices=indices.to(torch.int32),
+                sm_scale=float(inputs["sm_scale"]),
+                d_v=int(inputs["d_v"]),
+            )
         )
-    )
+    except Exception:
+        # tilelang JITs CUDA (wgmma) templates that don't compile on gfx942;
+        # fall back to the torch reference rather than crashing the harness.
+        return None
 
 
 class AmdRewardbenchProvider:
