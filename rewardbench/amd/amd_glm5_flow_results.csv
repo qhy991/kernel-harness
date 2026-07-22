@@ -1,0 +1,9 @@
+op,phase,M,state,correct,reference_reward,candidate_reward,target_reward,speedup,shape_verdict,target_met,pct_of_target
+o_proj,prefill,1024,TARGET_MET,True,0.04454,0.07739,0.0669,1.7375,win,True,115.7
+o_proj,prefill,2048,TARGET_MET,True,0.04914,0.07529,0.07395,1.5321,win,True,101.8
+o_proj,prefill,4096,TARGET_MET,True,0.05146,0.08161,0.07761,1.5858,win,True,105.2
+index_k,prefill,1024,TARGET_MET,True,0.09733,0.16688,0.14465,1.7145,win,True,115.4
+index_k,prefill,2048,TARGET_MET,True,0.09694,0.16684,0.1444,1.7212,win,True,115.5
+index_k,prefill,4096,TARGET_MET,True,0.09677,0.16559,0.14472,1.7112,win,True,114.4
+dsa_attn,decode,16,TARGET_MET,True,0.02917,0.0578,0.04498,1.9815,win,True,128.5
+dsa_attn,decode,32,TARGET_MET,True,0.03917,0.08003,0.05901,2.043,win,True,135.6
