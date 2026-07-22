@@ -51,8 +51,15 @@ def main() -> int:
             result = run_task(task, args, env, m_value)
             results.append(result)
             status = result.get("status")
-            speedup = result.get("geomean_speedup")
-            suffix = f" geomean={speedup:.4g}" if isinstance(speedup, (int, float)) else ""
+            primary = result.get("geomean_primary_util")
+            if isinstance(primary, (int, float)):
+                suffix = (
+                    f" primary_util={primary:.4g}"
+                    f" mfu={format_optional(result.get('geomean_mfu'))}"
+                    f" bw={format_optional(result.get('geomean_bw_util'))}")
+            else:
+                speedup = result.get("geomean_speedup")
+                suffix = f" geomean={speedup:.4g}" if isinstance(speedup, (int, float)) else ""
             print(f"{task['id']}[M={m_value}]: {status}{suffix}")
 
     summary = summarize(results)
@@ -182,11 +189,27 @@ def run_task(task: dict[str, Any], args, env: dict[str, str], m_value: int) -> d
         "status": status,
         "correct": bool(verdict.get("correct")),
         "performance_ok": bool(verdict.get("performance_ok")),
+        "metric_name": aggregate.get("metric_name"),
+        "geomean_primary_util": aggregate.get("geomean_primary_util"),
+        "geomean_primary_util_ratio": aggregate.get("geomean_primary_util_ratio"),
+        "geomean_primary_util_ratio_conservative": aggregate.get("geomean_primary_util_ratio_conservative"),
+        "min_primary_util_ratio_conservative": aggregate.get("min_primary_util_ratio_conservative"),
+        "geomean_mfu": aggregate.get("geomean_mfu"),
+        "geomean_bw_util": aggregate.get("geomean_bw_util"),
+        "best_primary_util": aggregate.get("best_primary_util"),
+        "best_mfu": aggregate.get("best_mfu"),
+        "best_bw_util": aggregate.get("best_bw_util"),
+        "best_tflops": aggregate.get("best_tflops"),
+        "best_bw_gbps": aggregate.get("best_bw_gbps"),
         "geomean_speedup": aggregate.get("geomean_speedup"),
         "min_speedup_conservative": aggregate.get("min_speedup_conservative"),
         "stdout_tail": proc.stdout[-2000:] if status in {"infra_failed", "incorrect"} else "",
         "stderr_tail": proc.stderr[-2000:] if proc.stderr and status == "infra_failed" else "",
     }
+
+
+def format_optional(value: Any) -> str:
+    return f"{value:.4g}" if isinstance(value, (int, float)) else "-"
 
 
 def extract_result(stdout: str) -> dict[str, Any] | None:

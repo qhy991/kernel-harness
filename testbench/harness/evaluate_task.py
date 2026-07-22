@@ -280,7 +280,7 @@ def evaluate(task_dir: Path, args) -> tuple[dict, int]:
     # sub-row is the ceiling: without it a low reward reads as candidate headroom
     # when it may simply be the op's roof.
     hdr = (f"{'shape':>7} {'ok':>5} {'calc_diff':>10} {'cand_us':>9} {'ref_us':>9} "
-           f"{'speedup':>8} {'sp_cons':>8} {'verdict':>8} {'AI':>7} {'bound':>7} "
+           f"{'util_rt':>8} {'cons_rt':>8} {'verdict':>8} {'AI':>7} {'bound':>7} "
            f"{'TFLOP/s':>9} {'MFU':>7} {'GB/s':>9} {'BW':>7} {'reward':>8}")
     print(hdr)
 
@@ -385,7 +385,8 @@ def evaluate(task_dir: Path, args) -> tuple[dict, int]:
         if unstable:
             print(f"{'':>7} {'WARN':>5}   timing samples spread {spread:.2f}x "
                   f"(cand {c_lo*1e3:.1f}-{c_hi*1e3:.1f}us, ref {b_lo*1e3:.1f}-"
-                  f"{b_hi*1e3:.1f}us) — sp_cons unreliable, re-run before trusting it")
+                  f"{b_hi*1e3:.1f}us) — conservative primary-util ratio unreliable, "
+                  f"re-run before trusting it")
 
         # ── post-timing correctness on FRESH inputs ──
         # Catches a candidate that mutates its inputs or drifts across the timed
@@ -406,6 +407,14 @@ def evaluate(task_dir: Path, args) -> tuple[dict, int]:
         flops, byts, dtype = ops.cost(op, phase, M, S)
         cand_r = ops.reward(c_med, flops, byts, dtype)
         ref_r = ops.reward(b_med, flops, byts, dtype)
+        metric_resource = "mfu" if cand_r["bound"] == "compute" else "bw"
+        candidate_primary_util = (
+            cand_r["compute_util"] if metric_resource == "mfu" else cand_r["bw_util"])
+        reference_primary_util = (
+            ref_r["compute_util"] if metric_resource == "mfu" else ref_r["bw_util"])
+        primary_util_ratio = (
+            candidate_primary_util / reference_primary_util
+            if reference_primary_util else None)
         row.update(
             flops=flops, bytes_hbm=byts, compute_dtype=dtype,
             candidate_us=round(c_med * 1e3, 3), candidate_us_lo=round(c_lo * 1e3, 3),
@@ -423,6 +432,16 @@ def evaluate(task_dir: Path, args) -> tuple[dict, int]:
             reward=cand_r["reward"], reference_reward=ref_r["reward"],
             achieved_tflops=cand_r["tflops"], achieved_gbps=cand_r["gbps"],
             compute_util=cand_r["compute_util"], bw_util=cand_r["bw_util"],
+            metric_name="roofline_mfu_bw", metric_resource=metric_resource,
+            candidate_primary_util=candidate_primary_util,
+            reference_primary_util=reference_primary_util,
+            primary_util_ratio=primary_util_ratio,
+            primary_util_ratio_conservative=round(s_cons, 4),
+            primary_util_ratio_optimistic=round(s_opt, 4),
+            candidate_tflops=cand_r["tflops"], reference_tflops=ref_r["tflops"],
+            candidate_mfu=cand_r["compute_util"], reference_mfu=ref_r["compute_util"],
+            candidate_bw_gbps=cand_r["gbps"], reference_bw_gbps=ref_r["gbps"],
+            candidate_bw_util=cand_r["bw_util"], reference_bw_util=ref_r["bw_util"],
         )
         per_shape.append(row)
 
@@ -442,11 +461,40 @@ def evaluate(task_dir: Path, args) -> tuple[dict, int]:
 
     # ── aggregate ──
     rewards = [r["reward"] for r in per_shape if "reward" in r]
+    primary_utils = [r["candidate_primary_util"] for r in per_shape
+                     if r.get("candidate_primary_util") is not None]
+    primary_ratios = [r["primary_util_ratio"] for r in per_shape
+                      if r.get("primary_util_ratio") is not None]
+    primary_ratios_cons = [r["primary_util_ratio_conservative"] for r in per_shape
+                           if r.get("primary_util_ratio_conservative") is not None]
+    mfus = [r["candidate_mfu"] for r in per_shape if r.get("candidate_mfu") is not None]
+    bw_utils = [r["candidate_bw_util"] for r in per_shape
+                if r.get("candidate_bw_util") is not None]
+    tflops = [r["candidate_tflops"] for r in per_shape
+              if r.get("candidate_tflops") is not None]
+    gbps = [r["candidate_bw_gbps"] for r in per_shape
+            if r.get("candidate_bw_gbps") is not None]
     diffs = [r["calc_diff"] for r in per_shape if r.get("calc_diff") is not None]
     complete = len(per_shape) == len(workloads)
     wins = shape_verdicts.count("win")
     regressions = shape_verdicts.count("regress")
     aggregate = {
+        "metric_name": "roofline_mfu_bw",
+        "metric_policy": "compute-bound shapes use MFU; memory-bound shapes use HBM BW utilisation",
+        "geomean_primary_util": round(_geomean(primary_utils), 6) if primary_utils else None,
+        "geomean_primary_util_ratio": round(_geomean(primary_ratios), 4) if primary_ratios else None,
+        "geomean_primary_util_ratio_conservative": (
+            round(_geomean(primary_ratios_cons), 4) if primary_ratios_cons else None),
+        "min_primary_util_ratio_conservative": (
+            round(min(primary_ratios_cons), 4) if primary_ratios_cons else None),
+        "best_primary_util": round(max(primary_utils), 6) if primary_utils else None,
+        "worst_primary_util": round(min(primary_utils), 6) if primary_utils else None,
+        "geomean_mfu": round(_geomean(mfus), 6) if mfus else None,
+        "best_mfu": round(max(mfus), 6) if mfus else None,
+        "geomean_bw_util": round(_geomean(bw_utils), 6) if bw_utils else None,
+        "best_bw_util": round(max(bw_utils), 6) if bw_utils else None,
+        "best_tflops": round(max(tflops), 3) if tflops else None,
+        "best_bw_gbps": round(max(gbps), 3) if gbps else None,
         "min_speedup": round(min(sp_med_all), 4) if sp_med_all else None,
         "geomean_speedup": round(_geomean(sp_med_all), 4) if sp_med_all else None,
         "min_speedup_conservative": round(min(sp_cons_all), 4) if sp_cons_all else None,
@@ -477,9 +525,10 @@ def evaluate(task_dir: Path, args) -> tuple[dict, int]:
     if correct:
         print(f"{wins}/{len(shape_verdicts)} shapes WIN, {regressions} regressed, "
               f"{shape_verdicts.count('neutral')} neutral   "
-              f"geomean_speedup={aggregate['geomean_speedup']}x  "
-              f"best_reward={aggregate['best_reward']}")
-        print(f"performance_gate: >=1 win AND 0 regressions -> "
+              f"geomean_primary_util={aggregate['geomean_primary_util']}  "
+              f"geomean_mfu={aggregate['geomean_mfu']}  "
+              f"geomean_bw_util={aggregate['geomean_bw_util']}")
+        print(f"performance_gate: >=1 primary-util win AND 0 primary-util regressions -> "
               f"{'MET' if perf_ok else 'NOT MET'}")
         if wins == 0 and regressions == 0:
             print("  (every shape is inside the noise band — a candidate that only "
@@ -503,8 +552,10 @@ def evaluate(task_dir: Path, args) -> tuple[dict, int]:
             "backend": op_meta["backend"],
             "diff_tol": op_meta["diff_tol"], "rel_tol": op_meta["rel_tol"],
             "abs_tol_factor": op_meta["abs_tol_factor"],
-            "performance_gate": {"min_speedup": min_speedup_gate,
-                                 "basis": f"conservative (q={CONS_Q})"},
+            "performance_gate": {"min_primary_util_ratio": min_speedup_gate,
+                                 "compat_min_speedup": min_speedup_gate,
+                                 "basis": (f"primary resource utilisation ratio "
+                                           f"conservative (q={CONS_Q})")},
         },
         "run": {
             "run_id": run_id, "started_utc": started,
