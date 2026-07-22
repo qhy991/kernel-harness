@@ -95,7 +95,7 @@ def _fast_moe_total_prefill(inputs: dict):
     a1_scale = inputs["a1_scale"]
     a2_scale = inputs["a2_scale"]
 
-    E, N, _ = w1.shape
+    E, _, _ = w1.shape
     M = hidden.shape[0]
     topk = topk_ids.shape[1]
 
