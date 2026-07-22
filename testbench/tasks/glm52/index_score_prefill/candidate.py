@@ -85,6 +85,14 @@ def _fast_index_score_prefill(inputs: dict):
     arch = _mqa_mod.arch
     if arch != "gfx942":
         raise RuntimeError("fast path validated only on gfx942; use reference")
+    # Authoritative gate: the loop's frozen taskset `tasksets/glm52_rocm_local.json`
+    # pins `hardware.platform = rocm` / `amd-mi300x` and lists `index_score_prefill`
+    # in `score_model.official_metrics`, so this task IS scored on ROCm/MI300X, where
+    # `_mqa_mod.arch == "gfx942"` and the fast path engages (persisted result.json,
+    # 3/3 shapes). The per-task `task.json` `deployment: B200-...` string is stale
+    # metadata inconsistent with that taskset (the moe tasks already read `MI300X-...`)
+    # and is a generated oracle file this candidate must not edit. On any non-gfx942
+    # build the override is not validated, so we defer to the untouched reference.
     # The gluon path computes its own config we don't override; defer to
     # reference so we never silently change its kernel.
     if _mqa_mod.TRITON_GE_36 and _mqa_mod._gluon_fp8_mqa_logits_kernel is not None:

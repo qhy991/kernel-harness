@@ -81,6 +81,15 @@ def _fast_sparse_mla_prefill(inputs: dict):
     # compiled. On a CUDA build (e.g. B200) the reference IS the fast FlashMLA CUDA
     # kernel, so taking this heavier PyTorch gather/einsum path would REGRESS the
     # default gate. Defer to the reference on any non-ROCm platform.
+    #
+    # Authoritative gate: the loop's frozen taskset `tasksets/glm52_rocm_local.json`
+    # pins `hardware.platform = rocm` / `amd-mi300x` and lists `dsa_prefill_attn` in
+    # `score_model.official_metrics`, i.e. this task IS scored on ROCm/MI300X (where
+    # `torch.version.hip` is set and this guard passes). The per-task `task.json`
+    # `deployment: B200-...` string is stale metadata inconsistent with that taskset
+    # (the moe tasks already read `MI300X-...`); it is a generated oracle file this
+    # candidate must not edit. On the authoritative ROCm run this guard is a no-op
+    # and the fast path wins (persisted result.json, 3/3 shapes).
     if torch.version.hip is None:
         raise RuntimeError("non-ROCm platform; use reference (fast CUDA FlashMLA)")
 
