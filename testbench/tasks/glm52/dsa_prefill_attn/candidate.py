@@ -31,9 +31,10 @@ Optimization (this candidate)
 The reference is `sgl_kernel.flash_mla.flash_mla_sparse_fwd`. On this ROCm build
 the CUDA `sparse_prefill_fwd` op is not compiled, so that entry point dispatches
 to sglang's TileLang sparse-MLA kernel (`_try_sglang_tilelang_sparse_mla`). That
-compiled kernel is poorly tuned for these prefill shapes on MI300X: measured
-device medians are ~11.7 / 26 / 44 ms at M = 1024 / 2048 / 4096 (gather/BW-bound;
-the roofline evaluator reports primary_util = BW utilisation, tiny MFU).
+compiled kernel is poorly tuned for these prefill shapes on MI300X: persisted
+result.json device medians are ~8.5 / 17.2 / 34.6 ms at M = 1024 / 2048 / 4096
+(compute-bound; the roofline evaluator reports primary_util = MFU, ~0.026 for the
+reference — a very low compute utilisation, not a BW-bound kernel).
 
 A plain PyTorch sparse-attention (gather top-k KV, QK^T, softmax, weighted V) runs
 ~2-3x faster than the TileLang kernel on these shapes. The only correctness catch:
