@@ -75,6 +75,15 @@ def _fast_sparse_mla_prefill(inputs: dict):
     kv = inputs["kv"]
     indices = inputs["indices"]
 
+    # Platform guard (correctness/perf-safety first): this fast path only helps on
+    # ROCm/HIP, where the reference `flash_mla_sparse_fwd` dispatches to the slow
+    # TileLang sparse-MLA kernel because the CUDA `sparse_prefill_fwd` op is not
+    # compiled. On a CUDA build (e.g. B200) the reference IS the fast FlashMLA CUDA
+    # kernel, so taking this heavier PyTorch gather/einsum path would REGRESS the
+    # default gate. Defer to the reference on any non-ROCm platform.
+    if torch.version.hip is None:
+        raise RuntimeError("non-ROCm platform; use reference (fast CUDA FlashMLA)")
+
     # Only take the fast path for the exact sparse-MLA prefill setup this task
     # uses; anything else defers to the reference (correctness first).
     if q.dtype != torch.bfloat16 or kv.dtype != torch.bfloat16:
