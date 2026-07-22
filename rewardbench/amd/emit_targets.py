@@ -48,7 +48,7 @@ def _load(name, path):
     return mod
 
 
-ops = _load("glm52_ops", _REPO / "testbench" / "harness" / "glm52_ops.py")
+ops = _load("glm52_ops_amd", _REPO / "testbench" / "harness" / "glm52_ops_amd.py")
 tb_timing = _load("tb_timing", _REPO / "testbench" / "harness" / "timing.py")
 
 # The 3 optimization targets (amd-glm-object.csv): o_proj+index_k prefill, MLA decode.

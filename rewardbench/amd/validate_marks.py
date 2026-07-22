@@ -50,7 +50,7 @@ def _load(name: str, path: Path):
     return mod
 
 
-ops = _load("glm52_ops", _REPO / "testbench" / "harness" / "glm52_ops.py")
+ops = _load("glm52_ops_amd", _REPO / "testbench" / "harness" / "glm52_ops_amd.py")
 rb = _load("amd_glm5_ops_common", _HERE / "amd_glm5_ops_common.py")
 from testbench.harness.backends import rocm_mi300x as R  # noqa: E402
 

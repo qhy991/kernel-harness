@@ -34,9 +34,10 @@ def _load(name: str, path: Path):
     return mod
 
 
-# glm52_ops is the single source of truth for the operators; load it by path so
-# this script needs nothing on sys.path.
-specs = _load("glm52_ops_cmp", REPO / "testbench" / "harness" / "glm52_ops.py")
+# glm52_ops_cuda is the CUDA-side operator definition; this script is
+# CUDA-specific (compares CUPTI/CUDA-graph/CUDA-event timers). Load by path so
+# nothing needs to be on sys.path.
+specs = _load("glm52_ops_cmp", REPO / "testbench" / "harness" / "glm52_ops_cuda.py")
 from harness.timing import time_callable, time_cold_l2, clone_inputs  # noqa: E402
 sys.path.pop(0)
 

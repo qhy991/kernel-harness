@@ -54,7 +54,7 @@ def _load(name, path):
     return m
 
 
-ops = _load("glm52_ops", _REPO / "testbench/harness/glm52_ops.py")
+ops = _load("glm52_ops_amd", _REPO / "testbench" / "harness" / "glm52_ops_amd.py")
 tb_timing = _load("tb_timing", _REPO / "testbench/harness/timing.py")
 from testbench.harness.backends import rocm_mi300x as R  # noqa: E402
 
