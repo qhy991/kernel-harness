@@ -51,15 +51,19 @@ tile), and num_stages/num_warps/waves_per_eu are pure scheduling. Standalone
 probe measured `calc_diff == 0.00e+00` (bit-exact) at M in {1024, 2048, 4096}
 while running 1.4x (M=1024) to ~3.8x (M=2048) faster than the heuristic tile.
 
-run() wraps the fast path in try/except and falls back to the untouched
-reference call on any surprise (unexpected arch, gluon kernel active, shape or
-dtype mismatch, or if the heuristic already resolves to the target tile).
+run() wraps the fast path in try/except and falls back to the harness reference
+(`glm52_ops.reference`, i.e. the selected ROCm backend oracle) on any surprise
+(unexpected arch, gluon kernel active, shape or dtype mismatch, or if the
+heuristic already resolves to the target tile).
 """
 from __future__ import annotations
 
 import torch
 
-import deep_gemm
+from testbench.harness import glm52_ops
+
+OP = 'index_score'
+PHASE = 'prefill'
 
 
 # Bit-exact launch-config override, tuned per the standalone sweep. BLOCK_KV /
@@ -70,10 +74,11 @@ _TARGET_NUM_STAGES = 1
 
 
 def _reference(inputs: dict):
-    return deep_gemm.fp8_mqa_logits(
-        inputs["q_fp8"], (inputs["k_fp8"], inputs["k_scale"]), inputs["weights"],
-        inputs["ks"], inputs["ke"], clean_logits=False,
-    )
+    # Fall back through the harness reference (the selected backend's authoritative
+    # oracle), NOT deep_gemm directly. On MI300X `glm52_ops.reference` dispatches to
+    # aiter's `fp8_mqa_logits`, matching the backend described in problem.json; this
+    # also keeps the module import-safe on a ROCm runner without DeepGEMM installed.
+    return glm52_ops.reference(OP, PHASE, inputs)
 
 
 def _fast_index_score_prefill(inputs: dict):
