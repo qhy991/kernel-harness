@@ -10,6 +10,10 @@ MoE 诊断项，并额外加入 fused SGLang MoE total 作为 production ABI rol
 > 「A 卡分支」指的是 **sglang 在 ROCm 上的算子实现**（走 aiter），已由 qhy 在 MI300X 上跑通
 > （PyTorch 2.10/2.11+rocm7.0，AITER git HEAD）。本表据此重建。
 
+> **E2E 对照（2026-07-22）**：TP=8 真实 prefill profile 显示 **AllReduce > MoE fused > dense MLA stage1 > FP8 GEMM**；
+> 与本目录 TP1 campaign（`o_proj`/`index_k`/`dsa_attn` sparse）**优先级与 baseline 不对齐**。
+> 详见 **`e2e_profile_20260722/README.md`** 与 `e2e_vs_harness_baseline_mismatch.csv`。
+
 ## 硬件与数值基线（MI300X / CDNA3 / gfx942）
 
 | 项 | 值 |

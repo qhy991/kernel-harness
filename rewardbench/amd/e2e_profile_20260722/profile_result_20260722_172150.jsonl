@@ -1,0 +1,3 @@
+{"run_name": "default", "batch_size": 1, "input_len": 1024, "output_len": 1, "prefill_latency": 0.39377002883702517, "prefill_throughput": 2600.5026411591534, "total_latency": 0.39377002883702517, "overall_throughput": 2603.0421945196604}
+{"run_name": "default", "batch_size": 1, "input_len": 2048, "output_len": 1, "prefill_latency": 0.48033101204782724, "prefill_throughput": 4263.726365009465, "total_latency": 0.48033101204782724, "overall_throughput": 4265.808262648629}
+{"run_name": "default", "batch_size": 1, "input_len": 4096, "output_len": 1, "prefill_latency": 0.7382134003564715, "prefill_throughput": 5548.531086027572, "total_latency": 0.7382134003564715, "overall_throughput": 5549.885707874747}

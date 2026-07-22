@@ -1,0 +1,9 @@
+rank,input_len,kernel,gpu_ms,pct_of_gpu,notes
+1,4096,aiter::cross_device_reduce_2stage,184.61,34.90,TP=8 custom AR (AITER)
+2,4096,fused_moe_kernel (triton),82.83,15.66,moe-runner=triton
+3,4096,aiter::mla_dec_stage1_bf16,66.34,12.54,dense MLA via mla_decode_fwd; NOT sparse
+4,4096,aiter::fp8gemm ASM bpreshuffle,25.20,4.76,fp8_fast_path / aiter_w8a8
+5,4096,ck::fp8 gemm bpreshuffle,21.79,4.12,CK bpreshuffle fallback/branch
+6,4096,per_token_group_quant_8bit,11.66,2.20,FP8 quant before GEMM
+7,4096,aiter::add_rmsnorm_quant,6.84,1.29,fused norm+quant
+8,4096,gluon_deepgemm_fp8_paged_mqa_logits,3.79,0.72,DSA indexer; small on short prefill

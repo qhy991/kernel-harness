@@ -1,0 +1,350 @@
+{
+  "run": "20260722_172150",
+  "config": "TP=8 \u00b7 aiter/aiter \u00b7 moe=triton \u00b7 KV=bf16 \u00b7 prefill",
+  "shapes": {
+    "1024": {
+      "total_gpu_ms": 233.54,
+      "wall_ms": 393.77,
+      "groups": [
+        {
+          "name": "AllReduce (TP)",
+          "ms": 117.2,
+          "pct": 50.19
+        },
+        {
+          "name": "ATen elementwise/misc",
+          "ms": 35.4,
+          "pct": 15.16
+        },
+        {
+          "name": "MoE fused GEMM",
+          "ms": 31.85,
+          "pct": 13.64
+        },
+        {
+          "name": "FP8 GEMM (linear)",
+          "ms": 19.14,
+          "pct": 8.2
+        },
+        {
+          "name": "MLA attention",
+          "ms": 12.67,
+          "pct": 5.43
+        },
+        {
+          "name": "Quant / act",
+          "ms": 4.64,
+          "pct": 1.99
+        },
+        {
+          "name": "rocPRIM",
+          "ms": 3.66,
+          "pct": 1.57
+        },
+        {
+          "name": "Other",
+          "ms": 3.24,
+          "pct": 1.39
+        },
+        {
+          "name": "TopK",
+          "ms": 2.82,
+          "pct": 1.21
+        },
+        {
+          "name": "RMSNorm",
+          "ms": 2.6,
+          "pct": 1.12
+        },
+        {
+          "name": "Other GEMM",
+          "ms": 0.31,
+          "pct": 0.13
+        }
+      ],
+      "kernels": [
+        {
+          "name": "aiter::cross_device_reduce_2stage",
+          "ms": 117.2,
+          "pct": 50.19
+        },
+        {
+          "name": "fused_moe_kernel (triton)",
+          "ms": 31.85,
+          "pct": 13.64
+        },
+        {
+          "name": "aiter::mla_dec_stage1_bf16",
+          "ms": 10.08,
+          "pct": 4.31
+        },
+        {
+          "name": "aiter::fp8gemm ASM bpreshuffle",
+          "ms": 7.91,
+          "pct": 3.39
+        },
+        {
+          "name": "ck::fp8 gemm bpreshuffle",
+          "ms": 7.02,
+          "pct": 3.01
+        },
+        {
+          "name": "void at::native::elementwise_kernel_manual_unroll<128, 4, at::native::",
+          "ms": 3.67,
+          "pct": 1.57
+        },
+        {
+          "name": "per_token_group_quant_8bit",
+          "ms": 3.1,
+          "pct": 1.33
+        },
+        {
+          "name": "void at::native::elementwise_kernel_manual_unroll<128, 8, at::native::",
+          "ms": 2.67,
+          "pct": 1.14
+        },
+        {
+          "name": "void at::native::reduce_kernel<128, 4, at::native::ReduceOp<c10::BFloa",
+          "ms": 2.64,
+          "pct": 1.13
+        },
+        {
+          "name": "_fwd_kernel_stage2_asm",
+          "ms": 2.32,
+          "pct": 0.99
+        }
+      ]
+    },
+    "2048": {
+      "total_gpu_ms": 389.79,
+      "wall_ms": 480.33,
+      "groups": [
+        {
+          "name": "AllReduce (TP)",
+          "ms": 208.85,
+          "pct": 53.58
+        },
+        {
+          "name": "MoE fused GEMM",
+          "ms": 49.99,
+          "pct": 12.83
+        },
+        {
+          "name": "ATen elementwise/misc",
+          "ms": 45.17,
+          "pct": 11.59
+        },
+        {
+          "name": "FP8 GEMM (linear)",
+          "ms": 30.25,
+          "pct": 7.76
+        },
+        {
+          "name": "MLA attention",
+          "ms": 28.24,
+          "pct": 7.24
+        },
+        {
+          "name": "Quant / act",
+          "ms": 8.51,
+          "pct": 2.18
+        },
+        {
+          "name": "rocPRIM",
+          "ms": 5.23,
+          "pct": 1.34
+        },
+        {
+          "name": "RMSNorm",
+          "ms": 4.98,
+          "pct": 1.28
+        },
+        {
+          "name": "Other",
+          "ms": 4.56,
+          "pct": 1.17
+        },
+        {
+          "name": "TopK",
+          "ms": 3.6,
+          "pct": 0.92
+        },
+        {
+          "name": "Other GEMM",
+          "ms": 0.41,
+          "pct": 0.11
+        }
+      ],
+      "kernels": [
+        {
+          "name": "aiter::cross_device_reduce_2stage",
+          "ms": 208.85,
+          "pct": 53.58
+        },
+        {
+          "name": "fused_moe_kernel (triton)",
+          "ms": 49.99,
+          "pct": 12.83
+        },
+        {
+          "name": "aiter::mla_dec_stage1_bf16",
+          "ms": 24.95,
+          "pct": 6.4
+        },
+        {
+          "name": "aiter::fp8gemm ASM bpreshuffle",
+          "ms": 12.13,
+          "pct": 3.11
+        },
+        {
+          "name": "ck::fp8 gemm bpreshuffle",
+          "ms": 11.78,
+          "pct": 3.02
+        },
+        {
+          "name": "per_token_group_quant_8bit",
+          "ms": 6.19,
+          "pct": 1.59
+        },
+        {
+          "name": "void at::native::reduce_kernel<128, 4, at::native::ReduceOp<c10::BFloa",
+          "ms": 4.92,
+          "pct": 1.26
+        },
+        {
+          "name": "void at::native::elementwise_kernel_manual_unroll<128, 8, at::native::",
+          "ms": 4.37,
+          "pct": 1.12
+        },
+        {
+          "name": "void at::native::elementwise_kernel_manual_unroll<128, 4, at::native::",
+          "ms": 4.32,
+          "pct": 1.11
+        },
+        {
+          "name": "aiter::add_rmsnorm_quant",
+          "ms": 3.78,
+          "pct": 0.97
+        }
+      ]
+    },
+    "4096": {
+      "total_gpu_ms": 528.99,
+      "wall_ms": 738.21,
+      "groups": [
+        {
+          "name": "AllReduce (TP)",
+          "ms": 184.61,
+          "pct": 34.9
+        },
+        {
+          "name": "MoE fused GEMM",
+          "ms": 82.83,
+          "pct": 15.66
+        },
+        {
+          "name": "ATen elementwise/misc",
+          "ms": 78.33,
+          "pct": 14.81
+        },
+        {
+          "name": "MLA attention",
+          "ms": 73.18,
+          "pct": 13.83
+        },
+        {
+          "name": "FP8 GEMM (linear)",
+          "ms": 57.01,
+          "pct": 10.78
+        },
+        {
+          "name": "Quant / act",
+          "ms": 18.44,
+          "pct": 3.49
+        },
+        {
+          "name": "Other",
+          "ms": 8.64,
+          "pct": 1.63
+        },
+        {
+          "name": "RMSNorm",
+          "ms": 8.01,
+          "pct": 1.51
+        },
+        {
+          "name": "TopK",
+          "ms": 7.41,
+          "pct": 1.4
+        },
+        {
+          "name": "rocPRIM",
+          "ms": 6.14,
+          "pct": 1.16
+        },
+        {
+          "name": "DSA indexer",
+          "ms": 3.79,
+          "pct": 0.72
+        },
+        {
+          "name": "Other GEMM",
+          "ms": 0.6,
+          "pct": 0.11
+        }
+      ],
+      "kernels": [
+        {
+          "name": "aiter::cross_device_reduce_2stage",
+          "ms": 184.61,
+          "pct": 34.9
+        },
+        {
+          "name": "fused_moe_kernel (triton)",
+          "ms": 82.83,
+          "pct": 15.66
+        },
+        {
+          "name": "aiter::mla_dec_stage1_bf16",
+          "ms": 66.34,
+          "pct": 12.54
+        },
+        {
+          "name": "aiter::fp8gemm ASM bpreshuffle",
+          "ms": 25.2,
+          "pct": 4.76
+        },
+        {
+          "name": "ck::fp8 gemm bpreshuffle",
+          "ms": 21.79,
+          "pct": 4.12
+        },
+        {
+          "name": "per_token_group_quant_8bit",
+          "ms": 11.66,
+          "pct": 2.2
+        },
+        {
+          "name": "void at::native::reduce_kernel<128, 4, at::native::ReduceOp<c10::BFloa",
+          "ms": 9.41,
+          "pct": 1.78
+        },
+        {
+          "name": "void at::native::elementwise_kernel_manual_unroll<128, 8, at::native::",
+          "ms": 7.71,
+          "pct": 1.46
+        },
+        {
+          "name": "aiter::add_rmsnorm_quant",
+          "ms": 6.84,
+          "pct": 1.29
+        },
+        {
+          "name": "_ZN5aiter37dynamic_per_group_scaled_quant_kernelIDF16bDB8_Li32ELi128EL",
+          "ms": 6.75,
+          "pct": 1.28
+        }
+      ]
+    }
+  }
+}

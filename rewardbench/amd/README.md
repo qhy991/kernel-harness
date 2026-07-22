@@ -23,6 +23,7 @@ reward = **bound-aware roofline 利用率 ∈ [0,1]** = 实测吞吐 ÷ roofline
 | `bench_AMD_GLM5_ops_prefill.py` / `bench_AMD_GLM5_ops_decode.py` | **reward-bench 入口**（=baseline 模式，产 reward 分母 CSV） |
 | `amd_glm5_ops_prefill_reward.csv` / `amd_glm5_ops_decode_reward.csv` | **baseline 测试结果**：13 个参考算子在 MI300X 上的 reward（reward 基准） |
 | `operator_mapping.md` | CUDA(B200)→AMD(MI300X) 算子后端对照表 + aiter 精确 API |
+| **`e2e_profile_20260722/`** | **TP=8 真实 e2e prefill profile 份额 + 与 harness baseline 不对齐台账（共享给同伴）** |
 | `rebuild_env.sh` | 一键重建 venv（torch2.11+rocm7.0 / py3.12 / sglang0.5.15；路径按本节点，改用前调整） |
 
 ## 硬件峰值（reward 分母，MI300X / CDNA3）

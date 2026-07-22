@@ -1,0 +1,9 @@
+e2e_kernel,e2e_group,pct_m4096,sglang_api,aiter_or_kernel_impl,harness_op_name,harness_in_campaign,baseline_match,notes
+aiter::cross_device_reduce_2stage,AllReduce (TP),34.90,sglang parallel_state._all_reduce_out_place + layers/communicator.py AR,aiter CustomAllreduce.all_reduce -> ops.all_reduce,(none),no,no,Largest e2e cost; harness is TP1
+fused_moe_kernel,MoE fused GEMM,15.66,moe_runner/triton.py TritonRunnerCore.run -> invoke_fused_moe_kernel,fused_moe_triton_kernels.py::fused_moe_kernel,moe_total,taskset_only,partial,Promote to campaign primary
+aiter::mla_dec_stage1_bf16,MLA attention,12.54,dsa_backend._forward_aiter_extend -> aiter.mla.mla_decode_fwd,aiter mla_decode_stage1_asm_fwd (asm_mla.cu),dsa_attn|dsa_prefill_attn,yes_as_sparse,no,E2E is dense stage1 not sparse S64k
+aiter::fp8gemm ASM bpreshuffle,FP8 GEMM (linear),4.76,fp8_utils.aiter_w8a8_block_fp8_linear,gemm_a8w8_blockscale_bpreshuffle_asm,o_proj|q_b|fused_qkv_a|index_*,yes_o_proj,no,Harness aiter baseline often Triton/plain CK
+ck::fp8 gemm bpreshuffle,FP8 GEMM (linear),4.12,fp8_utils.aiter_w8a8_block_fp8_linear,gemm_a8w8_blockscale_bpreshuffle_ck,o_proj|index_k,yes_o_proj,partial,Same family as ASM path
+per_token_group_quant_8bit,Quant / act,2.20,fp8_utils.aiter_per1x128_quant / fp8_kernel,aiter quant kernels,(folded into GEMM),n/a,ok,Support path for FP8 GEMM
+gluon_deepgemm_fp8_paged_mqa_logits,DSA indexer,0.72,DSA indexer path,aiter gluon/triton pa_mqa_logits,index_score|index_k,index_k_yes,partial,Small on short prefill
+get_valid_kv_indices,DSA helper,0.52,dsa_backend get_valid_kv_indices,triton_kernel.py,(none),n/a,ok,Python-time large GPU tiny
