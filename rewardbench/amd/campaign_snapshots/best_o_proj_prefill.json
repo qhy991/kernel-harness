@@ -1,0 +1,40 @@
+{
+  "geomean_reward": 0.18649208098847714,
+  "variant": "fp8_dot",
+  "cfg": {
+    "BM": 128,
+    "BN": 128,
+    "GROUP_M": 1,
+    "num_warps": 4,
+    "num_stages": 2,
+    "waves_per_eu": 2,
+    "matrix_instr_nonkdim": 16,
+    "kpack": 2
+  },
+  "per_shape": {
+    "1024": {
+      "lat_us": 485.97,
+      "reward": 0.16223,
+      "pct_roofline": 16.22,
+      "bound": "compute",
+      "speedup_vs_ref": 3.643,
+      "reward_vs_ref": 3.643
+    },
+    "2048": {
+      "lat_us": 913.35,
+      "reward": 0.17264,
+      "pct_roofline": 17.26,
+      "bound": "compute",
+      "speedup_vs_ref": 3.5,
+      "reward_vs_ref": 3.5
+    },
+    "4096": {
+      "lat_us": 1361.76,
+      "reward": 0.23158,
+      "pct_roofline": 23.16,
+      "bound": "compute",
+      "speedup_vs_ref": 4.465,
+      "reward_vs_ref": 4.465
+    }
+  }
+}

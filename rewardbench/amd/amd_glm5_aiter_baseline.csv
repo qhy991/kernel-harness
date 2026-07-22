@@ -1,0 +1,9 @@
+op,phase,M,aiter_kernel,aiter_us,our_ref_us,tuned_us,tuned_vs_aiter,aiter_vs_ourref,aiter_correct,aiter_calc_diff
+o_proj,prefill,1024,gemm_a8w8_blockscale,946.0,1767.8,428.1,2.21,1.869,True,4.90e-09
+o_proj,prefill,2048,gemm_a8w8_blockscale,1913.4,3201.0,903.6,2.117,1.673,True,5.02e-09
+o_proj,prefill,4096,gemm_a8w8_blockscale,3161.9,6107.0,1326.2,2.384,1.931,True,4.78e-09
+index_k,prefill,1024,gemm_a8w8_blockscale,567.7,845.2,288.8,1.966,1.489,True,2.97e-09
+index_k,prefill,2048,gemm_a8w8_blockscale,540.1,843.6,286.9,1.883,1.562,True,2.97e-09
+index_k,prefill,4096,gemm_a8w8_blockscale,539.9,841.4,286.4,1.885,1.559,True,2.97e-09
+dsa_attn,decode,16,pa_decode_sparse,273.9,261.8,122.6,2.233,0.956,True,4.09e-06
+dsa_attn,decode,32,pa_decode_sparse,432.8,386.3,128.2,3.377,0.893,True,4.13e-06

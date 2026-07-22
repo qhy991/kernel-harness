@@ -5,6 +5,11 @@ MI300X (CDNA3 / gfx942, ROCm 7.0)**。是 kernel-harness `rewardbench/`（B200/S
 的 A 卡移植：算子清单、reward 公式、CSV schema 与 B200 版一一对应，只把 roofline 峰值换成
 MI300X、后端 kernel 换成 sglang-ROCm（aiter / hipBLASLt）。
 
+> **正确性检验 bench (opbench) 也已移植 + 完整优化 flow —— 见下方「MI300X 正确性 bench + 优化 flow」。**
+> 现在两个 mark 都在 A 卡上：**opbench**（正确性 gate + 加速比，`testbench/`）与
+> **rewardbench**（roofline reward tracker，本目录）。二者共享同一 cost model，且都经
+> `validate_marks.py` 严格自检。
+
 reward = **bound-aware roofline 利用率 ∈ [0,1]** = 实测吞吐 ÷ roofline 天花板
 （compute-bound → 矩阵核利用率；memory-bound → HBM 带宽利用率，按 arithmetic intensity 自动判定）。
 指标设计见 `operator_mapping.md`（算子对照表）与 kernel-harness 的 `../GLM5_ops_reward_design.md`。
@@ -85,3 +90,67 @@ Triton-ROCm 融合实现。AI 值与 B200 rewardbench 完全一致，证明 cost
 # rebuild_env.sh 顶部的 VENV / PYBASE / mirror 路径按本节点写死，改用前请调整。
 bash rebuild_env.sh
 ```
+
+---
+
+## MI300X 正确性 bench (opbench) + 优化 flow
+
+把 B200 的**正确性检验 bench**（`testbench/`：`run.sh` → 正确性 + 加速比 + roofline
+reward，CUPTI 计时）也移植到了 MI300X，**零改动 oracle** `testbench/harness/glm52_ops.py`
+——harness 早已 provider 抽象化，移植只是加一个后端 bundle。
+
+### 组件（本目录，`rewardbench/amd/`）
+
+| 文件 | 作用 |
+|---|---|
+| `../../testbench/harness/backends/rocm_mi300x.py` | ROCm 后端：`DeviceProfile`（MI300X 峰值 / e4m3fnuz）+ 自带 torch+triton provider（**triton blockwise-fp8 GEMM** 参考核 + chunked sparse-MLA + torch 参考）+ HIP-event 计时器。仅依赖 torch+triton（本机无 aiter/deep_gemm/sgl_kernel） |
+| `validate_marks.py` | **Req-0 mark 自检（24 项全绿）**：opbench↔rewardbench cost model 逐字节一致、triton-GEMM vs bf16 dequant oracle（calc_diff ~5e-9）、chunked-MLA vs full-attn oracle、反作弊有效（no-op 失败、2× 幅度错误即便 cosine 1.0 也失败、poison 生效） |
+| `emit_targets.py` | 测 opbench 参考基线，产出 **target = min(hardware roofline, 1.5×baseline)**；写 `amd_glm5_targets.csv`（baseline 右边并排 target 列），`--augment` 给两张 reward CSV 在 `reward` 右侧加 `target_reward`/`target_desc` |
+| `run_flow.py` | **一条命令跑完整 flow**：先正确性 gate（错误候选 exit 2，不进性能比较），再 roofline reward vs target，产出 flotilla 兼容 `status.json` |
+| `amd_glm5_targets.csv` | 3 个优化目标算子（o_proj/index_k prefill、dsa_attn decode）的 baseline + target 台账 |
+
+### 用法
+
+```bash
+cd ~/repos/kernel-harness && source /opt/mizar/huyan/amd_env.sh && export HIP_VISIBLE_DEVICES=0
+# 硬盘全满：amd_env.sh 把 triton/LLVM 临时目录 + 缓存重定向到 /opt/mizar tmpfs（否则编译报 No space）
+
+# 0) 先验两个 mark 本身正确（防 flow 出问题）
+.venv/bin/python rewardbench/amd/validate_marks.py            # 24 checks
+
+# 1) 产出 baseline + target 台账，并给 reward CSV 加 target 列
+.venv/bin/python rewardbench/amd/emit_targets.py --augment
+
+# 2) 跑 flow：候选 → 正确性 gate → 性能 vs target
+.venv/bin/python rewardbench/amd/run_flow.py o_proj_prefill --candidate <kernel.py> --round 1
+#   state: INCORRECT (exit 2) | CORRECT_BELOW_TARGET (exit 1) | TARGET_MET (exit 0)
+
+# 也可直接跑 opbench gate（正确性 + 加速比）
+testbench/tasks/glm52/o_proj_prefill/run.sh --candidate <kernel.py>
+```
+
+后端选择靠 gitignore 的 `testbench/harness.env`（本机已设 rocm/rocm-mi300x/torch-triton-rocm/event）
++ `.venv` 软链到 `/opt/mizar/huyan/venvs/amd-glm52`。`get_backend()` 也会读 `harness.env` 兜底。
+
+### 已跑通结果（单卡 MI300X）
+
+| 算子 / phase | family/bound | 参考 reward | target(1.5×) | 最佳候选 | 结果 |
+|---|---|---|---|---|---|
+| `o_proj` prefill | gemm / compute | 0.045–0.052 | 0.067–0.078 | autotuned triton blockwise-fp8 GEMM | **TARGET_MET**，geomean **1.62×**，3/3 shape win，116% of target |
+| `index_k` prefill | gemm / memory | 0.096 | 0.145 | 同上（shape-generic） | **TARGET_MET**，geomean **1.72×**，3/3 win，116% of target |
+| `dsa_attn` decode | mla / memory | 0.030–0.039 | 0.045–0.059 | 融合 flash-DECODING（tk-split + 融合 combine 核） | **TARGET_MET**，geomean **2.01×**，2/2 win，136% of target |
+
+> `dsa_attn` 最难（B200 也靠专用 flash_mla 核）：朴素 torch-SDPA 正确但慢 37× 被 gate 拒绝；
+> f32-bmm 1.30×；plain flash-decode 因 M=16/32 网格太小 CU 空转只有 1.05×；tk-split 提并行度到
+> 1.55×；**再把 combine 融进单个 triton 核**去掉 M=16 的 launch 尾巴 → **2.01×**。三个算子全部
+> 先过正确性 gate 再达 target。
+
+KDA-Pilot 原生任务目录见 `~/repos/KDA-Pilot/mi300x/`；flotilla 监控用 `kernel_harness` evaluator
+（`~/repos/flotilla/flotilla/evaluator/kernel_harness_eval.py`）+ `demo/glm52_mi300x_demo.py` 播种。
+
+> **两个 baseline 的区别**（勿混淆）：上文「实测 baseline 摘录」(o_proj 0.461) 是 rewardbench
+> 直接测 **hipBLASLt per-tensor** GEMM（随机输入、per-tensor 量化）的吞吐；opbench/flow 的
+> 参考基线 (o_proj ~0.05) 是 **triton blockwise-fp8** 参考核——它消费 opbench 冻结的 *blockwise*
+> 量化输入（与 deep_gemm B200 路径同构，是正确性 oracle 兼延时分母），未调优故利用率低。二者
+> 量化粒度不同、测的是不同问题；per-tensor hipBLASLt 无法直接作为 opbench 候选（数值与 blockwise
+> 参考不符会 fail 正确性）。flow 的 target 一律基于 opbench 参考基线，内部自洽。
