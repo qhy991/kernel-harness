@@ -8,7 +8,7 @@ TASK  index_q_upproj/decode — Indexer Q Up-Projection
 
   MATH   out[M,4096] = x_fp8[M,2048] @ w_fp8[4096,2048].T
 
-  WORKLOAD   M in [16, 32]   (every shape must pass correctness AND be beaten on latency)
+  WORKLOAD   M in [16, 32]   (every shape must pass correctness; at least one shape must win and none may regress)
 
   BASELINE   deep_gemm.fp8_gemm_nt
              glm52_ops.reference('index_q_upproj', 'decode', inputs)

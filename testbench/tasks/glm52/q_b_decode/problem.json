@@ -24,7 +24,7 @@
       16,
       32
     ],
-    "rule": "every shape must pass correctness AND be beaten on latency"
+    "rule": "every shape must pass correctness; at least one shape must win and none may regress"
   },
   "baseline": {
     "backend": "deep_gemm.fp8_gemm_nt",
@@ -163,10 +163,16 @@
     }
   },
   "verdict": {
-    "exit_0": "correct on every shape AND performance gate met",
+    "exit_0": "correct on every shape, at least one shape wins, and no shape regresses",
     "exit_1": "correct on every shape, performance gate not met",
     "exit_2": "incorrect, incomplete sweep, or correctness did not survive timing",
-    "exit_3": "infrastructure error, or task.json disagrees with glm52_ops"
+    "exit_3": "infrastructure error, or task.json disagrees with glm52_ops",
+    "terminal_state": {
+      "COMPLETE_WIN": "exit 0; correct complete sweep with >=1 win and 0 regressions",
+      "NO_WIN_WITH_EVIDENCE": "exit 1; correct complete sweep but every shape is neutral",
+      "PARTIAL_OR_REGRESSED_WITH_EVIDENCE": "exit 1; correct complete sweep but at least one shape regressed",
+      "INCORRECT_OR_INCOMPLETE": "exit 2; correctness failed, the sweep was incomplete, or post-timing correctness failed"
+    }
   },
   "run": {
     "gate": "./run.sh",

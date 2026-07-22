@@ -129,6 +129,14 @@ List everything with `.venv/bin/python testbench/bin/inventory.py`.
 - Use only the repo-local `.venv` (`./testbench/setup_env.sh`).
 - Verify once before testing: `.venv/bin/python testbench/bin/check_env.py`.
 - Structural pre-flight runs anywhere, no GPU/venv: `python3 testbench/bin/selftest.py`.
+- Review/CI gate for harness changes, GPU-free except the configured venv import check:
+  `python3 testbench/bin/verify_harness.py`.
+  Add `--strict-audit-sweep` only for release/evidence lanes that must reject
+  historical `PROVISIONAL` results. Add `--strict-pointer-audit` when stale
+  `runs/index.jsonl` / `latest.json` pointers must also fail the lane; the normal
+  verifier reports pointer drift but keeps it advisory for old corpora. Use
+  `--audit-report` and `--pointer-report` to list every non-official result or
+  stale/malformed/mismatched pointer before citing historical evidence.
 - Layer-swap acceptance (advisory, after a per-op result):
   `.venv/bin/python testbench/bin/accept_layer.py --M 32 --task <task>`.
 - After changing `glm52_ops.py`, re-project it onto the tasks:
@@ -175,6 +183,17 @@ Schema and honesty rules:
   estimate. Copy `hardware`/`stack` facts from `check_env.py`.
 - A `win` needs `shapes_won >= 1` with `shapes_regressed == 0`, from `result.json`'s
   aggregate.
+- Before writing a final claim or knowledge entry, run
+  `python3 testbench/bin/audit_result.py <run>/result.json`. It performs the cheap
+  reviewer checks: schema, gate/exit consistency, candidate SHA copy, and dirty-tree
+  provenance. `OFFICIAL` means the JSON is internally consistent and clean enough to
+  cite directly; `PROVISIONAL` means cite the caveat it prints. Use `--strict` when
+  a CI lane or release note must reject provisional evidence.
+- Treat dirty-tree results as provisional unless the recorded provenance is reviewed:
+  `environment.git_status` lists every dirty file, and `candidate.git` says whether
+  the exact candidate file was dirty. Unrelated archive/docs churn is acceptable when
+  disclosed; candidate or harness dirtiness must be called out in the knowledge entry
+  or final report.
 - Entries are append-only. Never edit or delete one; supersede it by adding a new one.
   The pre-consolidation `glm52--*` entries are **not reproducible** — see that README.
 

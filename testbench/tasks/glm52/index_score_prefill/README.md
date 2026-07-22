@@ -12,7 +12,7 @@ TASK  index_score/prefill — Indexer Score (MQA logits)
          NOTE scale, and real sglang folds them in before the call. Do not apply
          NOTE them again.
 
-  WORKLOAD   M in [1024, 2048, 4096]   (every shape must pass correctness AND be beaten on latency)
+  WORKLOAD   M in [1024, 2048, 4096]   (every shape must pass correctness; at least one shape must win and none may regress)
 
   BASELINE   deep_gemm.fp8_mqa_logits / fp8_paged_mqa_logits
              glm52_ops.reference('index_score', 'prefill', inputs)

@@ -23,6 +23,9 @@ testbench/
     inventory.py        list tasks by family
     knowledge.py        the recipe log
     check_env.py        verify GPU / CUDA / torch / deep_gemm / sgl_kernel
+    verify_harness.py   GPU-free review/CI gate: compile, selftest, knowledge
+                        freshness, generated-task sync, audit sweep, pointer
+                        audit, diff hygiene
   tasks/glm52/<task>/   task.json · problem.json · workload.jsonl · candidate.py ·
                         run.sh · README.md
   knowledge/            append-only session recipes
@@ -31,6 +34,23 @@ testbench/
 
 The agent-facing guide is [`../AGENTS.md`](../AGENTS.md); a task describes itself with
 `run.sh --describe`.
+
+Review harness changes with one GPU-free command:
+
+```bash
+python3 testbench/bin/verify_harness.py
+python3 testbench/bin/verify_harness.py --json        # CI/agent-readable summary
+python3 testbench/bin/verify_harness.py --strict-audit-sweep
+python3 testbench/bin/verify_harness.py --strict-pointer-audit
+python3 testbench/bin/verify_harness.py --audit-report
+python3 testbench/bin/verify_harness.py --pointer-report
+python3 testbench/bin/verify_harness.py --skip-audit-sweep
+python3 testbench/bin/verify_harness.py --skip-pointer-audit
+python3 testbench/bin/verify_harness.py --print-review-paths
+python3 testbench/bin/verify_harness.py --print-review-files
+python3 testbench/bin/verify_harness.py --print-review-files --with-status
+python3 testbench/bin/verify_harness.py --print-review-files -0
+```
 
 ## The five operator families
 

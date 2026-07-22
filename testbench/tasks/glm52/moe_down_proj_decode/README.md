@@ -11,7 +11,7 @@ TASK  moe_down/decode — MoE Down Projection
          NOTE multinomial (masked_m); expected_m is the per-expert slab capacity
          NOTE and is sized to hold the largest bin.
 
-  WORKLOAD   M in [16, 32]   (every shape must pass correctness AND be beaten on latency)
+  WORKLOAD   M in [16, 32]   (every shape must pass correctness; at least one shape must win and none may regress)
 
   BASELINE   deep_gemm.fp8_m_grouped_gemm_nt_masked
              glm52_ops.reference('moe_down', 'decode', inputs)

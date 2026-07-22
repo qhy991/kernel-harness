@@ -8,7 +8,7 @@ TASK  dsa_attn/prefill — DSA Sparse Attention
 
   MATH   sparse MLA: q[M,64,576] attends the top-2048 of kv[65536,1,576] -> out[M,64,512]
 
-  WORKLOAD   M in [1024, 2048, 4096]   (every shape must pass correctness AND be beaten on latency)
+  WORKLOAD   M in [1024, 2048, 4096]   (every shape must pass correctness; at least one shape must win and none may regress)
 
   BASELINE   sgl_kernel.flash_mla.flash_mla_sparse_fwd
              glm52_ops.reference('dsa_attn', 'prefill', inputs)

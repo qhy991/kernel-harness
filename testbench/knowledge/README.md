@@ -9,15 +9,21 @@ lesson. Later sessions (any model family, any GPU) query it before touching
 testbench/knowledge/
   README.md        # this contract
   entries/         # one JSON file per session, filename = entry id (append-only)
+  queries/         # generated cross-reference indices by op/bottleneck/technique
+  distilled.*      # generated recurring pitfalls and proven-technique rollup
+  promotions.json  # append-only ledger of lessons promoted into docs/checks/prompts
 ```
 
 Tool (stdlib-only, runs anywhere — like `bin/selftest.py`):
 
 ```bash
+python3 testbench/bin/knowledge.py brief --task glm52/o_proj_decode      # warm start
 python3 testbench/bin/knowledge.py query --task kimi_k27/o_proj_decode   # prior recipes
-python3 testbench/bin/knowledge.py query --family fp8-linear-gemm --gpu B200
 python3 testbench/bin/knowledge.py add my_entry.json                     # validate + install
 python3 testbench/bin/knowledge.py lint                                  # validate all entries
+python3 testbench/bin/knowledge.py index --check                         # generated indices fresh
+python3 testbench/bin/knowledge.py distill --check                       # generated rollup fresh
+python3 testbench/bin/knowledge.py promote <class> --to reviewer         # record durable owner
 ```
 
 ## Rules (enforced by `knowledge.py`, not just requested)
@@ -25,12 +31,22 @@ python3 testbench/bin/knowledge.py lint                                  # valid
 - **One entry per session, win or not.** A `no-win` or `failed` entry with honest
   "why" lines on each approach is as valuable as a win — it saves the next agent the
   same detour.
-- **Every number comes from `evaluate.py`'s final `VERDICT_JSON`.** Never record a
+- **Every number comes from `evaluate_task.py`'s persisted `result.json`.** Never record a
   `profile.py` (advisory) number or an unmeasured estimate as a result. The linter
   rejects `status: "win"` unless `min_speedup_conservative > 1.0` and at least one
   approach has `outcome: "win"`.
+- **Audit before citing a result.** Run
+  `python3 testbench/bin/audit_result.py <run>/result.json` before writing a final
+  claim or a knowledge entry. `OFFICIAL` means the result is internally consistent
+  and clean enough to cite directly; `PROVISIONAL` means include the printed caveat,
+  usually dirty-tree provenance or an older schema. `--strict` exits nonzero for
+  provisional results when a CI lane must accept only official evidence.
 - **Append-only.** `add` refuses to overwrite; never edit or delete an existing entry.
   To correct or supersede one, add a new entry (query sorts newest first).
+- **Promote recurring mistakes.** `distill` clusters repeated failure modes. Once a
+  repeated mistake has a durable owner (prompt, doc, reviewer, diagnostic,
+  typed-boundary, or lint), record it with `promote` so warm starts stop resurfacing
+  the same gap as unresolved toil.
 
 ### The pre-consolidation GLM-5.2 entries are not reproducible
 
