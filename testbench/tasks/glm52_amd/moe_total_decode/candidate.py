@@ -1,0 +1,48 @@
+"""GLM-5.2 Routed Expert Gate+Up/Down Total (decode) — the one file to edit for this task.
+
+Platform: AMD (this task is on the amd-only tree
+`testbench/tasks/glm52_amd/`; the sibling platform lives under
+`glm52_cuda/`).
+
+This file is the DEFAULT candidate, not the only one: `./run.sh --candidate PATH`
+tests any .py defining run(inputs), from anywhere on disk, without touching the task.
+Editing this file is just the convenient path.
+
+Run `./run.sh --describe` for the full contract. The short version:
+
+`inputs` is the frozen dict from glm52_ops.build_inputs. The very same dict feeds
+the reference, so do NOT re-quantize, re-seed, or rebuild any tensor inside
+run() — that would measure a different problem than the one the gate checked.
+
+Tensors at M=16:
+
+    hidden_states    (16, 6144)               torch.bfloat16
+    w1               (8, 4096, 6144)          torch.float8_e4m3fnuz
+    w2               (8, 6144, 2048)          torch.float8_e4m3fnuz
+    topk_weights     (16, 8)                  torch.float32
+    topk_ids         (16, 8)                  torch.int32
+    router_logits    (16, 8)                  torch.float32
+    w1_scale         (8,)                     torch.float32
+    w2_scale         (8,)                     torch.float32
+    a1_scale         (1,)                     torch.float32
+    a2_scale         (1,)                     torch.float32
+
+Return the output. Correctness against glm52_ops.reference on these inputs is
+FlashMLA's three-layer check: matching inf/nan positions, then every element
+abs_err < abs_tol OR rel_err < 0.0157, then DeepGEMM's calc_diff
+<= 1e-05. `./run.sh --describe` prints all of it.
+
+Baseline to beat: the call below, timed CUPTI cold-L2 on these same inputs.
+
+    ./run.sh
+"""
+from __future__ import annotations
+
+# Fused MoE total on MI300X — sglang's production path is
+# sglang.srt.layers.moe.moe_runner.triton_utils.fused_moe. Starting from the
+# provider reference dispatch — replace with a direct fused kernel to win.
+from testbench.harness import glm52_ops
+
+
+def run(inputs: dict):
+    return glm52_ops.reference("moe_total", "prefill", inputs)

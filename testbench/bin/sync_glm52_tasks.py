@@ -25,17 +25,58 @@ from __future__ import annotations
 import argparse
 import importlib.util
 import json
+import os
 import shutil
 import sys
 from pathlib import Path
 
 _REPO = Path(__file__).resolve().parents[2]
 _HARNESS = _REPO / "testbench" / "harness"
-_TASKS = _REPO / "testbench" / "tasks" / "glm52"
 
-_spec = importlib.util.spec_from_file_location("glm52_ops", _HARNESS / "glm52_ops.py")
-ops = importlib.util.module_from_spec(_spec)
-_spec.loader.exec_module(ops)
+# The shim imports `testbench.harness.backends` as a package, so the repo root
+# must be on sys.path BEFORE _load_ops() is called.
+if str(_REPO) not in sys.path:
+    sys.path.insert(0, str(_REPO))
+
+# Platform → (task tree, backend env vars, deployment tag, default candidate templates).
+# Each row is what the sync tool applies BEFORE loading glm52_ops so the module
+# imports the correct concrete impl (_cuda / _amd) via the shim.
+_PLATFORM_ENV = {
+    "cuda": {
+        "KERNEL_HARNESS_PLATFORM": "cuda",
+        "KERNEL_HARNESS_PROFILE":  "cuda-b200",
+        "KERNEL_HARNESS_PROVIDER": "deep-gemm-sgl-kernel",
+        "KERNEL_HARNESS_TIMER":    "auto",
+    },
+    "amd": {
+        "KERNEL_HARNESS_PLATFORM": "rocm",
+        "KERNEL_HARNESS_PROFILE":  "amd-mi300x",
+        "KERNEL_HARNESS_PROVIDER": "aiter-torch-reference",
+        "KERNEL_HARNESS_TIMER":    "event",
+    },
+}
+_PLATFORM_TASK_DIR = {"cuda": "glm52_cuda", "amd": "glm52_amd"}
+
+
+def _apply_platform_env(platform: str) -> None:
+    """Populate KERNEL_HARNESS_* env vars for the target platform BEFORE
+    importing glm52_ops, so the shim routes to the right concrete impl."""
+    for k, v in _PLATFORM_ENV[platform].items():
+        os.environ[k] = v
+
+
+def _load_ops():
+    """Fresh import of glm52_ops with whatever env is currently active."""
+    spec = importlib.util.spec_from_file_location(
+        "glm52_ops_sync_target", _HARNESS / "glm52_ops.py"
+    )
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    return mod
+
+
+# ops is set inside main() after --platform is parsed and env is applied.
+ops = None
 
 # (directory, operator, phase). Directory names are historical — several predate
 # the operator names and are referenced by the kda/* branches, so they are kept
@@ -62,6 +103,8 @@ TASKS: list[tuple[str, str, str]] = [
     ("moe_up_proj_decode",     "moe_up",         "decode"),
     ("moe_down_proj_prefill",  "moe_down",       "prefill"),
     ("moe_down_proj_decode",   "moe_down",       "decode"),
+    ("moe_total_prefill",      "moe_total",      "prefill"),
+    ("moe_total_decode",       "moe_total",      "decode"),
     ("dsa_prefill_attn",       "dsa_attn",       "prefill"),
     ("dsa_attn_decode",        "dsa_attn",       "decode"),
     ("index_score_prefill",    "index_score",    "prefill"),
@@ -75,7 +118,7 @@ TASKS: list[tuple[str, str, str]] = [
 # different backend, and it padded M).
 OBSOLETE = ("impl.py", "verify.py", "solution.py", "definition.json", "reference.py")
 
-RUN_SH = '''#!/usr/bin/env bash
+RUN_SH_TEMPLATE = '''#!/usr/bin/env bash
 # The single entry point for this task.
 #
 #   ./run.sh --describe          # what is this problem? (generated from glm52_ops)
@@ -95,16 +138,58 @@ set -euo pipefail
 HERE="$(cd "$(dirname "${{BASH_SOURCE[0]}}")" && pwd)"
 TESTBENCH="$(cd "$HERE/../../.." && pwd)"
 REPO="$(cd "$TESTBENCH/.." && pwd)"
-PYTHON="${{REPO}}/.venv/bin/python"
-if [[ ! -x "$PYTHON" ]]; then
-  PYTHON="$(command -v python3)"
-fi
+{python_selector}
+{env_exports}
 exec "$PYTHON" "$TESTBENCH/harness/evaluate_task.py" "$HERE" "$@"
 '''
 
-# Per-family default candidate: the real backend call, spelled out, so the agent
-# starts from the baseline it has to beat rather than from an indirection.
-_BODY = {
+# CUDA runner: default python is repo .venv; env not exported (registry defaults
+# already resolve to cuda-b200 when unset).
+_RUN_SH_PY_CUDA = 'PYTHON="${REPO}/.venv/bin/python"\nif [[ ! -x "$PYTHON" ]]; then\n  PYTHON="$(command -v python3)"\nfi'
+_RUN_SH_ENV_CUDA = ""  # empty — registry defaults are already cuda
+
+# AMD runner: default python is ROCm venv (fallback repo .venv → system python3);
+# platform env vars force the shim onto glm52_ops_amd + aiter provider.
+_RUN_SH_PY_AMD = (
+    'PYTHON="${ROCM_TORCH_PYTHON:-}"\n'
+    'if [[ -z "$PYTHON" && -n "${ROCM_TORCH_VENV:-}" && -x "${ROCM_TORCH_VENV}/bin/python" ]]; then\n'
+    '  PYTHON="${ROCM_TORCH_VENV}/bin/python"\n'
+    'fi\n'
+    'if [[ -z "$PYTHON" ]]; then\n'
+    '  PYTHON="${REPO}/.venv/bin/python"\n'
+    'fi\n'
+    'if [[ ! -x "$PYTHON" ]]; then\n'
+    '  PYTHON="$(command -v python3)"\n'
+    'fi'
+)
+_RUN_SH_ENV_AMD = (
+    'export KERNEL_HARNESS_PLATFORM="${KERNEL_HARNESS_PLATFORM:-rocm}"\n'
+    'export KERNEL_HARNESS_PROFILE="${KERNEL_HARNESS_PROFILE:-amd-mi300x}"\n'
+    'export KERNEL_HARNESS_PROVIDER="${KERNEL_HARNESS_PROVIDER:-aiter-torch-reference}"\n'
+    'export KERNEL_HARNESS_TIMER="${KERNEL_HARNESS_TIMER:-event}"\n'
+    'export SGLANG_USE_AITER="${SGLANG_USE_AITER:-1}"'
+)
+
+_RUN_SH_PARTS = {
+    "cuda": (_RUN_SH_PY_CUDA, _RUN_SH_ENV_CUDA),
+    "amd":  (_RUN_SH_PY_AMD,  _RUN_SH_ENV_AMD),
+}
+
+
+def _run_sh(platform: str, m: int) -> str:
+    py, env = _RUN_SH_PARTS[platform]
+    return RUN_SH_TEMPLATE.format(m=m, python_selector=py, env_exports=env)
+
+# Per-platform, per-family default candidate: the real backend call spelled out,
+# so the agent starts from the baseline it has to beat rather than from an
+# indirection. CUDA uses deep_gemm / sgl_kernel; AMD uses aiter / hipBLASLt.
+#
+# The AMD templates fall back to `glm52_ops.reference` for anything the local
+# aiter build might not expose. That is still a real production dispatch (the
+# provider's `.reference()` method), and it means the sync always writes a
+# candidate that runs — the agent is free to replace it with a direct aiter
+# call once they confirm which entry points their aiter has.
+_BODY_CUDA = {
     "gemm": '''import deep_gemm
 
 
@@ -148,6 +233,15 @@ def run(inputs: dict):
     return flash_mla_sparse_fwd(inputs["q"], inputs["kv"], inputs["indices"],
                                 inputs["sm_scale"], inputs["d_v"])
 ''',
+    "moe_fused": '''from testbench.harness import glm52_ops
+
+
+def run(inputs: dict):
+    # Starting point: the SGLang fused MoE reference — correct, speedup ~1.0.
+    # Replace with a fused MoE kernel to beat it (e.g. a Triton fused_moe with
+    # your own tuning table).
+    return glm52_ops.reference("moe_total", "prefill", inputs)
+''',
     "score_prefill": '''import deep_gemm
 
 
@@ -171,8 +265,97 @@ def run(inputs: dict):
 ''',
 }
 
+# AMD templates: aiter's production path. For families where aiter's precise
+# entry point varies across builds, we start from a `glm52_ops.reference`
+# indirection — that still dispatches to the aiter provider, so timing is real
+# and correctness is by construction; the agent replaces the body with a direct
+# aiter call once they see what their aiter build exposes.
+_BODY_AMD = {
+    "gemm": '''from aiter.ops.triton.gemm_a8w8_blockscale import gemm_a8w8_blockscale
+import torch
 
-def _candidate_src(op: str, phase: str, device) -> str:
+
+def run(inputs: dict):
+    # Starting point: aiter's Triton blockscale FP8 GEMM (a fallback path — sglang's
+    # default gfx942 dispatch is bpreshuffle_asm/ck, but the ASM build is not always
+    # available on every node). Replace with a direct MFMA kernel to beat it.
+    out = gemm_a8w8_blockscale(inputs["x_fp8"], inputs["w_fp8"],
+                               inputs["x_scale"], inputs["w_scale"],
+                               dtype=torch.bfloat16)
+    inputs["out"].copy_(out)
+    return inputs["out"]
+''',
+    "bmm": '''import torch
+
+# absorbed_W_UK / _UV BMM on MI300X. There is no fused FP8 BMM on gfx942 — sglang's
+# production path loops per-head torch._scaled_mm (hipBLASLt). This candidate is
+# the reference call itself; replace with a batched kernel (MFMA head-folding) to win.
+from testbench.harness import glm52_ops
+
+
+def run(inputs: dict):
+    return glm52_ops.reference("absorbed_W_UK", "prefill", inputs)  # phase inferred by shape
+''',
+    "moe": '''from aiter.fused_moe import fused_moe
+from aiter import ActivationType, QuantType
+import torch
+
+
+def run(inputs: dict):
+    # aiter's fused_moe consumes per-tensor scales on gfx942. If your aiter build
+    # uses a different signature, fall back to glm52_ops.reference in the outer
+    # dispatch and shape-branch here for the wins.
+    out = fused_moe(
+        inputs["x_fp8"], inputs["w_fp8"], None,
+        inputs["masked_m"], inputs["masked_m"],
+        activation=ActivationType.Silu, quant_type=QuantType.per_1x128,
+        w1_scale=inputs["x_scale"], w2_scale=inputs["w_scale"],
+    )
+    inputs["out"].copy_(out)
+    return inputs["out"]
+''',
+    "mla": '''# sparse-MLA on MI300X. Production sglang path: aiter.mla.mla_decode_fwd
+# (ASM stage1 + reduce). The reference() dispatch below IS that path when the
+# provider is aiter-torch-reference; replace with a direct aiter.mla call or a
+# tk-split flash-decode + fused combine kernel to beat it.
+from testbench.harness import glm52_ops
+
+
+def run(inputs: dict):
+    return glm52_ops.reference("dsa_attn", inputs.get("_phase", "decode"), inputs)
+''',
+    "moe_fused": '''# Fused MoE total on MI300X — sglang's production path is
+# sglang.srt.layers.moe.moe_runner.triton_utils.fused_moe. Starting from the
+# provider reference dispatch — replace with a direct fused kernel to win.
+from testbench.harness import glm52_ops
+
+
+def run(inputs: dict):
+    return glm52_ops.reference("moe_total", "prefill", inputs)
+''',
+    "score_prefill": '''# indexer score on MI300X uses aiter.ops.triton.fp8_mqa_logits. weights already
+# folds q_scale and softmax_scale (see dsa_indexer.py). Starting from the
+# provider's reference() dispatch — replace with a direct aiter call for the win.
+from testbench.harness import glm52_ops
+
+
+def run(inputs: dict):
+    return glm52_ops.reference("index_score", "prefill", inputs)
+''',
+    "score_decode": '''# AMD decode index_score also uses ksrange (NOT paged): same signature as prefill.
+# The provider reference here dispatches to aiter.ops.triton.fp8_mqa_logits.
+from testbench.harness import glm52_ops
+
+
+def run(inputs: dict):
+    return glm52_ops.reference("index_score", "decode", inputs)
+''',
+}
+
+_BODY_BY_PLATFORM = {"cuda": _BODY_CUDA, "amd": _BODY_AMD}
+
+
+def _candidate_src(op: str, phase: str, device, platform: str) -> str:
     s = ops.spec(op, phase)
     fam = s["family"]
     key = f"score_{phase}" if fam == "score" else fam
@@ -187,6 +370,10 @@ def _candidate_src(op: str, phase: str, device) -> str:
         pass
     table = "\n".join(tensors) or "    (run ./run.sh --describe on a GPU node for the tensor table)"
     doc = f'''"""GLM-5.2 {s['label']} ({phase}) — the one file to edit for this task.
+
+Platform: {platform.upper()} (this task is on the {platform}-only tree
+`testbench/tasks/glm52_{platform}/`; the sibling platform lives under
+`glm52_{"amd" if platform == "cuda" else "cuda"}/`).
 
 This file is the DEFAULT candidate, not the only one: `./run.sh --candidate PATH`
 tests any .py defining run(inputs), from anywhere on disk, without touching the task.
@@ -220,10 +407,10 @@ Baseline to beat: the call below, timed CUPTI cold-L2 on these same inputs.
 from __future__ import annotations
 
 '''
-    return doc + _BODY[key]
+    return doc + _BODY_BY_PLATFORM[platform][key]
 
 
-def _task_json(dirname: str, op: str, phase: str) -> str:
+def _task_json(dirname: str, op: str, phase: str, platform: str) -> str:
     s = ops.spec(op, phase)
     return json.dumps({
         "_note": ("Generated by testbench/bin/sync_glm52_tasks.py. Declares only WHICH "
@@ -234,6 +421,7 @@ def _task_json(dirname: str, op: str, phase: str) -> str:
                   "`./run.sh --describe` for the real contract."),
         "name": dirname,
         "model": "glm52",
+        "platform": platform,
         "operator": op,
         "phase": phase,
         # Generated mirror of glm52_ops.spec(op, phase)["family"]. It exists only
@@ -248,7 +436,7 @@ def _task_json(dirname: str, op: str, phase: str) -> str:
                  f"contract."),
         "entrypoint": "candidate.py",
         "runner": "testbench/harness/evaluate_task.py",
-        "deployment": "B200-DP1-TP1-EP32",
+        "deployment": ops.DEVICE_PROFILE.deployment,
         "performance_gate": {
             "min_speedup": 1.0,
             "basis": "conservative",
@@ -283,11 +471,11 @@ def _readme(dirname: str, op: str, phase: str, device) -> str:
             "```text\n" + ops.describe(op, phase, device=device) + "\n```\n")
 
 
-def _problem_json(dirname: str, op: str, phase: str, device) -> str:
+def _problem_json(dirname: str, op: str, phase: str, device, tasks_root: Path) -> str:
     """Project problem(); when no GPU, keep previously captured tensor tables."""
     problem = ops.problem(op, phase, device)
     if device is None:
-        prev_path = _TASKS / dirname / "problem.json"
+        prev_path = tasks_root / dirname / "problem.json"
         if prev_path.is_file():
             try:
                 prev = json.loads(prev_path.read_text())
@@ -302,11 +490,22 @@ def _problem_json(dirname: str, op: str, phase: str, device) -> str:
 
 def main() -> int:
     ap = argparse.ArgumentParser()
+    ap.add_argument("--platform", choices=("cuda", "amd"), default="cuda",
+                    help="target task tree: cuda → glm52_cuda/, amd → glm52_amd/. "
+                         "Sets KERNEL_HARNESS_* env vars before loading glm52_ops, "
+                         "so the shim routes to the concrete impl.")
     ap.add_argument("--check", action="store_true", help="exit 1 if stale; write nothing")
     ap.add_argument("--force-candidate", action="store_true",
                     help="overwrite candidate.py too (DESTROYS agent work)")
     ap.add_argument("--device", default="cuda:0")
     args = ap.parse_args()
+
+    platform = args.platform
+    _apply_platform_env(platform)
+    global ops
+    ops = _load_ops()
+
+    tasks_root = _REPO / "testbench" / "tasks" / _PLATFORM_TASK_DIR[platform]
 
     import torch
     device = args.device if torch.cuda.is_available() else None
@@ -315,18 +514,18 @@ def main() -> int:
 
     stale, wrote, removed = [], 0, 0
     for dirname, op, phase in TASKS:
-        d = _TASKS / dirname
+        d = tasks_root / dirname
         d.mkdir(parents=True, exist_ok=True)
         want = {
-            "task.json": _task_json(dirname, op, phase),
-            "problem.json": _problem_json(dirname, op, phase, device),
+            "task.json": _task_json(dirname, op, phase, platform),
+            "problem.json": _problem_json(dirname, op, phase, device, tasks_root),
             "workload.jsonl": _workload(dirname, op, phase),
-            "run.sh": RUN_SH.format(m=ops.spec(op, phase)["sweep"][0]),
+            "run.sh": _run_sh(platform, ops.spec(op, phase)["sweep"][0]),
             "README.md": _readme(dirname, op, phase, device),
         }
         cand = d / "candidate.py"
         if args.force_candidate or not cand.is_file():
-            want["candidate.py"] = _candidate_src(op, phase, device)
+            want["candidate.py"] = _candidate_src(op, phase, device, platform)
 
         for name, text in want.items():
             p = d / name
@@ -354,13 +553,14 @@ def main() -> int:
 
     if args.check:
         if stale:
-            print(f"STALE ({len(stale)}):")
+            print(f"STALE ({len(stale)}) [{platform}]:")
             for s in stale:
                 print(f"  {s}")
             return 1
-        print(f"{len(TASKS)} task dirs are in sync with glm52_ops")
+        print(f"{len(TASKS)} {platform} task dirs are in sync with glm52_ops")
         return 0
-    print(f"{len(TASKS)} task dirs synced: {wrote} files written, {removed} obsolete removed")
+    print(f"[{platform}] {len(TASKS)} task dirs synced: {wrote} files written, "
+          f"{removed} obsolete removed  →  {tasks_root.relative_to(_REPO)}")
     return 0
 
 

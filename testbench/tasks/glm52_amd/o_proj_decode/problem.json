@@ -1,0 +1,186 @@
+{
+  "schema_version": "1.0",
+  "generated_by": "testbench/harness/glm52_ops.py:problem() \u2014 do not hand-edit",
+  "operator": "o_proj",
+  "phase": "decode",
+  "label": "Attention O Projection",
+  "family": "gemm",
+  "model": "GLM-5.2",
+  "deployment": "MI300X-DP1-TP1-EP32",
+  "S": 65536,
+  "seed": 0,
+  "math": {
+    "expression": "out[M,6144] = x_fp8[M,16384] @ w_fp8[6144,16384].T",
+    "dims": {
+      "K": 16384,
+      "N": 6144,
+      "rows": "M"
+    },
+    "notes": []
+  },
+  "workload": {
+    "axis": "M",
+    "sweep": [
+      16,
+      32
+    ],
+    "rule": "every shape must pass correctness AND be beaten on latency"
+  },
+  "baseline": {
+    "backend": "sglang.fp8_utils.aiter_w8a8_block_fp8_linear",
+    "platform": "rocm",
+    "profile": "amd-mi300x",
+    "provider": "aiter-torch-reference",
+    "call": "glm52_ops.reference('o_proj', 'decode', inputs)",
+    "role": "the correctness oracle AND the latency denominator \u2014 the same call, on the same frozen inputs, timed under the same protocol",
+    "caveat": "AMD/SGLang MI300X baseline: FP8 fnuz with FP8_MAX=224.0 and plain fp32 scales (no UE8M0). Dense FP8 GEMM is routed through sglang.srt.layers.quantization.fp8_utils.aiter_w8a8_block_fp8_linear, which selects AITER Triton blockscale GEMM on gfx942. Sparse MLA attempts SGLang's AMD default tilelang DSA backend. Torch/AITER CK fallbacks are kept only to keep the harness debuggable when the production modules are not importable."
+  },
+  "contract": {
+    "entrypoint": "run(inputs: dict) -> output",
+    "where": "candidate.py in this directory, or any file/directory passed to --candidate (it may live anywhere; testing a kernel does not require editing the task)",
+    "inputs_call": "glm52_ops.build_inputs('o_proj', 'decode', M, S, device, seed)",
+    "frozen": "the very same dict feeds the reference \u2014 do NOT re-quantize, re-seed, or rebuild any tensor inside run(), or you measure a different problem than the one the gate checked",
+    "tensors": {
+      "at_M": 16,
+      "read_from": "a real build_inputs() call",
+      "items": [
+        {
+          "name": "x_fp8",
+          "shape": [
+            16,
+            16384
+          ],
+          "dtype": "float8_e4m3fnuz"
+        },
+        {
+          "name": "x_scale",
+          "shape": [
+            16,
+            128
+          ],
+          "dtype": "float32"
+        },
+        {
+          "name": "w_fp8",
+          "shape": [
+            6144,
+            16384
+          ],
+          "dtype": "float8_e4m3fnuz"
+        },
+        {
+          "name": "w_scale",
+          "shape": [
+            48,
+            128
+          ],
+          "dtype": "float32"
+        },
+        {
+          "name": "rows",
+          "value": 16
+        },
+        {
+          "name": "N",
+          "value": 6144
+        },
+        {
+          "name": "out",
+          "shape": [
+            16,
+            6144
+          ],
+          "dtype": "bfloat16"
+        }
+      ]
+    },
+    "tensors_error": null,
+    "output_buffer": {
+      "key": "out",
+      "may_write_in_place": true,
+      "poisoned": "NaN-filled before run() is called",
+      "why": "reference() writes into this shared buffer, so without poisoning a candidate whose whole body is `return inputs['out']` inherits the reference's answer and scores a perfect match having computed nothing. Returning it unwritten now FAILS."
+    },
+    "accepted_forms": [
+      "Python / PyTorch / Triton ROCm - a .py defining run(inputs)",
+      "HIP/C++ extension - a directory holding candidate.py plus extension sources; candidate.py owns compilation/import outside the timed kernel body"
+    ]
+  },
+  "correctness": {
+    "output_kind": "dense",
+    "structure": "FlashMLA kernelkit.check_is_allclose; the aggregate is deep_gemm.testing.numeric.calc_diff verbatim",
+    "layers": [
+      {
+        "order": 1,
+        "check": "inf / -inf / nan occupy the same positions in both"
+      },
+      {
+        "order": 2,
+        "check": "every element: abs_err < abs_tol OR rel_err < rel_tol",
+        "gate": true,
+        "rel_tol": 0.015703125,
+        "abs_tol": "1e-04 * |ref|.max(), computed per shape",
+        "why_or": "large elements pass on relative error, near-zero elements on absolute \u2014 neither alone works",
+        "why_derived_abs_tol": "output magnitude spans seven orders across these GLM-5.2 ops (dsa_attn 0.285, o_proj 564, index_score 1.5e7), so a fixed abs_tol cannot port"
+      },
+      {
+        "order": 3,
+        "check": "calc_diff <= diff_tol",
+        "diff_tol": 5e-06,
+        "formula": "||x-y||^2 / (||x||^2 + ||y||^2)",
+        "why": "scale-SENSITIVE, unlike cosine \u2014 a uniform k*reference is caught here (k=0.5 or 2 both give 0.2)"
+      }
+    ],
+    "post_timing_recheck": "correctness is re-checked on freshly built inputs after timing, to catch a kernel that mutates its inputs or drifts across the timed iterations",
+    "diagnostics": {
+      "cosine": "reported, never gated \u2014 it is scale-invariant, so reference*k scores 1.000000 for every k and it cannot catch the likeliest FP8 bug on its own",
+      "best_fit_scale": "least-squares k for candidate ~= k*reference",
+      "why": "paired with calc_diff they name the failure: cosine ~1 with a large calc_diff is a magnitude error (check the dequant scale, the UE8M0 exponent, or the backend FP8 max) and best_fit_scale is the factor to look for; a low cosine is an algorithm, indexing or layout error instead. calc_diff alone cannot tell them apart \u2014 flipping the output and applying a uniform FP8 scale error both score similarly badly"
+    }
+  },
+  "performance": {
+    "timing": "HIP graph capture+replay by default, falling back to HIP event timing; setup/cloning is outside the measured region",
+    "timer_id": "hipgraph-or-event-median",
+    "why_device_time": "the reward is a hardware-utilisation ratio, so it must be paired with device time; a per-call wall-clock timer reports ~99us for this op's ~47us kernel, and the difference is host dispatch stall",
+    "gate": "at least one shape WINS and no shape REGRESSES",
+    "shape_verdict": {
+      "win": "reference p10 / candidate p90 > 1.0 \u2014 the candidate is ahead even on the reading least favourable to it",
+      "regress": "reference p90 / candidate p10 < 1.0 \u2014 the candidate is behind even on the reading most favourable to it",
+      "neutral": "neither \u2014 inside the noise band; does not veto the run",
+      "why_quantiles": "not max/min: dividing two extremes lets one artifact sample decide the verdict, which at repeat=10 is likely rather than rare",
+      "why_not_all_shapes": "requiring every shape to win is unreachable the moment one shape merely matches \u2014 an identical-to-reference candidate measures sp_cons 0.855-0.989, never above 1.0 \u2014 so it made per-shape fallback impossible to express"
+    },
+    "fallback_is_allowed": "run() may branch on the shape and hand the losing shapes to glm52_ops.reference(op, phase, inputs). That is what SGLang itself does (deepgemm_w8a8_block_fp8_linear_with_fallback), and it is the expected answer when a kernel wins in one regime only: the fallback shapes land as `neutral` and no longer veto the win. Falling back on EVERY shape scores zero wins and still fails, so this buys nothing unless something real is gained somewhere. Do the dispatch inside run() \u2014 the harness will not do it for you, because then it would be measuring a kernel the candidate does not contain.",
+    "defaults": {
+      "warmup": 3,
+      "repeat": 10,
+      "iterations": 30
+    },
+    "repeat_note": "--repeat 1 is a probe, not a verdict: at 1 the conservative margin collapses to the median one and a candidate identical to the reference passes a >1.0 gate a good fraction of the time",
+    "reward": "bound-aware roofline utilisation: (flops/latency) / min(peak_flops, ai*peak_bw); unclamped",
+    "peaks": {
+      "id": "amd-mi300x",
+      "platform": "rocm",
+      "gpu": "AMD MI300X",
+      "deployment": "MI300X-DP1-TP1-EP32",
+      "fp8_dtype": "float8_e4m3fnuz",
+      "hbm_bytes_per_s": 5300000000000.0,
+      "peak_flops_fp8": 2614900000000000.0,
+      "peak_flops_bf16": 1307400000000000.0,
+      "source": "rewardbench/amd MI300X constants: HBM 5.3 TB/s, FP8 e4m3 2614.9 TFLOP/s, BF16 1307.4 TFLOP/s"
+    }
+  },
+  "verdict": {
+    "exit_0": "correct on every shape AND performance gate met",
+    "exit_1": "correct on every shape, performance gate not met",
+    "exit_2": "incorrect, incomplete sweep, or correctness did not survive timing",
+    "exit_3": "infrastructure error, or task.json disagrees with glm52_ops"
+  },
+  "run": {
+    "gate": "./run.sh",
+    "describe": "./run.sh --describe        (this text)",
+    "describe_json": "./run.sh --describe --json",
+    "external_candidate": "./run.sh --candidate PATH",
+    "one_shape": "./run.sh --M <M>"
+  }
+}
