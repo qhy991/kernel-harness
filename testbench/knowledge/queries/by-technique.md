@@ -77,9 +77,17 @@
 - `glm52--routed_down_decode--b200--20260714b` [win] Routed Expert Down/decode — For decode-only GLM52 grouped-MoE tasks, avoid reading scalar layout tensors inside run() when the workload sweep fixes layout=1. The saved device synchronization can be larger than the DeepGEMM kernel tuning headroom at tiny routed loads.
 - `glm52--routed_down_decode--b200--20260714a` [win] Routed Expert Down/decode — For decode-only GLM52 grouped-MoE tasks, avoid reading scalar layout tensors inside run() when the workload sweep fixes layout=1. The saved device synchronization can be larger than the DeepGEMM kernel tuning headroom at tiny routed loads.
 
+## m16-combine-max-splits-32-specialization
+
+- `glm52--dsa_flashmla_kv_decode--b200--20260722a` [no-win] DSA FlashMLA KV Decode Attention/decode — For a PDL-overlapped split-KV plus combine path with no measured launch gap, a compile-time combine-resource reduction must be judged on the full captured chain, not one kernel or one favorable eager session. At these fixed decode buckets the M16 max-splits specialization was not repeatably faster, so the safe transferable policy is to fail closed to stock until repeated CUDA-Graph and containing-region measurements clear the production threshold.
+
 ## packed-deepgemm-lower-op
 
 - `glm52--o_proj_decode--b200--20260714a` [no-win] Attention O Projection/decode — For small-M B200 FP8 decode GEMMs with SGLang-packed UE8M0 scales, the production DeepGEMM wrapper is already the safe path. Python-wrapper bypasses do not improve CUPTI device-kernel timing, and alternate APIs either need different scale layouts or fail to beat both M=16 and M=32.
+
+## pinned-stock-source-rebuild-control
+
+- `glm52--dsa_flashmla_kv_decode--b200--20260722a` [no-win] DSA FlashMLA KV Decode Attention/decode — For a PDL-overlapped split-KV plus combine path with no measured launch gap, a compile-time combine-resource reduction must be judged on the full captured chain, not one kernel or one favorable eager session. At these fixed decode buckets the M16 max-splits specialization was not repeatably faster, so the safe transferable policy is to fail closed to stock until repeated CUDA-Graph and containing-region measurements clear the production threshold.
 
 ## preserve-device-tensor-scales
 

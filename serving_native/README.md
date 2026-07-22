@@ -7,7 +7,8 @@ unchanged.
 
 The important difference is the reference contract: every task calls the
 production SGLang or DeepEP symbol with the production dtype/layout. FP8 GEMMs
-use packed int32 UE8M0 scales; DSA uses FlashInfer TRT-LLM; the indexer uses
+use packed int32 UE8M0 scales; DSA has separately named FlashInfer TRT-LLM and
+explicit FlashMLA-KV lanes; the indexer uses
 `wq_b` and fused `wk_weights_proj`; MoE exposes the real fused W13, SwiGLU+quant,
 and W2 stages; and communication includes both DP AllGather and both DeepEP modes.
 
@@ -36,6 +37,10 @@ serving_native/run.sh --describe dp_allgather_decode_m16
 
 # One-GPU production ABI
 serving_native/run.sh linear_indexer_wq_b_decode_m16 \
+  --candidate serving_native/candidates/reference.py
+
+# Explicit FlashMLA-KV DSA decode (split-KV plus combine)
+serving_native/run.sh dsa_flashmla_kv_decode_m16 \
   --candidate serving_native/candidates/reference.py
 
 # Eight-GPU SGLang GroupCoordinator AllGather
@@ -111,7 +116,9 @@ buckets do not need to win. Configure that policy in SGLang with, for example,
 - indexer Q is `linear_indexer_wq_b_decode_m16/m32`, separate from attention Q-B.
 - separate `moe_gate`/`moe_up` assumptions are replaced by
   M16/M32 variants of fused W13, SwiGLU+quant, and W2.
-- `flash_mla_sparse_fwd` is replaced by `dsa_trtllm_decode_m16/m32`.
+- The no-flag Blackwell route remains `dsa_trtllm_decode_m16/m32`; the explicit
+  `--dsa-decode-backend flashmla_kv` route is measured independently as
+  `dsa_flashmla_kv_decode_m16/m32`. Neither is relabeled as the other.
 - communication is represented explicitly by M16/M32 AllGather and DeepEP tasks.
 - the four-GPU diagnostic lane adds M16/M32 AllReduce, AllGather, and DeepEP
   tasks with `world_size=4`; EP4 has 64 local experts per rank.

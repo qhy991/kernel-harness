@@ -1,0 +1,10 @@
+python:      /home/qinhaiyan/glm52-goal-runs/22-dsa_flashmla_kv_production/kernel-harness/.venv/bin/python
+venv:        /home/qinhaiyan/glm52-goal-runs/22-dsa_flashmla_kv_production/kernel-harness/.venv
+cuda home:   /usr/local/cuda
+sglang:      checkout /home/qinhaiyan/glm52-goal-runs/22-dsa_flashmla_kv_production/sglang (d9fb72325)
+gpu:         NVIDIA B200 sm_100
+visible gpus:1  CUDA_VISIBLE_DEVICES=3
+torch/cuda:  2.11.0+cu130 / 13.0
+M3 kernels:  present in SGLANG_DIR
+
+Environment check passed.

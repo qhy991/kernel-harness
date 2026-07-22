@@ -1,0 +1,65 @@
+{
+  "built_extension": {
+    "elf_build_id": "134e5d51dded901e97231718aceec9ed96a0b398",
+    "path": "/home/qinhaiyan/glm52-goal-runs/22-dsa_flashmla_kv_production/kernel-harness/.venv/lib/python3.12/site-packages/sgl_kernel/flashmla_ops.abi3.so",
+    "sha256": "d8d97150bd86381c73406603cb7d6b682767535e0526053f04e3acefadb13316",
+    "size_bytes": 14628528
+  },
+  "cuda_toolkit": {
+    "nvcc": "nvcc: NVIDIA (R) Cuda compiler driver\nCopyright (c) 2005-2026 NVIDIA Corporation\nBuilt on Thu_Mar_19_11:12:51_PM_PDT_2026\nCuda compilation tools, release 13.2, V13.2.78\nBuild cuda_13.2.r13.2/compiler.37668154_0"
+  },
+  "flashmla": {
+    "archive_sha256": "ce369489bbfc42cdfbba9aa949de0270e64469d530748dea9f4f60b3c69dea9b",
+    "git_revision": "05e26647fe840b8baedae486c2d86d5ce4efeb7c"
+  },
+  "flashmla_cutlass": {
+    "archive_sha256": "9f6c53320a85b4a570975e557918cde65168cd311f081920446c238437347dc6",
+    "git_revision": "147f5673d0c1c3dcf66f78d677fd647e4a020219"
+  },
+  "flashmla_overlay": {
+    "git_branch": "goal22-combine32-m16",
+    "git_head": "d18ff63a73dc6519432f59acb9f04365ce14bb10",
+    "git_status": [
+      "?? build-artifacts/"
+    ],
+    "root": "/home/qinhaiyan/glm52-goal-runs/22-dsa_flashmla_kv_production/sglang/third_party/FlashMLA-goal22"
+  },
+  "kernel_harness": {
+    "git_branch": "goal/glm52-prod-22-dsa_flashmla_kv_production",
+    "git_head": "bcd005409e65786af82c86f621507ebef12b2766",
+    "git_status": [
+      "M serving_native/README.md",
+      " M serving_native/runner.py",
+      " M serving_native/selftest.py",
+      " M serving_native/workloads.py",
+      "?? profile/",
+      "?? serving_native/candidates/flashmla_goal22_overlay.py"
+    ],
+    "root": "/home/qinhaiyan/glm52-goal-runs/22-dsa_flashmla_kv_production/kernel-harness"
+  },
+  "sgl_kernel": {
+    "python_distribution": "0.4.4",
+    "python_module": "/home/qinhaiyan/glm52-goal-runs/22-dsa_flashmla_kv_production/kernel-harness/.venv/lib/python3.12/site-packages/sgl_kernel/flash_mla.py",
+    "source": "SGLang monorepo sgl-kernel"
+  },
+  "sglang": {
+    "git_branch": "goal/glm52-prod-22-dsa_flashmla_kv_production",
+    "git_head": "d9fb72325cc73bb4b6f3ad96664513eb632e2459",
+    "git_status": [
+      "?? third_party/FlashMLA-goal22/"
+    ],
+    "python_distribution": "0.5.15",
+    "root": "/home/qinhaiyan/glm52-goal-runs/22-dsa_flashmla_kv_production/sglang",
+    "source_python_root": "/home/qinhaiyan/glm52-goal-runs/22-dsa_flashmla_kv_production/sglang/python"
+  },
+  "sm100_dispatch": {
+    "combine_kernel": "flash_fwd_mla_combine_kernel*",
+    "instantiation": "csrc/sm100/decode/head64/instantiations/v32.cu",
+    "main_kernel": "flash_fwd_splitkv_mla_fp8_sparse_kernel*"
+  },
+  "torch": {
+    "git_revision": "70d99e998b4955e0049d13a98d77ae1b14db1f45",
+    "version": "2.11.0+cu130",
+    "wheel_cuda": "13.0"
+  }
+}

@@ -1,0 +1,3 @@
+Start (ns),Duration (ns),CorrId,GrdX,GrdY,GrdZ,BlkX,BlkY,BlkZ,Reg/Trd,StcSMem (MB),DymSMem (MB),Bytes (MB),Throughput (MB/s),SrcMemKd,DstMemKd,Device,Ctx,GreenCtx,Strm,Name
+7988362660,17632,1201,1,148,1,384,1,1,168,0.000,0.232,,,,,NVIDIA B200 (0),1,,7,flash_fwd_splitkv_mla_fp8_sparse_kernel
+7988376164,13216,1205,16,1,8,256,1,1,48,0.001,0.000,,,,,NVIDIA B200 (0),1,,7,flash_fwd_mla_combine_kernel

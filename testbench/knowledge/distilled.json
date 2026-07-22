@@ -1,5 +1,5 @@
 {
-  "generated_from_entries": 12,
+  "generated_from_entries": 13,
   "mistakes": [
     {
       "class": "launch-overhead::integration-empty-expert-diagnosis",
@@ -94,6 +94,44 @@
       ],
       "whys": [
         "Although it avoided the production prefix-scan mapping, Triton generated a heavier per-row vector program and measured about 52.5 us on both shapes in correctness-only evaluation, slower than the ~42 us baseline."
+      ],
+      "suggested_owner": "doc|reviewer",
+      "promoted": false,
+      "recurring": false
+    },
+    {
+      "class": "other::pinned-stock-source-rebuild-control",
+      "bottleneck": "other",
+      "technique": "pinned-stock-source-rebuild-control",
+      "count": 1,
+      "distinct_entries": 1,
+      "ops": [
+        "DSA FlashMLA KV Decode Attention"
+      ],
+      "outcomes": [
+        "abandoned"
+      ],
+      "whys": [
+        "None of the three eager or three real-CUDA-Graph sessions for either M16 or M32 passed the 3 percent gate; graph speedups were 0.996567, 0.999013, and 0.989950 at M16 and 0.982680, 0.992860, and 0.991372 at M32, showing that the rebuilt control itself was not a promotable optimization."
+      ],
+      "suggested_owner": "doc|reviewer",
+      "promoted": false,
+      "recurring": false
+    },
+    {
+      "class": "other::m16-combine-max-splits-32-specialization",
+      "bottleneck": "other",
+      "technique": "m16-combine-max-splits-32-specialization",
+      "count": 1,
+      "distinct_entries": 1,
+      "ops": [
+        "DSA FlashMLA KV Decode Attention"
+      ],
+      "outcomes": [
+        "slower"
+      ],
+      "whys": [
+        "Only the first eager M16 session exceeded the 3 percent threshold at 1.036845; the next two reached 1.016081 and 1.020847, all real-CUDA-Graph sessions missed the gate at M16 (0.998068, 0.987407, 0.983109) and M32 (0.993963, 0.994055, 0.999149), and the one candidate Nsight Systems trace reduced combine static shared memory from 0.005 MB to 0.001 MB but changed the M16 chain span only from 27040 ns to 26720 ns, which did not survive repeated graph measurement."
       ],
       "suggested_owner": "doc|reviewer",
       "promoted": false,

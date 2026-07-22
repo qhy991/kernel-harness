@@ -21,6 +21,7 @@
 
 ## other
 
+- `glm52--dsa_flashmla_kv_decode--b200--20260722a` [no-win] DSA FlashMLA KV Decode Attention/decode — For a PDL-overlapped split-KV plus combine path with no measured launch gap, a compile-time combine-resource reduction must be judged on the full captured chain, not one kernel or one favorable eager session. At these fixed decode buckets the M16 max-splits specialization was not repeatably faster, so the safe transferable policy is to fail closed to stock until repeated CUDA-Graph and containing-region measurements clear the production threshold.
 - `glm52--sparse_mla_decode--b200--20260714a` [win] Sparse MLA Decode/decode — For FlashInfer TRT-LLM FP8 sparse MLA decode on Blackwell, preserve device tensor scale inputs when the wrapper supports them; converting scalar scale tensors to Python floats can silently select a slower static-scale path. Do not shrink sparse_mla_top_k unless the block-table shape and production semantics also change.
 - `glm52--routed_swiglu_decode--b200--20260714a` [no-win] Routed Expert SwiGLU+FP8 Quant/decode — For GLM-5.2 masked routed SwiGLU decode on B200, the production SGLang C++ kernel is already close to the small-shape floor despite sparse active rows. Removing the CTA prefix mapping is not enough; a replacement must match the production vectorized bf16x2/fp8x2 instruction quality and beat run-to-run noise on M=16.
 

@@ -1,0 +1,3 @@
+API Start (ns),API Dur (ns),Queue Start (ns),Queue Dur (ns),Kernel Start (ns),Kernel Dur (ns),Total Dur (ns),PID,TID,DevId,API Function,GridXYZ,BlockXYZ,Kernel Name
+8393403018,8763,8393411781,2264,8393414045,17568,28595,676491,676491,0,cudaLaunchKernel,   1  148    1, 384    1    1,flash_fwd_splitkv_mla_fp8_sparse_kernel
+8393413429,5043,8393418472,8981,8393427453,13632,27656,676491,676491,0,cudaLaunchKernelExC_v11060,  16    1    8, 256    1    1,flash_fwd_mla_combine_kernel

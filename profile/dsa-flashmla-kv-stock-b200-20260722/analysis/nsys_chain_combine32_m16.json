@@ -1,0 +1,50 @@
+{
+  "combine": {
+    "block": [
+      256,
+      1,
+      1
+    ],
+    "duration_ns": 13216,
+    "dynamic_shared_mb": 0.0,
+    "grid": [
+      16,
+      1,
+      8
+    ],
+    "name": "flash_fwd_mla_combine_kernel",
+    "registers_per_thread": 48,
+    "start_ns": 7988376164,
+    "static_shared_mb": 0.001,
+    "stream": 7
+  },
+  "combine_launch_count": 4,
+  "combine_start_after_main_start_ns": 13504,
+  "combined_chain_span_ns": 26720,
+  "main": {
+    "block": [
+      384,
+      1,
+      1
+    ],
+    "duration_ns": 17632,
+    "dynamic_shared_mb": 0.232,
+    "grid": [
+      1,
+      148,
+      1
+    ],
+    "name": "flash_fwd_splitkv_mla_fp8_sparse_kernel",
+    "registers_per_thread": 168,
+    "start_ns": 7988362660,
+    "static_shared_mb": 0.0,
+    "stream": 7
+  },
+  "main_combine_overlap_ns": 4128,
+  "main_launch_count": 4,
+  "main_to_combine_gap_ns": 0,
+  "same_stream": true,
+  "selected_pair": "last main launch and its first following combine launch",
+  "source_csv": "/home/qinhaiyan/glm52-goal-runs/22-dsa_flashmla_kv_production/kernel-harness/profile/dsa-flashmla-kv-stock-b200-20260722/analysis/nsys_combine32_m16_all_cuda_gpu_trace_base.csv",
+  "tag": "combine32_m16"
+}

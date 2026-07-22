@@ -1,0 +1,30 @@
+Start (ns),Duration (ns),CorrId,GrdX,GrdY,GrdZ,BlkX,BlkY,BlkZ,Reg/Trd,StcSMem (MB),DymSMem (MB),Bytes (MB),Throughput (MB/s),SrcMemKd,DstMemKd,Device,Ctx,GreenCtx,Strm,Name
+7082450713,5312,678,1184,1,1,256,1,1,55,0.000,0.000,,,,,NVIDIA B200 (0),1,,7,distribution_elementwise_grid_stride_kernel
+7100841057,2912,691,576,1,1,128,1,1,32,0.000,0.000,,,,,NVIDIA B200 (0),1,,7,vectorized_elementwise_kernel
+7101329280,146144,728,1184,1,1,256,1,1,55,0.000,0.000,,,,,NVIDIA B200 (0),1,,7,distribution_elementwise_grid_stride_kernel
+7101506848,48288,743,73764,1,1,128,1,1,32,0.000,0.000,,,,,NVIDIA B200 (0),1,,7,vectorized_elementwise_kernel
+8271339421,340895,794,131136,5,1,128,1,1,16,0.000,0.000,,,,,NVIDIA B200 (0),1,,7,_quantize_k_cache_fast_kernel
+8274815320,1440,815,32,1,1,64,1,1,16,0.000,0.000,,,,,NVIDIA B200 (0),1,,7,elementwise_kernel_with_index
+8275032184,2016,827,2,1,1,128,1,1,40,0.000,0.000,,,,,NVIDIA B200 (0),1,,7,vectorized_elementwise_kernel
+8333156012,2624,840,2,1,1,128,1,1,38,0.000,0.000,,,,,NVIDIA B200 (0),1,,7,vectorized_elementwise_kernel
+8333317675,1088,858,1,1,1,64,1,1,16,0.000,0.000,,,,,NVIDIA B200 (0),1,,7,elementwise_kernel_with_index
+8333380651,1504,869,1,1,1,128,1,1,40,0.000,0.000,,,,,NVIDIA B200 (0),1,,7,vectorized_elementwise_kernel
+8354925423,1472,882,1,1,1,128,1,1,40,0.000,0.000,,,,,NVIDIA B200 (0),1,,7,vectorized_elementwise_kernel
+8355133295,2272,900,128,1,1,128,1,1,20,0.000,0.000,,,,,NVIDIA B200 (0),1,,7,elementwise_kernel
+8380658381,2560,916,64,1,1,128,1,1,30,0.000,0.000,,,,,NVIDIA B200 (0),1,,7,unrolled_elementwise_kernel
+8389560770,1088,933,1,1,1,128,1,1,16,0.000,0.000,,,,,NVIDIA B200 (0),1,,7,vectorized_elementwise_kernel
+8390819328,29696,958,1,1,1,32,1,1,32,0.000,0.000,,,,,NVIDIA B200 (0),1,,7,get_mla_metadata_kernel
+8392179646,20896,1015,1,148,1,384,1,1,168,0.000,0.232,,,,,NVIDIA B200 (0),1,,7,flash_fwd_splitkv_mla_fp8_sparse_kernel
+8392852542,5856,1019,16,1,8,256,1,1,48,0.005,0.000,,,,,NVIDIA B200 (0),1,,7,flash_fwd_mla_combine_kernel
+8393071325,19104,1069,1,148,1,384,1,1,168,0.000,0.232,,,,,NVIDIA B200 (0),1,,7,flash_fwd_splitkv_mla_fp8_sparse_kernel
+8393086173,13504,1073,16,1,8,256,1,1,48,0.005,0.000,,,,,NVIDIA B200 (0),1,,7,flash_fwd_mla_combine_kernel
+8393122205,17824,1123,1,148,1,384,1,1,168,0.000,0.232,,,,,NVIDIA B200 (0),1,,7,flash_fwd_splitkv_mla_fp8_sparse_kernel
+8393135805,13888,1127,16,1,8,256,1,1,48,0.005,0.000,,,,,NVIDIA B200 (0),1,,7,flash_fwd_mla_combine_kernel
+8393414045,17568,1180,1,148,1,384,1,1,168,0.000,0.232,,,,,NVIDIA B200 (0),1,,7,flash_fwd_splitkv_mla_fp8_sparse_kernel
+8393427453,13632,1184,16,1,8,256,1,1,48,0.005,0.000,,,,,NVIDIA B200 (0),1,,7,flash_fwd_mla_combine_kernel
+8393640348,4480,1197,,,,,,,,,,0.000,15.179,Device,Pageable,NVIDIA B200 (0),1,,7,[CUDA memcpy Device-to-Host]
+8393720252,3744,1207,,,,,,,,,,0.000,17.094,Device,Pageable,NVIDIA B200 (0),1,,7,[CUDA memcpy Device-to-Host]
+8393879900,3712,1222,1024,1,1,128,1,1,30,0.000,0.000,,,,,NVIDIA B200 (0),1,,7,unrolled_elementwise_kernel
+8393996316,1664,1238,,,,,,,,,,0.000,2.404,Device,,NVIDIA B200 (0),1,,7,[CUDA memset]
+8427236560,6336,1243,1,64,1,512,1,1,30,0.000,0.002,,,,,NVIDIA B200 (0),1,,7,reduce_kernel
+8428932686,4768,1255,,,,,,,,,,0.000,0.839,Device,Pinned,NVIDIA B200 (0),1,,7,[CUDA memcpy Device-to-Host]

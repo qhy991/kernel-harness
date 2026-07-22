@@ -1,0 +1,88 @@
+diff --git a/csrc/api/api.cpp b/csrc/api/api.cpp
+index f43f2a0..fc4f574 100644
+--- a/csrc/api/api.cpp
++++ b/csrc/api/api.cpp
+@@ -1,4 +1,6 @@
+ #include <pybind11/pybind11.h>
++#include <pybind11/stl.h>
++#include <torch/extension.h>
+ 
+ #include "sparse_fwd.h"
+ #include "sparse_decode.h"
+diff --git a/csrc/api/dense_decode.h b/csrc/api/dense_decode.h
+index 7d765bf..dd6376d 100644
+--- a/csrc/api/dense_decode.h
++++ b/csrc/api/dense_decode.h
+@@ -205,6 +205,7 @@ dense_attn_decode_interface(
+         params.tile_scheduler_metadata_ptr,
+         params.num_splits_ptr,
+         params.num_sm_parts,
++        params.num_sm_parts,
+ 
+         nullptr,
+         at::cuda::getCurrentCUDAStream().stream()
+diff --git a/csrc/api/sparse_decode.h b/csrc/api/sparse_decode.h
+index 6df5c84..baf62a4 100644
+--- a/csrc/api/sparse_decode.h
++++ b/csrc/api/sparse_decode.h
+@@ -466,6 +466,25 @@ sparse_attn_decode_interface(
+     params.stride_o_accum_h_q = int64_stride_to_int(o_accum.stride(2));
+ 
+     impl->run(params, features);
++
++    // GLM-5.2's exact M16 FP8 decode bucket produces eight real splits per
++    // request.  Specialize only the combine reduction's static bound; the main
++    // scheduler, metadata, accumulation order, buffers, stream, and PDL launch
++    // remain unchanged.  Every non-exact ABI keeps the stock num_sm_parts bound.
++    const bool use_glm52_m16_combine32 =
++        arch.is_sm100f() &&
++        b == 16 && s_q == 1 && h_q == 64 && h_kv == 1 &&
++        d_qk == 576 && d_v == 512 && model_type == ModelType::V32 &&
++        page_block_size == 64 && topk == 2048 && extra_topk == 0 &&
++        kv.dtype() == torch::kFloat8_e4m3fn && sm_scale == 0.0625f &&
++        !have_topk_length && !have_attn_sink &&
++        !have_extra_kcache && !have_extra_topk_length &&
++        q.is_contiguous() && kv.is_contiguous() && indices.is_contiguous() &&
++        impl_meta.block_size_topk == 64 &&
++        impl_meta.fixed_overhead_num_blocks == 5 &&
++        impl_meta.num_sm_parts == 148;
++    const int combine_max_num_splits =
++        use_glm52_m16_combine32 ? 32 : impl_meta.num_sm_parts;
+     
+     CombineParams combine_params = {
+         b, s_q, h_q, d_v,
+@@ -483,6 +502,7 @@ sparse_attn_decode_interface(
+         params.tile_scheduler_metadata_ptr,
+         params.num_splits_ptr,
+         params.num_sm_parts,
++        combine_max_num_splits,
+ 
+         ku::get_optional_tensor_ptr<float>(attn_sink),
+         at::cuda::getCurrentCUDAStream().stream()
+diff --git a/csrc/params.h b/csrc/params.h
+index 4433e8d..38b2ad2 100644
+--- a/csrc/params.h
++++ b/csrc/params.h
+@@ -118,6 +118,7 @@ struct CombineParams {
+     DecodingSchedMeta* __restrict__ tile_scheduler_metadata_ptr; // [num_sm_parts, ], contiguous
+     int* __restrict__ num_splits_ptr; // [batch_size+1, ], contiguous
+     int num_sm_parts;
++    int max_num_splits;
+ 
+     float* attn_sink;  // [h_q], may be nullptr
+ 
+diff --git a/csrc/smxx/decode/combine/combine.cu b/csrc/smxx/decode/combine/combine.cu
+index b924ba5..22157f8 100644
+--- a/csrc/smxx/decode/combine/combine.cu
++++ b/csrc/smxx/decode/combine/combine.cu
+@@ -189,7 +189,9 @@ template<typename ElementT>
+ void run_flash_mla_combine_kernel(CombineParams &params) {
+     static constexpr int HEAD_DIM_V = 512;  // Since only this head dimension is supported by Flash MLA
+     FLASH_ASSERT(params.d_v == HEAD_DIM_V);
+-    MLA_NUM_SPLITS_SWITCH(params.num_sm_parts, NUM_SPLITS, [&] {
++    FLASH_ASSERT(params.max_num_splits > 0);
++    FLASH_ASSERT(params.max_num_splits <= params.num_sm_parts);
++    MLA_NUM_SPLITS_SWITCH(params.max_num_splits, NUM_SPLITS, [&] {
+         constexpr int BLOCK_SIZE_M = 8;
+         constexpr int NUM_THREADS = BLOCK_SIZE_M*32;
+         constexpr size_t smem_size = BLOCK_SIZE_M*(NUM_SPLITS+1)*sizeof(float);

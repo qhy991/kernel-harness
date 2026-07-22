@@ -1,0 +1,83 @@
+{
+  "schema_version": 1,
+  "id": "glm52--dsa_flashmla_kv_decode--b200--20260722a",
+  "date": "2026-07-22",
+  "model": "glm52",
+  "task": "glm52/dsa_flashmla_kv_decode",
+  "op": "DSA FlashMLA KV Decode Attention",
+  "family": "dsa_flashmla_kv",
+  "phase": "decode",
+  "shapes": {
+    "local_M_buckets": [
+      16,
+      32
+    ],
+    "measured_world_size": 1,
+    "context_allocation": 8192,
+    "selected_cache_length": 2048,
+    "q_heads": 64,
+    "q_head_dim": 576,
+    "v_head_dim": 512,
+    "kv_cache_dim": 656,
+    "page_size": 64,
+    "sparse_topk": 2048,
+    "softmax_scale": 0.0625
+  },
+  "hardware": {
+    "gpu": "NVIDIA B200",
+    "sm": "sm_100"
+  },
+  "stack": {
+    "sglang_commit": "d9fb72325cc73bb4b6f3ad96664513eb632e2459",
+    "sgl_kernel": "0.4.4",
+    "flashmla_base_commit": "05e26647fe840b8baedae486c2d86d5ce4efeb7c",
+    "flashmla_control_commit": "0657fffdfd1c981517647e043e4ef30ffdc1480f",
+    "flashmla_attempt_commit": "d18ff63a73dc6519432f59acb9f04365ce14bb10",
+    "cutlass_commit": "147f5673d0c1c3dcf66f78d677fd647e4a020219",
+    "torch": "2.11.0+cu130",
+    "cuda": "toolkit 13.2.78; torch wheel cu130"
+  },
+  "baseline_kernel": "stock sgl-kernel 0.4.4 FlashMLA SM100 flash_fwd_splitkv_mla_fp8_sparse_kernel plus flash_fwd_mla_combine_kernel",
+  "bottleneck": {
+    "kind": "other",
+    "evidence": "Nsight Systems measured zero main-to-combine launch gap with PDL overlap, excluding host launch removal as the binding opportunity. Nsight Compute on the pinned stock-source rebuild control measured the main at only 14.42/19.78 percent SM and 13.06/19.74 percent DRAM throughput for M16/M32; its 168 registers, 232656-byte total per-block launch shared allocation, and one 148-block wave yield 18.75/18.62 percent achieved occupancy. PC sampling attributed 304/1080 M16 samples to barriers and 280/1080 M16 plus 503/1500 M32 samples to long scoreboards. Stock M16 combine launches only 128 blocks on 148 SMs, reads 16818176 DRAM bytes, and attributes 288/402 samples to long scoreboards. The candidate cuts combine shared allocation from 6144 to 2048 bytes but still reads 16816896 bytes, has 291/400 long-scoreboard samples, and changes the replay-instrumented isolated duration only from 11008 to 10784 ns. The binding limit is therefore mixed sparse-gather latency, cross-warp synchronization, and combine tail underfill rather than compute or a launch gap."
+  },
+  "approaches": [
+    {
+      "technique": "pinned-stock-source-rebuild-control",
+      "summary": "Rebuilt pinned FlashMLA 05e26647 with the production tensor-caster binding fixes and compared the overlay against the installed stock extension to establish compiler and overlay noise.",
+      "outcome": "abandoned",
+      "geomean_speedup": null,
+      "why": "None of the three eager or three real-CUDA-Graph sessions for either M16 or M32 passed the 3 percent gate; graph speedups were 0.996567, 0.999013, and 0.989950 at M16 and 0.982680, 0.992860, and 0.991372 at M32, showing that the rebuilt control itself was not a promotable optimization."
+    },
+    {
+      "technique": "m16-combine-max-splits-32-specialization",
+      "summary": "Added an exact SM100 M16 sparse-FP8 guard and dispatched the combine kernel with compile-time max_num_splits 32 while leaving the main kernel, scheduler metadata, stream, buffers, M32, and unsupported cases on stock behavior.",
+      "outcome": "slower",
+      "geomean_speedup": null,
+      "why": "Only the first eager M16 session exceeded the 3 percent threshold at 1.036845; the next two reached 1.016081 and 1.020847, all real-CUDA-Graph sessions missed the gate at M16 (0.998068, 0.987407, 0.983109) and M32 (0.993963, 0.994055, 0.999149), and the one candidate Nsight Systems trace reduced combine static shared memory from 0.005 MB to 0.001 MB but changed the M16 chain span only from 27040 ns to 26720 ns, which did not survive repeated graph measurement."
+    }
+  ],
+  "result": {
+    "status": "no-win",
+    "geomean_speedup": null,
+    "min_speedup_conservative": null,
+    "repeat": 100,
+    "integrate": "not-run"
+  },
+  "lesson": "For a PDL-overlapped split-KV plus combine path with no measured launch gap, a compile-time combine-resource reduction must be judged on the full captured chain, not one kernel or one favorable eager session. At these fixed decode buckets the M16 max-splits specialization was not repeatably faster, so the safe transferable policy is to fail closed to stock until repeated CUDA-Graph and containing-region measurements clear the production threshold.",
+  "transfers_to": [
+    "SM100 FlashMLA sparse FP8 decode paths with split-KV and combine kernels",
+    "small fixed decode buckets where a sub-microsecond component delta is comparable to session noise",
+    "CUDA-Graph serving kernels that use PDL overlap between producer and reduction kernels"
+  ],
+  "caveats": [
+    "This serving-native session has no frozen evaluate_task.py result.json or audit_result.py verdict; paired timings come from the committed raw paired JSON artifacts and profiler metrics come from the committed Nsight Systems/Compute artifacts, and none is represented as a synthetic-task result or win.",
+    "The aggregate task slug glm52/dsa_flashmla_kv_decode denotes this production serving-native session over the concrete dsa_flashmla_kv_decode_m16 and dsa_flashmla_kv_decode_m32 workloads; it is not a frozen task directory.",
+    "The exact workload, invalid-index, nondefault-stream, and direct core CUDA-Graph checks passed, but no candidate was integrated because neither M16 nor M32 passed repeated graph timing.",
+    "Complete SGLang decode was not measured because the target GLM-5.2 weights were unavailable in this environment.",
+    "The required TP8/DP8/EP8 acceptance lane remains external: the host has four GPUs and the mandated scheduler wrapper exposed only physical GPU 3; this no-replacement result does not weaken or relabel that gate.",
+    "The direct core graph benchmark is not a captured replay of the full SGLang DeepseekSparseAttnBackend path; that remains a promotion blocker, although stock fallback is the disposition."
+  ],
+  "agent": "Codex"
+}

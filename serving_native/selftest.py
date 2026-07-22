@@ -27,6 +27,8 @@ def main() -> int:
     assert "linear_indexer_wq_b_decode_m32" in names
     assert "indexer_wk_weights_decode_m16" in names
     assert "dsa_trtllm_decode_m32" in names
+    assert "dsa_flashmla_kv_decode_m16" in names
+    assert "dsa_flashmla_kv_decode_m32" in names
     assert "moe_w13_grouped_decode_m16" in names
     assert "moe_w2_grouped_decode_m32" in names
     assert "deepep_normal_dispatch_prefill" in names
@@ -52,6 +54,25 @@ def main() -> int:
         for workload in WORKLOADS.values()
         if workload.family == "dsa_trtllm"
     } == decode_ms
+    flashmla_workloads = [
+        workload
+        for workload in WORKLOADS.values()
+        if workload.family == "dsa_flashmla_kv"
+    ]
+    assert {workload.params["batch"] for workload in flashmla_workloads} == decode_ms
+    for workload in flashmla_workloads:
+        assert workload.params["q_heads"] == 64
+        assert workload.params["q_head_dim"] == 576
+        assert workload.params["v_head_dim"] == 512
+        assert workload.params["qk_nope_head_dim"] == 192
+        assert workload.params["qk_rope_head_dim"] == 64
+        assert workload.params["softmax_scale"] == 0.0625
+        assert workload.params["kv_cache_dim"] == 656
+        assert workload.params["context"] == 8192
+        assert workload.params["sparse_topk"] == 2048
+        assert workload.params["page_size"] == 64
+        assert "_forward_flashmla_kv" in workload.source_symbol
+        assert "fwd_kvcache_mla" in workload.source_symbol
     assert {
         workload.params["local_tokens"]
         for workload in WORKLOADS.values()
@@ -64,7 +85,10 @@ def main() -> int:
             assert workload.params["expected_m"] == m // 4
             assert workload.params["valid_assignments"] == m * 8
 
-    sglang_root = Path(os.environ.get("SGLANG_ROOT", "/home/qinhaiyan/sglang"))
+    # Worktrees are provisioned as sibling Kernel-Harness/sglang directories.
+    # Honor an explicit override, otherwise audit the sibling paired with this
+    # checkout instead of silently reaching into a global SGLang tree.
+    sglang_root = Path(os.environ.get("SGLANG_ROOT", REPO_ROOT.parent / "sglang"))
     source_checks = {
         "python/sglang/kernels/ops/quantization/fp8_kernel.py": (
             "def w8a8_block_fp8_matmul_deepgemm",
@@ -76,6 +100,35 @@ def main() -> int:
         "python/sglang/srt/layers/attention/dsa_backend.py": (
             "trtllm_batch_decode_with_kv_cache_mla",
             'backend="trtllm-gen"',
+            "def _forward_flashmla_kv(",
+            "from sgl_kernel.flash_mla import flash_mla_with_kvcache",
+            "target_q_heads = self.flashmla_kv_num_q_heads",
+            "kv_cache.view(-1, self.real_page_size, 1, self.kv_cache_dim)",
+            "indices = page_table_1.unsqueeze(1)",
+            "is_fp8_kvcache=True",
+        ),
+        "sgl-kernel/python/sgl_kernel/flash_mla.py": (
+            "def flash_mla_with_kvcache(",
+            "torch.ops.sgl_kernel.fwd_kvcache_mla.default",
+        ),
+        "sgl-kernel/cmake/flashmla.cmake": (
+            "05e26647fe840b8baedae486c2d86d5ce4efeb7c",
+            "csrc/sm100/decode/head64/instantiations/v32.cu",
+        ),
+        "sgl-kernel/csrc/flashmla_extension.cc": (
+            'm.impl("fwd_kvcache_mla", torch::kCUDA, &fwd_kvcache_mla)',
+        ),
+        "test/registered/attention/unittests/dsa/test_dsa.py": (
+            "PRODUCTION_FLASHMLA_KV_DECODE_CASES",
+            "for batch in (16, 32)",
+            "index_topk=2048",
+            'index_pattern="affine"',
+            "require_fused_topk=True",
+            "softmax_scale=(192 + 64) ** -0.5",
+            "model_head_dim=192",
+            "model_v_head_dim=256",
+            "test_production_flashmla_kv_cuda_graph_metadata_lifecycle_cases",
+            'dsa_decode_backend="flashmla_kv"',
         ),
         "python/sglang/srt/layers/moe/moe_runner/deep_gemm.py": (
             "def _varlen_deep_gemm_silu_mul_quant",

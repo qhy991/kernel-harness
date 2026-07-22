@@ -1,0 +1,42 @@
+{
+  "build_command": [
+    "/home/qinhaiyan/glm52-goal-runs/22-dsa_flashmla_kv_production/kernel-harness/.venv/bin/python",
+    "setup.py",
+    "build",
+    "--build-base",
+    "/home/qinhaiyan/glm52-goal-runs/22-dsa_flashmla_kv_production/sglang/third_party/FlashMLA-goal22/build-artifacts/.stock-pybind.staging-qf41ek0_/build",
+    "bdist_wheel",
+    "--skip-build",
+    "--bdist-dir",
+    "/home/qinhaiyan/glm52-goal-runs/22-dsa_flashmla_kv_production/sglang/third_party/FlashMLA-goal22/build-artifacts/.stock-pybind.staging-qf41ek0_/bdist",
+    "--dist-dir",
+    "/home/qinhaiyan/glm52-goal-runs/22-dsa_flashmla_kv_production/sglang/third_party/FlashMLA-goal22/build-artifacts/.stock-pybind.staging-qf41ek0_/wheels"
+  ],
+  "build_log": "/home/qinhaiyan/glm52-goal-runs/22-dsa_flashmla_kv_production/sglang/third_party/FlashMLA-goal22/build-artifacts/stock-pybind/build.log",
+  "cutlass_commit": "147f5673d0c1c3dcf66f78d677fd647e4a020219",
+  "cutlass_status": [],
+  "elapsed_seconds": 160.76576113700867,
+  "environment": {
+    "CPLUS_INCLUDE_PATH": "/usr/local/cuda-13.2/targets/x86_64-linux/include/cccl",
+    "FLASH_MLA_DISABLE_SM90": "1",
+    "MAX_JOBS": "4",
+    "NVCC_THREADS": "2"
+  },
+  "extension": "/home/qinhaiyan/glm52-goal-runs/22-dsa_flashmla_kv_production/sglang/third_party/FlashMLA-goal22/build-artifacts/stock-pybind/overlay/flash_mla/cuda.cpython-312-x86_64-linux-gnu.so",
+  "extension_sha256": "a7047cf134189760879a90854257a86a107e9a41b430e7d148b93b94386e76c5",
+  "extension_size_bytes": 21657616,
+  "label": "stock-pybind",
+  "overlay": "/home/qinhaiyan/glm52-goal-runs/22-dsa_flashmla_kv_production/sglang/third_party/FlashMLA-goal22/build-artifacts/stock-pybind/overlay",
+  "python": "/home/qinhaiyan/glm52-goal-runs/22-dsa_flashmla_kv_production/kernel-harness/.venv/bin/python",
+  "source": "/home/qinhaiyan/glm52-goal-runs/22-dsa_flashmla_kv_production/sglang/third_party/FlashMLA-goal22",
+  "source_commit": "94413309bb484a2831621ffa07cdd00246aa968b",
+  "source_patch": "/home/qinhaiyan/glm52-goal-runs/22-dsa_flashmla_kv_production/sglang/third_party/FlashMLA-goal22/build-artifacts/stock-pybind/source.patch",
+  "source_patch_base": "05e26647fe840b8baedae486c2d86d5ce4efeb7c",
+  "source_patch_sha256": "16b2871e734dd1ac8a70f77e7588d0517ec23f067588da5a8a2d294def5e927c",
+  "source_status": [],
+  "source_untracked_status": [
+    "?? build-artifacts/"
+  ],
+  "wheel": "/home/qinhaiyan/glm52-goal-runs/22-dsa_flashmla_kv_production/sglang/third_party/FlashMLA-goal22/build-artifacts/stock-pybind/wheels/flash_mla-1.0.0+9441330-cp312-cp312-linux_x86_64.whl",
+  "wheel_sha256": "4e9e3722b857a2d1a816ff73bc92e69f694b4ec66fdcebf29cef39b30ff9c8e4"
+}

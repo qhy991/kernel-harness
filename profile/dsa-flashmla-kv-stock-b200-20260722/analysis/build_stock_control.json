@@ -1,0 +1,31 @@
+{
+  "build_command": [
+    "/home/qinhaiyan/glm52-goal-runs/22-dsa_flashmla_kv_production/kernel-harness/.venv/bin/python",
+    "setup.py",
+    "bdist_wheel",
+    "--dist-dir",
+    "/home/qinhaiyan/glm52-goal-runs/22-dsa_flashmla_kv_production/sglang/third_party/FlashMLA-goal22/build-artifacts/stock-control/wheels"
+  ],
+  "build_log": "/home/qinhaiyan/glm52-goal-runs/22-dsa_flashmla_kv_production/sglang/third_party/FlashMLA-goal22/build-artifacts/stock-control/build.log",
+  "cutlass_commit": "147f5673d0c1c3dcf66f78d677fd647e4a020219",
+  "elapsed_seconds": 137.68652319908142,
+  "environment": {
+    "CPLUS_INCLUDE_PATH": "/usr/local/cuda-13.2/targets/x86_64-linux/include/cccl",
+    "FLASH_MLA_DISABLE_SM90": "1",
+    "MAX_JOBS": "4",
+    "NVCC_THREADS": "2"
+  },
+  "extension": "/home/qinhaiyan/glm52-goal-runs/22-dsa_flashmla_kv_production/sglang/third_party/FlashMLA-goal22/build-artifacts/stock-control/overlay/flash_mla/cuda.cpython-312-x86_64-linux-gnu.so",
+  "extension_sha256": "271243b461bb08dd88a48c7a8a481a2fd41eef71bf8bb4efa74afb1712f822f9",
+  "extension_size_bytes": 21666576,
+  "label": "stock-control",
+  "overlay": "/home/qinhaiyan/glm52-goal-runs/22-dsa_flashmla_kv_production/sglang/third_party/FlashMLA-goal22/build-artifacts/stock-control/overlay",
+  "python": "/home/qinhaiyan/glm52-goal-runs/22-dsa_flashmla_kv_production/kernel-harness/.venv/bin/python",
+  "source": "/home/qinhaiyan/glm52-goal-runs/22-dsa_flashmla_kv_production/sglang/third_party/FlashMLA-goal22",
+  "source_commit": "05e26647fe840b8baedae486c2d86d5ce4efeb7c",
+  "source_status": [
+    "?? build-artifacts/"
+  ],
+  "wheel": "/home/qinhaiyan/glm52-goal-runs/22-dsa_flashmla_kv_production/sglang/third_party/FlashMLA-goal22/build-artifacts/stock-control/wheels/flash_mla-1.0.0+05e2664-cp312-cp312-linux_x86_64.whl",
+  "wheel_sha256": "0ddd99c6cf775d8a5fd9431ead18dce3490982e0b5ea3845d5ae541cf8270a96"
+}

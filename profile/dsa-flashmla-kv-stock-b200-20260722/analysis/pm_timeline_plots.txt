@@ -1,0 +1,456 @@
+
+============================================================
+stock_main_m16: full_stock_main_m16.ncu-rep
+============================================================
+
+pmsampling:smsp__warps_issue_stalled_long_scoreboard.avg
+  (n=19 active samples, leading_zero=141, trailing_zero=216, max=3.85e+03)
+   3.9e+03 |                    
+   3.5e+03 |    ##              
+   3.2e+03 |    ###             
+   2.9e+03 |    ###             
+   2.6e+03 |   ####             
+   2.2e+03 |  #####  #          
+   1.9e+03 |  ###### #          
+   1.6e+03 |  ###### #          
+   1.3e+03 |  ##########        
+   9.6e+02 |  ########## #      
+   6.4e+02 |  ############    # 
+   3.2e+02 | ##############   # 
+            -------------------
+             (time →)
+
+pmsampling:smsp__warps_issue_stalled_short_scoreboard.avg
+  (n=20 active samples, leading_zero=135, trailing_zero=243, max=1.06e+03)
+   1.1e+03 |  #                  
+   9.7e+02 |  #                  
+   8.8e+02 |  #                  
+     8e+02 |  #                  
+   7.1e+02 |  #                  
+   6.2e+02 |  ##                 
+   5.3e+02 |  ##                 
+   4.4e+02 |  ##     # #         
+   3.5e+02 |  ##     # # #       
+   2.7e+02 |  ##    ## ###       
+   1.8e+02 |  ##    #######      
+        88 | ####  #########     
+            --------------------
+             (time →)
+
+pmsampling:smsp__warps_issue_stalled_wait.avg
+  (n=19 active samples, leading_zero=128, trailing_zero=202, max=1.16e+03)
+   1.2e+03 | #                  
+   1.1e+03 | #                  
+   9.6e+02 | #                  
+   8.7e+02 | #                  
+   7.7e+02 | #                  
+   6.7e+02 | ##                 
+   5.8e+02 | ##      # #        
+   4.8e+02 | ##    ######       
+   3.9e+02 | ##    #######      
+   2.9e+02 | ###   ########     
+   1.9e+02 | ###  #########   # 
+        96 | ### ############ # 
+            -------------------
+             (time →)
+
+pmsampling:smsp__warps_issue_stalled_dispatch_stall.avg
+  (n=14 active samples, leading_zero=171, trailing_zero=100, max=29.6)
+        30 |               
+        27 |        #      
+        25 |        # #    
+        22 |        ####   
+        20 |       #####   
+        17 |       ######  
+        15 |       ######  
+        12 |      #######  
+       9.9 |      #######  
+       7.4 | #    ######## 
+       4.9 | #    ######## 
+       2.5 | ##  ######### 
+            --------------
+             (time →)
+
+pmsampling:smsp__warps_issue_stalled_math_pipe_throttle.avg
+  (n=18 active samples, leading_zero=141, trailing_zero=217, max=75)
+        75 |          #        
+        69 |          #        
+        63 |          #        
+        56 |        # # #      
+        50 |        # # #      
+        44 |        # # #      
+        38 |        #####      
+        31 |        #####      
+        25 |        #####      
+        19 |       ######      
+        13 |  #    #######     
+       6.3 |  #   ########     
+            ------------------
+             (time →)
+
+pmsampling:smsp__warps_issue_stalled_mio_throttle.avg
+  (n=19 active samples, leading_zero=135, trailing_zero=244, max=1.22e+03)
+   1.2e+03 |                 #  
+   1.1e+03 |                 #  
+     1e+03 |                ##  
+   9.2e+02 |                ##  
+   8.2e+02 |                ### 
+   7.1e+02 |                ### 
+   6.1e+02 |                ### 
+   5.1e+02 |                ### 
+   4.1e+02 |               #### 
+   3.1e+02 |               #### 
+     2e+02 |               #### 
+     1e+02 |     #    # # ##### 
+            -------------------
+             (time →)
+
+pmsampling:sm__throughput.avg.pct_of_peak_sustained_elapsed: no instances
+
+pmsampling:sm__warps_active.avg.pct_of_peak_sustained_active: no instances
+
+pmsampling:dram__throughput.avg.pct_of_peak_sustained_elapsed: no instances
+
+pmsampling:l1tex__throughput.avg.pct_of_peak_sustained_active: no instances
+
+============================================================
+stock_main_m32: full_stock_main_m32.ncu-rep
+============================================================
+
+pmsampling:smsp__warps_issue_stalled_long_scoreboard.avg
+  (n=26 active samples, leading_zero=106, trailing_zero=208, max=3.85e+03)
+   3.9e+03 |    #                      
+   3.5e+03 |    ##                     
+   3.2e+03 |    ###                    
+   2.9e+03 |   ####                    
+   2.6e+03 |   ####                    
+   2.2e+03 |  #####  #                 
+   1.9e+03 |  ###### # # # # #         
+   1.6e+03 |  ########## # # #         
+   1.3e+03 |  ################ #       
+   9.6e+02 |  ##################       
+   6.4e+02 |  ####################     
+   3.2e+02 | ######################  # 
+            --------------------------
+             (time →)
+
+pmsampling:smsp__warps_issue_stalled_short_scoreboard.avg
+  (n=27 active samples, leading_zero=244, trailing_zero=207, max=1.09e+03)
+   1.1e+03 |  #                         
+     1e+03 |  #                         
+   9.1e+02 |  #                         
+   8.2e+02 |  #                         
+   7.3e+02 |  #                         
+   6.4e+02 |  #                         
+   5.4e+02 |  ##                        
+   4.5e+02 |  ##        # # # #         
+   3.6e+02 |  ##    # # # # # # #       
+   2.7e+02 |  ##    #############       
+   1.8e+02 |  ##   ################     
+        91 | ###   #################    
+            ---------------------------
+             (time →)
+
+pmsampling:smsp__warps_issue_stalled_wait.avg
+  (n=27 active samples, leading_zero=211, trailing_zero=198, max=1.14e+03)
+   1.1e+03 | #                          
+     1e+03 | #                          
+   9.5e+02 | #                          
+   8.6e+02 | #                          
+   7.6e+02 | #                          
+   6.7e+02 | #              # #         
+   5.7e+02 | #      ## ## # # # #       
+   4.8e+02 | ##    ############ #       
+   3.8e+02 | ##    ##############       
+   2.9e+02 | ###   ###############      
+   1.9e+02 | ###  #################     
+        95 | ### #####################  
+            ---------------------------
+             (time →)
+
+pmsampling:smsp__warps_issue_stalled_dispatch_stall.avg
+  (n=23 active samples, leading_zero=146, trailing_zero=211, max=40.8)
+        41 |              #         
+        37 |            # # #       
+        34 |          # # # # #     
+        31 |          # # # # #     
+        27 |        # # # # # #     
+        24 |        # # # # # #     
+        20 |        # ### # # # #   
+        17 |        ####### #####   
+        14 |       ##############   
+        10 |       ##############   
+       6.8 |  #    ###############  
+       3.4 |  #  #################  
+            -----------------------
+             (time →)
+
+pmsampling:smsp__warps_issue_stalled_math_pipe_throttle.avg
+  (n=27 active samples, leading_zero=105, trailing_zero=208, max=89.8)
+        90 |                 #          
+        82 |               # # #        
+        75 |             # # # #        
+        67 |           # # # # #        
+        60 |           ### # # #        
+        52 |         # ##### # #        
+        45 |         ########### #      
+        37 |         #############      
+        30 |         #############      
+        22 |        ##############      
+        15 |   #    ##############      
+       7.5 |   #    ##############      
+            ---------------------------
+             (time →)
+
+pmsampling:smsp__warps_issue_stalled_mio_throttle.avg
+  (n=26 active samples, leading_zero=244, trailing_zero=208, max=1.22e+03)
+   1.2e+03 |                        #  
+   1.1e+03 |                        #  
+     1e+03 |                       ##  
+   9.1e+02 |                       ##  
+   8.1e+02 |                       ### 
+   7.1e+02 |                       ### 
+   6.1e+02 |                       ### 
+   5.1e+02 |                       ### 
+   4.1e+02 |                      #### 
+     3e+02 |                      #### 
+     2e+02 |                      #### 
+     1e+02 |     #    #          ##### 
+            --------------------------
+             (time →)
+
+pmsampling:sm__throughput.avg.pct_of_peak_sustained_elapsed: no instances
+
+pmsampling:sm__warps_active.avg.pct_of_peak_sustained_active: no instances
+
+pmsampling:dram__throughput.avg.pct_of_peak_sustained_elapsed: no instances
+
+pmsampling:l1tex__throughput.avg.pct_of_peak_sustained_active: no instances
+
+============================================================
+stock_combine_m16: full_stock_combine_m16.ncu-rep
+============================================================
+
+pmsampling:smsp__warps_issue_stalled_long_scoreboard.avg
+  (n=7 active samples, leading_zero=88, trailing_zero=224, max=3.12e+03)
+   3.1e+03 |    #   
+   2.9e+03 |   ###  
+   2.6e+03 |   ###  
+   2.3e+03 |   ###  
+   2.1e+03 |   ###  
+   1.8e+03 | #####  
+   1.6e+03 | #####  
+   1.3e+03 | #####  
+     1e+03 | ###### 
+   7.8e+02 | ###### 
+   5.2e+02 | ###### 
+   2.6e+02 | ###### 
+            -------
+             (time →)
+
+pmsampling:smsp__warps_issue_stalled_short_scoreboard.avg
+  (n=7 active samples, leading_zero=132, trailing_zero=143, max=889)
+   8.9e+02 | #      
+   8.1e+02 | #      
+   7.4e+02 | #      
+   6.7e+02 | ##     
+   5.9e+02 | ##     
+   5.2e+02 | ##     
+   4.4e+02 | ##     
+   3.7e+02 | ##     
+     3e+02 | ##     
+   2.2e+02 | ##     
+   1.5e+02 | ##     
+        74 | ##     
+            -------
+             (time →)
+
+pmsampling:smsp__warps_issue_stalled_wait.avg
+  (n=8 active samples, leading_zero=171, trailing_zero=108, max=458)
+   4.6e+02 |   #     
+   4.2e+02 |   #     
+   3.8e+02 |   #     
+   3.4e+02 |  ##     
+   3.1e+02 |  ##     
+   2.7e+02 |  ##     
+   2.3e+02 |  ##   # 
+   1.9e+02 |  ##   # 
+   1.5e+02 |  ##   # 
+   1.1e+02 |  ###### 
+        76 |  ###### 
+        38 |  ###### 
+            --------
+             (time →)
+
+pmsampling:smsp__warps_issue_stalled_dispatch_stall.avg
+  (n=7 active samples, leading_zero=78, trailing_zero=952, max=28.7)
+        29 |   #    
+        26 |   #    
+        24 |   #    
+        22 |  ##    
+        19 |  ####  
+        17 |  ####  
+        14 |  ##### 
+        12 |  ##### 
+       9.6 |  ##### 
+       7.2 |  ##### 
+       4.8 |  ##### 
+       2.4 |  ##### 
+            -------
+             (time →)
+
+pmsampling:smsp__warps_issue_stalled_math_pipe_throttle.avg
+  (n=7 active samples, leading_zero=88, trailing_zero=224, max=49.3)
+        49 | #      
+        45 | #      
+        41 | #      
+        37 | #      
+        33 | #      
+        29 | #      
+        25 | #      
+        21 | #      
+        16 | #      
+        12 | ##     
+       8.2 | ##     
+       4.1 | ##     
+            -------
+             (time →)
+
+pmsampling:smsp__warps_issue_stalled_mio_throttle.avg
+  (n=6 active samples, leading_zero=133, trailing_zero=143, max=38.6)
+        39 | #     
+        35 | #     
+        32 | #     
+        29 | #     
+        26 | #     
+        22 | #     
+        19 | #     
+        16 | #     
+        13 | #   # 
+       9.6 | #   # 
+       6.4 | #   ##
+       3.2 | #   ##
+            ------
+             (time →)
+
+pmsampling:sm__throughput.avg.pct_of_peak_sustained_elapsed: no instances
+
+pmsampling:sm__warps_active.avg.pct_of_peak_sustained_active: no instances
+
+pmsampling:dram__throughput.avg.pct_of_peak_sustained_elapsed: no instances
+
+pmsampling:l1tex__throughput.avg.pct_of_peak_sustained_active: no instances
+
+============================================================
+combine32_combine_m16: full_combine32_combine_m16.ncu-rep
+============================================================
+
+pmsampling:smsp__warps_issue_stalled_long_scoreboard.avg
+  (n=7 active samples, leading_zero=135, trailing_zero=232, max=3.12e+03)
+   3.1e+03 |     #  
+   2.9e+03 |   ###  
+   2.6e+03 |   ###  
+   2.3e+03 |  ##### 
+   2.1e+03 |  ##### 
+   1.8e+03 |  ##### 
+   1.6e+03 |  ##### 
+   1.3e+03 |  ##### 
+     1e+03 | ###### 
+   7.8e+02 | ###### 
+   5.2e+02 | ###### 
+   2.6e+02 | #######
+            -------
+             (time →)
+
+pmsampling:smsp__warps_issue_stalled_short_scoreboard.avg
+  (n=8 active samples, leading_zero=106, trailing_zero=63, max=873)
+   8.7e+02 | #       
+     8e+02 | #       
+   7.3e+02 | #       
+   6.6e+02 | #       
+   5.8e+02 | #       
+   5.1e+02 | # #     
+   4.4e+02 | # #     
+   3.6e+02 | # #     
+   2.9e+02 | # #     
+   2.2e+02 | # #     
+   1.5e+02 | # #     
+        73 | ###     
+            --------
+             (time →)
+
+pmsampling:smsp__warps_issue_stalled_wait.avg
+  (n=8 active samples, leading_zero=127, trailing_zero=160, max=301)
+     3e+02 |  #      
+   2.8e+02 |  ##     
+   2.5e+02 |  ##     
+   2.3e+02 |  ##     
+     2e+02 | ###  #  
+   1.8e+02 | ###  #  
+   1.5e+02 | ###  #  
+   1.3e+02 | ######  
+     1e+02 | ####### 
+        75 | ####### 
+        50 | ####### 
+        25 | ####### 
+            --------
+             (time →)
+
+pmsampling:smsp__warps_issue_stalled_dispatch_stall.avg
+  (n=8 active samples, leading_zero=131, trailing_zero=82, max=20.5)
+        20 |     #   
+        19 |   ####  
+        17 |  #####  
+        15 |  #####  
+        14 |  #####  
+        12 |  #####  
+        10 |  #####  
+       8.5 |  #####  
+       6.8 |  #####  
+       5.1 |  #####  
+       3.4 |  ###### 
+       1.7 | ####### 
+            --------
+             (time →)
+
+pmsampling:smsp__warps_issue_stalled_math_pipe_throttle.avg
+  (n=7 active samples, leading_zero=135, trailing_zero=232, max=13.7)
+        14 |        
+        13 | #      
+        11 | #      
+        10 | #      
+       9.1 | #      
+         8 | #      
+       6.8 | # #    
+       5.7 | ###    
+       4.6 | ###    
+       3.4 | ###    
+       2.3 | ###    
+       1.1 | #### # 
+            -------
+             (time →)
+
+pmsampling:smsp__warps_issue_stalled_mio_throttle.avg
+  (n=3 active samples, leading_zero=111, trailing_zero=63, max=16.7)
+        17 |  # 
+        15 |  # 
+        14 |  # 
+        13 |  # 
+        11 |  # 
+       9.8 |  # 
+       8.4 |  # 
+         7 |  # 
+       5.6 |  # 
+       4.2 |  # 
+       2.8 |  # 
+       1.4 | ## 
+            ---
+             (time →)
+
+pmsampling:sm__throughput.avg.pct_of_peak_sustained_elapsed: no instances
+
+pmsampling:sm__warps_active.avg.pct_of_peak_sustained_active: no instances
+
+pmsampling:dram__throughput.avg.pct_of_peak_sustained_elapsed: no instances
+
+pmsampling:l1tex__throughput.avg.pct_of_peak_sustained_active: no instances

@@ -158,6 +158,8 @@ class Runtime:
             return self._build_moe_swiglu_quant()
         if family == "dsa_trtllm":
             return self._build_dsa_trtllm()
+        if family == "dsa_flashmla_kv":
+            return self._build_dsa_flashmla_kv()
         if family == "allgather":
             return self._build_allgather()
         if family == "allreduce":
@@ -365,6 +367,98 @@ class Runtime:
             "max_seq_len": context,
             "sparse_topk": topk,
             "bmm1_scale": head_dim**-0.5,
+        }
+
+    def _build_dsa_flashmla_kv(self) -> dict[str, Any]:
+        """Build the exact FP8-cache ABI consumed by ``_forward_flashmla_kv``."""
+        from sgl_kernel.flash_mla import get_mla_metadata
+
+        from sglang.srt.layers.attention.dsa.quant_k_cache import quantize_k_cache
+
+        p = self.workload.params
+        batch = p["batch"]
+        heads = p["q_heads"]
+        q_head_dim = p["q_head_dim"]
+        v_head_dim = p["v_head_dim"]
+        context = p["context"]
+        topk = p["sparse_topk"]
+        page_size = p["page_size"]
+        if context % page_size != 0:
+            raise RuntimeError("FlashMLA production workload requires whole page_size=64 pages")
+
+        q = (
+            self.torch.randn(
+                (batch, 1, heads, q_head_dim),
+                device=self.device,
+                dtype=self.torch.bfloat16,
+                generator=self._generator(14),
+            )
+            * 0.05
+        )
+        # SGLang reserves physical token slot 0 as the padding/dummy sink.  Keep
+        # the entire first page unused so every sequence starts page-aligned and
+        # every sparse index denotes a live production-style physical slot.
+        reserved_tokens = page_size
+        logical_kv = (
+            self.torch.randn(
+                (
+                    (reserved_tokens + batch * context) // page_size,
+                    page_size,
+                    1,
+                    q_head_dim,
+                ),
+                device=self.device,
+                dtype=self.torch.bfloat16,
+                generator=self._generator(15),
+            )
+            * 0.05
+        )
+        # Production stores [512 FP8 no-PE | 4 FP32 scales | 64 BF16 RoPE]
+        # as 656 byte-addressed float8 elements per token. Quantization is setup,
+        # not part of the timed decode region, matching the live KV-store path.
+        kv_cache = quantize_k_cache(logical_kv)
+        del logical_kv
+        if tuple(kv_cache.shape[-2:]) != (1, p["kv_cache_dim"]):
+            raise RuntimeError(f"unexpected FlashMLA KV layout: {tuple(kv_cache.shape)}")
+
+        # The live indexer emits physical token-slot indices. Use a deterministic
+        # affine permutation so the microbenchmark exercises sparse page gathers
+        # instead of an artificially contiguous first-topk slice.
+        positions = self.torch.arange(topk, dtype=self.torch.int64, device=self.device)
+        positions = (positions * 4051) % context
+        sequence_bases = reserved_tokens + (
+            self.torch.arange(batch, dtype=self.torch.int64, device=self.device) * context
+        )
+        indices = (sequence_bases[:, None] + positions[None, :]).to(self.torch.int32)
+        indices = indices.unsqueeze(1).contiguous()
+
+        # _forward_flashmla_kv passes the DSA-clamped lengths (min(seq, topk)),
+        # not the original full context lengths, to FlashMLA's scheduler.
+        cache_seqlens = self.torch.full(
+            (batch,), min(context, topk), dtype=self.torch.int32, device=self.device
+        )
+        tile_scheduler_metadata, num_splits = get_mla_metadata(
+            cache_seqlens=cache_seqlens,
+            num_q_tokens_per_head_k=heads,
+            num_heads_k=1,
+            num_heads_q=heads,
+            is_fp8_kvcache=True,
+            topk=topk,
+        )
+        return {
+            "q": q,
+            "kv_cache": kv_cache,
+            "cache_seqlens": cache_seqlens,
+            "indices": indices,
+            "block_table": self.torch.empty(
+                (batch, 0), dtype=self.torch.int32, device=self.device
+            ),
+            "tile_scheduler_metadata": tile_scheduler_metadata,
+            "num_splits": num_splits,
+            "head_dim_v": v_head_dim,
+            # The absorbed FlashMLA Q is 576 wide, but GLM-5.2 preserves the
+            # model's original QK attention scale: 1/sqrt(192 + 64) = 0.0625.
+            "softmax_scale": p["softmax_scale"],
         }
 
     def _build_allgather(self) -> dict[str, Any]:
@@ -575,6 +669,23 @@ class Runtime:
                 backend="trtllm-gen",
             )
             return TaskResult(out.squeeze(1) if out.ndim == 4 and out.shape[1] == 1 else out)
+        if family == "dsa_flashmla_kv":
+            from sgl_kernel.flash_mla import flash_mla_with_kvcache
+
+            out, _ = flash_mla_with_kvcache(
+                q=inputs["q"],
+                k_cache=inputs["kv_cache"],
+                block_table=inputs["block_table"],
+                cache_seqlens=inputs["cache_seqlens"],
+                head_dim_v=inputs["head_dim_v"],
+                tile_scheduler_metadata=inputs["tile_scheduler_metadata"],
+                num_splits=inputs["num_splits"],
+                softmax_scale=inputs["softmax_scale"],
+                causal=False,
+                is_fp8_kvcache=True,
+                indices=inputs["indices"],
+            )
+            return TaskResult(out)
         if family == "allgather":
             self.tp_group.all_gather_into_tensor(inputs["output"], inputs["local"])
             return TaskResult(inputs["output"])
@@ -679,6 +790,46 @@ class Runtime:
         )
         return float(value.item())
 
+    def runtime_evidence(self, inputs: dict[str, Any]) -> Optional[dict[str, Any]]:
+        """Return untimed, machine-readable reachability evidence when available."""
+        if self.workload.family != "dsa_flashmla_kv":
+            return None
+        split_prefix = inputs["num_splits"].detach().cpu().tolist()
+        return {
+            "selected_backend": "flashmla_kv",
+            "python_symbol": "sgl_kernel.flash_mla.flash_mla_with_kvcache",
+            "torch_op": "sgl_kernel::fwd_kvcache_mla",
+            "sm100_instantiation": "csrc/sm100/decode/head64/instantiations/v32.cu",
+            "main_kernel_pattern": "flash_fwd_splitkv_mla_fp8_sparse_kernel*",
+            "combine_kernel_pattern": "flash_fwd_mla_combine_kernel*",
+            "q": {
+                "shape": list(inputs["q"].shape),
+                "stride": list(inputs["q"].stride()),
+                "dtype": str(inputs["q"].dtype),
+            },
+            "kv_cache": {
+                "shape": list(inputs["kv_cache"].shape),
+                "stride": list(inputs["kv_cache"].stride()),
+                "dtype": str(inputs["kv_cache"].dtype),
+                "bytes_per_token": inputs["kv_cache"].shape[-1],
+            },
+            "indices": {
+                "shape": list(inputs["indices"].shape),
+                "stride": list(inputs["indices"].stride()),
+                "dtype": str(inputs["indices"].dtype),
+            },
+            "cache_seqlens": inputs["cache_seqlens"].detach().cpu().tolist(),
+            "tile_scheduler_metadata_shape": list(
+                inputs["tile_scheduler_metadata"].shape
+            ),
+            "num_splits_prefix": split_prefix,
+            "splits_per_request": [
+                end - begin for begin, end in zip(split_prefix, split_prefix[1:])
+            ],
+            "softmax_scale": inputs["softmax_scale"],
+            "stream": "torch current CUDA stream",
+        }
+
 
 def _iter_pairs(value: Any, prefix: str = "output"):
     if isinstance(value, TaskResult):
@@ -711,6 +862,10 @@ def _compare(reference: TaskResult, candidate: TaskResult) -> None:
             if ref_value.shape != cand_value.shape:
                 raise AssertionError(
                     f"{ref_name}: shape {tuple(ref_value.shape)} != {tuple(cand_value.shape)}"
+                )
+            if ref_value.dtype != cand_value.dtype:
+                raise AssertionError(
+                    f"{ref_name}: dtype {ref_value.dtype} != {cand_value.dtype}"
                 )
             ref_f = ref_value.float() if ref_value.dtype.is_floating_point else ref_value
             cand_f = cand_value.float() if cand_value.dtype.is_floating_point else cand_value
@@ -771,7 +926,7 @@ def _measure_paired(
     candidate_fn: Callable[[], TaskResult],
     warmup: int,
     repeat: int,
-) -> tuple[list[float], list[float]]:
+) -> tuple[list[float], list[float], list[dict[str, Any]]]:
     """Interleave A/B samples to reduce clock, cache, and temperature drift."""
     torch = runtime.torch
 
@@ -800,14 +955,28 @@ def _measure_paired(
 
     reference_values: list[float] = []
     candidate_values: list[float] = []
+    paired_samples: list[dict[str, Any]] = []
     for index in range(repeat):
         if index % 2 == 0:
-            reference_values.append(one(reference_fn))
-            candidate_values.append(one(candidate_fn))
+            order = ["reference", "candidate"]
+            reference_ms = one(reference_fn)
+            candidate_ms = one(candidate_fn)
         else:
-            candidate_values.append(one(candidate_fn))
-            reference_values.append(one(reference_fn))
-    return reference_values, candidate_values
+            order = ["candidate", "reference"]
+            candidate_ms = one(candidate_fn)
+            reference_ms = one(reference_fn)
+        reference_values.append(reference_ms)
+        candidate_values.append(candidate_ms)
+        paired_samples.append(
+            {
+                "pair": index,
+                "order": order,
+                "reference_ms": reference_ms,
+                "candidate_ms": candidate_ms,
+                "speedup": reference_ms / candidate_ms,
+            }
+        )
+    return reference_values, candidate_values, paired_samples
 
 
 def _summary(values: list[float]) -> dict[str, float]:
@@ -850,8 +1019,9 @@ def run_task(args: argparse.Namespace) -> int:
                 repeat=args.repeat,
             )
             candidate_values = None
+            paired_samples = None
         else:
-            reference_values, candidate_values = _measure_paired(
+            reference_values, candidate_values, paired_samples = _measure_paired(
                 runtime,
                 inputs,
                 lambda: runtime.reference(inputs),
@@ -859,10 +1029,19 @@ def run_task(args: argparse.Namespace) -> int:
                 warmup=args.warmup,
                 repeat=args.repeat,
             )
+        reference_summary: dict[str, Any] = _summary(reference_values)
+        reference_summary["samples_ms"] = reference_values
         result: dict[str, Any] = {
             "schema_version": 1,
             "workload": as_dict(workload),
-            "reference": _summary(reference_values),
+            "warmup": args.warmup,
+            "repeat": args.repeat,
+            "environment_flags": {
+                "SGLANG_GLM52_OPT": os.environ.get("SGLANG_GLM52_OPT"),
+                "CUDA_VISIBLE_DEVICES": os.environ.get("CUDA_VISIBLE_DEVICES"),
+                "SGLANG_ROOT": os.environ.get("SGLANG_ROOT"),
+            },
+            "reference": reference_summary,
             "reference_policy": "SGLANG_GLM52_OPT=0 production path",
             "execution_mode": "eager_cuda_event",
             "timing_contract": (
@@ -872,9 +1051,13 @@ def run_task(args: argparse.Namespace) -> int:
             ),
             "candidate": None,
         }
+        runtime_evidence = runtime.runtime_evidence(inputs)
+        if runtime_evidence is not None:
+            result["runtime_evidence"] = runtime_evidence
         if candidate_module is not None:
             assert candidate_values is not None
             candidate_summary = _summary(candidate_values)
+            candidate_summary["samples_ms"] = candidate_values
             candidate_summary["path"] = str(Path(args.candidate).expanduser().resolve())
             paired_ratios = [
                 ref_ms / cand_ms
@@ -892,6 +1075,10 @@ def run_task(args: argparse.Namespace) -> int:
                 min(len(ordered_ratios) - 1, max(0, int(0.9 * len(ordered_ratios)) - 1))
             ]
             result["candidate"] = candidate_summary
+            result["paired_samples"] = paired_samples
+            candidate_evidence = getattr(candidate_module, "candidate_evidence", None)
+            if callable(candidate_evidence):
+                result["candidate_evidence"] = candidate_evidence()
 
         if runtime.rank == 0:
             rendered = json.dumps(result, indent=2, sort_keys=True)

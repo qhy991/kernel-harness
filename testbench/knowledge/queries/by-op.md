@@ -6,6 +6,10 @@
 
 - `glm52--o_proj_decode--b200--20260714a` [no-win] Attention O Projection/decode — For small-M B200 FP8 decode GEMMs with SGLang-packed UE8M0 scales, the production DeepGEMM wrapper is already the safe path. Python-wrapper bypasses do not improve CUPTI device-kernel timing, and alternate APIs either need different scale layouts or fail to beat both M=16 and M=32.
 
+## DSA FlashMLA KV Decode Attention
+
+- `glm52--dsa_flashmla_kv_decode--b200--20260722a` [no-win] DSA FlashMLA KV Decode Attention/decode — For a PDL-overlapped split-KV plus combine path with no measured launch gap, a compile-time combine-resource reduction must be judged on the full captured chain, not one kernel or one favorable eager session. At these fixed decode buckets the M16 max-splits specialization was not repeatably faster, so the safe transferable policy is to fail closed to stock until repeated CUDA-Graph and containing-region measurements clear the production threshold.
+
 ## Routed Expert Down
 
 - `glm52--routed_down_decode--b200--20260715a` [win] Routed Expert Down/decode — Masked grouped-MoE decode drop-in verification must ignore empty-expert padded slots. A harness WIN that removes device-scalar layout reads is production-safe once active rows match bit-exactly under deep_gemm_wrapper.grouped_gemm_nt_f8f8bf16_masked.

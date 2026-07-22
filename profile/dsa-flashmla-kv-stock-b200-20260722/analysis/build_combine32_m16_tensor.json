@@ -1,0 +1,47 @@
+{
+  "allowed_prebuild_untracked_count": 39,
+  "build_command": [
+    "/home/qinhaiyan/glm52-goal-runs/22-dsa_flashmla_kv_production/kernel-harness/.venv/bin/python",
+    "setup.py",
+    "build",
+    "--build-base",
+    "/home/qinhaiyan/glm52-goal-runs/22-dsa_flashmla_kv_production/sglang/third_party/FlashMLA-goal22/build-artifacts/.combine32-m16-tensor.staging-vaa02k0q/build",
+    "bdist_wheel",
+    "--skip-build",
+    "--bdist-dir",
+    "/home/qinhaiyan/glm52-goal-runs/22-dsa_flashmla_kv_production/sglang/third_party/FlashMLA-goal22/build-artifacts/.combine32-m16-tensor.staging-vaa02k0q/bdist",
+    "--dist-dir",
+    "/home/qinhaiyan/glm52-goal-runs/22-dsa_flashmla_kv_production/sglang/third_party/FlashMLA-goal22/build-artifacts/.combine32-m16-tensor.staging-vaa02k0q/wheels"
+  ],
+  "build_log": "/home/qinhaiyan/glm52-goal-runs/22-dsa_flashmla_kv_production/sglang/third_party/FlashMLA-goal22/build-artifacts/combine32-m16-tensor/build.log",
+  "cutlass_commit": "147f5673d0c1c3dcf66f78d677fd647e4a020219",
+  "cutlass_status": [],
+  "elapsed_seconds": 158.84970331192017,
+  "environment": {
+    "CPLUS_INCLUDE_PATH": "/usr/local/cuda-13.2/targets/x86_64-linux/include/cccl",
+    "FLASH_MLA_DISABLE_SM90": "1",
+    "MAX_JOBS": "4",
+    "NVCC_THREADS": "2"
+  },
+  "extension": "/home/qinhaiyan/glm52-goal-runs/22-dsa_flashmla_kv_production/sglang/third_party/FlashMLA-goal22/build-artifacts/combine32-m16-tensor/overlay/flash_mla/cuda.cpython-312-x86_64-linux-gnu.so",
+  "extension_sha256": "9665dec00cb8caa4a8b5fc42bd40f9e8320d890e1a77705f0428630010539ccb",
+  "extension_size_bytes": 21637496,
+  "label": "combine32-m16-tensor",
+  "overlay": "/home/qinhaiyan/glm52-goal-runs/22-dsa_flashmla_kv_production/sglang/third_party/FlashMLA-goal22/build-artifacts/combine32-m16-tensor/overlay",
+  "overlay_python_sha256": {
+    "flash_mla/__init__.py": "5c390eb2b6633ef6ae3f0cda6c92443405f1640a9c012157673155b9e95f6662",
+    "flash_mla/flash_mla_interface.py": "802da6b2db58ca3455e4f48bb860e448fd16b12f817fbd94d900ea7a51334bd6"
+  },
+  "python": "/home/qinhaiyan/glm52-goal-runs/22-dsa_flashmla_kv_production/kernel-harness/.venv/bin/python",
+  "source": "/home/qinhaiyan/glm52-goal-runs/22-dsa_flashmla_kv_production/sglang/third_party/FlashMLA-goal22",
+  "source_commit": "d18ff63a73dc6519432f59acb9f04365ce14bb10",
+  "source_patch": "/home/qinhaiyan/glm52-goal-runs/22-dsa_flashmla_kv_production/sglang/third_party/FlashMLA-goal22/build-artifacts/combine32-m16-tensor/source.patch",
+  "source_patch_base": "05e26647fe840b8baedae486c2d86d5ce4efeb7c",
+  "source_patch_sha256": "b7e2b6740e6cf6f491f309e2957d637b716903e3ae09d877f190b3aa35e51268",
+  "source_status": [],
+  "source_untracked_status": [
+    "?? build-artifacts/"
+  ],
+  "wheel": "/home/qinhaiyan/glm52-goal-runs/22-dsa_flashmla_kv_production/sglang/third_party/FlashMLA-goal22/build-artifacts/combine32-m16-tensor/wheels/flash_mla-1.0.0+d18ff63-cp312-cp312-linux_x86_64.whl",
+  "wheel_sha256": "d034eb53a849e08516ca90373f1f849306d60f7ac21c24038c6d4f1b52055738"
+}

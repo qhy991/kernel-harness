@@ -193,6 +193,37 @@ def _add_decode_bucket(m: int) -> None:
         "Blackwell FP8-KV production backend (trtllm-gen), not flash_mla_sparse_fwd.",
     )
 
+    name = f"dsa_flashmla_kv_decode_{suffix}"
+    WORKLOADS[name] = Workload(
+        name,
+        "dsa_flashmla_kv",
+        "decode",
+        1,
+        (
+            "sglang.srt.layers.attention.dsa_backend."
+            "DeepseekSparseAttnBackend._forward_flashmla_kv -> "
+            "sgl_kernel.flash_mla.flash_mla_with_kvcache -> "
+            "torch.ops.sgl_kernel.fwd_kvcache_mla"
+        ),
+        dict(
+            batch=m,
+            q_heads=64,
+            q_head_dim=576,
+            v_head_dim=512,
+            qk_nope_head_dim=192,
+            qk_rope_head_dim=64,
+            softmax_scale=0.0625,
+            kv_cache_dim=656,
+            context=8192,
+            sparse_topk=2048,
+            page_size=64,
+        ),
+        (
+            "Explicit --dsa-decode-backend flashmla_kv lane: paged FP8 KV, "
+            "production split-KV plus combine, TP8/DP8/EP8 local decode bucket."
+        ),
+    )
+
     name = f"dp_allgather_decode_{suffix}"
     WORKLOADS[name] = Workload(
         name,
