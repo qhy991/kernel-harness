@@ -2,6 +2,7 @@
   "version": 1,
   "name": "glm52_rocm_local",
   "description": "Local GLM-5.2 ROCm selected-task taskset: 11 target tasks plus fused MoE total rollups for calibration and official-total reporting.",
+  "task_root": "testbench/tasks/glm52_amd",
   "hardware": {
     "platform": "rocm",
     "profile": "amd-mi300x",

@@ -1,8 +1,21 @@
 # Kernel optimization agent guide
 
-The task suite is **GLM-5.2 on B200**: 12 operators × 2 phases = 24 tasks under
-[`testbench/tasks/glm52/`](testbench/tasks/glm52/). Optimize **one task per session**.
-All commands run from the repo root.
+The task suite is **GLM-5.2**, 13 operators × 2 phases = 26 tasks per platform,
+split by hardware into two independent trees:
+
+- **CUDA (B200, sm100):** [`testbench/tasks/glm52_cuda/`](testbench/tasks/glm52_cuda/)
+- **AMD (MI300X, gfx942):** [`testbench/tasks/glm52_amd/`](testbench/tasks/glm52_amd/)
+
+Optimize **one task per session**. All commands run from the repo root.
+
+The two trees are separate on purpose. Same operator name (`o_proj_prefill`,
+`dsa_attn_decode`, …) but different FP8 dtype (`e4m3fn` vs `e4m3fnuz`), different
+reference kernel (`deep_gemm` / `sgl_kernel` vs `aiter`), different inputs schemas
+(e.g. `index_score_decode` uses paged KV on CUDA and a ksrange KV on AMD), and
+different roofline peaks. Pick the tree that matches your hardware.
+
+The legacy [`testbench/tasks/glm52/`](testbench/tasks/glm52/) tree is retained for
+now as a compatibility bridge; new work should target `glm52_cuda/` or `glm52_amd/`.
 
 Everything else in this repo is retired and lives under [`legacy/`](legacy/README.md)
 — the Kimi-K2.7 / MiniMax-M3 tasks, the `solution.py` + `definition.json` contract,
@@ -11,24 +24,37 @@ here; don't copy patterns from it.
 
 ## The contract
 
-All 12 operators are defined exactly once, in
-[`testbench/harness/glm52_ops.py`](testbench/harness/glm52_ops.py). A task directory
-names which problem it is and nothing else, so it has nothing it could contradict:
+Each platform has its own operator definitions module — no `IS_ROCM` branches
+between them:
+
+- [`testbench/harness/glm52_ops_cuda.py`](testbench/harness/glm52_ops_cuda.py)
+- [`testbench/harness/glm52_ops_amd.py`](testbench/harness/glm52_ops_amd.py)
+
+Existing `from testbench.harness import glm52_ops` imports keep working via a
+one-way shim that routes to the concrete impl based on the active backend, but
+new code that is already platform-committed should import the concrete module.
+
+A task directory names which problem it is and nothing else, so it has nothing it
+could contradict:
 
 ```
-testbench/tasks/glm52/<task>/
-  task.json       operator + phase + the performance bar. Restating anything
-                  glm52_ops owns is rejected with exit 3.
+testbench/tasks/glm52_{cuda,amd}/<task>/
+  task.json       operator + phase + platform + the performance bar. Restating
+                  anything glm52_ops owns is rejected with exit 3.
   problem.json    the whole problem definition, machine-readable. Generated —
                   read it, never edit it.
   workload.jsonl  the M sweep
   candidate.py    the default candidate: run(inputs: dict) -> output
-  run.sh          the ONLY command
+  run.sh          the ONLY command; hard-codes the platform env
   README.md       generated; identical to `run.sh --describe`
 ```
 
 ```bash
-T=testbench/tasks/glm52/o_proj_decode
+# AMD (MI300X)
+T=testbench/tasks/glm52_amd/o_proj_decode
+
+# CUDA (B200)
+T=testbench/tasks/glm52_cuda/o_proj_decode
 
 $T/run.sh --describe          # what is this problem? (tensor table included)
 $T/run.sh --describe --json   # ...the same, machine-readable (== problem.json)
@@ -131,17 +157,20 @@ List everything with `.venv/bin/python testbench/bin/inventory.py`.
 - Structural pre-flight runs anywhere, no GPU/venv: `python3 testbench/bin/selftest.py`.
 - Layer-swap acceptance (advisory, after a per-op result):
   `.venv/bin/python testbench/bin/accept_layer.py --M 32 --task <task>`.
-- After changing `glm52_ops.py`, re-project it onto the tasks:
-  `.venv/bin/python testbench/bin/sync_glm52_tasks.py` (`--check` for CI; it never
-  overwrites `candidate.py`).
+- After changing `glm52_ops_cuda.py` or `glm52_ops_amd.py`, re-project onto the tasks:
+  `.venv/bin/python testbench/bin/sync_glm52_tasks.py --platform cuda` (for CUDA), or
+  `.venv/bin/python testbench/bin/sync_glm52_tasks.py --platform amd` (for AMD).
+  Add `--check` for CI; it never overwrites `candidate.py` files.
 
 ## Backends
 
 Hardware peaks, reference kernels, and timing protocols live under
-[`testbench/harness/backends/`](testbench/harness/backends/). The default bundle is
-`cuda/cuda-b200/deep-gemm-sgl-kernel`. See
-[`testbench/docs/BACKENDS.md`](testbench/docs/BACKENDS.md). ROCm/AITER is not
-registered yet — requesting it fails loudly.
+[`testbench/harness/backends/`](testbench/harness/backends/). Registered bundles:
+`cuda/cuda-b200/deep-gemm-sgl-kernel`, `rocm/amd-mi300x/aiter-torch-reference`, and
+`rocm/rocm-mi300x/torch-triton-rocm` (a torch+triton fallback provider for ROCm).
+Each `glm52_{cuda,amd}` task's `run.sh` exports the KERNEL_HARNESS_* env vars that
+pin its bundle, so agents don't need to know these keys. See
+[`testbench/docs/BACKENDS.md`](testbench/docs/BACKENDS.md).
 ## Roofline-reward bench (folder of optimized ops → one CSV)
 
 [`rewardbench/`](rewardbench/README.md) is a standalone tool that scores a **folder of
@@ -187,8 +216,9 @@ Schema and honesty rules:
 
 ## Do not edit (forbidden)
 
-- `testbench/harness/glm52_ops.py` — the operator definitions, the reference, and the
-  tolerances. It is the oracle.
+- `testbench/harness/glm52_ops_cuda.py` and `testbench/harness/glm52_ops_amd.py` —
+  the operator definitions, the reference, and the tolerances. The oracle for each
+  platform. `testbench/harness/glm52_ops.py` is a routing shim; do not add logic to it.
 - `testbench/harness/evaluate_task.py`, `timing.py`, `reward_hack.py` — the runner,
   the timer, the anti-cheat.
 - `task.json`, `problem.json`, `workload.jsonl`, `README.md` in a task directory —

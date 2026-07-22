@@ -16,7 +16,31 @@ from typing import Any
 REPO = Path(__file__).resolve().parents[2]
 DEFAULT_TASKSET = REPO / "tasksets" / "glm52_rocm_local.json"
 EVALUATE_TASK = REPO / "testbench" / "harness" / "evaluate_task.py"
-TASK_ROOT = REPO / "testbench" / "tasks" / "glm52"
+
+# Task root is derived from the taskset's hardware.platform:
+#   rocm → testbench/tasks/glm52_amd/
+#   cuda → testbench/tasks/glm52_cuda/
+# A taskset may override with "task_root": "<repo-relative path>" if it points at
+# the legacy glm52/ tree or a custom fork.
+_PLATFORM_TASK_ROOT = {
+    "rocm": REPO / "testbench" / "tasks" / "glm52_amd",
+    "cuda": REPO / "testbench" / "tasks" / "glm52_cuda",
+}
+
+
+def _resolve_task_root(taskset: dict[str, Any]) -> Path:
+    override = taskset.get("task_root")
+    if override:
+        p = Path(override)
+        return p if p.is_absolute() else (REPO / p)
+    platform = ((taskset.get("hardware") or {}).get("platform") or "").lower()
+    root = _PLATFORM_TASK_ROOT.get(platform)
+    if root is None:
+        raise SystemExit(
+            f"taskset has no hardware.platform (or an unknown one: {platform!r}); "
+            f"add a 'task_root' field pointing at the task directory."
+        )
+    return root
 
 
 def main() -> int:
@@ -41,6 +65,7 @@ def main() -> int:
     args = ap.parse_args()
 
     taskset = load_taskset(args.taskset)
+    task_root = _resolve_task_root(taskset)
     selected = select_tasks(taskset["tasks"], args.phase, args.task)
     defaults = taskset.get("defaults", {})
     env = rocm_env(taskset.get("hardware", {}))
@@ -48,7 +73,7 @@ def main() -> int:
     results = []
     for task in selected:
         for m_value in m_values_for_task(task, args, defaults):
-            result = run_task(task, args, env, m_value)
+            result = run_task(task, args, env, m_value, task_root)
             results.append(result)
             status = result.get("status")
             speedup = result.get("geomean_speedup")
@@ -123,9 +148,10 @@ def m_values_for_task(task: dict[str, Any], args, defaults: dict[str, Any]) -> l
     return [int(v) for v in defaults.get(key, fallback)]
 
 
-def run_task(task: dict[str, Any], args, env: dict[str, str], m_value: int) -> dict[str, Any]:
+def run_task(task: dict[str, Any], args, env: dict[str, str], m_value: int,
+             task_root: Path) -> dict[str, Any]:
     harness_task = task["harness_task"]
-    task_dir = TASK_ROOT / harness_task
+    task_dir = task_root / harness_task
     cmd = [
         sys.executable,
         str(EVALUATE_TASK),

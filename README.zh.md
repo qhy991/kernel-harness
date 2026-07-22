@@ -1,21 +1,30 @@
 # Kernel-Harness
 
-面向 **GLM-5.2 / B200** 的 SGLang 算子优化任务集。
+面向 **GLM-5.2** 的 SGLang 算子优化任务集，同时支持 NVIDIA B200 与 AMD MI300X。
 
-**24 个 task** = 12 个算子 × 2 个 phase（prefill / decode），位于
-`testbench/tasks/glm52/`。全部算子只在 `testbench/harness/glm52_ops.py` 里定义一次；
-每个 task 目录只声明"我是哪个问题"，一条命令同时判定正确性、延迟、speedup 与
-roofline reward：
+每个平台 **26 个 task** = 13 个算子 × 2 个 phase（prefill / decode）。两棵独立
+task 树按硬件分开 —— 选跟你 GPU 匹配的那棵：
+
+- **CUDA / B200**: `testbench/tasks/glm52_cuda/`（`float8_e4m3fn`、deep_gemm + sgl_kernel）
+- **AMD / MI300X**: `testbench/tasks/glm52_amd/`（`float8_e4m3fnuz`、aiter）
+
+算子只在对应平台的 `testbench/harness/glm52_ops_cuda.py` 或 `glm52_ops_amd.py`
+里定义一次。每个 task 目录只声明"我是哪个问题"，一条命令同时判定正确性、延迟、
+speedup 与 roofline reward：
 
 ```bash
-T=testbench/tasks/glm52/o_proj_decode
+# CUDA agent
+T=testbench/tasks/glm52_cuda/o_proj_decode
+
+# AMD agent
+T=testbench/tasks/glm52_amd/o_proj_decode
 
 $T/run.sh --describe                        # 这是什么问题？
 $T/run.sh --describe --json                 # 同上，机器可读（== problem.json）
 $T/run.sh                                   # 判定门
 $T/run.sh --candidate ~/kernels/mine.py     # 测任意 kernel，无需改动 task
 
-# 验收环节（不是判定门）：把候选换进 12 算子层预算，看端到端 delta
+# 验收环节（不是判定门）：把候选换进 13 算子层预算，看端到端 delta
 .venv/bin/python testbench/bin/accept_layer.py --M 32 --task o_proj_decode
 ```
 

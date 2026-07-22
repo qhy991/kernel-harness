@@ -1,21 +1,32 @@
 # Kernel-Harness
 
-Agent-ready **SGLang kernel-optimization tasks for GLM-5.2 on B200**.
+Agent-ready **SGLang kernel-optimization tasks for GLM-5.2**, on both NVIDIA B200
+and AMD MI300X.
 
-**24 tasks** = 12 operators × 2 phases (prefill / decode), under
-`testbench/tasks/glm52/`. Every operator is defined exactly once in
-`testbench/harness/glm52_ops.py`; each task directory only names which problem it
-is, and one command judges correctness, latency, speedup and roofline reward:
+**26 tasks per platform** = 13 operators × 2 phases (prefill / decode). Two
+independent task trees, one per hardware — pick the one that matches your GPU:
+
+- **CUDA / B200**: `testbench/tasks/glm52_cuda/` (`float8_e4m3fn`, deep_gemm + sgl_kernel)
+- **AMD / MI300X**: `testbench/tasks/glm52_amd/` (`float8_e4m3fnuz`, aiter)
+
+Every operator is defined exactly once per platform in
+`testbench/harness/glm52_ops_cuda.py` or `testbench/harness/glm52_ops_amd.py`.
+Each task directory only names which problem it is, and one command judges
+correctness, latency, speedup and roofline reward:
 
 ```bash
-T=testbench/tasks/glm52/o_proj_decode
+# CUDA agent
+T=testbench/tasks/glm52_cuda/o_proj_decode
+
+# AMD agent
+T=testbench/tasks/glm52_amd/o_proj_decode
 
 $T/run.sh --describe                        # what is this problem?
 $T/run.sh --describe --json                 # ...machine-readable (== problem.json)
 $T/run.sh                                   # the gate
 $T/run.sh --candidate ~/kernels/mine.py     # test any kernel, without editing the task
 
-# acceptance only (not the gate): swap the candidate into the 12-op layer budget
+# acceptance only (not the gate): swap the candidate into the 13-op layer budget
 .venv/bin/python testbench/bin/accept_layer.py --M 32 --task o_proj_decode
 ```
 
