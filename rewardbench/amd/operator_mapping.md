@@ -14,6 +14,82 @@ MoE 诊断项，并额外加入 fused SGLang MoE total 作为 production ABI rol
 > 与本目录 TP1 campaign（`o_proj`/`index_k`/`dsa_attn` sparse）**优先级与 baseline 不对齐**。
 > 详见 **`e2e_profile_20260722/README.md`** 与 `e2e_vs_harness_baseline_mismatch.csv`。
 
+## harness baseline ↔ sglang 生产 dispatch 对照（2026-07-22 源码审计）
+
+> **一句话**：`amd-glm-object.csv` 里的 `baseline(aiter us)` 与 `speedup vs aiter` 的分母，都是
+> **aiter 的 Triton fallback 路径**，不是 sglang 在 gfx942 上默认 dispatch 的 kernel。数字本身没错，
+> 只是"分母对象"需要注明清楚。
+
+### GEMM (o_proj / index_k)
+
+sglang 生产 dispatch — `sglang/srt/layers/quantization/fp8_utils.py::aiter_w8a8_block_fp8_linear`
+（第 788 行）在 `_use_aiter_bpreshuffle_gfx942`（MI300X 上默认 True）时：
+
+```
+if M >= _GFX942_M_THRESHOLD (=4096) and (K,N) not in {(2048,4096)}:
+    gemm_a8w8_blockscale_bpreshuffle_asm     ← ASM 路径（2.64× vs CK）
+else:
+    ck_gemm_a8w8_blockscale                  ← CK 路径
+# aiter.ops.triton.gemm_a8w8_blockscale 只在 bpreshuffle 关闭时作为 fallback
+```
+
+对应到 CSV 三条 o_proj 行（`K=16384, N=6144`；均不在 exception set）：
+
+| M | sglang 生产实际 dispatch | harness baseline | 差别 |
+|---|---|---|---|
+| 1024 | `ck_gemm_a8w8_blockscale` | `aiter.ops.triton.gemm_a8w8_blockscale` | 不同 kernel |
+| 2048 | `ck_gemm_a8w8_blockscale` | 同上 (Triton) | 不同 kernel |
+| 4096 | `gemm_a8w8_blockscale_bpreshuffle_asm` | 同上 (Triton) | 不同 kernel；ASM 快 2.64× |
+
+`index_k` 三条：`_build_gemm` 让 prefill 的 `rows = S = 65536`，所以三个 CSV row 都是同一个
+`[65536, 6144]×[6144, 128]` GEMM（这也是 CSV 里 index_k 三行延迟几乎相同的原因）。M=65536 ≥ 4096，
+sglang 生产实际全部走 **ASM 路径**；harness baseline 仍是 Triton。
+
+### MLA Decode (dsa_attn)
+
+sglang 生产 dispatch — `sglang/srt/layers/attention/dsa_backend.py::_run_aiter_mla_decode_fwd`
+（第 2051-2121 行）：
+
+```python
+from aiter.mla import mla_decode_fwd
+mla_decode_fwd(q_kernel, kv_cache, o_kernel, cu_seqlens_q,
+               kv_indptr, kv_indices, kv_last_page_lens, max_seqlen_q,
+               sm_scale=layer.scaling, logit_cap=layer.logit_cap)
+# 内部落到 aiter.mla_decode_stage1_asm_fwd（ASM），非 Triton
+```
+
+harness baseline — `aiter_baseline.py:85`：
+```python
+from aiter.ops.triton.attention.pa_decode_sparse import pa_decode_sparse
+```
+
+两者签名、算法、KV cache layout 都不一样：`mla_decode_fwd` 是 paged-KV + ASM stage1+reduce，
+`pa_decode_sparse` 是 flat-KV + Triton split-K。**`grep -r pa_decode_sparse sglang/` 结果为空** ——
+sglang 里没有任何代码路径会调用 `pa_decode_sparse`。
+
+### 正确性 (`OK(calc_diff<5e-6)`)
+
+`aiter_baseline.py:126` 的 oracle 是 `rocm_mi300x.py` 里的自包含参考：
+
+| 算子族 | oracle | 缺失的 sglang 语义 |
+|---|---|---|
+| GEMM | `_blockwise_fp8_gemm_torch` (dequant→f32→matmul→bf16) | — (纯数学) |
+| MLA | `_ref_mla` (gather + softmax + matmul) | `logit_cap`、sink、FP8 KV cache 量化、paged block table、head padding、多请求 batching |
+
+**通过 calc_diff<5e-6 = "kernel 匹配 blockwise-FP8 GEMM / sparse MQA 的数学定义"**；
+**≠ "kernel 与 sglang 生产 kernel 在同一输入上产生 bit-close 输出"**。这是刻意设计
+（独立 oracle 能同时抓 baseline 和 candidate 各自的 bug），但读 CSV 时不能把它当作
+"能直接替换进 sglang 服务"的通行证。
+
+### 后续要复现"vs 生产 dispatch"分母，需要
+
+1. **GEMM**：把 baseline 换成 `gemm_a8w8_blockscale_bpreshuffle_asm` (M≥4096) + `ck_gemm_a8w8_blockscale` (M<4096) 的分档测量；ASM 需要 aiter C++ JIT 构建到 aiter 包目录（本机只读，未跑通）。
+2. **MLA**：把 baseline 换成 `aiter.mla.mla_decode_fwd`（配合 sglang `_run_aiter_mla_decode_fwd` 的 KV cache layout 与 `kv_indptr`/`kv_indices` 语义）。`pa_decode_sparse` 可保留为独立的 Triton 参考，但不再叫 "aiter baseline"。
+3. **端到端 bit-close 正确性**：把 `run_glm52_no_offload.py` shim 起 sglang，在生产 kernel 的入口/出口 tap 出 Tensor，与 candidate 逐 shape 比对。
+4. **配置 caveat**：现在 shim 里 `SGLANG_DISABLE_GFX942_BPRESHUFFLE=1`（省 5 GiB `weight_original`）会让 sglang 改走 Triton fallback；这条配置下 harness 的 Triton baseline 就 = 生产 dispatch。但这是"内存换速度"的降级路径，不是默认生产配置。
+
+---
+
 ## 硬件与数值基线（MI300X / CDNA3 / gfx942）
 
 | 项 | 值 |
