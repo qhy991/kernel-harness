@@ -32,15 +32,15 @@ Baseline to beat: the call below, timed CUPTI cold-L2 on these same inputs.
 """
 from __future__ import annotations
 
-import deep_gemm
+from testbench.harness import glm52_ops
+
+
+OP = 'o_proj'
+PHASE = 'prefill'
 
 
 def run(inputs: dict):
     # Starting point: the reference call itself — correct, speedup ~1.0. Replace it.
-    out = inputs["out"]
-    deep_gemm.fp8_gemm_nt(
-        (inputs["x_fp8"], inputs["x_scale"]),
-        (inputs["w_fp8"], inputs["w_scale"]),
-        out,
-    )
-    return out
+    # glm52_ops.reference dispatches to the per-platform production kernel
+    # (deep_gemm on CUDA; aiter on ROCm).
+    return glm52_ops.reference(OP, PHASE, inputs)

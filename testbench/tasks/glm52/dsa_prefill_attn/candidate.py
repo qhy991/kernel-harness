@@ -27,10 +27,16 @@ Baseline to beat: the call below, timed CUPTI cold-L2 on these same inputs.
 """
 from __future__ import annotations
 
-from sgl_kernel.flash_mla import flash_mla_sparse_fwd
+from testbench.harness import glm52_ops
+
+
+OP = 'dsa_attn'
+PHASE = 'prefill'
 
 
 def run(inputs: dict):
     # Starting point: the reference call itself — correct, speedup ~1.0. Replace it.
-    return flash_mla_sparse_fwd(inputs["q"], inputs["kv"], inputs["indices"],
-                                inputs["sm_scale"], inputs["d_v"])
+    # glm52_ops.reference dispatches to the per-platform production kernel
+    # (flash_mla_sparse_fwd on CUDA; aiter paged sparse MLA on ROCm, ~2x faster
+    # than the torch reference at prefill M>=1024).
+    return glm52_ops.reference(OP, PHASE, inputs)

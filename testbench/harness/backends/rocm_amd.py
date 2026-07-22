@@ -248,6 +248,54 @@ def _try_sglang_tilelang_sparse_mla(inputs: dict):
         return None
 
 
+@lru_cache(maxsize=1)
+def _aiter_sparse_mla_fn():
+    _add_source_tree("SGLANG_DIR", str(_REPO.parent / "sglang"), "python")
+    try:
+        from sglang.srt.layers.attention.dsa.dsa_aiter_sparse_mla import (
+            aiter_sparse_mla_fwd,
+        )
+    except Exception:
+        return None
+    return aiter_sparse_mla_fwd
+
+
+def _try_aiter_sparse_mla(inputs: dict):
+    """Production-aligned sparse MLA: sglang-ROCm's aiter
+    ``unified_attention_sparse_mla`` (paged). The harness gather-form inputs map
+    onto the paged call with block_size=1, a single sequence, and an identity
+    block_table. Verified ~2x faster than the torch (rocBLAS) reference at
+    prefill M>=1024 — so it is the prefill baseline. Slower at decode M<=32
+    (launch overhead dominates in isolation), so decode keeps the torch path."""
+    fn = _aiter_sparse_mla_fn()
+    if fn is None:
+        return None
+    q = inputs["q"].contiguous()
+    kv = inputs["kv"]
+    indices = inputs["indices"]
+    M = q.shape[0]
+    head_dim = q.shape[-1]
+    S = kv.shape[0]
+    kv_cache = kv.reshape(S, 1, head_dim).contiguous()
+    cu_seqlens_q = torch.tensor([0, M], dtype=torch.int32, device=q.device)
+    seq_lens = torch.full((1,), S, dtype=torch.int32, device=q.device)
+    try:
+        return fn(
+            q,
+            kv_cache,
+            indices.to(torch.int32),
+            float(inputs["sm_scale"]),
+            int(inputs["d_v"]),
+            cu_seqlens_q,
+            M,
+            seq_lens,
+            S,
+            block_size=1,
+        )
+    except Exception:
+        return None
+
+
 class AmdRewardbenchProvider:
     id = "aiter-torch-reference"
     platform = "rocm"
@@ -270,7 +318,9 @@ class AmdRewardbenchProvider:
         if family == "moe_fused":
             return "sglang.fused_moe total Routed Expert Gate+Up/Down"
         if family == "mla":
-            return "sglang.tilelang_sparse_fwd / gather+chunked fallback"
+            if phase == "prefill":
+                return "sglang aiter unified_attention_sparse_mla (paged)"
+            return "torch gather+chunked sparse MLA (decode; tilelang N/A on gfx942)"
         if phase == "prefill":
             return "aiter.ops.triton.fp8_mqa_logits"
         return "batched torch._scaled_mm + weighted sum (paged-cost decode)"
@@ -361,6 +411,15 @@ class AmdRewardbenchProvider:
             return _fused_moe_reference(inputs)
 
         if family == "mla":
+            # Prefill: aiter paged MLA is sglang-ROCm production AND ~2x faster
+            # than torch at M>=1024 here -> use it as the baseline.
+            if phase == "prefill":
+                y = _try_aiter_sparse_mla(inputs)
+                if y is not None:
+                    return y
+            # Decode: torch (rocBLAS) is fastest in this isolated gather-form
+            # proxy; the production aiter kernel wins in real paged+graph
+            # serving, not here, so decode stays on the torch path.
             y = _try_sglang_tilelang_sparse_mla(inputs)
             if y is not None:
                 return y

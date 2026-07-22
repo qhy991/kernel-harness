@@ -30,13 +30,15 @@ Baseline to beat: the call below, timed CUPTI cold-L2 on these same inputs.
 """
 from __future__ import annotations
 
-import deep_gemm
+from testbench.harness import glm52_ops
+
+
+OP = 'index_score'
+PHASE = 'decode'
 
 
 def run(inputs: dict):
     # Starting point: the reference call itself — correct, speedup ~1.0. Replace it.
-    return deep_gemm.fp8_paged_mqa_logits(
-        inputs["q_fp8"], inputs["kv_cache_fp8"], inputs["weights"], inputs["seqlens"],
-        inputs["block_tables"], inputs["schedule_metadata"], inputs["max_seq_len"],
-        clean_logits=False,
-    )
+    # glm52_ops.reference dispatches to the per-platform production kernel
+    # (deep_gemm on CUDA; aiter on ROCm).
+    return glm52_ops.reference(OP, PHASE, inputs)
