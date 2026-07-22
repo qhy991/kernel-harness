@@ -1,0 +1,265 @@
+TASK q_b/prefill  run=20260720T071506Z-bab22c  candidate=archive/0720-Best-GLM-52/best/q_b_decode/candidate/candidate.py sha=5f4f85460224
+     timing=cupti-cold-l2-device-kernel-median iters=30 warmup=3 repeat=10  S=65536 seed=0  device=cuda:0
+
+     roofline: fp8 peak 4.50 PFLOP/s, HBM 8.0 TB/s, ridge 562.5 FLOP/byte -> reward = utilisation of whichever resource binds
+
+  shape    ok  calc_diff   cand_us    ref_us  speedup  sp_cons  verdict      AI   bound   TFLOP/s     MFU      GB/s      BW   reward
+ M=1024  PASS   0.00e+00     42.58     51.32   1.205x   1.199x      WIN   991.9 compute    1614.1  35.87%    1627.2  20.34%   0.3587
+        └ ref   baseline                                                                   1339.1  29.76%    1350.0  16.87%   0.2976
+ M=2048  PASS   0.00e+00     80.29     70.16   0.874x   0.872x  REGRESS  1309.0 compute    1711.7  38.04%    1307.7  16.35%   0.3804
+        └ ref   baseline                                                                   1958.9  43.53%    1496.5  18.71%   0.4353
+ M=4096  PASS   0.00e+00    152.08    109.90   0.723x   0.718x  REGRESS  1558.0 compute    1807.5  40.17%    1160.1  14.50%   0.4017
+        └ ref   baseline                                                                   2501.1  55.58%    1605.3  20.07%   0.5558
+
+VERDICT: CORRECT
+1/3 shapes WIN, 2 regressed, 0 neutral   geomean_speedup=0.913x  best_reward=0.4017
+performance_gate: >=1 win AND 0 regressions -> NOT MET
+  regressed: glm52-q_b_prefill-M2048, glm52-q_b_prefill-M4096 — the candidate loses there even at its fastest sample vs the reference's slowest. Fall back to the reference on those shapes.
+result=runs/glm52/q_b_prefill/20260720T071506Z-bab22c/result.json
+
+RESULT_JSON_BEGIN
+{
+  "schema_version": "1.0",
+  "task": {
+    "name": "q_b_prefill",
+    "model": "glm52",
+    "operator": "q_b",
+    "phase": "prefill",
+    "S": 65536,
+    "seed": 0,
+    "family": "gemm",
+    "output_kind": "dense",
+    "backend": "deep_gemm.fp8_gemm_nt",
+    "diff_tol": 5e-06,
+    "rel_tol": 0.015703125,
+    "abs_tol_factor": 0.0001,
+    "performance_gate": {
+      "min_speedup": 1.0,
+      "basis": "conservative (q=0.9)"
+    }
+  },
+  "run": {
+    "run_id": "20260720T071506Z-bab22c",
+    "started_utc": "2026-07-20T07:15:06Z",
+    "finished_utc": "2026-07-20T07:15:19Z",
+    "repeat": 10,
+    "repeat_scope": "in-process",
+    "iterations": 30,
+    "warmup": 3,
+    "timing_protocol": "cupti-cold-l2-device-kernel-median",
+    "device": "cuda:0",
+    "correctness_standard": "FlashMLA check_is_allclose structure: anomaly positions + elementwise (abs OR rel) + DeepGEMM calc_diff, on a poisoned output buffer",
+    "reward_standard": "rewardbench bound-aware roofline (PR2)",
+    "result_dir": "runs/glm52/q_b_prefill/20260720T071506Z-bab22c"
+  },
+  "candidate": {
+    "path": "archive/0720-Best-GLM-52/best/q_b_decode/candidate/candidate.py",
+    "sha256": "5f4f85460224c49a279bda7e1d67dfdd106a5f12ff0c0d23a7d020a36353fce1",
+    "is_reference_fallback": false,
+    "external": true
+  },
+  "environment": {
+    "hostname": "dry-vm-embraces-fin-03",
+    "python": "3.12.13",
+    "platform": "Linux-6.8.0-100-generic-x86_64-with-glibc2.39",
+    "git_sha": "fad7d34c913e280b558da812ad0ac24313fb5d00",
+    "git_branch": "main",
+    "git_dirty": true,
+    "torch": "2.11.0+cu130",
+    "deep_gemm": "0.1.4",
+    "sgl_kernel": "0.4.4",
+    "cuda": "13.0",
+    "gpu": "NVIDIA B200",
+    "gpu_capability": "10.0",
+    "gpu_memory_gb": 191.5,
+    "gpu_count": 1,
+    "driver": "610.43.02\n610.43.02\n610.43.02\n610.43.02"
+  },
+  "cost_model": {
+    "gpu": "NVIDIA B200",
+    "hbm_bytes_per_s": 8000000000000.0,
+    "peak_flops_fp8": 4500000000000000.0,
+    "peak_flops_bf16": 2250000000000000.0,
+    "source": "rewardbench (PR2) + testbench/harness/profile.py; opbench/mfu.py's 7.7e12 not used"
+  },
+  "per_shape": [
+    {
+      "uuid": "glm52-q_b_prefill-M1024",
+      "axes": {
+        "M": 1024,
+        "S": 65536
+      },
+      "correct": true,
+      "output_kind": "dense",
+      "output_buffer_poisoned": true,
+      "calc_diff": 0.0,
+      "max_abs_err": 0.0,
+      "max_rel_err": 0.0,
+      "abs_tol": 0.0247,
+      "rel_tol": 0.015703125,
+      "diff_tol": 5e-06,
+      "elementwise_failed": 0,
+      "anomaly_ok": true,
+      "elements": 16777216,
+      "cosine": 0.9999999999999999,
+      "best_fit_scale": 0.9999999999999999,
+      "timing_spread": 1.072,
+      "timing_unstable": false,
+      "post_timing_calc_diff": 0.0,
+      "post_timing_correct": true,
+      "flops": 68719476736.0,
+      "bytes_hbm": 69279744.0,
+      "compute_dtype": "fp8",
+      "candidate_us": 42.576,
+      "candidate_us_lo": 42.512,
+      "candidate_us_hi": 42.64,
+      "reference_us": 51.319,
+      "reference_us_lo": 51.104,
+      "reference_us_hi": 54.783,
+      "samples": 10,
+      "candidate_us_p90": 42.627,
+      "reference_us_p10": 51.104,
+      "conservative_quantile": 0.9,
+      "speedup": 1.2054,
+      "speedup_conservative": 1.1989,
+      "speedup_optimistic": 1.2162,
+      "shape_verdict": "win",
+      "bound": "compute",
+      "arithmetic_intensity": 991.912971502897,
+      "ridge": 562.5,
+      "reward": 0.358680340341798,
+      "reference_reward": 0.29756855040208546,
+      "achieved_tflops": 1614.061531538091,
+      "achieved_gbps": 1627.2209134361308,
+      "compute_util": 0.358680340341798,
+      "bw_util": 0.20340261417951636
+    },
+    {
+      "uuid": "glm52-q_b_prefill-M2048",
+      "axes": {
+        "M": 2048,
+        "S": 65536
+      },
+      "correct": true,
+      "output_kind": "dense",
+      "output_buffer_poisoned": true,
+      "calc_diff": 0.0,
+      "max_abs_err": 0.0,
+      "max_rel_err": 0.0,
+      "abs_tol": 0.0247,
+      "rel_tol": 0.015703125,
+      "diff_tol": 5e-06,
+      "elementwise_failed": 0,
+      "anomaly_ok": true,
+      "elements": 33554432,
+      "cosine": 0.9999999999999999,
+      "best_fit_scale": 0.9999999999999999,
+      "timing_spread": 1.087,
+      "timing_unstable": false,
+      "post_timing_calc_diff": 0.0,
+      "post_timing_correct": true,
+      "flops": 137438953472.0,
+      "bytes_hbm": 104996864.0,
+      "compute_dtype": "fp8",
+      "candidate_us": 80.294,
+      "candidate_us_lo": 80.192,
+      "candidate_us_hi": 80.4,
+      "reference_us": 70.16,
+      "reference_us_lo": 70.031,
+      "reference_us_hi": 76.129,
+      "samples": 10,
+      "candidate_us_p90": 80.358,
+      "reference_us_p10": 70.061,
+      "conservative_quantile": 0.9,
+      "speedup": 0.8738,
+      "speedup_conservative": 0.8719,
+      "speedup_optimistic": 0.8845,
+      "shape_verdict": "regress",
+      "bound": "compute",
+      "arithmetic_intensity": 1308.9815089334477,
+      "ridge": 562.5,
+      "reward": 0.3803758010124565,
+      "reference_reward": 0.4353191228683643,
+      "achieved_tflops": 1711.6911045560541,
+      "achieved_gbps": 1307.6510958132117,
+      "compute_util": 0.3803758010124565,
+      "bw_util": 0.16345638697665146
+    },
+    {
+      "uuid": "glm52-q_b_prefill-M4096",
+      "axes": {
+        "M": 4096,
+        "S": 65536
+      },
+      "correct": true,
+      "output_kind": "dense",
+      "output_buffer_poisoned": true,
+      "calc_diff": 0.0,
+      "max_abs_err": 0.0,
+      "max_rel_err": 0.0,
+      "abs_tol": 0.024800000000000003,
+      "rel_tol": 0.015703125,
+      "diff_tol": 5e-06,
+      "elementwise_failed": 0,
+      "anomaly_ok": true,
+      "elements": 67108864,
+      "cosine": 1.0,
+      "best_fit_scale": 1.0,
+      "timing_spread": 1.057,
+      "timing_unstable": false,
+      "post_timing_calc_diff": 0.0,
+      "post_timing_correct": true,
+      "flops": 274877906944.0,
+      "bytes_hbm": 176431104.0,
+      "compute_dtype": "fp8",
+      "candidate_us": 152.079,
+      "candidate_us_lo": 151.777,
+      "candidate_us_hi": 160.4,
+      "reference_us": 109.904,
+      "reference_us_lo": 109.695,
+      "reference_us_hi": 112.784,
+      "samples": 10,
+      "candidate_us_p90": 152.986,
+      "reference_us_p10": 109.825,
+      "conservative_quantile": 0.9,
+      "speedup": 0.7227,
+      "speedup_conservative": 0.7179,
+      "speedup_optimistic": 0.726,
+      "shape_verdict": "regress",
+      "bound": "compute",
+      "arithmetic_intensity": 1557.9900636114594,
+      "ridge": 562.5,
+      "reward": 0.4016582071935329,
+      "reference_reward": 0.5557914309322083,
+      "achieved_tflops": 1807.461932370898,
+      "achieved_gbps": 1160.1241718969352,
+      "compute_util": 0.4016582071935329,
+      "bw_util": 0.1450155214871169
+    }
+  ],
+  "aggregate": {
+    "min_speedup": 0.7227,
+    "geomean_speedup": 0.913,
+    "min_speedup_conservative": 0.7179,
+    "best_reward": 0.4017,
+    "worst_reward": 0.3587,
+    "worst_calc_diff": 0.0,
+    "shapes_evaluated": 3,
+    "complete_sweep": true,
+    "timing_unstable_shapes": [],
+    "shapes_won": 1,
+    "shapes_regressed": 2,
+    "shapes_neutral": 0,
+    "regressed_shapes": [
+      "glm52-q_b_prefill-M2048",
+      "glm52-q_b_prefill-M4096"
+    ]
+  },
+  "verdict": {
+    "correct": true,
+    "performance_ok": false,
+    "status": "CORRECT",
+    "exit_code": 1
+  }
+}
+RESULT_JSON_END

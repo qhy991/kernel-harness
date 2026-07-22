@@ -1,0 +1,15 @@
+{
+  "run_ts": "20260720T085336Z",
+  "protocol": "cuda_graph_drop_in",
+  "warmup": 5,
+  "runs": 20,
+  "decode_ops": 26,
+  "prefill_ops": 39,
+  "shared_ops": 20,
+  "files": [
+    "comparison_decode.csv",
+    "comparison_prefill.csv",
+    "comparison_all.csv",
+    "comparison_shared_decode_prefill.csv"
+  ]
+}

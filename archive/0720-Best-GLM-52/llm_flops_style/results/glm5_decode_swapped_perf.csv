@@ -1,27 +1,27 @@
 name,category,batch,S,shape,avg_ms,stock_ms,impl,protocol,archive,same_inputs,dropin
-fused_qkv_a_proj,Attention,16,65536,"[16, 6144]×[6144, 2624]  (DeepGEMM FP8)",0.006842,0.023109,dropin:best-hechenxi-0720/fused_qkv_a_decode,cuda_graph,best-hechenxi-0720/fused_qkv_a_decode,True,True
-q_b_proj,Attention,16,65536,"[16, 2048]×[2048, 16384]  (DeepGEMM FP8)",0.007040,0.024088,dropin:best/q_b_decode,cuda_graph,best/q_b_decode,True,True
-absorbed_W_UK,Attention,16,65536,"bmm_fp8 [64, 16, 192]×[192, 512]",0.002446,0.002446,llm_flops_stock,cuda_graph,,True,True
-absorbed_W_UV,Attention,16,65536,"bmm_fp8 [64, 16, 512]×[512, 256]",0.002331,0.002331,llm_flops_stock,cuda_graph,,True,True
-o_proj,Attention,16,65536,"[16, 16384]×[16384, 6144]  (DeepGEMM FP8)",0.021821,0.044246,dropin:best/o_proj_decode_hbm35,cuda_graph,best/o_proj_decode_hbm35,True,True
-dsa_decode_attn,DSA,16,65536,"flash_mla_sparse_fwd s_q=16 s_kv=65536 topk=2048 (decode batch)",0.018418,0.039325,dropin:best-hechenxi-0720/dsa_decode_attn,cuda_graph,best-hechenxi-0720/dsa_decode_attn,True,True
-index_k_proj,DSA Indexer,16,65536,"[16, 6144]×[6144, 128]  (DeepGEMM FP8)",0.008579,0.021509,dropin:best/index_k_proj_decode,cuda_graph,best/index_k_proj_decode,True,True
-index_q_upproj,DSA Indexer,16,65536,"[16, 2048]×[2048, 4096]  (DeepGEMM FP8)",0.004826,0.016549,dropin:best-hechenxi-0720/index_q_upproj_decode,cuda_graph,best-hechenxi-0720/index_q_upproj_decode,True,True
-index_weights_proj,DSA Indexer,16,65536,"[16, 6144]×[6144, 32]  (DeepGEMM BF16->F32)",0.012563,0.012563,llm_flops_stock,cuda_graph,,True,True
-index_score,DSA Indexer,16,65536,"fp8_paged_mqa_logits batch=16 s_kv=65536 (paged decode)",0.026512,0.026512,llm_flops_stock,cuda_graph,,True,True
-moe_gate_proj,MoE,16,65536,"masked [8x, 6144]×[6144, 2048]",0.023944,0.036683,dropin:best/moe_gate_proj_decode_hbm40,cuda_graph,best/moe_gate_proj_decode_hbm40,True,True
-moe_up_proj,MoE,16,65536,"masked [8x, 6144]×[6144, 2048]",0.024280,0.036430,dropin:best/moe_up_proj_decode_hbm40,cuda_graph,best/moe_up_proj_decode_hbm40,True,True
-moe_down_proj,MoE,16,65536,"masked [8x, 2048]×[2048, 6144]",0.024677,0.036944,dropin:best/moe_down_proj_decode_hbm40,cuda_graph,best/moe_down_proj_decode_hbm40,True,True
-fused_qkv_a_proj,Attention,32,65536,"[32, 6144]×[6144, 2624]  (DeepGEMM FP8)",0.009197,0.022826,dropin:best-hechenxi-0720/fused_qkv_a_decode,cuda_graph,best-hechenxi-0720/fused_qkv_a_decode,True,True
-q_b_proj,Attention,32,65536,"[32, 2048]×[2048, 16384]  (DeepGEMM FP8)",0.007086,0.023837,dropin:best/q_b_decode,cuda_graph,best/q_b_decode,True,True
-absorbed_W_UK,Attention,32,65536,"bmm_fp8 [64, 32, 192]×[192, 512]",0.002672,0.002672,llm_flops_stock,cuda_graph,,True,True
-absorbed_W_UV,Attention,32,65536,"bmm_fp8 [64, 32, 512]×[512, 256]",0.002538,0.002538,llm_flops_stock,cuda_graph,,True,True
-o_proj,Attention,32,65536,"[32, 16384]×[16384, 6144]  (DeepGEMM FP8)",0.027648,0.044963,dropin:best/o_proj_decode_hbm35,cuda_graph,best/o_proj_decode_hbm35,True,True
-dsa_decode_attn,DSA,32,65536,"flash_mla_sparse_fwd s_q=32 s_kv=65536 topk=2048 (decode batch)",0.024862,0.039691,dropin:best-hechenxi-0720/dsa_decode_attn,cuda_graph,best-hechenxi-0720/dsa_decode_attn,True,True
-index_k_proj,DSA Indexer,32,65536,"[32, 6144]×[6144, 128]  (DeepGEMM FP8)",0.008469,0.020376,dropin:best/index_k_proj_decode,cuda_graph,best/index_k_proj_decode,True,True
-index_q_upproj,DSA Indexer,32,65536,"[32, 2048]×[2048, 4096]  (DeepGEMM FP8)",0.006341,0.016664,dropin:best-hechenxi-0720/index_q_upproj_decode,cuda_graph,best-hechenxi-0720/index_q_upproj_decode,True,True
-index_weights_proj,DSA Indexer,32,65536,"[32, 6144]×[6144, 32]  (DeepGEMM BF16->F32)",0.012563,0.012563,llm_flops_stock,cuda_graph,,True,True
-index_score,DSA Indexer,32,65536,"fp8_paged_mqa_logits batch=32 s_kv=65536 (paged decode)",0.046798,0.046798,llm_flops_stock,cuda_graph,,True,True
-moe_gate_proj,MoE,32,65536,"masked [8x, 6144]×[6144, 2048]",0.023739,0.036557,dropin:best/moe_gate_proj_decode_hbm40,cuda_graph,best/moe_gate_proj_decode_hbm40,True,True
-moe_up_proj,MoE,32,65536,"masked [8x, 6144]×[6144, 2048]",0.024170,0.036523,dropin:best/moe_up_proj_decode_hbm40,cuda_graph,best/moe_up_proj_decode_hbm40,True,True
-moe_down_proj,MoE,32,65536,"masked [8x, 2048]×[2048, 6144]",0.024670,0.037050,dropin:best/moe_down_proj_decode_hbm40,cuda_graph,best/moe_down_proj_decode_hbm40,True,True
+fused_qkv_a_proj,Attention,16,65536,"[16, 6144]×[6144, 2624]  (DeepGEMM FP8)",0.007306,0.023310,dropin:best-hechenxi-0720/fused_qkv_a_decode,cuda_graph,best-hechenxi-0720/fused_qkv_a_decode,True,True
+q_b_proj,Attention,16,65536,"[16, 2048]×[2048, 16384]  (DeepGEMM FP8)",0.007125,0.025069,dropin:best/q_b_decode,cuda_graph,best/q_b_decode,True,True
+absorbed_W_UK,Attention,16,65536,"bmm_fp8 [64, 16, 192]×[192, 512]",0.002454,0.002454,llm_flops_stock,cuda_graph,,True,True
+absorbed_W_UV,Attention,16,65536,"bmm_fp8 [64, 16, 512]×[512, 256]",0.002493,0.002493,llm_flops_stock,cuda_graph,,True,True
+o_proj,Attention,16,65536,"[16, 16384]×[16384, 6144]  (DeepGEMM FP8)",0.022184,0.045069,dropin:best/o_proj_decode_hbm35,cuda_graph,best/o_proj_decode_hbm35,True,True
+dsa_decode_attn,DSA,16,65536,"flash_mla_sparse_fwd s_q=16 s_kv=65536 topk=2048 (decode batch)",0.018400,0.040016,dropin:best-hechenxi-0720/dsa_decode_attn,cuda_graph,best-hechenxi-0720/dsa_decode_attn,True,True
+index_k_proj,DSA Indexer,16,65536,"[16, 6144]×[6144, 128]  (DeepGEMM FP8)",0.008768,0.021662,dropin:best/index_k_proj_decode,cuda_graph,best/index_k_proj_decode,True,True
+index_q_upproj,DSA Indexer,16,65536,"[16, 2048]×[2048, 4096]  (DeepGEMM FP8)",0.005131,0.016883,dropin:best-hechenxi-0720/index_q_upproj_decode,cuda_graph,best-hechenxi-0720/index_q_upproj_decode,True,True
+index_weights_proj,DSA Indexer,16,65536,"[16, 6144]×[6144, 32]  (DeepGEMM BF16->F32)",0.012891,0.012891,llm_flops_stock,cuda_graph,,True,True
+index_score,DSA Indexer,16,65536,"fp8_paged_mqa_logits batch=16 s_kv=65536 (paged decode)",0.026394,0.026394,llm_flops_stock,cuda_graph,,True,True
+moe_gate_proj,MoE,16,65536,"masked [8x, 6144]×[6144, 2048]",0.025435,0.037282,dropin:best/moe_gate_proj_decode_hbm40,cuda_graph,best/moe_gate_proj_decode_hbm40,True,True
+moe_up_proj,MoE,16,65536,"masked [8x, 6144]×[6144, 2048]",0.025224,0.037558,dropin:best/moe_up_proj_decode_hbm40,cuda_graph,best/moe_up_proj_decode_hbm40,True,True
+moe_down_proj,MoE,16,65536,"masked [8x, 2048]×[2048, 6144]",0.024454,0.036784,dropin:best/moe_down_proj_decode_hbm40,cuda_graph,best/moe_down_proj_decode_hbm40,True,True
+fused_qkv_a_proj,Attention,32,65536,"[32, 6144]×[6144, 2624]  (DeepGEMM FP8)",0.009384,0.022931,dropin:best-hechenxi-0720/fused_qkv_a_decode,cuda_graph,best-hechenxi-0720/fused_qkv_a_decode,True,True
+q_b_proj,Attention,32,65536,"[32, 2048]×[2048, 16384]  (DeepGEMM FP8)",0.007109,0.023878,dropin:best/q_b_decode,cuda_graph,best/q_b_decode,True,True
+absorbed_W_UK,Attention,32,65536,"bmm_fp8 [64, 32, 192]×[192, 512]",0.002709,0.002709,llm_flops_stock,cuda_graph,,True,True
+absorbed_W_UV,Attention,32,65536,"bmm_fp8 [64, 32, 512]×[512, 256]",0.002602,0.002602,llm_flops_stock,cuda_graph,,True,True
+o_proj,Attention,32,65536,"[32, 16384]×[16384, 6144]  (DeepGEMM FP8)",0.028194,0.046133,dropin:best/o_proj_decode_hbm35,cuda_graph,best/o_proj_decode_hbm35,True,True
+dsa_decode_attn,DSA,32,65536,"flash_mla_sparse_fwd s_q=32 s_kv=65536 topk=2048 (decode batch)",0.024674,0.039814,dropin:best-hechenxi-0720/dsa_decode_attn,cuda_graph,best-hechenxi-0720/dsa_decode_attn,True,True
+index_k_proj,DSA Indexer,32,65536,"[32, 6144]×[6144, 128]  (DeepGEMM FP8)",0.008667,0.020896,dropin:best/index_k_proj_decode,cuda_graph,best/index_k_proj_decode,True,True
+index_q_upproj,DSA Indexer,32,65536,"[32, 2048]×[2048, 4096]  (DeepGEMM FP8)",0.006530,0.016962,dropin:best-hechenxi-0720/index_q_upproj_decode,cuda_graph,best-hechenxi-0720/index_q_upproj_decode,True,True
+index_weights_proj,DSA Indexer,32,65536,"[32, 6144]×[6144, 32]  (DeepGEMM BF16->F32)",0.012858,0.012858,llm_flops_stock,cuda_graph,,True,True
+index_score,DSA Indexer,32,65536,"fp8_paged_mqa_logits batch=32 s_kv=65536 (paged decode)",0.047379,0.047379,llm_flops_stock,cuda_graph,,True,True
+moe_gate_proj,MoE,32,65536,"masked [8x, 6144]×[6144, 2048]",0.025544,0.037466,dropin:best/moe_gate_proj_decode_hbm40,cuda_graph,best/moe_gate_proj_decode_hbm40,True,True
+moe_up_proj,MoE,32,65536,"masked [8x, 6144]×[6144, 2048]",0.025315,0.038240,dropin:best/moe_up_proj_decode_hbm40,cuda_graph,best/moe_up_proj_decode_hbm40,True,True
+moe_down_proj,MoE,32,65536,"masked [8x, 2048]×[2048, 6144]",0.024616,0.036819,dropin:best/moe_down_proj_decode_hbm40,cuda_graph,best/moe_down_proj_decode_hbm40,True,True

@@ -1,0 +1,261 @@
+TASK moe_up/prefill  run=20260720T072834Z-0cba68  candidate=archive/0720-Best-GLM-52/best/moe_up_proj_decode_hbm40/candidate/candidate.py sha=3940c89c6c20
+     timing=cupti-cold-l2-device-kernel-median iters=30 warmup=3 repeat=10  S=65536 seed=0  device=cuda:0
+
+     roofline: fp8 peak 4.50 PFLOP/s, HBM 8.0 TB/s, ridge 562.5 FLOP/byte -> reward = utilisation of whichever resource binds
+
+  shape    ok  calc_diff   cand_us    ref_us  speedup  sp_cons  verdict      AI   bound   TFLOP/s     MFU      GB/s      BW   reward
+ M=1024  PASS   0.00e+00     82.43     98.29   1.192x   1.187x      WIN  1107.5 compute    2501.0  55.58%    2258.2  28.23%   0.5558
+        └ ref   baseline                                                                   2097.5  46.61%    1893.9  23.67%   0.4661
+ M=2048  PASS   0.00e+00    142.93    158.56   1.109x   1.107x      WIN  1518.1 compute    2884.7  64.10%    1900.2  23.75%   0.6410
+        └ ref   baseline                                                                   2600.3  57.78%    1712.9  21.41%   0.5778
+ M=4096  PASS   0.00e+00    273.31    289.96   1.061x   1.057x      WIN  1863.5 compute    3017.2  67.05%    1619.1  20.24%   0.6705
+        └ ref   baseline                                                                   2844.0  63.20%    1526.2  19.08%   0.6320
+
+VERDICT: CORRECT
+3/3 shapes WIN, 0 regressed, 0 neutral   geomean_speedup=1.1196x  best_reward=0.6705
+performance_gate: >=1 win AND 0 regressions -> MET
+result=runs/glm52/moe_up_proj_prefill/20260720T072834Z-0cba68/result.json
+
+RESULT_JSON_BEGIN
+{
+  "schema_version": "1.0",
+  "task": {
+    "name": "moe_up_proj_prefill",
+    "model": "glm52",
+    "operator": "moe_up",
+    "phase": "prefill",
+    "S": 65536,
+    "seed": 0,
+    "family": "moe",
+    "output_kind": "masked_grouped",
+    "backend": "deep_gemm.fp8_m_grouped_gemm_nt_masked",
+    "diff_tol": 5e-06,
+    "rel_tol": 0.015703125,
+    "abs_tol_factor": 0.0001,
+    "performance_gate": {
+      "min_speedup": 1.0,
+      "basis": "conservative (q=0.9)"
+    }
+  },
+  "run": {
+    "run_id": "20260720T072834Z-0cba68",
+    "started_utc": "2026-07-20T07:28:34Z",
+    "finished_utc": "2026-07-20T07:28:43Z",
+    "repeat": 10,
+    "repeat_scope": "in-process",
+    "iterations": 30,
+    "warmup": 3,
+    "timing_protocol": "cupti-cold-l2-device-kernel-median",
+    "device": "cuda:0",
+    "correctness_standard": "FlashMLA check_is_allclose structure: anomaly positions + elementwise (abs OR rel) + DeepGEMM calc_diff, on a poisoned output buffer",
+    "reward_standard": "rewardbench bound-aware roofline (PR2)",
+    "result_dir": "runs/glm52/moe_up_proj_prefill/20260720T072834Z-0cba68"
+  },
+  "candidate": {
+    "path": "archive/0720-Best-GLM-52/best/moe_up_proj_decode_hbm40/candidate/candidate.py",
+    "sha256": "3940c89c6c2056b36db9e32a99a810a10158e84a5570ab5ace122de45b9be133",
+    "is_reference_fallback": false,
+    "external": true
+  },
+  "environment": {
+    "hostname": "dry-vm-embraces-fin-03",
+    "python": "3.12.13",
+    "platform": "Linux-6.8.0-100-generic-x86_64-with-glibc2.39",
+    "git_sha": "fad7d34c913e280b558da812ad0ac24313fb5d00",
+    "git_branch": "main",
+    "git_dirty": true,
+    "torch": "2.11.0+cu130",
+    "deep_gemm": "0.1.4",
+    "sgl_kernel": "0.4.4",
+    "cuda": "13.0",
+    "gpu": "NVIDIA B200",
+    "gpu_capability": "10.0",
+    "gpu_memory_gb": 191.5,
+    "gpu_count": 1,
+    "driver": "610.43.02\n610.43.02\n610.43.02\n610.43.02"
+  },
+  "cost_model": {
+    "gpu": "NVIDIA B200",
+    "hbm_bytes_per_s": 8000000000000.0,
+    "peak_flops_fp8": 4500000000000000.0,
+    "peak_flops_bf16": 2250000000000000.0,
+    "source": "rewardbench (PR2) + testbench/harness/profile.py; opbench/mfu.py's 7.7e12 not used"
+  },
+  "per_shape": [
+    {
+      "uuid": "glm52-moe_up_proj_prefill-M1024",
+      "axes": {
+        "M": 1024,
+        "S": 65536
+      },
+      "correct": true,
+      "output_kind": "masked_grouped",
+      "output_buffer_poisoned": true,
+      "calc_diff": 0.0,
+      "max_abs_err": 0.0,
+      "max_rel_err": 0.0,
+      "abs_tol": 0.0434,
+      "rel_tol": 0.015703125,
+      "diff_tol": 5e-06,
+      "elementwise_failed": 0,
+      "anomaly_ok": true,
+      "elements": 16777216,
+      "cosine": 0.9999999999999999,
+      "best_fit_scale": 0.9999999999999999,
+      "timing_spread": 1.212,
+      "timing_unstable": false,
+      "post_timing_calc_diff": 0.0,
+      "post_timing_correct": true,
+      "flops": 206158430208.0,
+      "bytes_hbm": 186146816.0,
+      "compute_dtype": "fp8",
+      "candidate_us": 82.431,
+      "candidate_us_lo": 82.336,
+      "candidate_us_hi": 82.655,
+      "reference_us": 98.287,
+      "reference_us_lo": 98.077,
+      "reference_us_hi": 118.879,
+      "samples": 10,
+      "candidate_us_p90": 82.642,
+      "reference_us_p10": 98.137,
+      "conservative_quantile": 0.9,
+      "speedup": 1.1924,
+      "speedup_conservative": 1.1875,
+      "speedup_optimistic": 1.2193,
+      "shape_verdict": "win",
+      "bound": "compute",
+      "arithmetic_intensity": 1107.5044668397659,
+      "ridge": 562.5,
+      "reward": 0.5557703607318399,
+      "reference_reward": 0.4661120131315444,
+      "achieved_tflops": 2500.9666232932796,
+      "achieved_gbps": 2258.200032754469,
+      "compute_util": 0.5557703607318399,
+      "bw_util": 0.2822750040943086
+    },
+    {
+      "uuid": "glm52-moe_up_proj_prefill-M2048",
+      "axes": {
+        "M": 2048,
+        "S": 65536
+      },
+      "correct": true,
+      "output_kind": "masked_grouped",
+      "output_buffer_poisoned": true,
+      "calc_diff": 0.0,
+      "max_abs_err": 0.0,
+      "max_rel_err": 0.0,
+      "abs_tol": 0.0436,
+      "rel_tol": 0.015703125,
+      "diff_tol": 5e-06,
+      "elementwise_failed": 0,
+      "anomaly_ok": true,
+      "elements": 33554432,
+      "cosine": 1.0,
+      "best_fit_scale": 1.0,
+      "timing_spread": 1.005,
+      "timing_unstable": false,
+      "post_timing_calc_diff": 0.0,
+      "post_timing_correct": true,
+      "flops": 412316860416.0,
+      "bytes_hbm": 271605760.0,
+      "compute_dtype": "fp8",
+      "candidate_us": 142.934,
+      "candidate_us_lo": 142.736,
+      "candidate_us_hi": 143.232,
+      "reference_us": 158.565,
+      "reference_us_lo": 158.222,
+      "reference_us_hi": 159.059,
+      "samples": 10,
+      "candidate_us_p90": 143.075,
+      "reference_us_p10": 158.337,
+      "conservative_quantile": 0.9,
+      "speedup": 1.1094,
+      "speedup_conservative": 1.1067,
+      "speedup_optimistic": 1.1112,
+      "shape_verdict": "win",
+      "bound": "compute",
+      "arithmetic_intensity": 1518.0711204946463,
+      "ridge": 562.5,
+      "reward": 0.6410380262277687,
+      "reference_reward": 0.5778448521510631,
+      "achieved_tflops": 2884.6711180249595,
+      "achieved_gbps": 1900.2213263137644,
+      "compute_util": 0.6410380262277687,
+      "bw_util": 0.23752766578922055
+    },
+    {
+      "uuid": "glm52-moe_up_proj_prefill-M4096",
+      "axes": {
+        "M": 4096,
+        "S": 65536
+      },
+      "correct": true,
+      "output_kind": "masked_grouped",
+      "output_buffer_poisoned": true,
+      "calc_diff": 0.0,
+      "max_abs_err": 0.0,
+      "max_rel_err": 0.0,
+      "abs_tol": 0.0432,
+      "rel_tol": 0.015703125,
+      "diff_tol": 5e-06,
+      "elementwise_failed": 0,
+      "anomaly_ok": true,
+      "elements": 67108864,
+      "cosine": 1.0,
+      "best_fit_scale": 1.0,
+      "timing_spread": 1.013,
+      "timing_unstable": false,
+      "post_timing_calc_diff": 0.0,
+      "post_timing_correct": true,
+      "flops": 824633720832.0,
+      "bytes_hbm": 442523648.0,
+      "compute_dtype": "fp8",
+      "candidate_us": 273.308,
+      "candidate_us_lo": 273.1,
+      "candidate_us_hi": 273.66,
+      "reference_us": 289.956,
+      "reference_us_lo": 286.509,
+      "reference_us_hi": 290.353,
+      "samples": 10,
+      "candidate_us_p90": 273.633,
+      "reference_us_p10": 289.349,
+      "conservative_quantile": 0.9,
+      "speedup": 1.0609,
+      "speedup_conservative": 1.0574,
+      "speedup_optimistic": 1.0628,
+      "shape_verdict": "win",
+      "bound": "compute",
+      "arithmetic_intensity": 1863.4794424184083,
+      "ridge": 562.5,
+      "reward": 0.6704948362845162,
+      "reference_reward": 0.6319991238762662,
+      "achieved_tflops": 3017.226763280323,
+      "achieved_gbps": 1619.136060532329,
+      "compute_util": 0.6704948362845162,
+      "bw_util": 0.20239200756654113
+    }
+  ],
+  "aggregate": {
+    "min_speedup": 1.0609,
+    "geomean_speedup": 1.1196,
+    "min_speedup_conservative": 1.0574,
+    "best_reward": 0.6705,
+    "worst_reward": 0.5558,
+    "worst_calc_diff": 0.0,
+    "shapes_evaluated": 3,
+    "complete_sweep": true,
+    "timing_unstable_shapes": [],
+    "shapes_won": 3,
+    "shapes_regressed": 0,
+    "shapes_neutral": 0,
+    "regressed_shapes": []
+  },
+  "verdict": {
+    "correct": true,
+    "performance_ok": true,
+    "status": "CORRECT",
+    "exit_code": 0
+  }
+}
+RESULT_JSON_END
