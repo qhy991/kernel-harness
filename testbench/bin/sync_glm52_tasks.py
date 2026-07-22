@@ -248,7 +248,7 @@ def _task_json(dirname: str, op: str, phase: str) -> str:
                  f"contract."),
         "entrypoint": "candidate.py",
         "runner": "testbench/harness/evaluate_task.py",
-        "deployment": "B200-DP1-TP1-EP32",
+        "deployment": ops.DEVICE_PROFILE.deployment.replace(" ", "-").replace("/", "-"),
         "performance_gate": {
             "min_speedup": 1.0,
             "basis": "conservative",

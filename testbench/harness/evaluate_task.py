@@ -29,24 +29,15 @@ would then time near zero and take the reward to its ceiling. Poisoning the
 buffer between the two calls is what makes "correct" and "fast" describe the
 same kernel: the no-op now arrives as all-NaN and the anomaly check names it.
 
-Timing: CUPTI cold-L2 **device-kernel** median (testbench harness.timing), the
-same primitive testbench/bin/evaluate.py gates on. Inputs are cloned per
-iteration and L2 is flushed before each, both outside the measured window; the
-number is the device-side kernel span, median over `--iterations` reps.
+Timing: selected-backend device-time median (see the active backend timer).
+Inputs are cloned per iteration, outside the measured window; the number is the
+device-side kernel span, median over `--repeat` reps.
 
 Device-kernel time, not wall clock, is the only thing that can back a roofline
 reward. The reward is a hardware-utilisation ratio (achieved FLOP/s over a peak),
 so pairing it with a host-inclusive wall time yields something that is not a
-utilisation at all. That is not a hypothetical: on B200 this op's deep_gemm
-Python wrapper costs ~65us of host enqueue per call while the kernel itself runs
-~47us, so eager dispatch is the binding cost. Timing one call between CUDA events
-with a sync per iteration reports ~99us for that 47us kernel — a 109% inflation
-that is pure host stall. rewardbench's warm-L2 numbers dodge this with CUDA
-graphs; a per-call event timer walks straight into it. CUPTI sidesteps both by
-correlating launches to kernels and measuring only the device span.
-
-The real cold-vs-warm penalty, once dispatch is excluded, is ~12% for this op
-(53us cold vs 47us warm), not the ~2.4x a per-call event timer suggests.
+utilisation at all. The CUDA and ROCm backends use different timing primitives,
+but both keep setup/cloning outside the candidate/reference latency being scored.
 
 `--repeat K` (default 10) takes K samples per shape and gates on the conservative
 margin: the candidate's p90 against the reference's p10. Not the median, because

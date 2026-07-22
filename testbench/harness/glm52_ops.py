@@ -518,9 +518,9 @@ def poison(inputs: dict) -> bool:
     gemm/moe pre-allocate `out` and reference() writes into it, so cloning the
     reference output is not enough: the correct answer is still sitting in
     inputs["out"], and a candidate whose whole body is `return inputs["out"]`
-    scores cosine 1.000000 having computed nothing (verified on B200). Filling
-    with NaN makes that candidate fail instead. Returns whether anything was
-    poisoned (False for the families that allocate their own output).
+    scores cosine 1.000000 having computed nothing. Filling with NaN makes that
+    candidate fail instead. Returns whether anything was poisoned (False for the
+    families that allocate their own output).
     """
     out = inputs.get("out")
     if torch.is_tensor(out):

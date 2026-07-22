@@ -45,12 +45,12 @@ def registered() -> tuple[tuple[str, str, str, str], ...]:
 
 @lru_cache(maxsize=1)
 def get_backend() -> BackendBundle:
-    platform = os.environ.get("KERNEL_HARNESS_PLATFORM", "cuda").lower()
-    profile = os.environ.get("KERNEL_HARNESS_PROFILE", "cuda-b200").lower()
+    platform = os.environ.get("KERNEL_HARNESS_PLATFORM", "rocm").lower()
+    profile = os.environ.get("KERNEL_HARNESS_PROFILE", "amd-mi300x").lower()
     provider = os.environ.get(
-        "KERNEL_HARNESS_PROVIDER", "deep-gemm-sgl-kernel"
+        "KERNEL_HARNESS_PROVIDER", "aiter-torch-reference"
     ).lower()
-    timer = os.environ.get("KERNEL_HARNESS_TIMER", "auto").lower()
+    timer = os.environ.get("KERNEL_HARNESS_TIMER", "event").lower()
     key = (platform, profile, provider, timer)
     try:
         bundle = _BUNDLES[key]

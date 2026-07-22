@@ -593,7 +593,7 @@ def main() -> int:
     q = sub.add_parser("query", help="filter entries and print recipes")
     for flag in ("model", "family", "op", "phase", "task", "status", "bottleneck"):
         q.add_argument(f"--{flag}")
-    q.add_argument("--gpu", help="substring match, e.g. B200")
+    q.add_argument("--gpu", help="substring match, e.g. MI300X")
     q.add_argument("--sm", help="substring match, e.g. sm_100")
     q.add_argument("--technique", help="substring match over approach techniques")
     q.add_argument("--json", action="store_true", help="print matches as JSON")

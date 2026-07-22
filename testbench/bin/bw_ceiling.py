@@ -2,17 +2,17 @@
 """Attainable-bandwidth ceiling — the physical BW a pure copy sustains over a byte
 footprint, so "distance to roof" is honest instead of spec-peak arithmetic.
 
-Small transfers cannot reach spec HBM (on B200, <64 MB tops out at ~17-25% of
-8 TB/s because fill/drain dominates). So a memory-bound op sitting near its
+Small transfers cannot reach spec HBM (<64 MB may top out at a small fraction of
+the nominal peak because fill/drain dominates). So a memory-bound op sitting near its
 *attainable* ceiling is at its real roof — an evidence-backed NO-GO by constructive
 proof, not the hand-computed estimate the SOP warns against. Feed the measured
 bytes/s into glm52_ops.reward(attainable_bw=...) for the honest utilisation.
 
     python3 testbench/bin/bw_ceiling.py --mb 8
-    python3 testbench/bin/bw_ceiling.py --bytes 138000000 --peak-tbps 8.0
-    python3 testbench/bin/bw_ceiling.py --sweep            # the B200 ramp curve
+    python3 testbench/bin/bw_ceiling.py --bytes 138000000 --peak-tbps 5.3
+    python3 testbench/bin/bw_ceiling.py --sweep
 
-Requires a GPU + the venv (imports torch and the harness CUPTI timer).
+Requires a GPU + the venv (imports torch and the active harness timer).
 """
 from __future__ import annotations
 
@@ -48,7 +48,7 @@ def main() -> int:
     g.add_argument("--bytes", type=int, help="footprint in bytes (e.g. an op's bytes_hbm)")
     g.add_argument("--mb", type=float, help="footprint in MiB")
     g.add_argument("--sweep", action="store_true", help="the 2 MB … 4 GB ramp curve")
-    ap.add_argument("--peak-tbps", type=float, default=8.0, help="spec HBM peak (B200=8.0)")
+    ap.add_argument("--peak-tbps", type=float, default=5.3, help="spec HBM peak (MI300X=5.3)")
     ap.add_argument("--warmup", type=int, default=5)
     ap.add_argument("--rep", type=int, default=50)
     args = ap.parse_args()

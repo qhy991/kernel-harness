@@ -77,12 +77,12 @@ def capture_environment() -> dict:
         "deep_gemm": _pkg_version("deep_gemm"),
         "sgl_kernel": _pkg_version("sgl_kernel"),
         "aiter": _pkg_version("aiter"),
-        "kernel_harness_platform": os.environ.get("KERNEL_HARNESS_PLATFORM", "cuda"),
-        "kernel_harness_profile": os.environ.get("KERNEL_HARNESS_PROFILE", "cuda-b200"),
+        "kernel_harness_platform": os.environ.get("KERNEL_HARNESS_PLATFORM", "rocm"),
+        "kernel_harness_profile": os.environ.get("KERNEL_HARNESS_PROFILE", "amd-mi300x"),
         "kernel_harness_provider": os.environ.get(
-            "KERNEL_HARNESS_PROVIDER", "deep-gemm-sgl-kernel"
+            "KERNEL_HARNESS_PROVIDER", "aiter-torch-reference"
         ),
-        "kernel_harness_timer": os.environ.get("KERNEL_HARNESS_TIMER", "auto"),
+        "kernel_harness_timer": os.environ.get("KERNEL_HARNESS_TIMER", "event"),
     }
     try:
         import torch
