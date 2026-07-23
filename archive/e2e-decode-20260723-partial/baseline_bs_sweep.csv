@@ -1,0 +1,6 @@
+bs,input_len,output_len,prefill_latency_s,total_latency_s,overall_throughput_tok_s,decode_only_throughput_tok_s,status,note
+16,128,64,0.402,27.324,112.43,38.1,ok,decode-only throughput = bs*output/(total-prefill)
+32,128,64,0.717,19.647,312.73,108.3,ok,
+64,128,64,7.016,27.578,445.58,198.6,ok,"prefill spike 7s vs 0.4s at bs=16 — likely aiter shape-config recompile on first bs=64"
+128,128,64,2.450,21.370,1150.03,433.5,ok,"real e2e decode at global batch=128, TP=8"
+256,128,64,4.101,,,,CRASH,"aiter decode kernel illegal memory access after prefill; leaves python process in D-state (uninterruptible), all 8 GPUs' HBM allocated ~125GB each and unreleasable without GPU reset. Known gfx942 aiter bug at bs>=256, not our patch."
