@@ -1051,6 +1051,13 @@ def run_task(args: argparse.Namespace) -> int:
             ),
             "candidate": None,
         }
+        if os.environ.get("GOAL22_CAMPAIGN_ID"):
+            result["campaign"] = {
+                "campaign_id": os.environ["GOAL22_CAMPAIGN_ID"],
+                "physical_gpu": int(os.environ["CUDA_VISIBLE_DEVICES"]),
+                "logical_gpu": 0,
+                "gpu_uuid": os.environ.get("GOAL22_GPU_UUID"),
+            }
         runtime_evidence = runtime.runtime_evidence(inputs)
         if runtime_evidence is not None:
             result["runtime_evidence"] = runtime_evidence

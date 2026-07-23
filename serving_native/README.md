@@ -36,12 +36,14 @@ serving_native/run.sh --list
 serving_native/run.sh --describe dp_allgather_decode_m16
 
 # One-GPU production ABI
-serving_native/run.sh linear_indexer_wq_b_decode_m16 \
-  --candidate serving_native/candidates/reference.py
+/home/qinhaiyan/glm52-goal-runs/with_flexible_gpu.sh -- \
+  serving_native/run.sh linear_indexer_wq_b_decode_m16 \
+    --candidate serving_native/candidates/reference.py
 
 # Explicit FlashMLA-KV DSA decode (split-KV plus combine)
-serving_native/run.sh dsa_flashmla_kv_decode_m16 \
-  --candidate serving_native/candidates/reference.py
+/home/qinhaiyan/glm52-goal-runs/with_flexible_gpu.sh -- \
+  serving_native/run.sh dsa_flashmla_kv_decode_m16 \
+    --candidate serving_native/candidates/reference.py
 
 # Eight-GPU SGLang GroupCoordinator AllGather
 CUDA_VISIBLE_DEVICES=0,1,2,3,4,5,6,7 \
@@ -54,17 +56,17 @@ CUDA_VISIBLE_DEVICES=0,1,2,3,4,5,6,7 \
   --candidate serving_native/candidates/deepep_config.py
 
 # Four-GPU SGLang AllReduce, independently at M16 and M32
-CUDA_VISIBLE_DEVICES=0,1,2,3 \
+/home/qinhaiyan/glm52-goal-runs/with_all_gpus_lock.sh \
   serving_native/run.sh tp4_allreduce_decode_m16 \
   --candidate serving_native/candidates/allreduce_torch.py
-CUDA_VISIBLE_DEVICES=0,1,2,3 \
+/home/qinhaiyan/glm52-goal-runs/with_all_gpus_lock.sh \
   serving_native/run.sh tp4_allreduce_decode_m32 \
   --candidate serving_native/candidates/allreduce_torch.py
 
 # Four-GPU DeepEP low-latency dispatch/combine
-CUDA_VISIBLE_DEVICES=0,1,2,3 \
+/home/qinhaiyan/glm52-goal-runs/with_all_gpus_lock.sh \
   serving_native/run.sh ep4_deepep_ll_dispatch_decode_m16
-CUDA_VISIBLE_DEVICES=0,1,2,3 \
+/home/qinhaiyan/glm52-goal-runs/with_all_gpus_lock.sh \
   serving_native/run.sh ep4_deepep_ll_combine_decode_m16
 ```
 

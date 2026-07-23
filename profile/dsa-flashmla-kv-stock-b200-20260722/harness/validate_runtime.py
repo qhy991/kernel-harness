@@ -9,6 +9,8 @@ import os
 import sys
 from pathlib import Path
 
+from gpu_lease_env import require_flexible_gpu
+
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
 EXPECTED_SGLANG_ROOT = Path(
@@ -16,10 +18,7 @@ EXPECTED_SGLANG_ROOT = Path(
 ).resolve()
 if Path(os.environ.get("SGLANG_ROOT", "")).resolve() != EXPECTED_SGLANG_ROOT:
     raise RuntimeError(f"SGLANG_ROOT must be the isolated checkout: {EXPECTED_SGLANG_ROOT}")
-if os.environ.get("CUDA_VISIBLE_DEVICES") != "3":
-    raise RuntimeError(
-        "run through /home/qinhaiyan/glm52-goal-runs/with_gpu_lock.sh 3"
-    )
+require_flexible_gpu()
 
 sys.path.insert(0, str(REPO_ROOT))
 
@@ -177,6 +176,12 @@ def main() -> int:
         assert evidence is not None
         evidence.update(
             {
+                "campaign": {
+                    "campaign_id": os.environ.get("GOAL22_CAMPAIGN_ID"),
+                    "physical_gpu": int(os.environ["CUDA_VISIBLE_DEVICES"]),
+                    "logical_gpu": 0,
+                    "gpu_uuid": os.environ.get("GOAL22_GPU_UUID"),
+                },
                 "task": args.task,
                 "output_shape": list(eager.shape),
                 "output_dtype": str(eager.dtype),

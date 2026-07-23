@@ -1,23 +1,42 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-if [[ "${CUDA_VISIBLE_DEVICES:-}" != "3" ]]; then
-  echo "run through /home/qinhaiyan/glm52-goal-runs/with_gpu_lock.sh 3" >&2
-  exit 64
-fi
+case "${CUDA_VISIBLE_DEVICES:-}" in
+  0|1|2|3) ;;
+  *)
+    echo "run through /home/qinhaiyan/glm52-goal-runs/with_flexible_gpu.sh -- <command>" >&2
+    exit 64
+    ;;
+esac
 
 KH=/home/qinhaiyan/glm52-goal-runs/22-dsa_flashmla_kv_production/kernel-harness
 SG=/home/qinhaiyan/glm52-goal-runs/22-dsa_flashmla_kv_production/sglang
 FLASHMLA="$SG/third_party/FlashMLA-goal22"
-RUN="$KH/profile/dsa-flashmla-kv-stock-b200-20260722"
-DRIVER="$RUN/harness/profile_driver.py"
+BASE_RUN="$KH/profile/dsa-flashmla-kv-stock-b200-20260722"
+RUN="$BASE_RUN"
+if [[ "$#" -gt 0 ]]; then
+  if [[ "$#" -ne 2 || "$1" != "--output-root" ]]; then
+    echo "usage: collect_ncu.sh [--output-root CAMPAIGN_ROOT]" >&2
+    exit 64
+  fi
+  RUN="$(realpath "$2")"
+  case "$RUN" in
+    "$BASE_RUN"/campaigns/*) ;;
+    *)
+      echo "campaign output must be below $BASE_RUN/campaigns" >&2
+      exit 64
+      ;;
+  esac
+fi
+mkdir -p "$RUN/analysis" "$RUN/reports"
+DRIVER="$BASE_RUN/harness/profile_driver.py"
 CANDIDATE="$KH/serving_native/candidates/flashmla_goal22_overlay.py"
 PYTHON="$KH/.venv/bin/python"
 
 STOCK_OVERLAY="$FLASHMLA/build-artifacts/stock-pybind-tensor/overlay"
-STOCK_MANIFEST="$RUN/analysis/build_stock_pybind_tensor.json"
+STOCK_MANIFEST="$BASE_RUN/analysis/build_stock_pybind_tensor.json"
 CANDIDATE_OVERLAY="$FLASHMLA/build-artifacts/combine32-m16-tensor/overlay"
-CANDIDATE_MANIFEST="$RUN/analysis/build_combine32_m16_tensor.json"
+CANDIDATE_MANIFEST="$BASE_RUN/analysis/build_combine32_m16_tensor.json"
 
 run_profile() {
   local mode=$1

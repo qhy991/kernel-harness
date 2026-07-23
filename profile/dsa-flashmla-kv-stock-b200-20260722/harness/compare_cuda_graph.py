@@ -11,6 +11,8 @@ import statistics
 import sys
 from pathlib import Path
 
+from gpu_lease_env import require_flexible_gpu
+
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
 EXPECTED_SGLANG_ROOT = Path(
@@ -18,10 +20,7 @@ EXPECTED_SGLANG_ROOT = Path(
 ).resolve()
 if Path(os.environ.get("SGLANG_ROOT", "")).resolve() != EXPECTED_SGLANG_ROOT:
     raise RuntimeError(f"SGLANG_ROOT must be the isolated checkout: {EXPECTED_SGLANG_ROOT}")
-if os.environ.get("CUDA_VISIBLE_DEVICES") != "3":
-    raise RuntimeError(
-        "run through /home/qinhaiyan/glm52-goal-runs/with_gpu_lock.sh 3"
-    )
+require_flexible_gpu()
 sys.path.insert(0, str(REPO_ROOT))
 
 from serving_native.runner import Runtime, TaskResult, _compare  # noqa: E402
@@ -173,6 +172,17 @@ def main() -> int:
             "mode": "real_cuda_graph_replay",
             "warmup": args.warmup,
             "repeat": args.repeat,
+            "campaign": {
+                "campaign_id": os.environ.get("GOAL22_CAMPAIGN_ID"),
+                "physical_gpu": int(os.environ["CUDA_VISIBLE_DEVICES"]),
+                "logical_gpu": 0,
+                "gpu_uuid": os.environ.get("GOAL22_GPU_UUID"),
+            },
+            "environment_flags": {
+                "CUDA_VISIBLE_DEVICES": os.environ.get("CUDA_VISIBLE_DEVICES"),
+                "SGLANG_GLM52_OPT": os.environ.get("SGLANG_GLM52_OPT"),
+                "SGLANG_ROOT": os.environ.get("SGLANG_ROOT"),
+            },
             "runtime_evidence": runtime.runtime_evidence(inputs),
             "candidate_evidence": candidate.candidate_evidence(),
             "reference": summary(reference_samples),
