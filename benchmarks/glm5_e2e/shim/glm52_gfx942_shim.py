@@ -65,7 +65,13 @@ def _hadamard_transform_pytorch(x, scale=1.0):
     return (x * scale).reshape(orig_shape)
 
 
+import importlib.util  # noqa: E402
+
 _fake_fht = types.ModuleType("fast_hadamard_transform")
+# Python 3.11's import machinery inspects __spec__ on every sys.modules entry
+# during startup; a bare types.ModuleType has __spec__ = None and triggers a
+# ValueError from sitecustomize's early import chain. Give the fake a real spec.
+_fake_fht.__spec__ = importlib.util.spec_from_loader("fast_hadamard_transform", loader=None)
 _fake_fht.hadamard_transform = _hadamard_transform_pytorch
 sys.modules["fast_hadamard_transform"] = _fake_fht
 

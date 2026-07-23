@@ -35,7 +35,8 @@ EXTRA_ARGS=()
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --overrides)   OVERRIDES="$2"; shift 2;;
-    --input-len)   INPUT_LEN=("$2"); shift 2;;
+    --input-len)   # allow "1024" or "1024 2048 4096"; splits on whitespace
+                   read -r -a INPUT_LEN <<< "$2"; shift 2;;
     --model-path)  MODEL_PATH="$2"; shift 2;;
     --tp)          TP="$2"; shift 2;;
     --kv-tokens)   KV_TOKENS="$2"; shift 2;;
@@ -78,8 +79,9 @@ PYTHON="${ROCM_TORCH_PYTHON:-$ROCM_TORCH_VENV/bin/python}"
 ulimit -c 0
 
 # manifest for provenance
+INPUT_LEN_STR="${INPUT_LEN[*]}"
 python3 - <<PY > "$RUN_DIR/manifest.json"
-import json, os, socket, subprocess, time
+import json, os, socket
 print(json.dumps({
     "scenario": "prefill_ttft",
     "started_at": "$STAMP",
@@ -87,7 +89,7 @@ print(json.dumps({
     "model_path": "$MODEL_PATH",
     "tp": $TP,
     "kv_tokens": $KV_TOKENS,
-    "input_lens": [${INPUT_LEN[*]// /, }],
+    "input_lens": [int(x) for x in "$INPUT_LEN_STR".split()],
     "output_len": 1,
     "overrides": os.environ.get("KDA_E2E_OVERRIDES") or None,
     "backends": {"dsa_prefill":"aiter","dsa_decode":"fa3","dsa_topk":"torch","moe":"triton"},

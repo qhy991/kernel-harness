@@ -31,7 +31,7 @@ EXTRA_ARGS=()
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --overrides)    OVERRIDES="$2"; shift 2;;
-    --batch-size)   BATCH_SIZE=("$2"); shift 2;;
+    --batch-size)   read -r -a BATCH_SIZE <<< "$2"; shift 2;;
     --model-path)   MODEL_PATH="$2"; shift 2;;
     --tp)           TP="$2"; shift 2;;
     --kv-tokens)    KV_TOKENS="$2"; shift 2;;
@@ -75,6 +75,7 @@ BS_NEED=$(( MAX_BS * (INPUT_LEN + OUTPUT_LEN) ))
 
 python3 - <<PY > "$RUN_DIR/manifest.json"
 import json, os, socket
+bs_str = "${BATCH_SIZE[*]}"
 print(json.dumps({
     "scenario": "decode_throughput",
     "started_at": "$STAMP",
@@ -82,7 +83,7 @@ print(json.dumps({
     "model_path": "$MODEL_PATH",
     "tp": $TP,
     "kv_tokens": $KV_TOKENS,
-    "batch_sizes": [${BATCH_SIZE[*]// /, }],
+    "batch_sizes": [int(x) for x in bs_str.split()],
     "input_len": $INPUT_LEN,
     "output_len": $OUTPUT_LEN,
     "overrides": os.environ.get("KDA_E2E_OVERRIDES") or None,
