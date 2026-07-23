@@ -4,6 +4,14 @@
 `llm_flops` scenarios but running the real GLM-5.2-FP8 model on 8× MI300X
 end-to-end instead of just at the operator level.
 
+**Start here**: [`METHODOLOGY.md`](METHODOLOGY.md) — the two-layer test
+model (op-level + e2e), operator replacement mechanism, timing standard,
+what to report, known gaps. Written after two audits + one e2e run.
+
+**Also read**: [`shim/PATCHES.md`](shim/PATCHES.md) — the seven gfx942
+compat patches the shim applies to sglang at import time, each explained
+with sglang code pointers and failure modes if skipped.
+
 The two shell scripts here forward everything to `sglang.bench_one_batch`
 (which natively sweeps `--input-len 1024 2048 4096` and
 `--batch-size 128 256`, and writes RESULT_JSON per shape into a `.jsonl`
@@ -33,16 +41,19 @@ of e2e testing is to reach the deployment regime.
 
 ```
 benchmarks/glm5_e2e/
-├── README.md                       ← you are here
-├── operator_overrides.py           ← runtime patch mechanism
-├── run_prefill_ttft.sh             ← wrapper: python -m sglang.bench_one_batch (prefill args)
-├── run_decode_throughput.sh        ← wrapper: python -m sglang.bench_one_batch (decode args)
+├── README.md                        ← you are here (quick start + reference)
+├── METHODOLOGY.md                   ← full testing methodology + operator replacement design
+├── operator_overrides.py            ← runtime patch mechanism (KNOWN_OVERRIDE_TARGETS registry)
+├── run_prefill_ttft.sh              ← wrapper: python -m sglang.bench_one_batch (prefill args)
+├── run_decode_throughput.sh         ← wrapper: python -m sglang.bench_one_batch (decode args)
 ├── shim/
-│   ├── glm52_gfx942_shim.py        ← 7 gfx942 compat patches (bootability)
-│   └── sitecustomize.py            ← auto-runs shim + user overrides on Python start
+│   ├── glm52_gfx942_shim.py         ← 7 gfx942 compat patches (bootability)
+│   ├── PATCHES.md                   ← each patch documented: what/why/when-it-retires
+│   └── sitecustomize.py             ← auto-runs shim + user overrides on Python start
 └── examples/
-    ├── example_overrides.py        ← two-idiom template
-    └── huyan_o_proj_prefill.py     ← worked example (huyan's tuned o_proj kernel)
+    ├── example_overrides.py         ← two-idiom template
+    ├── huyan_o_proj_prefill.py      ← worked example: archive/0723-amd-glm52 kernel
+    └── huyan_pr12_o_proj_prefill.py ← worked example: PR #12 kernel (from task tree)
 ```
 
 ## Quick start
