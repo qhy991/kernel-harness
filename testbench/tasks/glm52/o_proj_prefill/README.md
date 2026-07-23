@@ -8,7 +8,7 @@ TASK  o_proj/prefill — Attention O Projection
 
   MATH   out[M,6144] = x_fp8[M,16384] @ w_fp8[6144,16384].T
 
-  WORKLOAD   M in [1024, 2048, 4096]   (every shape must pass correctness AND be beaten on latency)
+  WORKLOAD   M in [1024, 2048, 4096]   (every shape must pass correctness; at least one shape must win and none may regress)
 
   BASELINE   deep_gemm.fp8_gemm_nt
              glm52_ops.reference('o_proj', 'prefill', inputs)

@@ -32,15 +32,30 @@ Baseline to beat: the call below, timed CUPTI cold-L2 on these same inputs.
 """
 from __future__ import annotations
 
-from testbench.harness import glm52_ops
+import deep_gemm
 
-
-OP = 'o_proj'
-PHASE = 'prefill'
+# Programmatic dependent launch: overlaps the grid-launch latency of the fp8 GEMM
+# with the tail of the preceding scale-layout transform kernels. Measured on B200
+# as the only device-time lever that helps this already-tensor-core-bound path.
+# Global, idempotent, and value-independent — set once at import, outside run().
+try:
+    deep_gemm.set_pdl(True)
+except Exception:  # pragma: no cover - older builds without the toggle
+    pass
 
 
 def run(inputs: dict):
-    # Starting point: the reference call itself — correct, speedup ~1.0. Replace it.
-    # glm52_ops.reference dispatches to the per-platform production kernel
-    # (deep_gemm on CUDA; aiter on ROCm).
-    return glm52_ops.reference(OP, PHASE, inputs)
+    # Same math and same frozen input dict as the reference, computed statelessly:
+    # no re-quantization, no rebuilt/aliased/cached operand copies. The only change
+    # is compile-time specialization of the M/N/K extents, which lets DeepGEMM's JIT
+    # emit tighter code for these frozen shapes. Specialization compiles during
+    # warmup (outside the timed window); any non-frozen M simply recompiles and
+    # still computes correctly, so no explicit fallback branch is needed.
+    out = inputs["out"]
+    deep_gemm.fp8_gemm_nt(
+        (inputs["x_fp8"], inputs["x_scale"]),
+        (inputs["w_fp8"], inputs["w_scale"]),
+        out,
+        compiled_dims="mnk",
+    )
+    return out

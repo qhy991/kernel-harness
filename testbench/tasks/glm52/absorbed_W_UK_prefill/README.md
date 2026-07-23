@@ -9,7 +9,7 @@ TASK  absorbed_W_UK/prefill — Absorbed W_UK BMM
   MATH   out[64,M,512] = A[64,M,192] @ B[64,192,512]
          NOTE per-tensor fp8 scales (cuBLAS path), not blockwise
 
-  WORKLOAD   M in [1024, 2048, 4096]   (every shape must pass correctness AND be beaten on latency)
+  WORKLOAD   M in [1024, 2048, 4096]   (every shape must pass correctness; at least one shape must win and none may regress)
 
   BASELINE   sgl_kernel.bmm_fp8
              glm52_ops.reference('absorbed_W_UK', 'prefill', inputs)

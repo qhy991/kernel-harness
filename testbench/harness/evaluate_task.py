@@ -247,9 +247,7 @@ def evaluate(task_dir: Path, args) -> tuple[dict, int]:
     seed = int(meta.get("seed", op_meta["seed"]))
     min_speedup_gate = float(meta.get("performance_gate", {}).get("min_speedup", 1.0))
 
-    # Pick the least-busy GPU when asked, so the agent never hand-manages
-    # CUDA_VISIBLE_DEVICES and campaign waves don't collide on one device.
-    if getattr(args, "auto_gpu", False):
+    if getattr(args, "auto_gpu", False) and not getattr(args, "_gpu_autoselected", False):
         args.device = f"cuda:{gpu_lease.pick_idle_gpu(gpu_lease.device_index(args.device))}"
     device = torch.device(args.device)
     torch.cuda.set_device(device)
@@ -325,9 +323,11 @@ def evaluate(task_dir: Path, args) -> tuple[dict, int]:
         ref_fn = partial(ops.reference, op, phase)
         setup = lambda: clone_inputs(inputs)  # noqa: E731 — cost is not timed
         cand_s, ref_s = [], []
-        # Hold the per-GPU timing lock across the whole sweep so a co-tenant gate
-        # run can't inflate these device-span medians. Opt out with --no-gpu-lock.
-        with gpu_lease.gpu_timing_lock(device, enabled=not getattr(args, "no_gpu_lock", False)):
+        # The CLI holds the per-GPU lock around the whole GPU gate. Keep this
+        # fallback for direct evaluate() callers that did not take the outer lock.
+        inner_lock = not (getattr(args, "no_gpu_lock", False) or
+                          getattr(args, "_gpu_lock_held", False))
+        with gpu_lease.gpu_timing_lock(device, enabled=inner_lock):
             for _ in range(args.repeat):
                 cand_s.append(tb_timing.time_runnable(cand_fn, setup=setup,
                                                       warmup=args.warmup,
@@ -471,6 +471,18 @@ def evaluate(task_dir: Path, args) -> tuple[dict, int]:
     perf_ok = bool(correct and wins >= 1 and regressions == 0)
     status = "CORRECT" if correct else "INCORRECT"
     exit_code = 0 if perf_ok else (1 if correct else 2)
+    if perf_ok:
+        terminal_state = "COMPLETE_WIN"
+        terminal_reason = "correct on every shape, at least one shape won, and no shape regressed"
+    elif correct and wins == 0 and regressions == 0:
+        terminal_state = "NO_WIN_WITH_EVIDENCE"
+        terminal_reason = "correct complete sweep, but every shape was inside the noise band"
+    elif correct:
+        terminal_state = "PARTIAL_OR_REGRESSED_WITH_EVIDENCE"
+        terminal_reason = "correct complete sweep, but the candidate regressed on at least one shape"
+    else:
+        terminal_state = "INCORRECT_OR_INCOMPLETE"
+        terminal_reason = "correctness failed, the sweep was incomplete, or correctness did not survive timing"
 
     print()
     print(f"VERDICT: {status}")
@@ -512,6 +524,11 @@ def evaluate(task_dir: Path, args) -> tuple[dict, int]:
             "repeat": args.repeat, "repeat_scope": "in-process",
             "iterations": args.iterations, "warmup": args.warmup,
             "timing_protocol": TIMING_PROTOCOL, "device": args.device,
+            "auto_gpu": bool(getattr(args, "auto_gpu", False)),
+            "gpu_lock_enabled": not bool(getattr(args, "no_gpu_lock", False)),
+            "gpu_lock_held": bool(getattr(args, "_gpu_lock_held", False)),
+            "gpu_physical_index": getattr(args, "_gpu_lease_physical_index", None),
+            "gpu_lock_path": getattr(args, "_gpu_lock_path", None),
             "correctness_standard": ("FlashMLA check_is_allclose structure: anomaly "
                                      "positions + elementwise (abs OR rel) + DeepGEMM "
                                      "calc_diff, on a poisoned output buffer"),
@@ -520,13 +537,16 @@ def evaluate(task_dir: Path, args) -> tuple[dict, int]:
         "candidate": {"path": cand_label, "sha256": cand_sha,
                       "is_reference_fallback": cand_label == "reference",
                       "external": bool(args.candidate),
+                      "git": result_store.candidate_git_state(cand_path),
                       "_abspath": cand_path},
         "environment": result_store.capture_environment(),
         "cost_model": ops.PEAKS,
         "per_shape": per_shape,
         "aggregate": aggregate,
         "verdict": {"correct": correct, "performance_ok": perf_ok,
-                    "status": status, "exit_code": exit_code},
+                    "status": status, "exit_code": exit_code,
+                    "terminal_state": terminal_state,
+                    "terminal_reason": terminal_reason},
     }
     return result, exit_code
 
@@ -555,7 +575,7 @@ def main() -> int:
                     help="pick the least-busy GPU via nvidia-smi/rocm-smi "
                          "(overrides --device index)")
     ap.add_argument("--no-gpu-lock", action="store_true",
-                    help="do not hold the per-GPU flock around the timed sweep")
+                    help="do not hold the per-GPU flock around the GPU gate")
     ap.add_argument("--no-persist", action="store_true")
     ap.add_argument("--describe", action="store_true",
                     help="print the problem statement (generated from glm52_ops) and exit")
@@ -591,7 +611,20 @@ def main() -> int:
     tee = _Tee(real_stdout)
     sys.stdout = tee
     try:
-        result, code = evaluate(task_dir, args)
+        lock_enabled = not getattr(args, "no_gpu_lock", False)
+        default_idx = gpu_lease.device_index(args.device)
+        if getattr(args, "auto_gpu", False):
+            lock_cm = gpu_lease.locked_idle_gpu(default=default_idx, enabled=lock_enabled)
+        else:
+            lock_cm = gpu_lease.gpu_timing_lock(args.device, enabled=lock_enabled)
+        with lock_cm as lease:
+            if getattr(args, "auto_gpu", False) and lease is not None:
+                args.device = f"cuda:{lease.index}"
+                args._gpu_autoselected = True
+            args._gpu_lock_held = bool(lock_enabled and lease is not None and lease.file is not None)
+            args._gpu_lease_physical_index = getattr(lease, "physical_index", None) if lease is not None else None
+            args._gpu_lock_path = getattr(getattr(lease, "file", None), "name", None) if lease is not None else None
+            result, code = evaluate(task_dir, args)
     except ContractError as exc:
         sys.stdout = real_stdout
         print(f"CONTRACT ERROR: {exc}", file=sys.stderr)
@@ -614,9 +647,7 @@ def main() -> int:
                 result, model=result["task"]["model"], task=task_dir.name,
                 run_id=result["run"]["run_id"], stdout_text=tee.buffer_text.getvalue(),
                 candidate_path=cand_abspath)
-            rel = d.relative_to(_REPO_ROOT)
-            print(f"result={rel}/result.json")
-            result["run"]["result_dir"] = str(rel)
+            print(f"result={result['run']['result_dir']}/result.json")
         except Exception as exc:
             print(f"warning: persistence failed: {exc}", file=sys.stderr)
 

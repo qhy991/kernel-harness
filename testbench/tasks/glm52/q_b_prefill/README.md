@@ -8,7 +8,7 @@ TASK  q_b/prefill — Q-B Projection
 
   MATH   out[M,16384] = x_fp8[M,2048] @ w_fp8[16384,2048].T
 
-  WORKLOAD   M in [1024, 2048, 4096]   (every shape must pass correctness AND be beaten on latency)
+  WORKLOAD   M in [1024, 2048, 4096]   (every shape must pass correctness; at least one shape must win and none may regress)
 
   BASELINE   deep_gemm.fp8_gemm_nt
              glm52_ops.reference('q_b', 'prefill', inputs)

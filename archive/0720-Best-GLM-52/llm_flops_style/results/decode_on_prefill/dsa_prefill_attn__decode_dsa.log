@@ -1,0 +1,266 @@
+TASK dsa_attn/prefill  run=20260720T072835Z-cd905c  candidate=archive/0720-Best-GLM-52/best-hechenxi-0720/dsa_decode_attn/candidate/candidate.py sha=f981164352a2
+     timing=cupti-cold-l2-device-kernel-median iters=30 warmup=3 repeat=10  S=65536 seed=0  device=cuda:0
+
+     roofline: bf16 peak 2.25 PFLOP/s, HBM 8.0 TB/s, ridge 281.2 FLOP/byte -> reward = utilisation of whichever resource binds
+
+  shape    ok  calc_diff   cand_us    ref_us  speedup  sp_cons  verdict      AI   bound   TFLOP/s     MFU      GB/s      BW   reward
+ M=1024  PASS   2.68e-06    420.92    283.88   0.674x   0.673x  REGRESS  1289.5 compute     693.9  30.84%     538.1   6.73%   0.3084
+        └ ref   baseline                                                                   1028.8  45.73%     797.9   9.97%   0.4573
+ M=2048  PASS   2.68e-06    811.76    563.00   0.694x   0.693x  REGRESS  1547.4 compute     719.6  31.98%     465.0   5.81%   0.3198
+        └ ref   baseline                                                                   1037.5  46.11%     670.5   8.38%   0.4611
+ M=4096  PASS   2.68e-06   1572.51   1129.96   0.719x   0.715x  REGRESS  1719.3 compute     742.9  33.02%     432.1   5.40%   0.3302
+        └ ref   baseline                                                                   1033.9  45.95%     601.3   7.52%   0.4595
+
+VERDICT: CORRECT
+0/3 shapes WIN, 3 regressed, 0 neutral   geomean_speedup=0.6953x  best_reward=0.3302
+performance_gate: >=1 win AND 0 regressions -> NOT MET
+  regressed: glm52-dsa_prefill_attn-M1024, glm52-dsa_prefill_attn-M2048, glm52-dsa_prefill_attn-M4096 — the candidate loses there even at its fastest sample vs the reference's slowest. Fall back to the reference on those shapes.
+result=runs/glm52/dsa_prefill_attn/20260720T072835Z-cd905c/result.json
+
+RESULT_JSON_BEGIN
+{
+  "schema_version": "1.0",
+  "task": {
+    "name": "dsa_prefill_attn",
+    "model": "glm52",
+    "operator": "dsa_attn",
+    "phase": "prefill",
+    "S": 65536,
+    "seed": 0,
+    "family": "mla",
+    "output_kind": "mla_sparse",
+    "backend": "sgl_kernel.flash_mla.flash_mla_sparse_fwd",
+    "diff_tol": 5e-06,
+    "rel_tol": 0.015703125,
+    "abs_tol_factor": 0.0001,
+    "performance_gate": {
+      "min_speedup": 1.0,
+      "basis": "conservative (q=0.9)"
+    }
+  },
+  "run": {
+    "run_id": "20260720T072835Z-cd905c",
+    "started_utc": "2026-07-20T07:28:35Z",
+    "finished_utc": "2026-07-20T07:28:44Z",
+    "repeat": 10,
+    "repeat_scope": "in-process",
+    "iterations": 30,
+    "warmup": 3,
+    "timing_protocol": "cupti-cold-l2-device-kernel-median",
+    "device": "cuda:0",
+    "correctness_standard": "FlashMLA check_is_allclose structure: anomaly positions + elementwise (abs OR rel) + DeepGEMM calc_diff, on a poisoned output buffer",
+    "reward_standard": "rewardbench bound-aware roofline (PR2)",
+    "result_dir": "runs/glm52/dsa_prefill_attn/20260720T072835Z-cd905c"
+  },
+  "candidate": {
+    "path": "archive/0720-Best-GLM-52/best-hechenxi-0720/dsa_decode_attn/candidate/candidate.py",
+    "sha256": "f981164352a2b7944698cdef2540000fbf8e27a6ba48519020ab7970e227b11a",
+    "is_reference_fallback": false,
+    "external": true
+  },
+  "environment": {
+    "hostname": "dry-vm-embraces-fin-03",
+    "python": "3.12.13",
+    "platform": "Linux-6.8.0-100-generic-x86_64-with-glibc2.39",
+    "git_sha": "fad7d34c913e280b558da812ad0ac24313fb5d00",
+    "git_branch": "main",
+    "git_dirty": true,
+    "torch": "2.11.0+cu130",
+    "deep_gemm": "0.1.4",
+    "sgl_kernel": "0.4.4",
+    "cuda": "13.0",
+    "gpu": "NVIDIA B200",
+    "gpu_capability": "10.0",
+    "gpu_memory_gb": 191.5,
+    "gpu_count": 1,
+    "driver": "610.43.02\n610.43.02\n610.43.02\n610.43.02"
+  },
+  "cost_model": {
+    "gpu": "NVIDIA B200",
+    "hbm_bytes_per_s": 8000000000000.0,
+    "peak_flops_fp8": 4500000000000000.0,
+    "peak_flops_bf16": 2250000000000000.0,
+    "source": "rewardbench (PR2) + testbench/harness/profile.py; opbench/mfu.py's 7.7e12 not used"
+  },
+  "per_shape": [
+    {
+      "uuid": "glm52-dsa_prefill_attn-M1024",
+      "axes": {
+        "M": 1024,
+        "S": 65536
+      },
+      "correct": true,
+      "output_kind": "mla_sparse",
+      "output_buffer_poisoned": false,
+      "calc_diff": 2.682145321286633e-06,
+      "max_abs_err": 0.001953125,
+      "max_rel_err": 264.1269226074219,
+      "abs_tol": 0.001,
+      "rel_tol": 0.015703125,
+      "diff_tol": 5e-06,
+      "elementwise_failed": 0,
+      "anomaly_ok": true,
+      "elements": 33554432,
+      "cosine": 0.9999973178559293,
+      "best_fit_scale": 0.9999957363111008,
+      "timing_spread": 1.006,
+      "timing_unstable": false,
+      "post_timing_calc_diff": 2.682145321286633e-06,
+      "post_timing_correct": true,
+      "flops": 292057776128.0,
+      "bytes_hbm": 226492416.0,
+      "compute_dtype": "bf16",
+      "candidate_us": 420.916,
+      "candidate_us_lo": 420.227,
+      "candidate_us_hi": 422.862,
+      "reference_us": 283.876,
+      "reference_us_lo": 283.647,
+      "reference_us_hi": 283.994,
+      "samples": 10,
+      "candidate_us_p90": 421.638,
+      "reference_us_p10": 283.69,
+      "conservative_quantile": 0.9,
+      "speedup": 0.6744,
+      "speedup_conservative": 0.6728,
+      "speedup_optimistic": 0.6753,
+      "shape_verdict": "regress",
+      "bound": "compute",
+      "arithmetic_intensity": 1289.4814814814815,
+      "ridge": 281.25,
+      "reward": 0.3083834616711037,
+      "reference_reward": 0.4572540688782739,
+      "achieved_tflops": 693.8627887599833,
+      "achieved_gbps": 538.0944191325698,
+      "compute_util": 0.3083834616711037,
+      "bw_util": 0.06726180239157123
+    },
+    {
+      "uuid": "glm52-dsa_prefill_attn-M2048",
+      "axes": {
+        "M": 2048,
+        "S": 65536
+      },
+      "correct": true,
+      "output_kind": "mla_sparse",
+      "output_buffer_poisoned": false,
+      "calc_diff": 2.6838079952851146e-06,
+      "max_abs_err": 0.001953125,
+      "max_rel_err": 225.40989685058594,
+      "abs_tol": 0.001,
+      "rel_tol": 0.015703125,
+      "diff_tol": 5e-06,
+      "elementwise_failed": 0,
+      "anomaly_ok": true,
+      "elements": 67108864,
+      "cosine": 0.9999973161920058,
+      "best_fit_scale": 0.9999972654789536,
+      "timing_spread": 1.001,
+      "timing_unstable": false,
+      "post_timing_calc_diff": 2.6838079952851146e-06,
+      "post_timing_correct": true,
+      "flops": 584115552256.0,
+      "bytes_hbm": 377487360.0,
+      "compute_dtype": "bf16",
+      "candidate_us": 811.765,
+      "candidate_us_lo": 811.644,
+      "candidate_us_hi": 812.184,
+      "reference_us": 562.995,
+      "reference_us_lo": 562.567,
+      "reference_us_hi": 563.228,
+      "samples": 10,
+      "candidate_us_p90": 811.98,
+      "reference_us_p10": 562.786,
+      "conservative_quantile": 0.9,
+      "speedup": 0.6935,
+      "speedup_conservative": 0.6931,
+      "speedup_optimistic": 0.6937,
+      "shape_verdict": "regress",
+      "bound": "compute",
+      "arithmetic_intensity": 1547.3777777777777,
+      "ridge": 281.25,
+      "reward": 0.319805598991306,
+      "reference_reward": 0.4611174110505866,
+      "achieved_tflops": 719.5625977304385,
+      "achieved_gbps": 465.0206355967046,
+      "compute_util": 0.319805598991306,
+      "bw_util": 0.058127579449588074
+    },
+    {
+      "uuid": "glm52-dsa_prefill_attn-M4096",
+      "axes": {
+        "M": 4096,
+        "S": 65536
+      },
+      "correct": true,
+      "output_kind": "mla_sparse",
+      "output_buffer_poisoned": false,
+      "calc_diff": 2.682994137748196e-06,
+      "max_abs_err": 0.001953125,
+      "max_rel_err": 258.2129821777344,
+      "abs_tol": 0.001,
+      "rel_tol": 0.015703125,
+      "diff_tol": 5e-06,
+      "elementwise_failed": 0,
+      "anomaly_ok": true,
+      "elements": 134217728,
+      "cosine": 0.9999973170061146,
+      "best_fit_scale": 0.9999966064365791,
+      "timing_spread": 1.01,
+      "timing_unstable": false,
+      "post_timing_calc_diff": 2.682994137748196e-06,
+      "post_timing_correct": true,
+      "flops": 1168231104512.0,
+      "bytes_hbm": 679477248.0,
+      "compute_dtype": "bf16",
+      "candidate_us": 1572.509,
+      "candidate_us_lo": 1565.137,
+      "candidate_us_hi": 1580.644,
+      "reference_us": 1129.963,
+      "reference_us_lo": 1127.783,
+      "reference_us_hi": 1131.107,
+      "samples": 10,
+      "candidate_us_p90": 1578.587,
+      "reference_us_p10": 1128.519,
+      "conservative_quantile": 0.9,
+      "speedup": 0.7186,
+      "speedup_conservative": 0.7149,
+      "speedup_optimistic": 0.72,
+      "shape_verdict": "regress",
+      "bound": "compute",
+      "arithmetic_intensity": 1719.3086419753085,
+      "ridge": 281.25,
+      "reward": 0.33018178225215594,
+      "reference_reward": 0.4594963058326295,
+      "achieved_tflops": 742.9090100673509,
+      "achieved_gbps": 432.09752567393883,
+      "compute_util": 0.33018178225215594,
+      "bw_util": 0.054012190709242354
+    }
+  ],
+  "aggregate": {
+    "min_speedup": 0.6744,
+    "geomean_speedup": 0.6953,
+    "min_speedup_conservative": 0.6728,
+    "best_reward": 0.3302,
+    "worst_reward": 0.3084,
+    "worst_calc_diff": 2.6838079952851146e-06,
+    "shapes_evaluated": 3,
+    "complete_sweep": true,
+    "timing_unstable_shapes": [],
+    "shapes_won": 0,
+    "shapes_regressed": 3,
+    "shapes_neutral": 0,
+    "regressed_shapes": [
+      "glm52-dsa_prefill_attn-M1024",
+      "glm52-dsa_prefill_attn-M2048",
+      "glm52-dsa_prefill_attn-M4096"
+    ]
+  },
+  "verdict": {
+    "correct": true,
+    "performance_ok": false,
+    "status": "CORRECT",
+    "exit_code": 1
+  }
+}
+RESULT_JSON_END

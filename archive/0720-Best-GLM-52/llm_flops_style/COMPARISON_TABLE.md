@@ -6,7 +6,7 @@
 Decode swaps（PR#5 bake-off 后）：
 - **PR5** `best-hechenxi-0720/`：`fused_qkv_a`、`index_q_upproj`、`dsa_decode_attn`
 - **ours** `best/`：`q_b`（DeepGEMM fork）、`o_proj`、`index_k`、`moe_*`
-- Prefill：PR#3 + `best/index_k` / `best/o_proj_prefill`（未改）
+- Prefill：**与 decode 共用** `o_proj`、`index_k`、`moe_up`、`moe_down`（pack+PDL）；其余仍 PR#3 prefill 专用
 
 复现：`bench_{decode,prefill}.py` · 对打：[`PR5_VS_OURS.md`](PR5_VS_OURS.md)
 
@@ -16,11 +16,13 @@ Decode swaps（PR#5 bake-off 后）：
 
 | Phase | M | stock 层 (ms) | swapped 层 (ms) | 层加速 |
 |-------|--:|-------------:|----------------:|-------:|
-| Decode（PR5+ours） | 16 | 0.3227 | 0.1843 | **1.75×** |
-| Decode（PR5+ours） | 32 | 0.3431 | 0.2208 | **1.55×** |
-| Prefill (+PR#3) | 1024 | 1.1643 | 1.1452 | **1.017×** |
-| Prefill (+PR#3) | 2048 | 2.9817† | 2.8954 | **1.030×** |
-| Prefill (+PR#3) | 4096 | 4.2332 | 4.1988 | **1.008×** |
+| Decode（PR5+ours） | 16 | 0.3279 | 0.1883 | **1.74×** |
+| Decode（PR5+ours） | 32 | 0.3487 | 0.2256 | **1.55×** |
+| Prefill (+PR#3+shared decode) | 1024 | 1.1416 | 1.1071 | **1.031×** |
+| Prefill (+PR#3+shared decode) | 2048 | 3.7152 | 3.6186 | **1.027×** |
+| Prefill (+PR#3+shared decode) | 4096 | 4.7069 | 4.4098 | **1.067×** |
+
+复测时间：`20260720T085336Z` · 协议 CUDA Graph drop-in（warmup=5, runs=20）
 
 † Prefill M=2048 stock 曾受 DSA 抖动影响；Decode 相对上一版（1.51×/1.44×）再抬，主要来自 PR5 `dsa` + 更快的 `fused_qkv_a`/`index_q`。
 
@@ -46,6 +48,18 @@ Decode swaps（PR#5 bake-off 后）：
 
 ## Prefill
 
-仍约 **1.0×** 层加速；DSA+index_score 占主导。详见上一版与 Prefill 战役文档。
+**decode/prefill 共用 swap**（`best/` pack+PDL）：
 
-原始 CSV：`results/comparison_{decode,prefill,all}.csv` · `results/glm5_*_swapped_perf.csv`
+| op | M1024 | M2048 | M4096 | archive |
+|----|------:|------:|------:|--------|
+| o_proj | **1.13×** (0.077/0.087 ms) | **1.07×** | **1.27×** | `best/o_proj_decode_hbm35` |
+| index_k_proj | **1.15×** | **1.14×** | **1.16×** | `best/index_k_proj_decode` |
+| moe_up_proj | **1.09×** | **1.03×** | 0.95× | `best/moe_up_proj_decode_hbm40` |
+| moe_down_proj | **1.07×** | **1.02×** | 0.92× | `best/moe_down_proj_decode_hbm40` |
+
+层加速 **1.03–1.07×**（M1024/4096）；M2048 stock 受 DSA/index_score 抖动影响偏大。
+
+原始 CSV（`20260720T085336Z` 复测）：
+- `results/comparison_all.csv` — decode+prefill 全量
+- `results/comparison_shared_decode_prefill.csv` — decode/prefill 共用 4 算子
+- `results/glm5_{decode,prefill}_swapped_perf.csv` — 原始 bench 输出

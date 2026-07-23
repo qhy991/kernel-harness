@@ -84,23 +84,23 @@ DECODE_SWAPS: dict[str, tuple[str | None, str | None, str | None]] = {
     "moe_down_proj": ("moe_down", "best/moe_down_proj_decode_hbm40", "moe_masked"),
 }
 
-# Prefill: PR#3 flat files + prior best/ winners
+# Prefill: PR#3 flat files + decode winners that also win on prefill (CUPTI+Graph).
+# Shared with DECODE_SWAPS: o_proj, index_k, moe_up (pack+PDL).
 PREFILL_SWAPS: dict[str, tuple[str | None, str | None, str | None]] = {
     "fused_qkv_a_proj": ("fused_qkv_a", "fused_qkv_a_prefill.py", "fp8_gemm"),
     "q_b_proj": ("q_b", "q_b_prefill.py", "fp8_gemm"),
     "absorbed_W_UK": ("absorbed_W_UK", "absorbed_W_UK_prefill.py", "bmm"),
     "absorbed_W_UV": ("absorbed_W_UV", "absorbed_W_UV_prefill.py", "bmm"),
-    "o_proj": ("o_proj", "best/o_proj_prefill", "fp8_gemm"),
+    "o_proj": ("o_proj", "best/o_proj_decode_hbm35", "fp8_gemm"),
     "dsa_prefill_attn": ("dsa_attn", "dsa_prefill_attn.py", "dsa"),
-    "index_k_proj": ("index_k", "best/index_k_prefill_bw70", "fp8_gemm"),
+    "index_k_proj": ("index_k", "best/index_k_proj_decode", "fp8_gemm"),
     "index_q_upproj": ("index_q_upproj", "index_q_upproj_prefill.py", "fp8_gemm"),
     "index_weights_proj": ("index_weights_proj", "index_weights_proj.py", "bf16_gemm"),
     "index_score": ("index_score", "index_score_prefill.py", "score_mqa"),
-    # CUPTI pack+PDL wins (~1.06–1.19×); CUDA Graph drop-in regresses at M=4096
-    # (~0.95×) — keep candidate in best/ but do not default-swap for layer tables.
+    # moe_gate pack: CUPTI ~1.12× but Graph M4096 ~0.95× — keep stock for layer tables.
     "moe_gate_proj": (None, None, None),
-    "moe_up_proj": ("moe_up", "moe_up_proj_prefill.py", "moe_masked"),
-    "moe_down_proj": ("moe_down", "moe_down_proj_prefill.py", "moe_masked"),
+    "moe_up_proj": ("moe_up", "best/moe_up_proj_decode_hbm40", "moe_masked"),
+    "moe_down_proj": ("moe_down", "best/moe_down_proj_decode_hbm40", "moe_masked"),
 }
 
 

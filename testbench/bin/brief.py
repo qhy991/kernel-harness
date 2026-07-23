@@ -27,6 +27,26 @@ TASKS = BIN.parent / "tasks" / "glm52"
 RUNS = BIN.parent.parent / "runs" / "glm52"
 
 
+def _run_rank(r: dict) -> tuple:
+    verdict = r.get("verdict") or {}
+    agg = r.get("aggregate") or {}
+    if isinstance(verdict, dict):
+        perf_ok = bool(verdict.get("performance_ok"))
+        correct = bool(verdict.get("correct"))
+        exit_code = verdict.get("exit_code")
+    else:
+        perf_ok = False
+        correct = str(verdict).upper() == "CORRECT"
+        exit_code = None
+    speed = (agg.get("geomean_speedup") or
+             agg.get("min_speedup_conservative") or
+             agg.get("speedup") or 0)
+    reward = agg.get("best_reward") or 0
+    # Correctness outranks speed: an incorrect run with a bogus high speedup must
+    # never be the warm-start recommendation.
+    return (perf_ok, correct, exit_code == 0, speed, reward)
+
+
 def _best_prior_run(task: str) -> None:
     d = RUNS / task
     results = sorted(d.glob("*/result.json")) if d.is_dir() else []
@@ -40,8 +60,7 @@ def _best_prior_run(task: str) -> None:
             r = json.loads(f.read_text())
         except Exception:
             continue
-        agg = r.get("aggregate") or {}
-        key = agg.get("geomean_speedup") or agg.get("min_speedup_conservative") or 0
+        key = _run_rank(r)
         if best is None or key > best[0]:
             best = (key, r, f)
     if best is None:
@@ -49,7 +68,13 @@ def _best_prior_run(task: str) -> None:
         return
     _, r, f = best
     agg, verdict = r.get("aggregate") or {}, r.get("verdict")
-    print(f"  verdict={verdict}  {json.dumps(agg)[:300]}")
+    if isinstance(verdict, dict):
+        status = (f"correct={bool(verdict.get('correct'))} "
+                  f"performance_ok={bool(verdict.get('performance_ok'))} "
+                  f"exit={verdict.get('exit_code')}")
+    else:
+        status = str(verdict)
+    print(f"  verdict={status}  {json.dumps(agg)[:300]}")
     print(f"  from {f.relative_to(BIN.parent.parent)}")
 
 

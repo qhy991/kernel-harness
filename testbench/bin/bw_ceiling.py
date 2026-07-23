@@ -17,12 +17,23 @@ Requires a GPU + the venv (imports torch and the harness CUPTI timer).
 from __future__ import annotations
 
 import argparse
+import importlib.util
 import sys
 from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "harness"))
 import torch  # noqa: E402
-import timing as tb_timing  # noqa: E402  (harness/timing.py — same CUPTI cold-L2 timer)
+
+
+def _harness_module(name: str):
+    harness = Path(__file__).resolve().parent.parent / "harness"
+    spec = importlib.util.spec_from_file_location(f"_tb_{name}", harness / f"{name}.py")
+    mod = importlib.util.module_from_spec(spec)
+    sys.modules[f"_tb_{name}"] = mod
+    spec.loader.exec_module(mod)
+    return mod
+
+
+tb_timing = _harness_module("timing")  # same CUPTI cold-L2 timer as the evaluator
 
 # 2 MB … 4 GB, matching the SOP's ramp-curve sample points.
 _SWEEP = [2, 6, 9, 16, 64, 138, 256, 1024, 4096]  # MiB

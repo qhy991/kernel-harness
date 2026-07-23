@@ -1,0 +1,130 @@
+TASK fused_qkv_a/prefill  run=20260720T071500Z-95962a  candidate=archive/0720-Best-GLM-52/best-hechenxi-0720/fused_qkv_a_decode/candidate/candidate.py sha=d27340ddb0f5
+     timing=cupti-cold-l2-device-kernel-median iters=30 warmup=3 repeat=10  S=65536 seed=0  device=cuda:0
+
+     roofline: fp8 peak 4.50 PFLOP/s, HBM 8.0 TB/s, ridge 562.5 FLOP/byte -> reward = utilisation of whichever resource binds
+
+  shape    ok  calc_diff   cand_us    ref_us  speedup  sp_cons  verdict      AI   bound   TFLOP/s     MFU      GB/s      BW   reward
+  M=1024    ERROR  OutOfResources: out of resource: shared memory, Required: 41
+  M=2048    ERROR  OutOfResources: out of resource: shared memory, Required: 82
+  M=4096    ERROR  OutOfResources: out of resource: shared memory, Required: 16
+
+VERDICT: INCORRECT
+result=runs/glm52/fused_qkv_a_prefill/20260720T071500Z-95962a/result.json
+
+RESULT_JSON_BEGIN
+{
+  "schema_version": "1.0",
+  "task": {
+    "name": "fused_qkv_a_prefill",
+    "model": "glm52",
+    "operator": "fused_qkv_a",
+    "phase": "prefill",
+    "S": 65536,
+    "seed": 0,
+    "family": "gemm",
+    "output_kind": "dense",
+    "backend": "deep_gemm.fp8_gemm_nt",
+    "diff_tol": 5e-06,
+    "rel_tol": 0.015703125,
+    "abs_tol_factor": 0.0001,
+    "performance_gate": {
+      "min_speedup": 1.0,
+      "basis": "conservative (q=0.9)"
+    }
+  },
+  "run": {
+    "run_id": "20260720T071500Z-95962a",
+    "started_utc": "2026-07-20T07:15:00Z",
+    "finished_utc": "2026-07-20T07:28:31Z",
+    "repeat": 10,
+    "repeat_scope": "in-process",
+    "iterations": 30,
+    "warmup": 3,
+    "timing_protocol": "cupti-cold-l2-device-kernel-median",
+    "device": "cuda:0",
+    "correctness_standard": "FlashMLA check_is_allclose structure: anomaly positions + elementwise (abs OR rel) + DeepGEMM calc_diff, on a poisoned output buffer",
+    "reward_standard": "rewardbench bound-aware roofline (PR2)",
+    "result_dir": "runs/glm52/fused_qkv_a_prefill/20260720T071500Z-95962a"
+  },
+  "candidate": {
+    "path": "archive/0720-Best-GLM-52/best-hechenxi-0720/fused_qkv_a_decode/candidate/candidate.py",
+    "sha256": "d27340ddb0f5cd1d2b58be71992a8c4664c2b97176940b70c4e36548f1fa11ee",
+    "is_reference_fallback": false,
+    "external": true
+  },
+  "environment": {
+    "hostname": "dry-vm-embraces-fin-03",
+    "python": "3.12.13",
+    "platform": "Linux-6.8.0-100-generic-x86_64-with-glibc2.39",
+    "git_sha": "fad7d34c913e280b558da812ad0ac24313fb5d00",
+    "git_branch": "main",
+    "git_dirty": true,
+    "torch": "2.11.0+cu130",
+    "deep_gemm": "0.1.4",
+    "sgl_kernel": "0.4.4",
+    "cuda": "13.0",
+    "gpu": "NVIDIA B200",
+    "gpu_capability": "10.0",
+    "gpu_memory_gb": 191.5,
+    "gpu_count": 1,
+    "driver": "610.43.02\n610.43.02\n610.43.02\n610.43.02"
+  },
+  "cost_model": {
+    "gpu": "NVIDIA B200",
+    "hbm_bytes_per_s": 8000000000000.0,
+    "peak_flops_fp8": 4500000000000000.0,
+    "peak_flops_bf16": 2250000000000000.0,
+    "source": "rewardbench (PR2) + testbench/harness/profile.py; opbench/mfu.py's 7.7e12 not used"
+  },
+  "per_shape": [
+    {
+      "uuid": "glm52-fused_qkv_a_prefill-M1024",
+      "axes": {
+        "M": 1024,
+        "S": 65536
+      },
+      "correct": false,
+      "error": "OutOfResources: out of resource: shared memory, Required: 417804, Hardware limit: 232448. Reducing block sizes or `num_stages` may help."
+    },
+    {
+      "uuid": "glm52-fused_qkv_a_prefill-M2048",
+      "axes": {
+        "M": 2048,
+        "S": 65536
+      },
+      "correct": false,
+      "error": "OutOfResources: out of resource: shared memory, Required: 823308, Hardware limit: 232448. Reducing block sizes or `num_stages` may help."
+    },
+    {
+      "uuid": "glm52-fused_qkv_a_prefill-M4096",
+      "axes": {
+        "M": 4096,
+        "S": 65536
+      },
+      "correct": false,
+      "error": "OutOfResources: out of resource: shared memory, Required: 1634316, Hardware limit: 232448. Reducing block sizes or `num_stages` may help."
+    }
+  ],
+  "aggregate": {
+    "min_speedup": null,
+    "geomean_speedup": null,
+    "min_speedup_conservative": null,
+    "best_reward": null,
+    "worst_reward": null,
+    "worst_calc_diff": null,
+    "shapes_evaluated": 3,
+    "complete_sweep": true,
+    "timing_unstable_shapes": [],
+    "shapes_won": 0,
+    "shapes_regressed": 0,
+    "shapes_neutral": 0,
+    "regressed_shapes": []
+  },
+  "verdict": {
+    "correct": false,
+    "performance_ok": false,
+    "status": "INCORRECT",
+    "exit_code": 2
+  }
+}
+RESULT_JSON_END

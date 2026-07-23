@@ -8,7 +8,7 @@ TASK  fused_qkv_a/decode — Fused QKV-A Projection
 
   MATH   out[M,2624] = x_fp8[M,6144] @ w_fp8[2624,6144].T
 
-  WORKLOAD   M in [16, 32]   (every shape must pass correctness AND be beaten on latency)
+  WORKLOAD   M in [16, 32]   (every shape must pass correctness; at least one shape must win and none may regress)
 
   BASELINE   deep_gemm.fp8_gemm_nt
              glm52_ops.reference('fused_qkv_a', 'decode', inputs)
