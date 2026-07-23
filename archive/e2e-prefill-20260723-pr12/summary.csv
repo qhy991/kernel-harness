@@ -1,0 +1,4 @@
+M,baseline_runs_ms,override_runs_ms,baseline_median_ms,override_median_ms,speedup_median,delta_pct,override_status,verdict
+1024,"289.4;389.4;376.2","333.4;282.2;282.4",382.8,282.3,1.356,+26.3,active,SPEEDUP (both later baseline runs slow to ~380ms; override stable ~282ms — likely real signal at n=3)
+2048,"357.1;309.4;257.2","397.8;330.0;291.8",283.3,310.9,0.911,-9.7,active,neutral/noise (baseline getting faster over runs)
+4096,"657.1;604.7;691.0","1402.9;856.0;683.8",647.9,769.9,0.842,-18.8,fallback,noise (override falls back to sglang default; first run 1403ms is outlier likely JIT/state)

@@ -1,0 +1,19 @@
+run,label,M,batch_size,output_len,prefill_latency_ms,prefill_throughput,note
+1,baseline_run1_M1024,1024,1,1,289.4,3538.3,first-hit warmup
+2,baseline_run2_M1024,1024,1,1,389.4,2629.9,
+3,baseline_run3_M1024,1024,1,1,376.2,2721.6,
+4,baseline_run1_M2048,2048,1,1,357.1,5734.5,
+5,baseline_run2_M2048,2048,1,1,309.4,6620.2,
+6,baseline_run3_M2048,2048,1,1,257.2,7962.4,
+7,baseline_run1_M4096,4096,1,1,657.1,6233.9,
+8,baseline_run2_M4096,4096,1,1,604.7,6773.5,
+9,baseline_run3_M4096,4096,1,1,691.0,5927.3,
+10,override_run1_M1024,1024,1,1,333.4,3072.1,huyan-PR12-o_proj active
+11,override_run2_M1024,1024,1,1,282.2,3629.7,huyan-PR12-o_proj active
+12,override_run3_M1024,1024,1,1,282.4,3626.1,huyan-PR12-o_proj active
+13,override_run1_M2048,2048,1,1,397.8,5148.6,huyan-PR12-o_proj active
+14,override_run2_M2048,2048,1,1,330.0,6206.5,huyan-PR12-o_proj active
+15,override_run3_M2048,2048,1,1,291.8,7019.2,huyan-PR12-o_proj active
+16,override_run1_M4096,4096,1,1,1402.9,2919.6,fallback to sglang default (M=4096 gated)
+17,override_run2_M4096,4096,1,1,856.0,4785.0,fallback to sglang default
+18,override_run3_M4096,4096,1,1,683.8,5990.3,fallback to sglang default
