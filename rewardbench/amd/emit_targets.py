@@ -28,8 +28,8 @@ import sys
 from pathlib import Path
 
 os.environ.setdefault("KERNEL_HARNESS_PLATFORM", "rocm")
-os.environ.setdefault("KERNEL_HARNESS_PROFILE", "rocm-mi300x")
-os.environ.setdefault("KERNEL_HARNESS_PROVIDER", "torch-triton-rocm")
+os.environ.setdefault("KERNEL_HARNESS_PROFILE", "amd-mi300x")
+os.environ.setdefault("KERNEL_HARNESS_PROVIDER", "aiter-torch-reference")
 os.environ.setdefault("KERNEL_HARNESS_TIMER", "event")
 
 _HERE = Path(__file__).resolve().parent

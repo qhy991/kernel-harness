@@ -157,7 +157,14 @@ def _check_outputs(cand_out) -> None:
 
 def _correctness(op, phase, M, S, seed, device, cand_fn) -> dict:
     inputs = ops.build_inputs(op, phase, M, S, device, seed)
-    ref_out = _clone_out(ops.reference(op, phase, inputs))
+    # Correctness compares the candidate against a deterministic MATH oracle, which is
+    # decoupled from the production latency baseline that reference() (timed below) uses.
+    # On gfx942 the production GEMM kernel is a shape/environment-dependent dispatch and
+    # is NOT a valid ground truth for the calc_diff gate; correctness_reference routes the
+    # gate to the dequant-f32 oracle the tolerances are calibrated for. Falls back to
+    # reference() for impls/platforms that do not define it.
+    oracle = getattr(ops, "correctness_reference", ops.reference)
+    ref_out = _clone_out(oracle(op, phase, inputs))
     poisoned = ops.poison(inputs)
     cand_out = cand_fn(inputs)
     _check_outputs(cand_out)

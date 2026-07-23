@@ -123,7 +123,10 @@ def _dsa_split(Q, KV, IDX, ACC, LSE, MAX, M, H, TK, NS,
         qk = tl.where(kmask[None, :], qk, -float('inf'))
         m_new = tl.maximum(m_i, tl.max(qk, 1)); alpha = tl.exp(m_i - m_new)
         p = tl.exp(qk - m_new[:, None]); l_i = l_i*alpha + tl.sum(p, 1)
-        acc = acc*alpha[:, None] + tl.dot(p.to(tl.bfloat16), kt0); m_i = m_new
+        # f32 PV accumulate: rounding p to bf16 here leaves 2-4 near-zero output
+        # elements just over the gate (abs 1.22e-3 vs 1e-3 floor; calc_diff 6.4e-6 vs
+        # 5e-6). The QK dot is already f32; matching it on PV clears the gate.
+        acc = acc*alpha[:, None] + tl.dot(p, kt0.to(tl.float32)); m_i = m_new
     tl.store(ACC + pid_m*sa_m + pid_s*sa_s + offs_h[:, None]*sa_h + d0[None, :]*sa_d, acc, mask=hmask[:, None])
     tl.store(LSE + pid_m*sl_m + pid_s*sl_s + offs_h*sl_h, l_i, mask=hmask)
     tl.store(MAX + pid_m*sl_m + pid_s*sl_s + offs_h*sl_h, m_i, mask=hmask)
@@ -155,8 +158,14 @@ def dsa_factory():
         amd = {k: cfg[k] for k in ("waves_per_eu",) if k in cfg}
 
         def run(inputs):
-            q = inputs["q"]; kv2 = inputs["kv"][:, 0, :].contiguous()
-            idx = inputs["indices"][:, 0, :].to(torch.int32).contiguous()
+            q = inputs["q"]
+            # AMD glm52_ops build_inputs yields 2-D kv (S, D_QK) and 2-D int64 indices
+            # (M, tk). Older/CUDA builds carry a singleton kv-head axis (S,1,D_QK) /
+            # (M,1,tk); collapse it when present so the wrapper accepts both schemas.
+            kv = inputs["kv"]
+            kv2 = (kv[:, 0, :] if kv.ndim == 3 else kv).contiguous()
+            idx_in = inputs["indices"]
+            idx = (idx_in[:, 0, :] if idx_in.ndim == 3 else idx_in).to(torch.int32).contiguous()
             sm = inputs["sm_scale"]; dv = inputs["d_v"]
             M, H, _ = q.shape; TK = idx.shape[1]; dev = q.device
             ns_ = NS

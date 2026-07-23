@@ -647,6 +647,27 @@ def reference(op: str, phase: str, inputs: dict):
     return OPERATOR_PROVIDER.reference(op, phase, fam, inputs)
 
 
+def correctness_reference(op: str, phase: str, inputs: dict):
+    """The correctness gate's oracle. Mirrors reference() here, delegating to the
+    provider's correctness_reference when it defines one (the ROCm/MI300X provider
+    does, to keep the gate on a deterministic math oracle rather than a production
+    fp8 kernel; see glm52_ops_amd.correctness_reference). On CUDA/B200 the provider
+    reference is already the intended oracle, so behaviour is unchanged."""
+    fam = family(op)
+    if fam == "comm":
+        return _ref_comm(op, inputs)
+    if fam == "deepep":
+        return _ref_deepep(op, inputs)
+    if not OPERATOR_PROVIDER.supports(op, phase):
+        raise NotImplementedError(
+            f"provider {OPERATOR_PROVIDER.id!r} does not support {op}/{phase}"
+        )
+    fn = getattr(OPERATOR_PROVIDER, "correctness_reference", None)
+    if fn is not None:
+        return fn(op, phase, fam, inputs)
+    return OPERATOR_PROVIDER.reference(op, phase, fam, inputs)
+
+
 def poison(inputs: dict) -> bool:
     """Destroy the reference's answer in the shared output buffer.
 

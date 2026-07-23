@@ -210,6 +210,28 @@ def _try_aiter_ck_gemm(x_fp8, w_fp8, x_scale, w_scale):
     return fn(x_fp8, w_fp8, x_scale, w_scale, dtype=torch.bfloat16)
 
 
+@lru_cache(maxsize=1)
+def _aiter_triton_gemm_fn():
+    """aiter's Triton blockwise-fp8 GEMM — the gfx942 *fallback* dispatch. No CK JIT
+    build and no ASM, so it runs on any ROCm+triton node where the production
+    ``gemm_a8w8_blockscale`` (CK) / ``..._bpreshuffle_asm`` paths are unavailable, and
+    it is numerically correct (matches a bf16 dequant oracle to ~5e-9). Used as the
+    runnable production-fallback latency baseline; NOT as the correctness oracle."""
+    _add_source_tree("AITER_PATH", str(_REPO.parent / "aiter"))
+    try:
+        mod = importlib.import_module("aiter.ops.triton.gemm_a8w8_blockscale")
+        return getattr(mod, "gemm_a8w8_blockscale")
+    except Exception:
+        return None
+
+
+def _try_aiter_triton_gemm(x_fp8, w_fp8, x_scale, w_scale):
+    fn = _aiter_triton_gemm_fn()
+    if fn is None:
+        return None
+    return fn(x_fp8, w_fp8, x_scale, w_scale, dtype=torch.bfloat16)
+
+
 def _normalize_tilelang_sparse_out(out: torch.Tensor) -> torch.Tensor:
     return out.squeeze(0) if out.ndim == 4 and out.shape[0] == 1 else out
 
@@ -376,12 +398,25 @@ class AmdRewardbenchProvider:
     def reference(self, op: str, phase: str, family: str, inputs: dict):
         del op
         if family == "gemm":
+            # LATENCY BASELINE (not the correctness oracle — see correctness_reference).
+            # Priority: sglang production dispatch -> aiter Triton blockscale (runnable
+            # gfx942 fallback) -> aiter CK -> hipBLASLt -> dequant. The Triton path is
+            # inserted before CK/hipBLASLt so nodes without a built CK/ASM aiter still
+            # measure against a real aiter kernel instead of erroring or dropping to the
+            # slow dequant matmul (which would inflate the speedup).
             y = _try_sglang_gemm(
                 inputs["x_fp8"],
                 inputs["w_fp8"],
                 inputs["x_scale"],
                 inputs["w_scale"],
             )
+            if y is None:
+                y = _try_aiter_triton_gemm(
+                    inputs["x_fp8"],
+                    inputs["w_fp8"],
+                    inputs["x_scale"],
+                    inputs["w_scale"],
+                )
             if y is None:
                 y = _try_aiter_ck_gemm(
                     inputs["x_fp8"],
@@ -432,6 +467,34 @@ class AmdRewardbenchProvider:
 
         del phase
         return _mqa_score_reference(inputs)
+
+    def correctness_reference(self, op: str, phase: str, family: str, inputs: dict):
+        """Deterministic MATH oracle for the correctness gate, decoupled from the
+        production latency baseline in reference().
+
+        The gate's diff_tol (5e-6) and abs_tol are calibrated for "candidate and
+        reference consume the same fp8 bytes, so the only divergence left is
+        accumulation order" — which holds ONLY against a dequant-f32 matmul, not
+        against a production fp8 kernel. On gfx942 the production GEMM dispatch is
+        shape-dependent (sglang routes M>=4096 to gemm_a8w8_blockscale_bpreshuffle_asm,
+        which needs preshuffled weights the harness does not supply) and
+        environment-dependent (CK/ASM may not be built; hipBLASLt rejects blockwise
+        scales). Using it as the oracle spuriously FAILED correct candidates in the
+        0723 replay at o_proj M=4096 and index_k (rows=65536). This routes the gate to
+        the always-correct dequant matmul instead; reference() keeps the production
+        kernel for honest latency."""
+        if family == "gemm":
+            return _blockwise_reference_mm(
+                inputs["x_fp8"],
+                inputs["w_fp8"],
+                inputs["x_scale"],
+                inputs["w_scale"],
+            )
+        if family == "mla":
+            return _sparse_mla_math_oracle(inputs)
+        # bmm/moe already reduce to per-tensor dequant matmul, and score is a torch
+        # math reference — reference() is itself the math oracle for those families.
+        return self.reference(op, phase, family, inputs)
 
     def version_info(self):
         return {
@@ -581,6 +644,34 @@ def _sparse_mla_reference(inputs: dict):
         scores = torch.einsum("chd,ckd->chk", q_chunk, gathered).float() * sm_scale
         probs = torch.softmax(scores, dim=-1).to(torch.bfloat16)
         out[start:end].copy_(torch.einsum("chk,ckd->chd", probs, gathered[..., :d_v]))
+    return out
+
+
+def _sparse_mla_math_oracle(inputs: dict):
+    """Fully-f32 sparse-MLA math oracle for the correctness gate. `_sparse_mla_reference`
+    (the latency baseline) rounds probs->bf16 and does the PV product in bf16, which is
+    itself ~6e-6 (calc_diff) off the true math — enough to spuriously FAIL a correct
+    flash-decode candidate on a handful of near-zero output elements. This upcasts q, kv,
+    and probs to f32 throughout so the gate measures the candidate against math, not
+    against the baseline's bf16 rounding."""
+    q = inputs["q"]
+    kv = inputs["kv"].view(inputs["kv"].shape[0], inputs["kv"].shape[-1]).float()
+    indices = inputs["indices"].view(inputs["indices"].shape[0], -1).long()
+    sm_scale = float(inputs["sm_scale"])
+    d_v = int(inputs["d_v"])
+    s_q, n_heads, _ = q.shape
+    topk = indices.shape[1]
+    out = torch.empty(s_q, n_heads, d_v, dtype=torch.bfloat16, device=q.device)
+    chunk = 256 if s_q >= 256 else s_q
+    for start in range(0, s_q, chunk):
+        end = min(start + chunk, s_q)
+        gathered = kv[indices[start:end].reshape(-1)].view(end - start, topk, -1)
+        q_chunk = q[start:end].float()
+        scores = torch.einsum("chd,ckd->chk", q_chunk, gathered) * sm_scale
+        probs = torch.softmax(scores, dim=-1)
+        out[start:end].copy_(
+            torch.einsum("chk,ckd->chd", probs, gathered[..., :d_v]).to(torch.bfloat16)
+        )
     return out
 
 
