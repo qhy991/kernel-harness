@@ -19,10 +19,14 @@ PROFILE = DeviceProfile(
         "hbm_bytes_per_s": 8.0e12,
         "fp8": 4.5e15,
         "bf16": 2.25e15,
+        # NVLink5 gen — 1.8 TB/s aggregate bidirectional per GPU on B200 HGX/NVL72.
+        "interconnect_bytes_per_s_per_gpu": 1.8e12,
+        "interconnect_name": "NVLink5",
     },
     peaks_source=(
         "rewardbench (PR2) + testbench/harness/profile.py; "
-        "opbench/mfu.py's 7.7e12 not used"
+        "opbench/mfu.py's 7.7e12 not used; "
+        "NVLink5 1.8 TB/s per GPU (NVIDIA HGX B200 spec)"
     ),
 )
 

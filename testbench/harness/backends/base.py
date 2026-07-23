@@ -29,6 +29,10 @@ class DeviceProfile:
             "hbm_bytes_per_s": self.peaks["hbm_bytes_per_s"],
             "peak_flops_fp8": self.peaks["fp8"],
             "peak_flops_bf16": self.peaks["bf16"],
+            "interconnect_bytes_per_s_per_gpu": self.peaks.get(
+                "interconnect_bytes_per_s_per_gpu"
+            ),
+            "interconnect_name": self.peaks.get("interconnect_name"),
             "source": self.peaks_source,
         }
 

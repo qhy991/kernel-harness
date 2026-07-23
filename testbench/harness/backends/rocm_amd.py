@@ -56,10 +56,15 @@ PROFILE = DeviceProfile(
         "hbm_bytes_per_s": 5.3e12,
         "fp8": 2.6149e15,
         "bf16": 1.3074e15,
+        # 8-way OAM node: 7 xGMI links per GPU × 128 GB/s bidir each = 896 GB/s
+        # aggregate bandwidth per GPU (peer-to-peer, full-mesh intra-node).
+        "interconnect_bytes_per_s_per_gpu": 896.0e9,
+        "interconnect_name": "xGMI-3",
     },
     peaks_source=(
         "rewardbench/amd MI300X constants: HBM 5.3 TB/s, FP8 e4m3 "
-        "2614.9 TFLOP/s, BF16 1307.4 TFLOP/s"
+        "2614.9 TFLOP/s, BF16 1307.4 TFLOP/s; xGMI-3 896 GB/s per GPU "
+        "(7 links × 128 GB/s bidir, 8-way OAM)"
     ),
 )
 

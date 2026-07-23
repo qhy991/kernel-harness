@@ -65,6 +65,7 @@ a full SGLang baseline reproduction.
 from __future__ import annotations
 
 import math
+import os
 import random
 import sys
 from pathlib import Path
@@ -150,6 +151,23 @@ MOE_FUSED_OPS = {
 }
 MLA_OPS = ("dsa_attn",)
 SCORE_OPS = ("index_score",)
+COMM_OPS = {
+    # Post-attention / post-MoE TP all-reduce over the residual stream. Per-rank
+    # tensor is [M, HIDDEN_SIZE] bf16; the sum reduces across `world_size` ranks
+    # into every rank's copy. Ring / 2-stage / one-shot are all valid candidates.
+    "all_reduce":  dict(H=HIDDEN_SIZE, dtype="bf16", op="all_reduce",  size="M"),
+    # Tensor-parallel all-gather along the token axis: each rank contributes its
+    # [M_per_rank, HIDDEN_SIZE] shard, output is [M_per_rank*world_size, HIDDEN_SIZE].
+    "all_gather":  dict(H=HIDDEN_SIZE, dtype="bf16", op="all_gather",  size="M_per_rank"),
+}
+DEEPEP_OPS = {
+    # DeepEP dispatch: rank sends its [M, HIDDEN_SIZE] hidden states routed by
+    # topk_ids [M, EXPERTS_PER_TOK] to the ranks that own the target experts.
+    "deepep_dispatch": dict(H=HIDDEN_SIZE, dtype="bf16", top_k=EXPERTS_PER_TOK),
+    # DeepEP combine: reverse — collect expert outputs, weight by topk_weights,
+    # reduce back onto the token owner rank.
+    "deepep_combine":  dict(H=HIDDEN_SIZE, dtype="bf16", top_k=EXPERTS_PER_TOK),
+}
 
 ALL_OPS = (
     list(GEMM_OPS)
@@ -158,6 +176,8 @@ ALL_OPS = (
     + list(MOE_FUSED_OPS)
     + list(MLA_OPS)
     + list(SCORE_OPS)
+    + list(COMM_OPS)
+    + list(DEEPEP_OPS)
 )
 
 _LABEL = {
@@ -168,6 +188,10 @@ _LABEL = {
     "moe_up": "MoE Up Projection", "moe_down": "MoE Down Projection",
     "moe_total": "Routed Expert Gate+Up/Down Total",
     "dsa_attn": "DSA Sparse Attention", "index_score": "Indexer Score (MQA logits)",
+    "all_reduce": "TP AllReduce (residual)",
+    "all_gather": "TP AllGather (token axis)",
+    "deepep_dispatch": "DeepEP Dispatch (EP MoE)",
+    "deepep_combine":  "DeepEP Combine (EP MoE)",
 }
 
 
@@ -177,6 +201,8 @@ def family(op: str) -> str:
     if op in MOE_OPS:   return "moe"
     if op in MOE_FUSED_OPS: return "moe_fused"
     if op in MLA_OPS:   return "mla"
+    if op in COMM_OPS:  return "comm"
+    if op in DEEPEP_OPS: return "deepep"
     if op in SCORE_OPS: return "score"
     raise KeyError(f"unknown op {op!r}; known: {', '.join(ALL_OPS)}")
 
@@ -241,11 +267,15 @@ def spec(op: str, phase: str) -> dict:
     fam = family(op)
     kind = {"gemm": "dense", "bmm": "dense", "moe": "masked_grouped",
             "moe_fused": "dense",
-            "mla": "mla_sparse"}.get(fam) or (
+            "mla": "mla_sparse",
+            "comm": "dense",
+            "deepep": "dense"}.get(fam) or (
         "logits_ksrange" if phase == "prefill" else "logits_paged")
+    peak_dtype = {"comm": "bf16", "deepep": "bf16",
+                  "mla": "bf16"}.get(fam, "fp8")
     d = dict(op=op, phase=phase, label=_LABEL[op], family=fam,
              backend=OPERATOR_PROVIDER.baseline_name(fam, phase), output_kind=kind,
-             peak_dtype="bf16" if fam == "mla" else "fp8",
+             peak_dtype=peak_dtype,
              diff_tol=DIFF_TOL, rel_tol=REL_TOL, abs_tol_factor=ABS_TOL_FACTOR,
              elementwise_gate=True,
              sweep=list(DEFAULT_SWEEP[phase]), S=DEFAULT_S, seed=DEFAULT_SEED,
@@ -261,6 +291,26 @@ def spec(op: str, phase: str) -> dict:
         d.update(diff_tol=1e-5, elementwise_gate=False)
         d.update(K=HIDDEN_SIZE, N=HIDDEN_SIZE, intermediate=MOE_INTERMEDIATE_SIZE,
                  E=N_EXPERT, experts_per_tok=EXPERTS_PER_TOK)
+    elif fam == "comm":
+        d.update(
+            H=COMM_OPS[op]["H"],
+            dtype=COMM_OPS[op]["dtype"],
+            collective=COMM_OPS[op]["op"],
+            size_kind=COMM_OPS[op]["size"],
+            requires_multi_gpu=True,
+            elementwise_gate=False,
+            diff_tol=1e-5,
+        )
+    elif fam == "deepep":
+        d.update(
+            H=DEEPEP_OPS[op]["H"],
+            dtype=DEEPEP_OPS[op]["dtype"],
+            top_k=DEEPEP_OPS[op]["top_k"],
+            E=N_EXPERT,
+            requires_multi_gpu=True,
+            elementwise_gate=False,
+            diff_tol=1e-5,
+        )
     return d
 
 
@@ -289,6 +339,8 @@ def build_inputs(op: str, phase: str, M: int, S: int = DEFAULT_S,
     if fam == "moe":   return _build_moe(op, M, device)
     if fam == "moe_fused": return _build_moe_total(M, device)
     if fam == "mla":   return _build_mla(M, S, device)
+    if fam == "comm":  return _build_comm(op, M, device, seed)
+    if fam == "deepep": return _build_deepep(op, M, device, seed)
     return _build_score(phase, M, S, device)
 
 
@@ -480,10 +532,114 @@ def _build_score(phase, M, S, device):
 
 
 # ══════════════════════════════════════════════════════════════════════════
+# Communication / EP ops — every rank builds a slice; the collective happens
+# in reference() (torch.distributed) and in the candidate.
+# ══════════════════════════════════════════════════════════════════════════
+def _dist_env():
+    """Read rank/world_size from torch.distributed if init'd, else from env."""
+    import os as _os
+    try:
+        import torch.distributed as _dist
+        if _dist.is_available() and _dist.is_initialized():
+            return _dist.get_rank(), _dist.get_world_size()
+    except Exception:
+        pass
+    rank = int(_os.environ.get("RANK", _os.environ.get("LOCAL_RANK", "0")))
+    ws = int(_os.environ.get("WORLD_SIZE", "1"))
+    return rank, ws
+
+
+def _build_comm(op: str, M: int, device, seed: int):
+    """Per-rank input for AllReduce / AllGather."""
+    rank, world_size = _dist_env()
+    H = COMM_OPS[op]["H"]
+    torch.manual_seed(seed + rank * 7919)
+    x = torch.randn(M, H, dtype=torch.bfloat16, device=device)
+    return dict(
+        x=x, H=H, rank=rank, world_size=world_size,
+        collective=COMM_OPS[op]["op"], device=device,
+    )
+
+
+def _build_deepep(op: str, M: int, device, seed: int):
+    """Per-rank input for DeepEP dispatch / combine."""
+    rank, world_size = _dist_env()
+    H = DEEPEP_OPS[op]["H"]
+    top_k = DEEPEP_OPS[op]["top_k"]
+    E = N_EXPERT
+    torch.manual_seed(seed + rank * 7919)
+    x = torch.randn(M, H, dtype=torch.bfloat16, device=device)
+    topk_ids = torch.randint(0, E * max(world_size, 1), (M, top_k),
+                             dtype=torch.int32, device=device)
+    topk_weights = torch.softmax(
+        torch.randn(M, top_k, dtype=torch.float32, device=device), dim=-1,
+    ).contiguous()
+    return dict(
+        x=x, topk_ids=topk_ids, topk_weights=topk_weights,
+        H=H, top_k=top_k, E=E, rank=rank, world_size=world_size, device=device,
+    )
+
+
+def _ref_comm(op: str, inputs: dict):
+    """torch.distributed reference for AllReduce / AllGather."""
+    import torch.distributed as dist
+    assert dist.is_available() and dist.is_initialized(), (
+        "comm reference requires an initialised process group; "
+        "run via evaluate_comm_task.py / torchrun."
+    )
+    x = inputs["x"]
+    if inputs["collective"] == "all_reduce":
+        out = x.clone()
+        dist.all_reduce(out, op=dist.ReduceOp.SUM)
+        return out
+    if inputs["collective"] == "all_gather":
+        ws = inputs["world_size"]
+        gather = [torch.empty_like(x) for _ in range(ws)]
+        dist.all_gather(gather, x)
+        return torch.cat(gather, dim=0)
+    raise ValueError(f"unknown comm collective {inputs['collective']!r}")
+
+
+def _ref_deepep(op: str, inputs: dict):
+    """torch-based emulation of DeepEP dispatch / combine — a correctness
+    oracle only. Real DeepEP kernels are the candidate's target."""
+    import torch.distributed as dist
+    assert dist.is_available() and dist.is_initialized(), (
+        "deepep reference requires an initialised process group; "
+        "run via evaluate_comm_task.py / torchrun."
+    )
+    ws = inputs["world_size"]
+    x = inputs["x"]
+    tk_ids = inputs["topk_ids"]
+    all_x = [torch.empty_like(x) for _ in range(ws)]
+    dist.all_gather(all_x, x)
+    all_ids = [torch.empty_like(tk_ids) for _ in range(ws)]
+    dist.all_gather(all_ids, tk_ids)
+    if op == "deepep_dispatch":
+        rank = inputs["rank"]
+        E = inputs["E"] * ws
+        owner_shard = torch.cat(all_x, dim=0)
+        owner_ids = torch.cat(all_ids, dim=0)
+        experts_per_rank = max(1, E // ws)
+        mask = (owner_ids // experts_per_rank == rank).any(dim=-1)
+        return owner_shard[mask]
+    top_w = inputs["topk_weights"]
+    weighted = (x.unsqueeze(1) * top_w.to(x.dtype).unsqueeze(-1)).sum(dim=1)
+    out = weighted.clone()
+    dist.all_reduce(out, op=dist.ReduceOp.SUM)
+    return out
+
+
+# ══════════════════════════════════════════════════════════════════════════
 # Reference == the baseline kernel == the correctness oracle
 # ══════════════════════════════════════════════════════════════════════════
 def reference(op: str, phase: str, inputs: dict):
     fam = family(op)
+    # Comm / DeepEP references live in this module (need torch.distributed).
+    if fam == "comm":
+        return _ref_comm(op, inputs)
+    if fam == "deepep":
+        return _ref_deepep(op, inputs)
     if not OPERATOR_PROVIDER.supports(op, phase):
         raise NotImplementedError(
             f"provider {OPERATOR_PROVIDER.id!r} does not support {op}/{phase}"
@@ -657,8 +813,36 @@ def _finish(out: dict) -> dict:
 # Cost model (PR2) — original ops verified bit-exact against rewardbench.
 # ══════════════════════════════════════════════════════════════════════════
 def cost(op: str, phase: str, M: int, S: int = DEFAULT_S):
-    """(flops, bytes_hbm, compute_dtype) for one shape."""
+    """(flops, bytes_hbm, compute_dtype) for one shape.
+
+    For comm / deepep families, `bytes_hbm` is repurposed as bytes moved
+    through the interconnect (NVLink); reward() below switches its BW
+    denominator to the interconnect peak when compute_dtype starts with 'comm.'.
+    """
     fam = family(op)
+    if fam == "comm":
+        _, ws = _dist_env()
+        if ws <= 1:
+            ws = int(os.environ.get("KERNEL_HARNESS_COMM_WORLD_SIZE", "8"))
+        H = COMM_OPS[op]["H"]
+        bytes_per_rank = float(M) * H * BF16_B
+        if op == "all_reduce":
+            moved = 2.0 * (ws - 1) / ws * bytes_per_rank
+            flops = float(ws - 1) * M * H
+        elif op == "all_gather":
+            moved = float(ws - 1) * bytes_per_rank
+            flops = 0.0
+        else:
+            raise KeyError(f"unknown comm op {op!r}")
+        return flops, moved, f"comm.bf16.ws{ws}"
+    if fam == "deepep":
+        _, ws = _dist_env()
+        if ws <= 1:
+            ws = int(os.environ.get("KERNEL_HARNESS_COMM_WORLD_SIZE", "8"))
+        H = DEEPEP_OPS[op]["H"]
+        top_k = DEEPEP_OPS[op]["top_k"]
+        bytes_per_rank = float(M) * top_k * H * BF16_B * (ws - 1) / ws
+        return 0.0, bytes_per_rank, f"comm.bf16.ws{ws}"
     if fam == "gemm":
         cfg = GEMM_OPS[op]
         K, N = cfg["K"], cfg["N"]
@@ -725,9 +909,34 @@ def reward(latency_ms: float, flops: float, bytes_hbm: float, compute_dtype: str
     byte footprint (see bin/bw_ceiling.py). It adds achievability-honest fields
     ALONGSIDE the spec-peak reward — small transfers cannot reach spec HBM, so a
     memory-bound op near its attainable ceiling is at its real roof — and never
-    changes the existing reward number."""
-    peak = PEAK_FLOPS[compute_dtype]
+    changes the existing reward number.
+
+    For comm / deepep families `compute_dtype` starts with `comm.`. The BW
+    denominator flips from HBM to the interconnect peak (NVLink)."""
     lat_s = latency_ms * 1e-3
+    if compute_dtype.startswith("comm."):
+        peak_link = DEVICE_PROFILE.peaks.get("interconnect_bytes_per_s_per_gpu")
+        if not peak_link:
+            raise RuntimeError(
+                f"device profile {DEVICE_PROFILE.id!r} has no interconnect_bytes_per_s_per_gpu; "
+                "comm-family reward cannot be computed."
+            )
+        achieved_bw = bytes_hbm / lat_s
+        return {
+            "latency_ms": latency_ms,
+            "tflops": (flops / lat_s) / 1e12 if flops > 0 else 0.0,
+            "gbps": achieved_bw / 1e9,
+            "arithmetic_intensity": None,
+            "ridge": None,
+            "bound": "interconnect",
+            "compute_util": None,
+            "bw_util": achieved_bw / peak_link,
+            "reward": achieved_bw / peak_link,
+            "compute_dtype": compute_dtype,
+            "interconnect_peak_gbps": peak_link / 1e9,
+            "interconnect_name": DEVICE_PROFILE.peaks.get("interconnect_name"),
+        }
+    peak = PEAK_FLOPS[compute_dtype]
     ai = flops / bytes_hbm
     ridge = peak / HBM_BYTES_PER_S
     achieved_flops, achieved_bw = flops / lat_s, bytes_hbm / lat_s
