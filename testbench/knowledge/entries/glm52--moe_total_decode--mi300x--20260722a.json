@@ -1,0 +1,77 @@
+{
+  "schema_version": 1,
+  "id": "glm52--moe_total_decode--mi300x--20260722a",
+  "date": "2026-07-22",
+  "model": "glm52",
+  "task": "glm52/moe_total_decode",
+  "op": "moe_total",
+  "family": "moe_fused",
+  "phase": "decode",
+  "shapes": {
+    "E": 8,
+    "top_k": 8,
+    "M_sweep": [
+      16,
+      32
+    ],
+    "note": "dense-degenerate: top_k==num_experts==8, topk_ids==arange(8)"
+  },
+  "hardware": {
+    "gpu": "AMD Instinct MI300X",
+    "sm": "gfx942"
+  },
+  "stack": {
+    "sglang_commit": "20fc529",
+    "torch": "2.10.0+rocm7.0",
+    "aiter_commit": "2ca7878",
+    "sgl_kernel": "0.4.3",
+    "hip": "7.0.51831"
+  },
+  "baseline_kernel": "sglang fused_moe(use_fp8_w8a8=True) Triton _fused_moe_kernel_sequence (fp8_e4m3fnuz w8a8)",
+  "bottleneck": {
+    "kind": "launch-overhead",
+    "evidence": "result.json per_shape: memory-bound (AI 31.8/63.2 << ridge), candidate 164.2/173.6us vs ref 176.5/183.4us; at decode M<=64 each expert owns only M rows so moe_align_block_size pads every expert block up to BLOCK_SIZE_M=128 => up to ~8x wasted padded-row work in both fp8 GEMMs"
+  },
+  "approaches": [
+    {
+      "technique": "bit-exact-block-size-m-shrink",
+      "summary": "Call sglang's own try_get_optimal_moe_config, override ONLY BLOCK_SIZE_M (gemm1+down cfg) to clamp(next_pow2(M),16,128), recompute moe_align_block_size, then call sglang's own _fused_moe_kernel_sequence with the reference's exact fp8 args",
+      "outcome": "win",
+      "geomean_speedup": 1.0655,
+      "why": "BLOCK_SIZE_M changes only the tile grid, not the per-output-element fp32 K-accumulation (BLOCK_SIZE_K untouched) so calc_diff==0.0 (bit-exact) while removing padded-row work"
+    },
+    {
+      "technique": "full-fp8-reimplementation",
+      "summary": "dequant->fp32 matmul gemm1 + silu_and_mul + a2-quant + gemm2",
+      "outcome": "incorrect",
+      "geomean_speedup": null,
+      "why": "fp8 intermediate saturates (act amax ~76288 vs FP8_MAX 224, ~45% of values clamp at +/-224) so any tiny gemm1/quant diff flips many fp8 codes: feeding the reference's exact intermediate still gave calc_diff 3.15e-2 (~3000x over the 5e-6 gate)"
+    },
+    {
+      "technique": "block-size-m-shrink-at-large-M",
+      "summary": "Apply the same BLOCK_SIZE_M shrink for M>32",
+      "outcome": "slower",
+      "geomean_speedup": 0.993,
+      "why": "at M>32 padding is a smaller fraction and the shrunk tile loses occupancy; measured ~0.7% regression, so run() falls back to reference for M>32"
+    }
+  ],
+  "result": {
+    "status": "win",
+    "geomean_speedup": 1.0655,
+    "min_speedup_conservative": 1.0518,
+    "repeat": null,
+    "integrate": "not-run",
+    "shapes_won": 2,
+    "shapes_regressed": 0
+  },
+  "lesson": "For dense-degenerate fp8 MoE decode (top_k==num_experts, tiny M), do NOT re-implement the fp8 GEMMs (fp8 saturation cliff makes calc_diff<=5e-6 unreachable). Instead reuse the reference Triton kernels and override ONLY BLOCK_SIZE_M (the tile-grid knob, not BLOCK_SIZE_K) to match the per-expert row count and kill moe_align padding: bit-exact and 1.05-1.08x.",
+  "transfers_to": [
+    "fp8 fused-MoE decode on gfx942 with small M and dense/near-dense routing",
+    "any Triton moe where moe_align_block_size padding dominates at small M"
+  ],
+  "caveats": [
+    "No benefit (slight regression) at M>32 where padding is a small fraction",
+    "Relies on sglang exposing try_get_optimal_moe_config + _fused_moe_kernel_sequence internals",
+    "Bit-exactness depends on BLOCK_SIZE_K staying fixed"
+  ]
+}

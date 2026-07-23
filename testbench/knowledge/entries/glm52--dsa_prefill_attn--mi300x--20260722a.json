@@ -1,0 +1,75 @@
+{
+  "schema_version": 1,
+  "id": "glm52--dsa_prefill_attn--mi300x--20260722a",
+  "date": "2026-07-22",
+  "model": "glm52",
+  "task": "glm52/dsa_prefill_attn",
+  "op": "dsa_attn",
+  "family": "mla",
+  "phase": "prefill",
+  "shapes": {
+    "M_sweep": [
+      1024,
+      2048,
+      4096
+    ],
+    "note": "sparse-MLA prefill; reference dispatches to TileLang on this ROCm build"
+  },
+  "hardware": {
+    "gpu": "AMD Instinct MI300X",
+    "sm": "gfx942"
+  },
+  "stack": {
+    "sglang_commit": "20fc529",
+    "torch": "2.10.0+rocm7.0",
+    "aiter_commit": "2ca7878",
+    "sgl_kernel": "0.4.3",
+    "hip": "7.0.51831"
+  },
+  "baseline_kernel": "sglang TileLang sparse-MLA kernel (_try_sglang_tilelang_sparse_mla; sgl_kernel.flash_mla has no ROCm sparse_prefill_fwd op)",
+  "bottleneck": {
+    "kind": "other",
+    "evidence": "result.json per_shape: reference 8457/17187/34614us at MFU 0.026/0.026/0.026 -- a slow monolithic compiled TileLang kernel with NO launch-config knob to override; candidate 6516/13154/26450us at MFU 0.034 (compute-bound, AI 1289/1547/1719)"
+  },
+  "approaches": [
+    {
+      "technique": "fp32-qk-torch-sparse-mla-reimpl",
+      "summary": "Independent torch gather+attention reimplementation of sparse-MLA, tuned to PASS the calc_diff gate by raising ONLY the QK matmul to fp32 to match the reference's fp32 logits",
+      "outcome": "win",
+      "geomean_speedup": 1.3044,
+      "why": "the TileLang reference is slow and knob-less so the only lever is a faster reimpl that passes the gate; fp32 QK gives calc_diff 2.88e-6 (< 5e-6, ~1.7x margin) and ~1.3x faster"
+    },
+    {
+      "technique": "bf16-qk-torch-reimpl",
+      "summary": "Same torch reimpl but with the default bf16 QK matmul",
+      "outcome": "incorrect",
+      "geomean_speedup": null,
+      "why": "bf16 QK matmul rounds the logits -> calc_diff 6.5e-6 which FAILS the 5e-6 gate; correctness here requires MORE numerical precision than the naive path, not less"
+    },
+    {
+      "technique": "bit-exact-config-knob",
+      "summary": "Override a launch-config knob like the MoE targets",
+      "outcome": "abandoned",
+      "geomean_speedup": null,
+      "why": "the TileLang sparse-MLA reference exposes no config knob to override, so the MoE-style bit-exact lever is not available"
+    }
+  ],
+  "result": {
+    "status": "win",
+    "geomean_speedup": 1.3044,
+    "min_speedup_conservative": 1.2603,
+    "repeat": null,
+    "integrate": "not-run",
+    "shapes_won": 3,
+    "shapes_regressed": 0
+  },
+  "lesson": "When the reference is a slow monolithic compiled kernel with no config knob, correctness is defined by the official gate (calc_diff<=5e-6), NOT by bit-exactness. A faster independent reimplementation that passes the gate is legitimate -- and passing may require being MORE precise than the naive path (fp32 QK matmul to match the reference's fp32 logits), not less.",
+  "transfers_to": [
+    "attention/MLA prefill tasks whose reference is a slow compiled/TileLang kernel with no tunable launch config",
+    "cases where a torch reimpl is fast but the naive dtype fails the diff gate"
+  ],
+  "caveats": [
+    "Not bit-exact (calc_diff 2.88e-6) -- margin to the 5e-6 gate must be re-verified if the gate tightens",
+    "Depends on the TileLang path remaining the (slow) reference on this ROCm build"
+  ]
+}

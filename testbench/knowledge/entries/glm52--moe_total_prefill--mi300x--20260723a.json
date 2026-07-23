@@ -1,0 +1,79 @@
+{
+  "schema_version": 1,
+  "id": "glm52--moe_total_prefill--mi300x--20260723a",
+  "date": "2026-07-23",
+  "model": "glm52",
+  "task": "glm52/moe_total_prefill",
+  "op": "moe_total",
+  "family": "moe_fused",
+  "phase": "prefill",
+  "shapes": {
+    "E": 8,
+    "top_k": 8,
+    "M_sweep": [
+      1024,
+      2048,
+      4096
+    ],
+    "note": "dense-degenerate: top_k==num_experts==8, topk_ids==arange(8); the recovered tail shape this session is M=4096"
+  },
+  "hardware": {
+    "gpu": "AMD Instinct MI300X",
+    "sm": "gfx942"
+  },
+  "stack": {
+    "sglang_commit": "20fc529",
+    "torch": "2.10.0+rocm7.0",
+    "aiter_commit": "2ca7878",
+    "ck_commit": "b67594561",
+    "sgl_kernel": "0.4.3",
+    "hip": "7.0.51831"
+  },
+  "baseline_kernel": "sglang fused_moe(use_fp8_w8a8=True) Triton _fused_moe_kernel_sequence (fp8_e4m3fnuz w8a8), pinned-CK reference (CK b67594561 + aiter-JIT module_quant.so)",
+  "bottleneck": {
+    "kind": "compute",
+    "evidence": "result.json 20260723T043507Z-daddf4 (candidate sha256 221718a3..b167c6 == committed candidate.py) per_shape: compute-bound (arithmetic_intensity 1446/2234/3072 >> ridge 493), MFU-limited; committed candidate MFU 0.1245/0.1722/0.2197 vs reference 0.1144/0.1662/0.2165; all 3 shapes shape_verdict=win, calc_diff 0.0"
+  },
+  "approaches": [
+    {
+      "technique": "bit-exact-group-size-m-reshift",
+      "summary": "Under the rebuilt pinned-CK reference, raise _pick_group_size_m to return GROUP_SIZE_M=16 for M>=4096 (M<=1024->1 and M=2048->4 unchanged); reuse sglang's try_get_optimal_moe_config result and override ONLY GROUP_SIZE_M on the gemm1/down fp8 configs, then call the reference's own _fused_moe_kernel_sequence (commit 017bfdc)",
+      "outcome": "win",
+      "geomean_speedup": 1.0459,
+      "why": "the pinned-CK reference is faster on the M=4096 tail than the stale-baseline reference, so the previously-optimal GROUP_SIZE_M=4 became reference-parity; the optimal L2-swizzle grouping shifted upward to 16, and GROUP_SIZE_M reorders only the program->tile L2 mapping (BLOCK_SIZE_K untouched) so calc_diff stays 0.0 (bit-exact)"
+    },
+    {
+      "technique": "group-size-m-full-sweep-m4096",
+      "summary": "Bit-exact GROUP_SIZE_M sweep {1,2,4,8,16,32} at M=4096 via a scratch env-driven candidate (--repeat 3 probe, then --repeat 10 gate x2 on the winner) to locate the re-shifted optimum",
+      "outcome": "abandoned",
+      "geomean_speedup": null,
+      "why": "GM in {1,8} regressed (cons 0.958/0.975), GM in {2,4} went neutral/parity (cons 0.980/0.996 -- including the previously-optimal GM=4), GM in {16,32} won (cons 1.010/1.012); GM=16 was picked as the widest-margin win, so {1,2,4,8,32} are recorded as the non-selected sweep points"
+    },
+    {
+      "technique": "decode-block-size-m-preservation-check",
+      "summary": "Companion no-code check on the sibling moe_total_decode task in the same session: BLOCK_SIZE_M sweep {16,32,64,128} at the M=32 tail whose Round-1 margin had softened to neutral",
+      "outcome": "abandoned",
+      "geomean_speedup": null,
+      "why": "BM=32 (the decode candidate's existing pick) is already the widest-margin win (cons 1.037 at --repeat 3; 2/2 official wins at --repeat 10 x2, min_cons 1.0411/1.0454); the Round-1 neutral was timing noise on a thin margin, so no decode code change was made -- recorded as preservation evidence, not a prefill measurement"
+    }
+  ],
+  "result": {
+    "status": "win",
+    "geomean_speedup": 1.0459,
+    "min_speedup_conservative": 1.0038,
+    "repeat": 10,
+    "integrate": "not-run",
+    "shapes_won": 3,
+    "shapes_regressed": 0
+  },
+  "lesson": "After an fp8-MoE reference is rebuilt/restored, a bit-exact 'drive the reference's own Triton kernels with a faster launch config' candidate can lose a tail-shape win because the optimal scheduling knob SHIFTS (here prefill M=4096 GROUP_SIZE_M 4->16 once the pinned-CK reference got faster), not because the candidate regressed. Re-sweep the bit-exact tile-scheduling knob (GROUP_SIZE_M for prefill, BLOCK_SIZE_M for decode) for the softened shape ONLY and gate the winner at --repeat 10 twice; never touch BLOCK_SIZE_K, so calc_diff stays 0.0.",
+  "transfers_to": [
+    "fp8 fused-MoE prefill on gfx942 at large compute-bound M after a reference rebuild or CK-pin change",
+    "any bit-exact Triton-config MoE candidate whose tail-shape win softened when the reference kernel changed speed"
+  ],
+  "caveats": [
+    "Thin margins under the restored reference (conservative down to 1.004x at M=4096) -- re-gate --repeat 10 x2 before declaring win/loss, since a <~1.05 cons margin flickers win<->neutral under timing noise",
+    "The decode approach is companion context for moe_total_decode (no code change), not a moe_total_prefill measurement",
+    "Bit-exactness depends on BLOCK_SIZE_K/N staying fixed; every gate must run AITER_TRITON_ONLY=0 or the fp8 reference silently degrades"
+  ]
+}

@@ -1,0 +1,70 @@
+{
+  "schema_version": 1,
+  "id": "glm52--index_score_prefill--mi300x--20260722a",
+  "date": "2026-07-22",
+  "model": "glm52",
+  "task": "glm52/index_score_prefill",
+  "op": "index_score",
+  "family": "score",
+  "phase": "prefill",
+  "shapes": {
+    "M_sweep": [
+      1024,
+      2048,
+      4096
+    ],
+    "S": 65536,
+    "heads": 32,
+    "head_size": 128
+  },
+  "hardware": {
+    "gpu": "AMD Instinct MI300X",
+    "sm": "gfx942"
+  },
+  "stack": {
+    "sglang_commit": "20fc529",
+    "torch": "2.10.0+rocm7.0",
+    "aiter_commit": "2ca7878",
+    "sgl_kernel": "0.4.3",
+    "hip": "7.0.51831"
+  },
+  "baseline_kernel": "deep_gemm.fp8_mqa_logits -> aiter Triton _fp8_mqa_logits_kernel (fp8 MQA logits)",
+  "bottleneck": {
+    "kind": "occupancy",
+    "evidence": "result.json per_shape: compute-bound (AI ~1953-2000), candidate MFU 0.158/0.107/0.107 vs ref 0.102/0.027/0.029; on gfx942 aiter's LDS-occupancy heuristic (_gfx942_tile_fits_lds) predicts the default BLOCK_KV=128/ns=2 tile won't keep 2 workgroups co-resident and drops to BLOCK_KV=64/ns=1; grid is (seq_len,) so the seq_len_kv=65536 KV loop dominates and a 64-wide tile serialises it"
+  },
+  "approaches": [
+    {
+      "technique": "bit-exact-block-kv-override",
+      "summary": "Replicate aiter's non-gluon _fp8_mqa_logits_kernel launch exactly (fnuz recast, clean_logits=False buffer+strides, matrix_instr_nonkdim heuristic, weights.squeeze(-1) to (M,32)) but override ONLY BLOCK_KV=256, num_stages=1",
+      "outcome": "win",
+      "geomean_speedup": 2.8371,
+      "why": "BLOCK_KV changes only KV-loop tiling, not the HEAD_SIZE=128 dot reduction, so calc_diff==0.0 (bit-exact); a wider KV tile de-serialises the 65536-long KV loop that the heuristic's 64-wide tile bottlenecked"
+    },
+    {
+      "technique": "missing-weights-squeeze",
+      "summary": "Call the kernel without squeezing the 3D weights (M,32,1)",
+      "outcome": "error",
+      "geomean_speedup": null,
+      "why": "stride unpack stride_w_s, stride_w_h = weights.stride() raises on a 3D tensor -> silent try/except fallback to reference (official ratio ~1.0, looks like correct_not_faster); always confirm the fast path actually runs (calc_diff==0, not raising) before trusting a ~1.0 official ratio"
+    }
+  ],
+  "result": {
+    "status": "win",
+    "geomean_speedup": 2.8371,
+    "min_speedup_conservative": 1.5375,
+    "repeat": null,
+    "integrate": "not-run",
+    "shapes_won": 3,
+    "shapes_regressed": 0
+  },
+  "lesson": "When the reference is a Triton kernel whose own autotune/occupancy heuristic picks a suboptimal tile on this arch, the safe lever is to call the reference's OWN kernel with its EXACT preprocessing and override ONLY the tile-shape knob (here BLOCK_KV) -- KV-loop tiling doesn't change the head-dim dot reduction so it stays bit-exact. Watch for silent try/except fallbacks that mask a ~1.0 ratio as 'not faster'.",
+  "transfers_to": [
+    "fp8 MQA/attention-logits Triton kernels on gfx942 with long KV and grid=(seq_len,)",
+    "any Triton op whose LDS/occupancy heuristic under-sizes the reduction-loop tile on gfx942"
+  ],
+  "caveats": [
+    "Only valid on the non-gluon gfx942 path (guarded); different arch/Triton>=3.6 gluon path needs re-derivation",
+    "Bit-exactness depends on head-dim dot tiling (matrix_instr_nonkdim) staying at the reference heuristic value"
+  ]
+}

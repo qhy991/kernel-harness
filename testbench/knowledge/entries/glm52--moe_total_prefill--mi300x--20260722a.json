@@ -1,0 +1,69 @@
+{
+  "schema_version": 1,
+  "id": "glm52--moe_total_prefill--mi300x--20260722a",
+  "date": "2026-07-22",
+  "model": "glm52",
+  "task": "glm52/moe_total_prefill",
+  "op": "moe_total",
+  "family": "moe_fused",
+  "phase": "prefill",
+  "shapes": {
+    "E": 8,
+    "top_k": 8,
+    "M_sweep": [
+      1024,
+      2048,
+      4096
+    ]
+  },
+  "hardware": {
+    "gpu": "AMD Instinct MI300X",
+    "sm": "gfx942"
+  },
+  "stack": {
+    "sglang_commit": "20fc529",
+    "torch": "2.10.0+rocm7.0",
+    "aiter_commit": "2ca7878",
+    "sgl_kernel": "0.4.3",
+    "hip": "7.0.51831"
+  },
+  "baseline_kernel": "sglang fused_moe(use_fp8_w8a8=True) Triton _fused_moe_kernel_sequence (fp8_e4m3fnuz w8a8)",
+  "bottleneck": {
+    "kind": "compute",
+    "evidence": "result.json per_shape: compute-bound (AI 1445/2234/3072 >> ridge), MFU-limited; candidate MFU 0.246/0.274/0.280 vs ref 0.216/0.259/0.268; padding already negligible at M>=1024"
+  },
+  "approaches": [
+    {
+      "technique": "bit-exact-group-size-m-swizzle",
+      "summary": "Reuse sglang's resolved config via try_get_optimal_moe_config and override ONLY GROUP_SIZE_M (L2 super-grouping / block-swizzle) for the fp8 gemm1/down configs, calling the reference's own _fused_moe_kernel_sequence",
+      "outcome": "win",
+      "geomean_speedup": 1.0809,
+      "why": "GROUP_SIZE_M reorders block scheduling to improve L2 weight reuse in the compute-bound regime; it does not change BLOCK_SIZE_K fp32 accumulation so calc_diff==0.0 (bit-exact)"
+    },
+    {
+      "technique": "block-size-m-shrink",
+      "summary": "Apply the moe_total_decode BLOCK_SIZE_M shrink lever to prefill",
+      "outcome": "abandoned",
+      "geomean_speedup": null,
+      "why": "prefill padding is already negligible at M>=1024 (M/expert >> BLOCK_SIZE_M), so there is no padded-row work to remove; the win must come from L2 scheduling instead"
+    }
+  ],
+  "result": {
+    "status": "win",
+    "geomean_speedup": 1.0809,
+    "min_speedup_conservative": 1.0263,
+    "repeat": null,
+    "integrate": "not-run",
+    "shapes_won": 3,
+    "shapes_regressed": 0
+  },
+  "lesson": "The correctness-preserving MoE lever is PHASE-dependent: decode (small M, memory/launch-bound) wins on BLOCK_SIZE_M padding removal, but prefill (large M, compute/MFU-bound) has no padding to remove -- there the bit-exact knob is GROUP_SIZE_M L2-swizzle. Same principle both times: override only a tile-scheduling knob, never BLOCK_SIZE_K.",
+  "transfers_to": [
+    "fp8 fused-MoE prefill on gfx942 at large compute-bound M",
+    "compute-bound Triton GEMMs where L2 block-swizzle (GROUP_SIZE_M) is under-tuned"
+  ],
+  "caveats": [
+    "Thin margins at large M (conservative down to 1.026x at M=4096)",
+    "Bit-exactness depends on BLOCK_SIZE_K/N staying fixed"
+  ]
+}
