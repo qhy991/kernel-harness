@@ -1,0 +1,94 @@
+===== Stall hotspots for combine32_combine_m16 =====
+Total distinct (file, line) entries: 33
+
+Rank      Total File                            Line  Breakdown (stall: count)
+------------------------------------------------------------------------------------------------------------------------------------------------------
+   0        234 combine.cu                       136  long_scoreboard: 234
+   1         49 combine.cu                        84  long_scoreboard: 49
+   2         21 combine.cu                        20  no_instructions: 16, short_scoreboard: 4, selected: 1
+   3         14 combine.cu                        38  long_scoreboard: 14
+   4         12 combine.cu                       141  selected: 5, wait: 5, long_scoreboard: 1, dispatch_stall: 1
+   5          9 combine.cu                        25  wait: 6, short_scoreboard: 2, selected: 1
+   6          7 combine.cu                        31  short_scoreboard: 6, wait: 1
+   7          6 combine.cu                        96  selected: 3, short_scoreboard: 2, wait: 1
+   8          6 bfloat16.h                       120  wait: 5, selected: 1
+   9          5 combine.cu                       131  wait: 3, selected: 2
+  10          4 combine.cu                        36  short_scoreboard: 4
+  11          4 combine.cu                       102  wait: 2, short_scoreboard: 1, branch_resolving: 1
+  12          3 combine.cu                        51  short_scoreboard: 2, not_selected: 1
+  13          3 combine.cu                        46  selected: 2, wait: 1
+  14          3 combine.cu                        28  wait: 2, selected: 1
+  15          3 combine.cu                       159  selected: 3
+  16          2 combine.cu                       157  wait: 2
+  17          1 combine.cu                        64  short_scoreboard: 1
+  18          1 math_functions.hpp              1133  short_scoreboard: 1
+  19          1 combine.cu                       135  short_scoreboard: 1
+  20          1 combine.cu                        43  wait: 1
+  21          1 sm_30_intrinsics.hpp             449  wait: 1
+  22          1 combine.cu                        93  wait: 1
+  23          1 combine.cu                        98  wait: 1
+  24          1 combine.cu                       148  wait: 1
+  25          1 combine.cu                       117  no_instructions: 1
+  26          1 combine.cu                        68  selected: 1
+  27          1 combine.cu                        88  selected: 1
+  28          1 combine.cu                       137  selected: 1
+  29          1 combine.cu                       139  selected: 1
+
+
+===== Per-stall-type top lines =====
+
+--- long_scoreboard ---
+       234  combine.cu:136
+        49  combine.cu:84
+        14  combine.cu:38
+         1  combine.cu:141
+
+--- short_scoreboard ---
+         6  combine.cu:31
+         4  combine.cu:20
+         4  combine.cu:36
+         2  combine.cu:25
+         2  combine.cu:96
+         2  combine.cu:51
+         1  combine.cu:64
+         1  math_functions.hpp:1133
+         1  combine.cu:102
+         1  combine.cu:135
+
+--- wait ---
+         6  combine.cu:25
+         5  combine.cu:141
+         5  bfloat16.h:120
+         3  combine.cu:131
+         2  combine.cu:102
+         2  combine.cu:28
+         2  combine.cu:157
+         1  combine.cu:31
+         1  combine.cu:96
+         1  combine.cu:43
+
+--- not_selected ---
+         1  combine.cu:51
+
+--- dispatch_stall ---
+         1  combine.cu:141
+
+--- no_instructions ---
+        16  combine.cu:20
+         1  combine.cu:117
+
+--- selected ---
+         5  combine.cu:141
+         3  combine.cu:96
+         3  combine.cu:159
+         2  combine.cu:46
+         2  combine.cu:131
+         1  combine.cu:20
+         1  combine.cu:25
+         1  combine.cu:28
+         1  bfloat16.h:120
+         1  combine.cu:68
+
+--- branch_resolving ---
+         1  combine.cu:102
+         1  combine.cu:162

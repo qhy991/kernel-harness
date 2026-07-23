@@ -1,0 +1,91 @@
+{
+  "schema_version": 1,
+  "id": "glm52--dsa_flashmla_kv_decode--b200--20260723b",
+  "date": "2026-07-23",
+  "model": "glm52",
+  "task": "glm52/dsa_flashmla_kv_decode",
+  "op": "DSA FlashMLA KV Decode Attention",
+  "family": "dsa_flashmla_kv",
+  "phase": "decode",
+  "shapes": {
+    "local_M_buckets": [
+      16,
+      32
+    ],
+    "measured_world_size": 1,
+    "context_allocation": 8192,
+    "selected_cache_length": 2048,
+    "q_heads": 64,
+    "q_head_dim": 576,
+    "v_head_dim": 512,
+    "kv_cache_dim": 656,
+    "page_size": 64,
+    "sparse_topk": 2048,
+    "softmax_scale": 0.0625,
+    "campaign_id": "flex-20260723T160729Z"
+  },
+  "hardware": {
+    "gpu": "NVIDIA B200",
+    "sm": "sm_100",
+    "physical_gpu": 1,
+    "gpu_uuid": "GPU-5b9be10b-5bfc-b658-9b31-f7ae8516dc54"
+  },
+  "stack": {
+    "kernel_harness_commit": "8c18448d9b76d2d648bec6da1e47587c59b26e73",
+    "sglang_commit": "d9fb72325cc73bb4b6f3ad96664513eb632e2459",
+    "sgl_kernel": "0.4.4",
+    "flashmla_base_commit": "05e26647fe840b8baedae486c2d86d5ce4efeb7c",
+    "flashmla_control_commit": "0657fffdfd1c981517647e043e4ef30ffdc1480f",
+    "flashmla_attempt_commit": "d18ff63a73dc6519432f59acb9f04365ce14bb10",
+    "cutlass_commit": "147f5673d0c1c3dcf66f78d677fd647e4a020219",
+    "torch": "2.11.0+cu130",
+    "cuda": "toolkit 13.2.78; torch wheel cu130",
+    "nsight_compute": "2026.1.1",
+    "nsight_systems": "2025.6.3",
+    "scheduler": "one with_flexible_gpu.sh lease"
+  },
+  "baseline_kernel": "installed sgl-kernel 0.4.4 FlashMLA SM100 flash_fwd_splitkv_mla_fp8_sparse_kernel plus flash_fwd_mla_combine_kernel",
+  "bottleneck": {
+    "kind": "other",
+    "evidence": "The scheduler-corrected one-lease campaign measured zero main-to-combine host gap with 4.096 us stock M16 PDL overlap. NCU measured the M16 main at 14.21 percent SM throughput, 13.24 percent DRAM peak, 18.45 percent achieved occupancy, and 375/1054 long-scoreboard plus 373/1054 barrier PC samples. Stock M16 combine launches only 128 blocks on 148 SMs, reads 16818176 bytes with 0.505 percent L2 hit rate, and has 271/390 long-scoreboard samples. The bound-32 candidate still reads 16817152 bytes with 0.470 percent L2 hit rate and increases long-scoreboard samples to 298/401. The binding limit is sparse-gather latency plus synchronization and grid underfill, not compute or a removable launch gap."
+  },
+  "approaches": [
+    {
+      "technique": "flexible-scheduler-pinned-source-rebuild-control",
+      "summary": "Revalidated the pinned stock-source overlay against the installed extension in eager and real CUDA Graph modes while keeping all paired sessions and profilers on physical GPU 1 under one flexible scheduler lease.",
+      "outcome": "abandoned",
+      "geomean_speedup": null,
+      "why": "All 12 rebuild-control sessions missed the 3 percent threshold; eager M16/M32 median-session speedups were 1.013117/1.007534 and graph M16/M32 were 0.991351/0.989923, so the overlay establishes noise and build provenance but is not an optimization."
+    },
+    {
+      "technique": "m16-combine-max-splits-32-specialization",
+      "summary": "Used an exact SM100 M16 sparse-FP8 predicate to dispatch the existing combine bound-32 body, reducing static shared allocation while preserving main-kernel, scheduler, metadata, stream, PDL, buffers, M32, and stock fallback semantics.",
+      "outcome": "slower",
+      "geomean_speedup": null,
+      "why": "Candidate eager session speedups were 1.024761/1.014102/1.016634 at M16 and 1.004522/1.021972/0.998688 at M32, while all graph sessions regressed at 0.989357/0.990007/0.989124 and 0.992105/0.985662/0.991270; the 1.36 percent single-trace chain delta did not survive paired graph measurement."
+    }
+  ],
+  "result": {
+    "status": "no-win",
+    "geomean_speedup": null,
+    "min_speedup_conservative": null,
+    "repeat": 100,
+    "integrate": "not-run"
+  },
+  "lesson": "Keep an entire alternating reference/candidate campaign and its profiler collection on one dynamically allocated physical GPU, then gate short PDL-overlapped paths on real CUDA Graph replay. Reducing compile-time combine state is not useful when it leaves sparse-gather bytes, a 128-block tail, and long-scoreboard pressure unchanged.",
+  "transfers_to": [
+    "SM100 FlashMLA sparse FP8 decode paths with split-KV and PDL-overlapped combine",
+    "short fixed-bucket kernels where unpaired device or thermal drift exceeds the proposed gain",
+    "source-overlay experiments that need a same-source rebuild control",
+    "CUDA Graph serving kernels whose isolated profiler delta is below the production gate"
+  ],
+  "caveats": [
+    "This supersedes the scheduler provenance and performance authority of the append-only 20260722a entry; that earlier entry remains historical and was not edited.",
+    "This serving-native campaign has no frozen evaluate_task.py result.json or audit_result.py verdict; the committed raw paired JSON and immutable campaign checker are the measurement authority, and no synthetic-task win is claimed.",
+    "The exact production-symbol, invalid-index, nondefault-stream, and direct core CUDA Graph checks passed, but the full captured DeepseekSparseAttnBackend/server path was not measured because the target GLM-5.2 checkpoint directory is empty.",
+    "The exact attention microbenchmark is rank-local with attention TP=1 and has no useful TP4 collective analogue; a four-rank model diagnostic also requires the missing checkpoint.",
+    "The official TP8/DP8/EP8 acceptance lane remains external because this host has four GPUs; neither one-rank nor four-rank evidence weakens or relabels that gate.",
+    "No candidate bucket is enabled, so installed stock FlashMLA remains the active production fallback."
+  ],
+  "agent": "Codex"
+}

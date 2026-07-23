@@ -64,6 +64,10 @@
 
 - `glm52--routed_gateup_nvfp4_decode--b200--20260714c` [win] Routed Expert Gate+Up NVFP4/decode — For fixed-shape GLM-5.2 NVFP4 MoE decode harness tasks, do not pass small CUDA scalar tensors through .item() in solution.py. If values are fixed by task.json/definition axes, use Python constants or shape-derived Python ints so the timed call contains the real FlashInfer work instead of device-host synchronization. Validate each FlashInfer routing knob with repeat-3 because several correct API choices differ mostly by noise.
 
+## flexible-scheduler-pinned-source-rebuild-control
+
+- `glm52--dsa_flashmla_kv_decode--b200--20260723b` [no-win] DSA FlashMLA KV Decode Attention/decode — Keep an entire alternating reference/candidate campaign and its profiler collection on one dynamically allocated physical GPU, then gate short PDL-overlapped paths on real CUDA Graph replay. Reducing compile-time combine state is not useful when it leaves sparse-gather bytes, a 128-block tail, and long-scoreboard pressure unchanged.
+
 ## harness-integrate-active-rows-fix
 
 - `glm52--routed_down_decode--b200--20260715a` [win] Routed Expert Down/decode — Masked grouped-MoE decode drop-in verification must ignore empty-expert padded slots. A harness WIN that removes device-scalar layout reads is production-safe once active rows match bit-exactly under deep_gemm_wrapper.grouped_gemm_nt_f8f8bf16_masked.
@@ -79,6 +83,7 @@
 
 ## m16-combine-max-splits-32-specialization
 
+- `glm52--dsa_flashmla_kv_decode--b200--20260723b` [no-win] DSA FlashMLA KV Decode Attention/decode — Keep an entire alternating reference/candidate campaign and its profiler collection on one dynamically allocated physical GPU, then gate short PDL-overlapped paths on real CUDA Graph replay. Reducing compile-time combine state is not useful when it leaves sparse-gather bytes, a 128-block tail, and long-scoreboard pressure unchanged.
 - `glm52--dsa_flashmla_kv_decode--b200--20260722a` [no-win] DSA FlashMLA KV Decode Attention/decode — For a PDL-overlapped split-KV plus combine path with no measured launch gap, a compile-time combine-resource reduction must be judged on the full captured chain, not one kernel or one favorable eager session. At these fixed decode buckets the M16 max-splits specialization was not repeatably faster, so the safe transferable policy is to fail closed to stock until repeated CUDA-Graph and containing-region measurements clear the production threshold.
 
 ## packed-deepgemm-lower-op

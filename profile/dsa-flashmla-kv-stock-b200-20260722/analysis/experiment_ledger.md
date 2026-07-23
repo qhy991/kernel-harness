@@ -5,6 +5,11 @@ repeated alternating session, exact correctness, graph/stream semantics, then a
 containing-region and complete-server win. An isolated profiler delta is not a
 promotion result.
 
+The original Experiment 0/1 measurements below are preserved as historical
+fixed-GPU evidence. The scheduler-corrected authority is the later
+`flex-20260723T160729Z` revalidation, which keeps the whole alternating campaign
+and profiler collection on one dynamically selected physical B200.
+
 ## Ranked hypotheses
 
 1. **Reduce the M16 combine compile-time split bound.** Runtime metadata shows
@@ -123,6 +128,32 @@ kernel optimization.
   installed extension. Source rollback is control commit `0657fff`; the rejected
   attempt remains reproducibly preserved at `d18ff63` and in
   [the source patch](flashmla_d18ff63.patch).
+
+## Scheduler-corrected revalidation: `flex-20260723T160729Z`
+
+- **Scheduler/provenance delta:** no source or build changed. Kernel-Harness
+  commit `8c18448` replaced the superseded fixed-GPU assumption with one
+  `with_flexible_gpu.sh` lease and immutable campaign artifacts. The wrapper
+  allocated physical GPU 1,
+  `GPU-5b9be10b-5bfc-b658-9b31-f7ae8516dc54`, as logical GPU 0 for the complete
+  paired-plus-profiler command.
+- **Correctness:** both runtime ABI/invalid-index/stream/graph checks, both exact
+  SGLang tests, and all 24 paired producer checks passed.
+- **Paired result:** candidate eager session speedups were
+  `1.024761/1.014102/1.016634` at M16 and
+  `1.004522/1.021972/0.998688` at M32. Candidate graph speedups were
+  `0.989357/0.990007/0.989124` at M16 and
+  `0.992105/0.985662/0.991270` at M32. No candidate or rebuild-control session
+  reached 1.03.
+- **Profiler result:** Nsys measured stock/candidate M16 chains at
+  25.888/25.536 us with zero launch gap, a descriptive 1.36% difference. NCU
+  measured stock/candidate isolated combine at 10.752/10.912 us; both read about
+  16.8 MB with about 0.5% L2 hit rate. The candidate increased long-scoreboard
+  PC samples from 271/390 (69.5%) to 298/401 (74.3%).
+- **Risk/decision/rollback:** the exact M16 predicate still fails closed, but
+  deploying it has no measured benefit. Reject it, enable no bucket, and keep
+  the installed stock extension active. The full current report is
+  [`../campaigns/flex-20260723T160729Z/REPORT.md`](../campaigns/flex-20260723T160729Z/REPORT.md).
 
 ## Final conclusion
 

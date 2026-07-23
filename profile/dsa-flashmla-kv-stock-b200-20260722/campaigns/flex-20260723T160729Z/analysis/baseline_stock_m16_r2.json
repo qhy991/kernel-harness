@@ -1,0 +1,212 @@
+{
+  "campaign": {
+    "campaign_id": "flex-20260723T160729Z",
+    "gpu_uuid": "GPU-5b9be10b-5bfc-b658-9b31-f7ae8516dc54",
+    "logical_gpu": 0,
+    "physical_gpu": 1
+  },
+  "candidate": null,
+  "environment_flags": {
+    "CUDA_VISIBLE_DEVICES": "1",
+    "SGLANG_GLM52_OPT": "0",
+    "SGLANG_ROOT": "/home/qinhaiyan/glm52-goal-runs/22-dsa_flashmla_kv_production/sglang"
+  },
+  "execution_mode": "eager_cuda_event",
+  "reference": {
+    "median_ms": 0.04358400031924248,
+    "min_ms": 0.042047999799251556,
+    "p95_ms": 0.049056001007556915,
+    "samples_ms": [
+      0.054496001452207565,
+      0.04521600157022476,
+      0.044319998472929,
+      0.043616000562906265,
+      0.044544000178575516,
+      0.043776001781225204,
+      0.04278400167822838,
+      0.05081599950790405,
+      0.043327998369932175,
+      0.04214400053024292,
+      0.043136000633239746,
+      0.042047999799251556,
+      0.043168000876903534,
+      0.05859199911355972,
+      0.04335999861359596,
+      0.04320000112056732,
+      0.04214400053024292,
+      0.04249599948525429,
+      0.04419200122356415,
+      0.043168000876903534,
+      0.044704001396894455,
+      0.04249599948525429,
+      0.049056001007556915,
+      0.0451200008392334,
+      0.042688000947237015,
+      0.044895999133586884,
+      0.043296001851558685,
+      0.0432640016078949,
+      0.045823998749256134,
+      0.043455999344587326,
+      0.045343998819589615,
+      0.043487999588251114,
+      0.043327998369932175,
+      0.04368000105023384,
+      0.04262400045990944,
+      0.04217600077390671,
+      0.04374400153756142,
+      0.04678399860858917,
+      0.045343998819589615,
+      0.04335999861359596,
+      0.04355200007557869,
+      0.042527999728918076,
+      0.0451200008392334,
+      0.04831999912858009,
+      0.04492799937725067,
+      0.04416000097990036,
+      0.04233599826693535,
+      0.04403200000524521,
+      0.042367998510599136,
+      0.04383999854326248
+    ]
+  },
+  "reference_policy": "SGLANG_GLM52_OPT=0 production path",
+  "repeat": 50,
+  "runtime_evidence": {
+    "cache_seqlens": [
+      2048,
+      2048,
+      2048,
+      2048,
+      2048,
+      2048,
+      2048,
+      2048,
+      2048,
+      2048,
+      2048,
+      2048,
+      2048,
+      2048,
+      2048,
+      2048
+    ],
+    "combine_kernel_pattern": "flash_fwd_mla_combine_kernel*",
+    "indices": {
+      "dtype": "torch.int32",
+      "shape": [
+        16,
+        1,
+        2048
+      ],
+      "stride": [
+        2048,
+        2048,
+        1
+      ]
+    },
+    "kv_cache": {
+      "bytes_per_token": 656,
+      "dtype": "torch.float8_e4m3fn",
+      "shape": [
+        2049,
+        64,
+        1,
+        656
+      ],
+      "stride": [
+        41984,
+        656,
+        656,
+        1
+      ]
+    },
+    "main_kernel_pattern": "flash_fwd_splitkv_mla_fp8_sparse_kernel*",
+    "num_splits_prefix": [
+      0,
+      8,
+      16,
+      24,
+      32,
+      40,
+      48,
+      56,
+      64,
+      72,
+      80,
+      88,
+      96,
+      104,
+      112,
+      120,
+      128
+    ],
+    "python_symbol": "sgl_kernel.flash_mla.flash_mla_with_kvcache",
+    "q": {
+      "dtype": "torch.bfloat16",
+      "shape": [
+        16,
+        1,
+        64,
+        576
+      ],
+      "stride": [
+        36864,
+        36864,
+        576,
+        1
+      ]
+    },
+    "selected_backend": "flashmla_kv",
+    "sm100_instantiation": "csrc/sm100/decode/head64/instantiations/v32.cu",
+    "softmax_scale": 0.0625,
+    "splits_per_request": [
+      8,
+      8,
+      8,
+      8,
+      8,
+      8,
+      8,
+      8,
+      8,
+      8,
+      8,
+      8,
+      8,
+      8,
+      8,
+      8
+    ],
+    "stream": "torch current CUDA stream",
+    "tile_scheduler_metadata_shape": [
+      148,
+      8
+    ],
+    "torch_op": "sgl_kernel::fwd_kvcache_mla"
+  },
+  "schema_version": 1,
+  "timing_contract": "maximum CUDA-event latency across ranks",
+  "warmup": 5,
+  "workload": {
+    "distributed": false,
+    "family": "dsa_flashmla_kv",
+    "name": "dsa_flashmla_kv_decode_m16",
+    "notes": "Explicit --dsa-decode-backend flashmla_kv lane: paged FP8 KV, production split-KV plus combine, TP8/DP8/EP8 local decode bucket.",
+    "params": {
+      "batch": 16,
+      "context": 8192,
+      "kv_cache_dim": 656,
+      "page_size": 64,
+      "q_head_dim": 576,
+      "q_heads": 64,
+      "qk_nope_head_dim": 192,
+      "qk_rope_head_dim": 64,
+      "softmax_scale": 0.0625,
+      "sparse_topk": 2048,
+      "v_head_dim": 512
+    },
+    "phase": "decode",
+    "source_symbol": "sglang.srt.layers.attention.dsa_backend.DeepseekSparseAttnBackend._forward_flashmla_kv -> sgl_kernel.flash_mla.flash_mla_with_kvcache -> torch.ops.sgl_kernel.fwd_kvcache_mla",
+    "world_size": 1
+  }
+}

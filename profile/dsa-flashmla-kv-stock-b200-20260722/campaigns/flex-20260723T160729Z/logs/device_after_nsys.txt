@@ -1,0 +1,82 @@
+{
+  "campaign_id": "flex-20260723T160729Z",
+  "environment": {
+    "CUDA_VISIBLE_DEVICES": "1",
+    "GOAL22_CAMPAIGN_ID": "flex-20260723T160729Z",
+    "GOAL22_CANDIDATE_MANIFEST": "/home/qinhaiyan/glm52-goal-runs/22-dsa_flashmla_kv_production/kernel-harness/profile/dsa-flashmla-kv-stock-b200-20260722/analysis/build_combine32_m16_tensor.json",
+    "GOAL22_CANDIDATE_OVERLAY": "/home/qinhaiyan/glm52-goal-runs/22-dsa_flashmla_kv_production/sglang/third_party/FlashMLA-goal22/build-artifacts/combine32-m16-tensor/overlay",
+    "GOAL22_GPU_UUID": "GPU-5b9be10b-5bfc-b658-9b31-f7ae8516dc54",
+    "GOAL22_PHYSICAL_GPU": "1",
+    "GOAL22_STOCK_MANIFEST": "/home/qinhaiyan/glm52-goal-runs/22-dsa_flashmla_kv_production/kernel-harness/profile/dsa-flashmla-kv-stock-b200-20260722/analysis/build_stock_pybind_tensor.json",
+    "GOAL22_STOCK_OVERLAY": "/home/qinhaiyan/glm52-goal-runs/22-dsa_flashmla_kv_production/sglang/third_party/FlashMLA-goal22/build-artifacts/stock-pybind-tensor/overlay",
+    "KERNEL_HARNESS_PYTHON": "/home/qinhaiyan/glm52-goal-runs/22-dsa_flashmla_kv_production/kernel-harness/.venv/bin/python",
+    "SGLANG_GLM52_OPT": "0",
+    "SGLANG_ROOT": "/home/qinhaiyan/glm52-goal-runs/22-dsa_flashmla_kv_production/sglang"
+  },
+  "gpu_uuid": "GPU-5b9be10b-5bfc-b658-9b31-f7ae8516dc54",
+  "logical_gpu_index": 0,
+  "nvidia_smi": {
+    "clocks.current.graphics": "757",
+    "clocks.current.memory": "3996",
+    "clocks.current.sm": "757",
+    "clocks.max.graphics": "1965",
+    "clocks.max.memory": "3996",
+    "clocks.max.sm": "1965",
+    "driver_version": "610.43.02",
+    "index": "1",
+    "name": "NVIDIA B200",
+    "pci.bus_id": "00000000:06:00.0",
+    "power.draw": "148.55",
+    "power.limit": "1000.00",
+    "pstate": "P0",
+    "temperature.gpu": "34",
+    "timestamp": "2026/07/23 16:13:46.577",
+    "uuid": "GPU-5b9be10b-5bfc-b658-9b31-f7ae8516dc54"
+  },
+  "physical_gpu_index": 1,
+  "recorded_at_utc": "2026-07-23T16:13:46.597710+00:00",
+  "repository_status": {
+    "flashmla": {
+      "all": [
+        "?? build-artifacts/"
+      ],
+      "tracked": []
+    },
+    "kernel_harness": {
+      "all": [
+        "?? profile/dsa-flashmla-kv-stock-b200-20260722/campaigns/flex-20260723T160729Z/"
+      ],
+      "tracked": []
+    },
+    "sglang": {
+      "all": [
+        "?? third_party/FlashMLA-goal22/"
+      ],
+      "tracked": []
+    }
+  },
+  "schema_version": 1,
+  "stack": {
+    "flashmla_commit": "d18ff63a73dc6519432f59acb9f04365ce14bb10",
+    "kernel_harness_commit": "8c18448d9b76d2d648bec6da1e47587c59b26e73",
+    "nsight_compute": "NVIDIA (R) Nsight Compute Command Line Profiler\nCopyright (c) 2018-2026 NVIDIA Corporation\nVersion 2026.1.1.0 (build 37634170) (public-release)",
+    "nsight_systems": "NVIDIA Nsight Systems version 2025.6.3.541-256337736014v0",
+    "nvcc": "nvcc: NVIDIA (R) Cuda compiler driver\nCopyright (c) 2005-2026 NVIDIA Corporation\nBuilt on Thu_Mar_19_11:12:51_PM_PDT_2026\nCuda compilation tools, release 13.2, V13.2.78\nBuild cuda_13.2.r13.2/compiler.37668154_0",
+    "python": "Python 3.12.13",
+    "scheduler_wrapper": "/home/qinhaiyan/glm52-goal-runs/with_flexible_gpu.sh",
+    "scheduler_wrapper_sha256": "ee129e7355f43c2b4448d33866aac57c3f3ca4ac01314bfc2f2d57c9d43ce5c0",
+    "sglang_commit": "d9fb72325cc73bb4b6f3ad96664513eb632e2459",
+    "torch": "2.11.0+cu130",
+    "torch_cuda": "13.0"
+  },
+  "stage": "after_nsys",
+  "torch_device": {
+    "capability": [
+      10,
+      0
+    ],
+    "multiprocessor_count": 148,
+    "name": "NVIDIA B200",
+    "total_memory_bytes": 191490555904
+  }
+}

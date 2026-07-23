@@ -1,0 +1,45 @@
+allocated physical GPU 1 (GPU-5b9be10b-5bfc-b658-9b31-f7ae8516dc54) as logical GPU 0 for one locked command
+==> device_start
+==> check_env
+==> verify_harness
+==> exact SGLang production-ABI tests
+==> runtime_stock_m16
+==> runtime_stock_m32
+==> paired_control_m16_r1
+==> graph_control_m16_r1
+==> paired_control_m32_r1
+==> graph_control_m32_r1
+==> paired_combine32_m16_r1
+==> graph_combine32_m16_r1
+==> paired_combine32_m32_r1
+==> graph_combine32_m32_r1
+==> paired_combine32_m32_r2
+==> graph_combine32_m32_r2
+==> paired_combine32_m16_r2
+==> graph_combine32_m16_r2
+==> paired_control_m32_r2
+==> graph_control_m32_r2
+==> paired_control_m16_r2
+==> graph_control_m16_r2
+==> paired_control_m16_r3
+==> graph_control_m16_r3
+==> paired_control_m32_r3
+==> graph_control_m32_r3
+==> paired_combine32_m16_r3
+==> graph_combine32_m16_r3
+==> paired_combine32_m32_r3
+==> graph_combine32_m32_r3
+==> baseline_stock_m16_r1
+==> baseline_stock_m32_r1
+==> baseline_stock_m32_r2
+==> baseline_stock_m16_r2
+==> baseline_stock_m16_r3
+==> baseline_stock_m32_r3
+==> device_after_paired
+==> nsys_stock_m16
+==> nsys_stock_m32
+==> nsys_combine32_m16
+==> device_after_nsys
+==> ncu_collection
+==> device_end
+campaign complete: /home/qinhaiyan/glm52-goal-runs/22-dsa_flashmla_kv_production/kernel-harness/profile/dsa-flashmla-kv-stock-b200-20260722/campaigns/flex-20260723T160729Z

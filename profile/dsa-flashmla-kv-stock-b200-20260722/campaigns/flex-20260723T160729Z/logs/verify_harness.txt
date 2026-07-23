@@ -1,0 +1,15 @@
+$ /home/qinhaiyan/miniconda3/bin/python3 -m py_compile testbench/bin/check_env.py testbench/bin/audit_result.py testbench/bin/selftest.py testbench/bin/brief.py testbench/bin/bw_ceiling.py testbench/bin/knowledge.py testbench/bin/kwiki_bridge.py testbench/bin/sync_glm52_tasks.py testbench/bin/verify_harness.py testbench/harness/evaluate_task.py testbench/harness/glm52_ops.py testbench/harness/gpu_lease.py testbench/harness/result_store.py
+$ /home/qinhaiyan/miniconda3/bin/python3 testbench/bin/selftest.py
+selftest: 24 tasks, 0 problems
+$ /home/qinhaiyan/miniconda3/bin/python3 testbench/bin/knowledge.py lint
+knowledge lint: 13 entries, 0 problems
+$ /home/qinhaiyan/miniconda3/bin/python3 testbench/bin/knowledge.py index --check
+index --check: 0 stale
+$ /home/qinhaiyan/miniconda3/bin/python3 testbench/bin/knowledge.py distill --check
+distill --check: up to date
+$ /mnt/OS-oKqEXySb/home/qinhaiyan/miniconda3/envs/sglang/bin/python testbench/bin/sync_glm52_tasks.py --check
+24 task dirs are in sync with glm52_ops
+$ git diff --check -- AGENTS.md testbench/README.md testbench/VERIFY.md testbench/setup_env.sh testbench/bin testbench/harness testbench/knowledge testbench/tasks/glm52 :(exclude)testbench/tasks/glm52/*/candidate.py
+pointer audit first problem: runs/index.jsonl is missing
+audit sweep: audited=0 invalid=0 official=0 provisional=0
+pointer audit: index_rows=0 latest_files=0 stale_index=0 stale_latest=0 malformed=1 mismatched=0

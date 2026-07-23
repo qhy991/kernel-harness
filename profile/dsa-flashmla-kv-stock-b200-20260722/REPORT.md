@@ -6,10 +6,17 @@ specialization has the intended code-generation effect, but it does not clear
 the repeated 3% paired gate. No bucket is enabled. Stock FlashMLA remains active
 for M16, M32, every other ABI, and every topology.
 
-The decision already follows from the repeated direct-symbol and real CUDA Graph
-measurements. Repeated containing-backend performance, complete GLM-5.2 server,
-and TP8/DP8/EP8 acceptance could not be run on this host because the checkpoint
-directory is empty and only four physical GPUs exist. Those gates remain external
+The authoritative scheduler-corrected campaign is
+[`flex-20260723T160729Z`](campaigns/flex-20260723T160729Z/REPORT.md). It ran all
+paired reference/candidate measurements and profiler collection in one
+`with_flexible_gpu.sh` lease and observed zero candidate sessions above 1.03
+(0/12). The earlier flat GPU-3 artifacts are retained unchanged as historical
+evidence collected under the superseded scheduling instruction; they are not
+used as the current acceptance authority.
+
+Repeated containing-backend performance, complete GLM-5.2 server, and
+TP8/DP8/EP8 acceptance cannot run on this host because the checkpoint directory
+is empty and only four physical GPUs exist. Those gates remain external
 requirements and are not weakened or relabelled; see
 [external validation blockers](analysis/external_validation_blockers.md).
 
@@ -88,13 +95,17 @@ captures import resolution and all three repository states. Candidate patch SHA-
 Earlier `build_stock_control.json`, `build_stock_pybind.json`, and
 `build_combine32_m16.json` are preserved ABI bring-up artifacts, not performance
 evidence; only the final `*_tensor` control/candidate pair was timed.
-All GPU work was serialized through the required physical-GPU-3 scheduler
-wrapper; no GPU command bypassed it. Nsight Systems identifies the measured
-device as physical GPU 3, PCI `0000:08:00.0`, UUID
-`705cc39e-af1d-c4c0-d97d-4155237646af`, with 148 SMs and a 1.965 GHz device
-metadata clock rate. That clock is profiler device metadata, not dynamic clock
-telemetry. The upstream dependency is `https://github.com/sgl-project/FlashMLA.git`;
-the candidate is a separate local source checkout at the commit above.
+The scheduler-corrected campaign pinned Kernel-Harness
+`8c18448d9b76d2d648bec6da1e47587c59b26e73` and ran on physical GPU 1, PCI
+`00000000:06:00.0`, UUID
+`GPU-5b9be10b-5bfc-b658-9b31-f7ae8516dc54`, exposed as logical GPU 0 for one
+uninterrupted lease. Four P0 snapshots record dynamic SM clocks
+645/780/757/682 MHz and the fixed 3996 MHz memory clock; Nsight Compute reports
+1.95 GHz during active replay. The wrapper line and its SHA-256, environment,
+tool versions, repository status, and all source pins are in the campaign's
+[device snapshot](campaigns/flex-20260723T160729Z/analysis/device_start.json).
+The upstream dependency is `https://github.com/sgl-project/FlashMLA.git`; the
+candidate is a separate local source checkout at the commit above.
 
 ## Correctness and execution semantics
 
@@ -112,9 +123,9 @@ the candidate is a separate local source checkout at the commit above.
 - The SGLang exact fixture covers independent raw attention correctness and the
   metadata lifecycle for both buckets, FP8 KV, 64 heads, 8192-token prefixes
   with page-rounded decode capacity, affine/interleaved top-k, exact model
-  scale, and required fused top-k. Its two targeted tests passed in 23.401
+  scale, and required fused top-k. Its two targeted tests passed in 23.608
   seconds; see
-  [test output](analysis/sglang_exact_tests.txt).
+  [fresh test output](campaigns/flex-20260723T160729Z/logs/sglang_exact_tests.txt).
 
 The SGLang metadata-lifecycle fixture is intentionally not claimed as a
 captured full-backend replay. The direct native workload supplies real CUDA
@@ -129,38 +140,39 @@ of the 100 pair-wise speedups, independently for each session and bucket.
 
 | Mode | Bucket | Candidate session speedups | Sessions at or above 1.03 |
 |---|---:|---|---:|
-| eager | M16 | `1.036845`, `1.016081`, `1.020847` | 1/3 |
-| eager | M32 | `0.989919`, `0.993737`, `1.010906` | 0/3 |
-| CUDA Graph | M16 | `0.998068`, `0.987407`, `0.983109` | 0/3 |
-| CUDA Graph | M32 | `0.993963`, `0.994055`, `0.999149` | 0/3 |
+| eager | M16 | `1.024761`, `1.014102`, `1.016634` | 0/3 |
+| eager | M32 | `1.004522`, `1.021972`, `0.998688` | 0/3 |
+| CUDA Graph | M16 | `0.989357`, `0.990007`, `0.989124` | 0/3 |
+| CUDA Graph | M32 | `0.992105`, `0.985662`, `0.991270` | 0/3 |
 
-The one favorable eager M16 session did not reproduce and reversed under graph
-replay. The same-source compiler/build control also varied around unity; its
-graph sessions were `0.996567/0.999013/0.989950` at M16 and
-`0.982680/0.992860/0.991372` at M32. The candidate-minus-control session-median
-deltas are descriptive only because those builds were not paired to each other.
-All 24 raw paired artifacts, independent medians, pair distributions, graph
-checks, and cold/warm stock context are retained in the generated
-[paired summary](analysis/paired_measurements_summary.md) and
-[machine-readable summary](analysis/paired_measurements_summary.json).
+The same-source compiler/build control also missed all sessions; its eager
+session speedups were `1.007414/1.014577/1.013117` at M16 and
+`1.007534/1.017690/0.995031` at M32, while graph sessions were
+`0.991351/0.991282/0.993822` and `0.989923/0.989446/0.993995`.
+All 24 fresh raw paired artifacts, independently recomputed medians, pair
+distributions, graph checks, scheduler identity, and context-only stock
+baselines are retained in the campaign
+[paired summary](campaigns/flex-20260723T160729Z/analysis/paired_measurements_summary.md)
+and [machine-readable summary](campaigns/flex-20260723T160729Z/analysis/paired_measurements_summary.json).
+The earlier flat summary remains historical and is not overwritten.
 
 ## Nsight Systems: complete two-kernel region
 
 | Build / bucket | main | combine | PDL overlap | chain span | launch gap |
 |---|---:|---:|---:|---:|---:|
-| stock M16 | 17.568 us | 13.632 us | 4.160 us | 27.040 us | 0 |
-| stock M32 | 25.312 us | 10.112 us | 4.064 us | 31.360 us | 0 |
-| candidate M16 | 17.632 us | 13.216 us | 4.128 us | 26.720 us | 0 |
+| stock M16 | 17.504 us | 12.480 us | 4.096 us | 25.888 us | 0 |
+| stock M32 | 25.088 us | 9.824 us | 4.000 us | 30.912 us | 0 |
+| candidate M16 | 17.536 us | 12.224 us | 4.224 us | 25.536 us | 0 |
 
 The main launch is one 384-thread block on each of 148 SMs. Stock M16 combine
 is 128 blocks (`16 x 1 x 8`) and M32 is 256 blocks (`32 x 1 x 8`). Main and
 combine use stream 7 and overlap through programmatic dependent launch, so
 there is no host launch gap to remove. The candidate's single-trace chain delta
-is only 1.18% and is profiling context, not an acceptance result. Parsed chain
-records are [stock M16](analysis/nsys_chain_stock_m16.json),
-[stock M32](analysis/nsys_chain_stock_m32.json), and
-[candidate M16](analysis/nsys_chain_combine32_m16.json); raw reports remain in
-[`reports/`](reports/README.md).
+is only 1.36% and is profiling context, not an acceptance result. Fresh parsed
+chain records are
+[stock M16](campaigns/flex-20260723T160729Z/analysis/nsys_chain_stock_m16.json),
+[stock M32](campaigns/flex-20260723T160729Z/analysis/nsys_chain_stock_m32.json),
+and [candidate M16](campaigns/flex-20260723T160729Z/analysis/nsys_chain_combine32_m16.json).
 
 ## Nsight Compute: six-dimension diagnosis
 
@@ -173,28 +185,28 @@ latencies.
    wave across 148 SMs. M16 combine has only 128 blocks (`0.173` waves/SM), so
    20 SMs are idle and the tool estimates a 13.5% grid-underfill opportunity.
 2. **Occupancy and resources.** Main uses 168 registers/thread and 232,656 bytes
-   total per-block launch shared allocation, limiting it to one block and 18.75% theoretical
-   occupancy (18.75% achieved M16, 18.62% M32). Combine uses 48 registers and
-   achieves only about 11.8% occupancy because the short underfilled grid and
-   latency, not its theoretical 62.5% ceiling, dominate. No local load/store
-   spills were measured.
-3. **Compute utilization.** Main M16/M32 reach only 14.42%/19.78% SM throughput
-   and 8.88%/13.30% tensor-pipe activity. Combine has no tensor activity and
-   reaches 4.38% stock / 3.76% candidate SM throughput. Compute throughput is
+   total per-block launch shared allocation, limiting it to one block and 18.75%
+   theoretical occupancy (18.45% achieved M16, 18.56% M32). Combine uses 48
+   registers and achieves only 11.29% stock / 12.28% candidate occupancy because
+   the short underfilled grid and latency, not its theoretical 62.5% ceiling,
+   dominate. No local load/store spills were measured.
+3. **Compute utilization.** Main M16/M32 reach only 14.21%/20.07% SM throughput
+   and 8.75%/13.49% tensor-pipe activity. Combine has no tensor activity and
+   reaches 4.35% stock / 3.62% candidate SM throughput. Compute throughput is
    not the binding roof.
 4. **Memory hierarchy and access efficiency.** Main reads 23.04 MB (M16) or
-   46.01 MB (M32), reaching 1.00/1.51 TB/s and 13.06%/19.74% DRAM peak; L2 hit
-   rate is only 14.12%/14.89%. Source rules report roughly 17.6-17.7 useful
+   46.01 MB (M32), reaching 1.014/1.534 TB/s and 13.24%/20.04% DRAM peak; L2 hit
+   rate is only 14.80%/14.96%. Source rules report roughly 17.6-17.7 useful
    bytes per 32-byte global sector and multi-way shared-memory conflicts.
-   Stock combine reads 16.818 MB at 1.528 TB/s with a 0.445% L2 hit rate; the
-   candidate still reads 16.817 MB at 1.559 TB/s. It removes no sparse gather.
-5. **Warp issue and stalls.** Main M16 exposes only 0.212 eligible
-   warps/scheduler/cycle and 18.44% issue activity; its 1,080 PC samples include
-   304 barrier and 280 long-scoreboard stalls. M32 improves to 0.288 eligible
-   warps and 23.82% issue, but 503/1,500 samples remain long-scoreboard stalls.
-   Stock combine has 288/402 long-scoreboard samples (71.6%); candidate has
-   291/400 (72.8%). The shared-memory reduction does not hide the dominant
-   gather latency.
+   Stock combine reads 16.818 MB at 1.564 TB/s with a 0.505% L2 hit rate; the
+   candidate still reads 16.817 MB at 1.541 TB/s and 0.470% L2 hit. It removes
+   no sparse gather.
+5. **Warp issue and stalls.** Main M16 exposes only 0.209 eligible
+   warps/scheduler/cycle and 18.30% issue activity; its 1,054 PC samples include
+   373 barrier and 375 long-scoreboard stalls. M32 improves to 0.289 eligible
+   warps and 23.93% issue. Stock combine has 271/390 long-scoreboard samples
+   (69.5%); candidate has 298/401 (74.3%). The shared-memory reduction does not
+   hide the dominant gather latency.
 6. **Source and executable code.** M16 main hotspots map to cross-warp barriers,
    mbarrier waits, and sparse/shared address work. Both builds contain the same
    decoded device SASS and resource inventory. The candidate merely dispatches
@@ -203,8 +215,9 @@ latencies.
    selected static body has 280 rather than 344 SASS records. Main code is
    unchanged.
 
-The complete metrics are in `analysis/metrics_all_*.json`; compact values are
-in `analysis/metrics_key_*.json`; source and stall exports are alongside them.
+The fresh complete metrics are in
+`campaigns/flex-20260723T160729Z/analysis/metrics_all_*.json`; compact values,
+source views, rule output, and stall exports are alongside them.
 The full [ptxas/SASS audit](analysis/ptxas_sass_inventory.md) distinguishes
 decoded executable identity from differing fatbin metadata. PM sampling had
 only 7-27 active samples for these very short kernels and lacked throughput
@@ -220,9 +233,9 @@ M16 uses eight actual splits/request, yet stock dispatch selected a bound of 160
 from `num_sm_parts=148`.
 
 The source change delivered exactly the predicted resource/code-size reduction,
-but the combine remains a 128-block, 16.8-MB latency-dominated gather and the
-complete graph chain did not improve. The experiment is rejected and rolled
-back operationally by enabling nothing. The detailed hypothesis, distributions,
+but the combine remains a 128-block, 16.8-MB latency-dominated gather and every
+fresh graph session regressed. The experiment is rejected and rolled back
+operationally by enabling nothing. The detailed hypothesis, distributions,
 profiler delta, risk, and rollback point are preserved in the
 [experiment ledger](analysis/experiment_ledger.md).
 
@@ -231,8 +244,8 @@ profiler delta, risk, and rollback point are preserved in the
 The final source state passed:
 
 - `python3 serving_native/selftest.py` (41 workloads);
-- the two exact SGLang FlashMLA-KV tests (23.401 s);
-- the paired-summary raw-artifact/graph consistency check;
+- the two exact SGLang FlashMLA-KV tests (23.608 s);
+- the fresh paired-summary raw-artifact/graph/scheduler consistency check;
 - `python3 testbench/bin/verify_harness.py` (24 task structural checks,
   knowledge lint/index/distill checks, sync and diff checks); its historical
   missing `runs/index.jsonl` pointer remains advisory and unrelated;
@@ -243,11 +256,15 @@ The final source state passed:
 Key artifacts:
 
 - workload and callable mapping: [source reachability](analysis/source-reachability.md);
-- final isolated import/GPU check: [environment output](analysis/check_env_final.txt);
-- exact runtime semantics: [M16](analysis/runtime_stock_m16.json) and
-  [M32](analysis/runtime_stock_m32.json);
-- all acceptance timing: [paired summary](analysis/paired_measurements_summary.md);
-- profiler binaries: [`reports/`](reports/README.md);
+- fresh isolated import/GPU check:
+  [environment output](campaigns/flex-20260723T160729Z/logs/check_env.txt);
+- exact runtime semantics:
+  [M16](campaigns/flex-20260723T160729Z/analysis/runtime_stock_m16.json) and
+  [M32](campaigns/flex-20260723T160729Z/analysis/runtime_stock_m32.json);
+- all current acceptance timing:
+  [paired summary](campaigns/flex-20260723T160729Z/analysis/paired_measurements_summary.md);
+- fresh profiler binaries:
+  [`campaign reports`](campaigns/flex-20260723T160729Z/reports/);
 - source/build delta: [patch](analysis/flashmla_d18ff63.patch) and final manifests;
 - raw final compiler logs: [stock](reports/build_stock_pybind_tensor.log) and
   [candidate](reports/build_combine32_m16_tensor.log);

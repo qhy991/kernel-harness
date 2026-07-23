@@ -1,0 +1,107 @@
+===== Stall hotspots for stock_combine_m16 =====
+Total distinct (file, line) entries: 32
+
+Rank      Total File                            Line  Breakdown (stall: count)
+------------------------------------------------------------------------------------------------------------------------------------------------------
+   0        240 combine.cu                       136  long_scoreboard: 239, selected: 1
+   1         25 combine.cu                        20  no_instructions: 19, short_scoreboard: 4, wait: 1, selected: 1
+   2         17 combine.cu                        38  long_scoreboard: 17
+   3         16 combine.cu                        84  long_scoreboard: 15, wait: 1
+   4         11 combine.cu                       159  short_scoreboard: 7, wait: 2, selected: 2
+   5          9 combine.cu                       131  wait: 4, selected: 2, short_scoreboard: 1, math_pipe_throttle: 1, not_selected: 1
+   6          7 combine.cu                        25  selected: 3, short_scoreboard: 2, wait: 1, not_selected: 1
+   7          6 math_functions.hpp              1133  short_scoreboard: 6
+   8          6 combine.cu                       141  wait: 3, selected: 2, dispatch_stall: 1
+   9          5 combine.cu                        31  short_scoreboard: 5
+  10          5 combine.cu                        68  short_scoreboard: 3, wait: 1, selected: 1
+  11          5 bfloat16.h                       120  wait: 3, mio_throttle: 1, selected: 1
+  12          4 combine.cu                        36  short_scoreboard: 4
+  13          4 combine.cu                        96  short_scoreboard: 3, wait: 1
+  14          3 pointer_base.hpp                 151  wait: 1, dispatch_stall: 1, selected: 1
+  15          3 combine.cu                        28  wait: 3
+  16          3 combine.cu                       154  wait: 3
+  17          3 combine.cu                       117  mio_throttle: 2, no_instructions: 1
+  18          2 combine.cu                        51  short_scoreboard: 2
+  19          2 combine.cu                       102  wait: 1, branch_resolving: 1
+  20          2 combine.cu                       162  wait: 1, drain: 1
+  21          2 combine.cu                       100  selected: 1, branch_resolving: 1
+  22          1 combine.cu                        87  short_scoreboard: 1
+  23          1 combine.cu                        78  wait: 1
+  24          1 combine.cu                        98  wait: 1
+  25          1 combine.cu                       148  wait: 1
+  26          1 combine.cu                        64  dispatch_stall: 1
+  27          1 combine.cu                       132  no_instructions: 1
+  28          1 combine.cu                        26  selected: 1
+  29          1 combine.cu                        77  selected: 1
+
+
+===== Per-stall-type top lines =====
+
+--- long_scoreboard ---
+       239  combine.cu:136
+        17  combine.cu:38
+        15  combine.cu:84
+
+--- short_scoreboard ---
+         7  combine.cu:159
+         6  math_functions.hpp:1133
+         5  combine.cu:31
+         4  combine.cu:20
+         4  combine.cu:36
+         3  combine.cu:68
+         3  combine.cu:96
+         2  combine.cu:25
+         2  combine.cu:51
+         1  combine.cu:87
+
+--- wait ---
+         4  combine.cu:131
+         3  combine.cu:141
+         3  combine.cu:28
+         3  bfloat16.h:120
+         3  combine.cu:154
+         2  combine.cu:159
+         1  combine.cu:84
+         1  combine.cu:20
+         1  combine.cu:25
+         1  combine.cu:68
+
+--- math_pipe_throttle ---
+         1  combine.cu:131
+
+--- mio_throttle ---
+         2  combine.cu:117
+         1  bfloat16.h:120
+
+--- not_selected ---
+         1  combine.cu:25
+         1  combine.cu:131
+
+--- dispatch_stall ---
+         1  pointer_base.hpp:151
+         1  combine.cu:141
+         1  combine.cu:64
+
+--- drain ---
+         1  combine.cu:162
+
+--- no_instructions ---
+        19  combine.cu:20
+         1  combine.cu:117
+         1  combine.cu:132
+
+--- selected ---
+         3  combine.cu:25
+         2  combine.cu:131
+         2  combine.cu:159
+         2  combine.cu:141
+         1  combine.cu:136
+         1  combine.cu:20
+         1  combine.cu:68
+         1  pointer_base.hpp:151
+         1  bfloat16.h:120
+         1  combine.cu:26
+
+--- branch_resolving ---
+         1  combine.cu:102
+         1  combine.cu:100

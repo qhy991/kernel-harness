@@ -1,6 +1,26 @@
 {
-  "generated_from_entries": 13,
+  "generated_from_entries": 14,
   "mistakes": [
+    {
+      "class": "other::m16-combine-max-splits-32-specialization",
+      "bottleneck": "other",
+      "technique": "m16-combine-max-splits-32-specialization",
+      "count": 2,
+      "distinct_entries": 2,
+      "ops": [
+        "DSA FlashMLA KV Decode Attention"
+      ],
+      "outcomes": [
+        "slower"
+      ],
+      "whys": [
+        "Only the first eager M16 session exceeded the 3 percent threshold at 1.036845; the next two reached 1.016081 and 1.020847, all real-CUDA-Graph sessions missed the gate at M16 (0.998068, 0.987407, 0.983109) and M32 (0.993963, 0.994055, 0.999149), and the one candidate Nsight Systems trace reduced combine static shared memory from 0.005 MB to 0.001 MB but changed the M16 chain span only from 27040 ns to 26720 ns, which did not survive repeated graph measurement.",
+        "Candidate eager session speedups were 1.024761/1.014102/1.016634 at M16 and 1.004522/1.021972/0.998688 at M32, while all graph sessions regressed at 0.989357/0.990007/0.989124 and 0.992105/0.985662/0.991270; the 1.36 percent single-trace chain delta did not survive paired graph measurement."
+      ],
+      "suggested_owner": "doc|reviewer",
+      "promoted": false,
+      "recurring": true
+    },
     {
       "class": "launch-overhead::integration-empty-expert-diagnosis",
       "bottleneck": "launch-overhead",
@@ -119,19 +139,19 @@
       "recurring": false
     },
     {
-      "class": "other::m16-combine-max-splits-32-specialization",
+      "class": "other::flexible-scheduler-pinned-source-rebuild-control",
       "bottleneck": "other",
-      "technique": "m16-combine-max-splits-32-specialization",
+      "technique": "flexible-scheduler-pinned-source-rebuild-control",
       "count": 1,
       "distinct_entries": 1,
       "ops": [
         "DSA FlashMLA KV Decode Attention"
       ],
       "outcomes": [
-        "slower"
+        "abandoned"
       ],
       "whys": [
-        "Only the first eager M16 session exceeded the 3 percent threshold at 1.036845; the next two reached 1.016081 and 1.020847, all real-CUDA-Graph sessions missed the gate at M16 (0.998068, 0.987407, 0.983109) and M32 (0.993963, 0.994055, 0.999149), and the one candidate Nsight Systems trace reduced combine static shared memory from 0.005 MB to 0.001 MB but changed the M16 chain span only from 27040 ns to 26720 ns, which did not survive repeated graph measurement."
+        "All 12 rebuild-control sessions missed the 3 percent threshold; eager M16/M32 median-session speedups were 1.013117/1.007534 and graph M16/M32 were 0.991351/0.989923, so the overlay establishes noise and build provenance but is not an optimization."
       ],
       "suggested_owner": "doc|reviewer",
       "promoted": false,

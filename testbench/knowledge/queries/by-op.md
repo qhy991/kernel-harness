@@ -8,6 +8,7 @@
 
 ## DSA FlashMLA KV Decode Attention
 
+- `glm52--dsa_flashmla_kv_decode--b200--20260723b` [no-win] DSA FlashMLA KV Decode Attention/decode — Keep an entire alternating reference/candidate campaign and its profiler collection on one dynamically allocated physical GPU, then gate short PDL-overlapped paths on real CUDA Graph replay. Reducing compile-time combine state is not useful when it leaves sparse-gather bytes, a 128-block tail, and long-scoreboard pressure unchanged.
 - `glm52--dsa_flashmla_kv_decode--b200--20260722a` [no-win] DSA FlashMLA KV Decode Attention/decode — For a PDL-overlapped split-KV plus combine path with no measured launch gap, a compile-time combine-resource reduction must be judged on the full captured chain, not one kernel or one favorable eager session. At these fixed decode buckets the M16 max-splits specialization was not repeatably faster, so the safe transferable policy is to fail closed to stock until repeated CUDA-Graph and containing-region measurements clear the production threshold.
 
 ## Routed Expert Down

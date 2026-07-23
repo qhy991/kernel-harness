@@ -1,0 +1,50 @@
+{
+  "combine": {
+    "block": [
+      256,
+      1,
+      1
+    ],
+    "duration_ns": 12480,
+    "dynamic_shared_mb": 0.0,
+    "grid": [
+      16,
+      1,
+      8
+    ],
+    "name": "void smxx::decode::flash_fwd_mla_combine_kernel<cutlass::bfloat16_t, (int)512, (int)8, (int)160, (int)256>(CombineParams)",
+    "registers_per_thread": 48,
+    "start_ns": 8066962406,
+    "static_shared_mb": 0.005,
+    "stream": 7
+  },
+  "combine_launch_count": 4,
+  "combine_start_after_main_start_ns": 13408,
+  "combined_chain_span_ns": 25888,
+  "main": {
+    "block": [
+      384,
+      1,
+      1
+    ],
+    "duration_ns": 17504,
+    "dynamic_shared_mb": 0.232,
+    "grid": [
+      1,
+      148,
+      1
+    ],
+    "name": "void sm100::decode::head64::flash_fwd_splitkv_mla_fp8_sparse_kernel<sm100::decode::head64::KernelTemplate<(ModelType)0>, sm100::decode::head64::KernelTemplate<(ModelType)0>::TmaParams<cute::tuple<int, int, int, int>, cute::TiledCopy<cute::Copy_Atom<cute::Copy_Traits<cute::SM90_TMA_LOAD, cute::C<(int)65536>, cute::AuxTmaParams<cute::tuple<cute::ScaledBasis<cute::C<(int)1>, (int)1>, cute::ScaledBasis<cute::C<(int)1>, (int)0>, cute::ScaledBasis<cute::C<(int)1>, (int)2>, cute::ScaledBasis<cute::C<(int)1>, (int)3>>, const cute::Layout<cute::tuple<cute::C<(int)64>, cute::C<(int)64>, cute::C<(int)1>, cute::C<(int)1>>, cute::tuple<cute::ScaledBasis<cute::C<(int)1>, (int)1>, cute::ScaledBasis<cute::C<(int)1>, (int)0>, cute::ScaledBasis<cute::C<(int)1>, (int)2>, cute::ScaledBasis<cute::C<(int)1>, (int)3>>> &, const cute::Swizzle<(int)3, (int)4, (int)3> &>>, cutlass::bfloat16_t>, cute::Layout<cute::tuple<cute::C<(int)1>, cute::tuple<cute::tuple<cute::tuple<cute::C<(int)64>, cute::C<(int)64>>, cute::C<(int)8>>>>, cute::tuple<cute::C<(int)0>, cute::tuple<cute::tuple<cute::tuple<cute::C<(int)64>, cute::C<(int)1>>, cute::C<(int)4096>>>>>, cute::tuple<cute::C<(int)64>, cute::C<(int)512>>>, cute::tuple<int, int, int, int>, cute::TiledCopy<cute::Copy_Atom<cute::Copy_Traits<cute::SM90_TMA_STORE, cute::C<(int)65536>, cute::AuxTmaParams<cute::tuple<cute::ScaledBasis<cute::C<(int)1>, (int)1>, cute::ScaledBasis<cute::C<(int)1>, (int)0>, cute::ScaledBasis<cute::C<(int)1>, (int)2>, cute::ScaledBasis<cute::C<(int)1>, (int)3>>, const cute::Layout<cute::tuple<cute::C<(int)64>, cute::C<(int)64>, cute::C<(int)1>, cute::C<(int)1>>, cute::tuple<cute::ScaledBasis<cute::C<(int)1>, (int)1>, cute::ScaledBasis<cute::C<(int)1>, (int)0>, cute::ScaledBasis<cute::C<(int)1>, (int)2>, cute::ScaledBasis<cute::C<(int)1>, (int)3>>> &, const cute::Swizzle<(int)3, (int)4, (int)3> &>>, cutlass::bfloat16_t>, cute::Layout<cute::tuple<cute::C<(int)1>, cute::tuple<cute::tuple<cute::tuple<cute::C<(int)64>, cute::C<(int)64>>, cute::C<(int)1>>>>, cute::tuple<cute::C<(int)0>, cute::tuple<cute::tuple<cute::tuple<cute::C<(int)64>, cute::C<(int)1>>, cute::C<(int)0>>>>>, cute::tuple<cute::C<(int)64>, cute::C<(int)64>>>>>(SparseAttnDecodeParams, T2)",
+    "registers_per_thread": 168,
+    "start_ns": 8066948998,
+    "static_shared_mb": 0.0,
+    "stream": 7
+  },
+  "main_combine_overlap_ns": 4096,
+  "main_launch_count": 4,
+  "main_to_combine_gap_ns": 0,
+  "same_stream": true,
+  "selected_pair": "last main launch and its first following combine launch",
+  "source_csv": "/home/qinhaiyan/glm52-goal-runs/22-dsa_flashmla_kv_production/kernel-harness/profile/dsa-flashmla-kv-stock-b200-20260722/campaigns/flex-20260723T160729Z/analysis/nsys_stock_m16_cuda_gpu_trace.csv",
+  "tag": "stock_m16"
+}
