@@ -31,7 +31,9 @@ from pathlib import Path
 
 _HERE = Path(__file__).resolve().parent
 _REPO = _HERE.parents[1]
-_TASKS = _REPO / "testbench" / "tasks" / "glm52"
+# Post platform-split: the AMD task tree is glm52_amd (glm52_ops_amd inputs). The old
+# pre-split `glm52` tree still exists but carries CUDA-schema seeds.
+_TASKS = _REPO / "testbench" / "tasks" / "glm52_amd"
 _TARGETS = _HERE / "amd_glm5_targets.csv"
 
 _OP_TO_TASK = {  # op -> (task_dir_name, op, phase)
@@ -64,14 +66,19 @@ def _load_targets(op: str, phase: str) -> dict[int, dict]:
 
 def _run_gate(task_dir: Path, candidate: str, repeat: int, iters: int, device: str) -> dict:
     """Run evaluate_task.py and parse its RESULT_JSON block."""
-    cmd = [str(_REPO / ".venv" / "bin" / "python"),
+    # The venv on this node lives on tmpfs and is rebuilt per session; honor KH_PYTHON
+    # (or fall back to the interpreter running this flow) instead of a frozen .venv path.
+    py = os.environ.get("KH_PYTHON") or sys.executable
+    cmd = [py,
            str(_REPO / "testbench" / "harness" / "evaluate_task.py"), str(task_dir),
            "--candidate", candidate, "--repeat", str(repeat),
            "--iterations", str(iters), "--device", device, "--no-persist"]
     env = dict(os.environ)
+    # AMD/MI300X production-baseline bundle (aiter): correctness is gated against a math
+    # oracle, latency against aiter's gfx942 kernel (Triton fallback when CK/ASM absent).
     env.setdefault("KERNEL_HARNESS_PLATFORM", "rocm")
-    env.setdefault("KERNEL_HARNESS_PROFILE", "rocm-mi300x")
-    env.setdefault("KERNEL_HARNESS_PROVIDER", "torch-triton-rocm")
+    env.setdefault("KERNEL_HARNESS_PROFILE", "amd-mi300x")
+    env.setdefault("KERNEL_HARNESS_PROVIDER", "aiter-torch-reference")
     env.setdefault("KERNEL_HARNESS_TIMER", "event")
     p = subprocess.run(cmd, capture_output=True, text=True, env=env)
     out = p.stdout

@@ -648,6 +648,31 @@ def reference(op: str, phase: str, inputs: dict):
     return OPERATOR_PROVIDER.reference(op, phase, fam, inputs)
 
 
+def correctness_reference(op: str, phase: str, inputs: dict):
+    """The correctness gate's oracle — a deterministic math reference, decoupled from
+    the production latency baseline returned by reference().
+
+    For gemm this is the dequant-f32 matmul the diff_tol/abs_tol are calibrated for;
+    using the production fp8 kernel as the oracle (as reference() does for the latency
+    baseline) spuriously FAILs correct candidates wherever that kernel's gfx942 dispatch
+    diverges (M>=4096 bpreshuffle_asm without preshuffled weights; CK/ASM not built;
+    hipBLASLt rejecting blockwise scales). Other families' reference() is already a torch
+    math oracle, so the provider delegates them back to reference()."""
+    fam = family(op)
+    if fam == "comm":
+        return _ref_comm(op, inputs)
+    if fam == "deepep":
+        return _ref_deepep(op, inputs)
+    if not OPERATOR_PROVIDER.supports(op, phase):
+        raise NotImplementedError(
+            f"provider {OPERATOR_PROVIDER.id!r} does not support {op}/{phase}"
+        )
+    fn = getattr(OPERATOR_PROVIDER, "correctness_reference", None)
+    if fn is not None:
+        return fn(op, phase, fam, inputs)
+    return OPERATOR_PROVIDER.reference(op, phase, fam, inputs)
+
+
 def poison(inputs: dict) -> bool:
     """Destroy the reference's answer in the shared output buffer.
 

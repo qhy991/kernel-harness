@@ -182,7 +182,7 @@ def dsa_factory():
 # ==================== MI300X 12h-campaign winner: index_k_prefill ====================
 # variant=fp8_dot  geomean_reward=0.28792
 # per-shape: {"1024": {"lat_us": 283.82, "reward": 0.28771, "pct_roofline": 28.77, "bound": "memory", "speedup_vs_ref": 2.933, "reward_vs_ref": 2.933}, "2048": {"lat_us": 283.98, "reward": 0.28755, "pct_roofline": 28.76, "bound": "memory", "speedup_vs_ref": 2.926, "reward_vs_ref": 2.926}, "4096": {"lat_us": 283.06, "reward": 0.28849, "pct_roofline": 28.85, "bound": "memory", "speedup_vs_ref": 2.947, "reward_vs_ref": 2.947}}
-_CFG = {"BM": 256, "BN": 128, "GROUP_M": 8, "num_warps": 8, "num_stages": 1, "waves_per_eu": 2, "matrix_instr_nonkdim": 32, "kpack": 2}
+_CFG = {"BM": 256, "BN": 128, "GROUP_M": 1, "num_warps": 4, "num_stages": 2, "waves_per_eu": 1, "matrix_instr_nonkdim": 16, "kpack": 2}  # re-optimized 0723: 322.9->297.9us (108->117% of target)
 _run = gemm_factory(True,1)(_CFG)
 def run(inputs):
     return _run(inputs)
