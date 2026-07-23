@@ -19,6 +19,6 @@ from _amd_kernels import dsa_factory
 
 TARGET = {"op": "dsa_attn", "phase": "decode", "BS": 32, "S": 65536}
 CFG = {"NS": 8, "BH": 64, "BK": 16, "BH2": 16, "num_warps": 4, "num_stages": 1, "waves_per_eu": 1}
-META = {"lat_us": 128.2, "aiter_us": 432.8, "speedup_vs_aiter": 3.38, "speedup_vs_ref": 2.974, "pct_roofline": 11.7, "bound": "memory", "correct": true, "variant": "flash_split", "aiter_baseline": "pa_decode_sparse"}
+META = {"lat_us": 128.2, "aiter_us": 432.8, "speedup_vs_aiter": 3.38, "speedup_vs_ref": 2.974, "pct_roofline": 11.7, "bound": "memory", "correct": True, "variant": "flash_split", "aiter_baseline": "pa_decode_sparse"}
 
 run = dsa_factory()(CFG)

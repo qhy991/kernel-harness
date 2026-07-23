@@ -19,6 +19,6 @@ from _amd_kernels import gemm_factory
 
 TARGET = {"op": "o_proj", "phase": "prefill", "M": 2048, "S": 65536}
 CFG = {"BM": 128, "BN": 128, "GROUP_M": 1, "num_warps": 4, "num_stages": 2, "waves_per_eu": 2, "matrix_instr_nonkdim": 16, "kpack": 2}
-META = {"lat_us": 903.6, "aiter_us": 1913.4, "speedup_vs_aiter": 2.12, "speedup_vs_ref": 3.5, "pct_roofline": 17.26, "bound": "compute", "correct": true, "variant": "fp8_dot", "aiter_baseline": "gemm_a8w8_blockscale"}
+META = {"lat_us": 903.6, "aiter_us": 1913.4, "speedup_vs_aiter": 2.12, "speedup_vs_ref": 3.5, "pct_roofline": 17.26, "bound": "compute", "correct": True, "variant": "fp8_dot", "aiter_baseline": "gemm_a8w8_blockscale"}
 
 run = gemm_factory(True, 1)(CFG)
