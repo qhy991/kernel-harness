@@ -1,0 +1,18 @@
+task,label,timestamp_utc,fresh_tokens_since_loop_start,effective_tokens_since_loop_start,fresh_tokens_millions,perf_ratio,geomean_mfu,geomean_bw_util,source,notes
+moe_total_decode,loop start / reference,2026-07-22T05:18:49Z,0,0,0.0,1.0,,,loop baseline,reference baseline
+moe_total_decode,round-0 gate snapshot,2026-07-22T07:00:20Z,7048551,20252662,7.048551,1.057373,,0.39607405507207405,.humanize/rlcr/2026-07-22_13-18-49/round-0-summary.md,5 wins + one neutral/reference-fallback shape in the round summary
+moe_total_decode,accepted result.json,2026-07-22T08:37:26Z,14964767,38512590,14.964767,1.0655,0.030953,0.340746,runs/glm52/moe_total_decode/20260722T083714Z-126708/result.json,accepted result; wins=2; regressions=0
+moe_total_decode,loop complete,2026-07-22T15:04:13Z,20146683,59543425,20.146683,1.0655,0.030953,0.340746,Claude transcript finalization point,no further perf change after accepted result
+moe_total_prefill,loop start / reference,2026-07-22T05:18:49Z,0,0,0.0,1.0,,,loop baseline,reference baseline
+moe_total_prefill,round-1 gate snapshot,2026-07-22T07:18:26Z,8115698,22801674,8.115698,1.081951,0.26477035390974785,,.humanize/rlcr/2026-07-22_13-18-49/round-1-summary.md,3/3 passed in the round summary
+moe_total_prefill,accepted result.json,2026-07-22T08:37:58Z,15380880,38991161,15.38088,1.0809,0.266527,0.061196,runs/glm52/moe_total_prefill/20260722T083730Z-959e52/result.json,accepted result; wins=3; regressions=0
+moe_total_prefill,loop complete,2026-07-22T15:04:13Z,20146683,59543425,20.146683,1.0809,0.266527,0.061196,Claude transcript finalization point,no further perf change after accepted result
+dsa_prefill_attn,loop start / reference,2026-07-22T05:18:49Z,0,0,0.0,1.0,,,loop baseline,reference baseline
+dsa_prefill_attn,round-2 gate snapshot,2026-07-22T07:49:08Z,10611069,29193090,10.611069,1.532656,0.03286923638776764,,.humanize/rlcr/2026-07-22_13-18-49/round-2-summary.md,3/3 passed in the round summary; later result.json is the authority
+dsa_prefill_attn,accepted result.json,2026-07-22T08:40:37Z,15512544,39154054,15.512544,1.3044,0.03401,0.005563,runs/glm52/dsa_prefill_attn/20260722T083802Z-1b233d/result.json,accepted result; wins=3; regressions=0
+dsa_prefill_attn,loop complete,2026-07-22T15:04:13Z,20146683,59543425,20.146683,1.3044,0.03401,0.005563,Claude transcript finalization point,no further perf change after accepted result
+index_score_prefill,loop start / reference,2026-07-22T05:18:49Z,0,0,0.0,1.0,,,loop baseline,reference baseline
+index_score_prefill,search probe,2026-07-22T08:00:15Z,11731711,31980378,11.731711,2.66736,,,Claude transcript search-probe note,pre-candidate probe that selected BLOCK_KV=256
+index_score_prefill,round-2 addendum gate snapshot,2026-07-22T08:25:43Z,13456729,36200344,13.456729,2.83588,0.12249581277927003,,.humanize/rlcr/2026-07-22_13-18-49/round-2-summary.md,3/3 passed in the round summary
+index_score_prefill,accepted result.json,2026-07-22T08:42:00Z,15512544,39154054,15.512544,2.8371,0.121637,0.030325,runs/glm52/index_score_prefill/20260722T084041Z-7a3d33/result.json,accepted result; wins=3; regressions=0
+index_score_prefill,loop complete,2026-07-22T15:04:13Z,20146683,59543425,20.146683,2.8371,0.121637,0.030325,Claude transcript finalization point,no further perf change after accepted result
