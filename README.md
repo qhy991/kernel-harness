@@ -3,11 +3,12 @@
 Agent-ready **SGLang kernel-optimization tasks for GLM-5.2**, on both NVIDIA B200
 and AMD MI300X.
 
-**26 tasks per platform** = 13 operators × 2 phases (prefill / decode). Two
-independent task trees, one per hardware — pick the one that matches your GPU:
+**34 tasks per platform** = 13 single-GPU operators + 4 multi-GPU comm/EP
+operators, each with prefill + decode phase. Two independent task trees, one
+per hardware — pick the one that matches your GPU:
 
-- **CUDA / B200**: `testbench/tasks/glm52_cuda/` (`float8_e4m3fn`, deep_gemm + sgl_kernel)
-- **AMD / MI300X**: `testbench/tasks/glm52_amd/` (`float8_e4m3fnuz`, aiter)
+- **CUDA / B200**: `testbench/tasks/glm52_cuda/` (`float8_e4m3fn`, deep_gemm + sgl_kernel; NVLink5 comm)
+- **AMD / MI300X**: `testbench/tasks/glm52_amd/` (`float8_e4m3fnuz`, aiter; xGMI-3 comm)
 
 Every operator is defined exactly once per platform in
 `testbench/harness/glm52_ops_cuda.py` or `testbench/harness/glm52_ops_amd.py`.

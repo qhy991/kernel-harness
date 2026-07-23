@@ -171,6 +171,63 @@ Hardware peaks, reference kernels, and timing protocols live under
 Each `glm52_{cuda,amd}` task's `run.sh` exports the KERNEL_HARNESS_* env vars that
 pin its bundle, so agents don't need to know these keys. See
 [`testbench/docs/BACKENDS.md`](testbench/docs/BACKENDS.md).
+
+## Communication tasks (TP AllReduce / AllGather / DeepEP)
+
+Every platform tree also carries 8 communication tasks that require a **multi-GPU
+node** — they can't run on a single card:
+
+```
+glm52_{cuda,amd}/
+  all_reduce_prefill/    all_reduce_decode/         # TP residual AR
+  all_gather_prefill/    all_gather_decode/         # TP token-axis AG
+  deepep_dispatch_prefill/  deepep_dispatch_decode/ # EP MoE dispatch
+  deepep_combine_prefill/   deepep_combine_decode/  # EP MoE combine
+```
+
+The `run.sh` for these tasks dispatches through `torchrun --standalone
+--nproc-per-node=$WORLD_SIZE` under the hood; agents still just call
+`./run.sh` and get the same 0/1/2/3 exit contract. `WORLD_SIZE` defaults to
+8; set `KERNEL_HARNESS_COMM_WORLD_SIZE=N` to run on fewer ranks:
+
+```bash
+T=testbench/tasks/glm52_amd/all_reduce_prefill
+
+$T/run.sh --describe                                     # single-process; no dist
+$T/run.sh                                                # full sweep, 8 GPUs
+$T/run.sh --M 4096                                       # one shape, 8 GPUs
+KERNEL_HARNESS_COMM_WORLD_SIZE=2 $T/run.sh --repeat 1    # 2-GPU smoke
+$T/run.sh --candidate ~/my_aiter_ar.py                   # a custom AR kernel
+```
+
+The reference is `torch.distributed.all_reduce` / `all_gather` (NCCL on CUDA,
+RCCL on ROCm). This matches what SGLang gets when
+`SGLANG_USE_AITER_AR=false` on gfx942 or `SGLANG_USE_CUSTOM_AR=false` on B200.
+When those env vars are on (the production defaults), SGLang dispatches to
+`aiter.dist.device_communicators.custom_all_reduce.AiterCustomAllreduce`
+(2-stage `cross_device_reduce_2stage`) or NVIDIA's custom AR — those are the
+production-target candidates to write here.
+
+Reward for comm tasks is **interconnect bandwidth utilisation**: bytes moved
+per rank divided by the profile's `interconnect_bytes_per_s_per_gpu` peak
+(xGMI-3 896 GB/s on MI300X, NVLink5 1.8 TB/s on B200). It replaces the HBM
+denominator only for `comm.*` compute_dtype ops; every other reward stays HBM.
+
+Correctness for comm tasks uses `torch.allclose` (atol=5e-2, rtol=5e-2) plus a
+DeepGEMM-style `calc_diff` check reported per rank and reduced with
+`dist.ReduceOp.MIN` so any rank that disagrees fails the shape. Per-rank input
+tensors differ by seed, so returning `inputs["x"]` unchanged (a broken
+AR that reduces nothing) fails the gate.
+
+### DeepEP note
+
+DeepEP is not installed by default. The four `deepep_*` task dirs are pre-
+generated; the default `candidate.py` falls back to `glm52_ops.reference` (a
+torch.distributed emulation of dispatch/combine). Once `deep_ep` is available,
+replace the body with a real `deep_ep.Buffer(...).dispatch/combine(...)` call.
+SGLang gfx942 does not use DeepEP today (fused_moe absorbs the transport), so
+these tasks are ready-slots for when EP>1 configurations land.
+
 ## Roofline-reward bench (folder of optimized ops → one CSV)
 
 [`rewardbench/`](rewardbench/README.md) is a standalone tool that scores a **folder of

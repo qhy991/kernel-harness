@@ -2,11 +2,11 @@
 
 面向 **GLM-5.2** 的 SGLang 算子优化任务集，同时支持 NVIDIA B200 与 AMD MI300X。
 
-每个平台 **26 个 task** = 13 个算子 × 2 个 phase（prefill / decode）。两棵独立
-task 树按硬件分开 —— 选跟你 GPU 匹配的那棵：
+每个平台 **34 个 task** = 13 个单卡算子 + 4 个多卡通信/EP 算子，各含 prefill + decode。
+两棵独立 task 树按硬件分开 —— 选跟你 GPU 匹配的那棵：
 
-- **CUDA / B200**: `testbench/tasks/glm52_cuda/`（`float8_e4m3fn`、deep_gemm + sgl_kernel）
-- **AMD / MI300X**: `testbench/tasks/glm52_amd/`（`float8_e4m3fnuz`、aiter）
+- **CUDA / B200**: `testbench/tasks/glm52_cuda/`（`float8_e4m3fn`、deep_gemm + sgl_kernel、NVLink5 通信）
+- **AMD / MI300X**: `testbench/tasks/glm52_amd/`（`float8_e4m3fnuz`、aiter、xGMI-3 通信）
 
 算子只在对应平台的 `testbench/harness/glm52_ops_cuda.py` 或 `glm52_ops_amd.py`
 里定义一次。每个 task 目录只声明"我是哪个问题"，一条命令同时判定正确性、延迟、
