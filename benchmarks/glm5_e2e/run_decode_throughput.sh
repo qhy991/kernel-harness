@@ -112,7 +112,7 @@ exec "$PYTHON" -m sglang.bench_one_batch \
   --max-total-tokens "$KV_TOKENS" \
   --dsa-topk-backend torch \
   --dsa-prefill-backend aiter \
-  --dsa-decode-backend fa3 \
+  --dsa-decode-backend aiter \
   --moe-runner-backend triton \
   --cuda-graph-max-bs "$MAX_BS" \
   --disable-cuda-graph \
