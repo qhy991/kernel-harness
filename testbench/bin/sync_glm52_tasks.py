@@ -109,6 +109,17 @@ TASKS: list[tuple[str, str, str]] = [
     ("dsa_attn_decode",        "dsa_attn",       "decode"),
     ("index_score_prefill",    "index_score",    "prefill"),
     ("index_score_decode",     "index_score",    "decode"),
+    # Communication family — driven by torchrun / evaluate_comm_task.py,
+    # every task requires N GPUs (WORLD_SIZE defaults to 8; override
+    # KERNEL_HARNESS_COMM_WORLD_SIZE to use fewer for smoke tests).
+    ("all_reduce_prefill",     "all_reduce",     "prefill"),
+    ("all_reduce_decode",      "all_reduce",     "decode"),
+    ("all_gather_prefill",     "all_gather",     "prefill"),
+    ("all_gather_decode",      "all_gather",     "decode"),
+    ("deepep_dispatch_prefill", "deepep_dispatch", "prefill"),
+    ("deepep_dispatch_decode",  "deepep_dispatch", "decode"),
+    ("deepep_combine_prefill",  "deepep_combine",  "prefill"),
+    ("deepep_combine_decode",   "deepep_combine",  "decode"),
 ]
 
 # Files from the superseded stacks. Each was a second definition of the same
@@ -176,9 +187,59 @@ _RUN_SH_PARTS = {
 }
 
 
-def _run_sh(platform: str, m: int) -> str:
+# Multi-process run.sh for comm / deepep tasks — dispatches through torchrun
+# so every rank shares a process group. WORLD_SIZE defaults to 8; override
+# KERNEL_HARNESS_COMM_WORLD_SIZE to use fewer (e.g. 2 for a smoke test on a
+# node where some GPUs are unavailable).
+COMM_RUN_SH_TEMPLATE = '''#!/usr/bin/env bash
+# Multi-process entry point for this communication task.
+# Every rank runs its own Python; the process group is the collective.
+#
+#   ./run.sh --describe                   # what is this problem? (single process; no dist)
+#   ./run.sh                              # full sweep (WORLD_SIZE default 8)
+#   ./run.sh --M {m}                      # one shape
+#   ./run.sh --repeat 1                   # fast probe
+#   KERNEL_HARNESS_COMM_WORLD_SIZE=4 ./run.sh   # 4-GPU smoke on a partial node
+#   ./run.sh --candidate ~/my_kernel.py   # any .py defining run(inputs)
+#
+# Exit: 0 correct+fast · 1 correct+not-faster · 2 incorrect · 3 infra
+set -euo pipefail
+HERE="$(cd "$(dirname "${{BASH_SOURCE[0]}}")" && pwd)"
+TESTBENCH="$(cd "$HERE/../../.." && pwd)"
+REPO="$(cd "$TESTBENCH/.." && pwd)"
+{python_selector}
+{env_exports}
+WORLD_SIZE="${{KERNEL_HARNESS_COMM_WORLD_SIZE:-8}}"
+
+# --describe short-circuits the multi-process launch — the problem statement
+# is single-process readable.
+if [[ "${{1:-}}" == "--describe" ]]; then
+  exec "$PYTHON" "$TESTBENCH/harness/evaluate_comm_task.py" "$HERE" "$@"
+fi
+
+# All ranks return 0 to torchrun (avoids ChildFailedError banner); rank 0
+# writes runs/comm/<task>/last_exit_code with the real 0/1/2/3 verdict.
+TASK_NAME="$(basename "$HERE")"
+LAST_EXIT="$REPO/runs/comm/$TASK_NAME/last_exit_code"
+rm -f "$LAST_EXIT"
+
+"$PYTHON" -m torch.distributed.run \\
+  --standalone --nproc-per-node="$WORLD_SIZE" \\
+  "$TESTBENCH/harness/evaluate_comm_task.py" "$HERE" "$@"
+
+# Reconstitute the verdict from the file rank 0 wrote.
+if [[ -f "$LAST_EXIT" ]]; then
+  exit "$(cat "$LAST_EXIT")"
+fi
+echo "[run.sh] rank 0 did not write $LAST_EXIT — treating as infra error" >&2
+exit 3
+'''
+
+
+def _run_sh(platform: str, m: int, is_comm: bool = False) -> str:
     py, env = _RUN_SH_PARTS[platform]
-    return RUN_SH_TEMPLATE.format(m=m, python_selector=py, env_exports=env)
+    template = COMM_RUN_SH_TEMPLATE if is_comm else RUN_SH_TEMPLATE
+    return template.format(m=m, python_selector=py, env_exports=env)
 
 # Per-platform, per-family default candidate: the real backend call spelled out,
 # so the agent starts from the baseline it has to beat rather than from an
@@ -262,6 +323,49 @@ def run(inputs: dict):
         inputs["block_tables"], inputs["schedule_metadata"], inputs["max_seq_len"],
         clean_logits=False,
     )
+''',
+    # ── Communication ops (multi-process; run via torchrun) ─────────────
+    "comm_all_reduce": '''import torch
+import torch.distributed as dist
+
+
+def run(inputs: dict):
+    """B200 TP AllReduce reference — uses NCCL through torch.distributed.
+    Replace with sglang.srt.distributed.device_communicators.custom_all_reduce
+    (CustomAllreduce) or a one-shot NVLINK kernel to beat NCCL SUM."""
+    out = inputs["x"].clone()
+    dist.all_reduce(out, op=dist.ReduceOp.SUM)
+    return out
+''',
+    "comm_all_gather": '''import torch
+import torch.distributed as dist
+
+
+def run(inputs: dict):
+    """B200 TP AllGather reference — NCCL all_gather across ranks."""
+    x = inputs["x"]
+    ws = inputs["world_size"]
+    gather = [torch.empty_like(x) for _ in range(ws)]
+    dist.all_gather(gather, x)
+    return torch.cat(gather, dim=0)
+''',
+    # DeepEP dispatch/combine — CUDA production path is nvshmem-based
+    # DeepEP kernels. Starting from an emulation via torch.distributed so
+    # the task runs without deep_ep installed; replace with real DeepEP
+    # dispatch/combine to beat it.
+    "deepep_dispatch": '''# Starting from the reference emulation. Replace with a real DeepEP
+# dispatch (deep_ep.Buffer(...).dispatch(...)) for the win.
+from testbench.harness import glm52_ops
+
+
+def run(inputs: dict):
+    return glm52_ops.reference("deepep_dispatch", "prefill", inputs)
+''',
+    "deepep_combine": '''from testbench.harness import glm52_ops
+
+
+def run(inputs: dict):
+    return glm52_ops.reference("deepep_combine", "prefill", inputs)
 ''',
 }
 
@@ -350,6 +454,49 @@ from testbench.harness import glm52_ops
 def run(inputs: dict):
     return glm52_ops.reference("index_score", "decode", inputs)
 ''',
+    # ── Communication ops (multi-process; torchrun) ───────────────────
+    "comm_all_reduce": '''import torch
+import torch.distributed as dist
+
+
+def run(inputs: dict):
+    """MI300X TP AllReduce reference — RCCL via torch.distributed.
+    Replace with aiter.dist.device_communicators.custom_all_reduce
+    (AiterCustomAllreduce, 2-stage cross_device_reduce) to beat RCCL SUM.
+    That is exactly what sglang production dispatches when
+    SGLANG_USE_AITER_AR=true (the default on gfx942)."""
+    out = inputs["x"].clone()
+    dist.all_reduce(out, op=dist.ReduceOp.SUM)
+    return out
+''',
+    "comm_all_gather": '''import torch
+import torch.distributed as dist
+
+
+def run(inputs: dict):
+    """MI300X TP AllGather reference — RCCL all_gather across ranks."""
+    x = inputs["x"]
+    ws = inputs["world_size"]
+    gather = [torch.empty_like(x) for _ in range(ws)]
+    dist.all_gather(gather, x)
+    return torch.cat(gather, dim=0)
+''',
+    "deepep_dispatch": '''# Starting from the reference emulation. Replace with a real DeepEP
+# (or aiter EP) dispatch call for the win. sglang gfx942 does NOT use
+# DeepEP today (fused_moe absorbs the dispatch), so this task is a
+# reserved slot for when EP>1 deployments land.
+from testbench.harness import glm52_ops
+
+
+def run(inputs: dict):
+    return glm52_ops.reference("deepep_dispatch", "prefill", inputs)
+''',
+    "deepep_combine": '''from testbench.harness import glm52_ops
+
+
+def run(inputs: dict):
+    return glm52_ops.reference("deepep_combine", "prefill", inputs)
+''',
 }
 
 _BODY_BY_PLATFORM = {"cuda": _BODY_CUDA, "amd": _BODY_AMD}
@@ -358,7 +505,16 @@ _BODY_BY_PLATFORM = {"cuda": _BODY_CUDA, "amd": _BODY_AMD}
 def _candidate_src(op: str, phase: str, device, platform: str) -> str:
     s = ops.spec(op, phase)
     fam = s["family"]
-    key = f"score_{phase}" if fam == "score" else fam
+    # Family → template key. Score is phase-split (paged decode vs ksrange prefill);
+    # comm is op-split (all_reduce vs all_gather). Everything else is one key per family.
+    if fam == "score":
+        key = f"score_{phase}"
+    elif fam == "comm":
+        key = f"comm_{op}"           # comm_all_reduce / comm_all_gather
+    elif fam == "deepep":
+        key = op                     # deepep_dispatch / deepep_combine
+    else:
+        key = fam
     tensors = []
     try:
         ins = ops.build_inputs(op, phase, s["sweep"][0], s["S"], device, s["seed"])
@@ -520,7 +676,8 @@ def main() -> int:
             "task.json": _task_json(dirname, op, phase, platform),
             "problem.json": _problem_json(dirname, op, phase, device, tasks_root),
             "workload.jsonl": _workload(dirname, op, phase),
-            "run.sh": _run_sh(platform, ops.spec(op, phase)["sweep"][0]),
+            "run.sh": _run_sh(platform, ops.spec(op, phase)["sweep"][0],
+                              is_comm=ops.spec(op, phase)["family"] in ("comm", "deepep")),
             "README.md": _readme(dirname, op, phase, device),
         }
         cand = d / "candidate.py"

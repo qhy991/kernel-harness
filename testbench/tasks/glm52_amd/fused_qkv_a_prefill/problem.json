@@ -168,7 +168,9 @@
       "hbm_bytes_per_s": 5300000000000.0,
       "peak_flops_fp8": 2614900000000000.0,
       "peak_flops_bf16": 1307400000000000.0,
-      "source": "rewardbench/amd MI300X constants: HBM 5.3 TB/s, FP8 e4m3 2614.9 TFLOP/s, BF16 1307.4 TFLOP/s"
+      "interconnect_bytes_per_s_per_gpu": 896000000000.0,
+      "interconnect_name": "xGMI-3",
+      "source": "rewardbench/amd MI300X constants: HBM 5.3 TB/s, FP8 e4m3 2614.9 TFLOP/s, BF16 1307.4 TFLOP/s; xGMI-3 896 GB/s per GPU (7 links \u00d7 128 GB/s bidir, 8-way OAM)"
     }
   },
   "verdict": {

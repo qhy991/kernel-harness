@@ -151,7 +151,9 @@
       "hbm_bytes_per_s": 8000000000000.0,
       "peak_flops_fp8": 4500000000000000.0,
       "peak_flops_bf16": 2250000000000000.0,
-      "source": "rewardbench (PR2) + testbench/harness/profile.py; opbench/mfu.py's 7.7e12 not used"
+      "interconnect_bytes_per_s_per_gpu": 1800000000000.0,
+      "interconnect_name": "NVLink5",
+      "source": "rewardbench (PR2) + testbench/harness/profile.py; opbench/mfu.py's 7.7e12 not used; NVLink5 1.8 TB/s per GPU (NVIDIA HGX B200 spec)"
     }
   },
   "verdict": {
