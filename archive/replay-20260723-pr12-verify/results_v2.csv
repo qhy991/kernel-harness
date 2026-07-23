@@ -1,0 +1,9 @@
+candidate_source,task,M,phase,correct,calc_diff,cand_us,ref_us,speedup_median,speedup_conservative,reward,ref_reward,verdict,repeat,iterations,note
+huyan_pr12,o_proj_prefill,1024,prefill,PASS,4.90e-09,847.77,1360.77,1.605,0.023,0.0930,,neutral,10,30,"median matches huyan's ~1.55x claim; but sp_cons 0.023x means 70x tail latency"
+huyan_pr12,o_proj_prefill,2048,prefill,PASS,5.02e-09,1454.39,2627.42,1.807,0.608,0.1084,,neutral,10,30,"median matches claim; sp_cons < 1 = worse than baseline at p90"
+huyan_pr12,o_proj_prefill,4096,prefill,PASS,4.78e-09,35240.04,1609.99,0.046,0.019,0.0089,,neutral,10,30,"21x REGRESSION — candidate 35ms vs ref 1.6ms; contradicts claimed 1.55x @ M=4096"
+huyan_pr12,index_k_prefill,1024,prefill,PASS,2.99e-09,1403.52,281.67,0.201,0.009,0.0582,,neutral,10,30,"cand 5x slower than baseline"
+huyan_pr12,index_k_prefill,2048,prefill,PASS,2.99e-09,520.83,323.73,0.622,0.008,0.1568,,neutral,10,30,"cand 1.6x slower"
+huyan_pr12,index_k_prefill,4096,prefill,PASS,2.99e-09,474.03,487.96,1.029,0.963,0.1723,,neutral,10,30,"tie; no real speedup"
+huyan_pr12,dsa_attn_decode,16,decode,PASS,7.34e-07,91.31,26413.27,289.275,0.012,0.0829,,neutral,10,30,"UNTRUSTWORTHY — harness warning 'unstable timing'; ref side hit 26ms outlier (should be ~300us)"
+huyan_pr12,dsa_attn_decode,32,decode,PASS,7.34e-07,167.12,11071.75,66.250,0.117,0.0906,,neutral,10,30,"UNTRUSTWORTHY — same warning; use v1 numbers for dsa_attn instead"
