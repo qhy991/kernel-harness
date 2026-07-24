@@ -7,7 +7,7 @@
   "family": "moe",
   "model": "GLM-5.2",
   "deployment": "B200 DP1/TP1/EP32",
-  "S": 65536,
+  "S": 32768,
   "seed": 0,
   "math": {
     "expression": "masked grouped GEMM over E=8 experts, K=2048 N=6144, top_k=8",

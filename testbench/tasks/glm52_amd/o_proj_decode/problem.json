@@ -7,7 +7,7 @@
   "family": "gemm",
   "model": "GLM-5.2",
   "deployment": "MI300X-DP1-TP1-EP32",
-  "S": 65536,
+  "S": 32768,
   "seed": 0,
   "math": {
     "expression": "out[M,6144] = x_fp8[M,16384] @ w_fp8[6144,16384].T",

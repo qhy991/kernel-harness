@@ -76,7 +76,7 @@ def main() -> int:
     taskset = load_taskset(args.taskset)
     selected = select_tasks(taskset["tasks"], args.phase, args.task)
     defaults = taskset.get("defaults", {})
-    s_value = int(args.S if args.S is not None else defaults.get("S", 65536))
+    s_value = int(args.S if args.S is not None else defaults.get("S", 32768))
 
     device = torch.device(args.device)
     torch.cuda.set_device(device)

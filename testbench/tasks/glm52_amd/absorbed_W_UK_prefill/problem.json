@@ -7,7 +7,7 @@
   "family": "bmm",
   "model": "GLM-5.2",
   "deployment": "MI300X-DP1-TP1-EP32",
-  "S": 65536,
+  "S": 32768,
   "seed": 0,
   "math": {
     "expression": "out[64,M,512] = A[64,M,192] @ B[64,192,512]",

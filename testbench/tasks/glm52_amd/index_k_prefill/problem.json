@@ -7,7 +7,7 @@
   "family": "gemm",
   "model": "GLM-5.2",
   "deployment": "MI300X-DP1-TP1-EP32",
-  "S": 65536,
+  "S": 32768,
   "seed": 0,
   "math": {
     "expression": "out[S,128] = x_fp8[S,6144] @ w_fp8[128,6144].T",
@@ -17,7 +17,7 @@
       "rows": "S"
     },
     "notes": [
-      "rows = S = 65536 (every KV token), not M \u2014 all prefill shapes are the same single GEMM. Intended; PR1 and PR2 agree."
+      "rows = S = 32768 (every KV token), not M \u2014 all prefill shapes are the same single GEMM. Intended; PR1 and PR2 agree."
     ]
   },
   "workload": {
@@ -50,7 +50,7 @@
         {
           "name": "x_fp8",
           "shape": [
-            65536,
+            32768,
             6144
           ],
           "dtype": "float8_e4m3fnuz"
@@ -58,7 +58,7 @@
         {
           "name": "x_scale",
           "shape": [
-            65536,
+            32768,
             48
           ],
           "dtype": "float32"
@@ -81,7 +81,7 @@
         },
         {
           "name": "rows",
-          "value": 65536
+          "value": 32768
         },
         {
           "name": "N",
@@ -90,7 +90,7 @@
         {
           "name": "out",
           "shape": [
-            65536,
+            32768,
             128
           ],
           "dtype": "bfloat16"

@@ -7,7 +7,7 @@
   "family": "moe",
   "model": "GLM-5.2",
   "deployment": "MI300X-DP1-TP1-EP32",
-  "S": 65536,
+  "S": 32768,
   "seed": 0,
   "math": {
     "expression": "masked grouped GEMM over E=8 experts, K=6144 N=2048, top_k=8",

@@ -7,10 +7,10 @@
   "family": "mla",
   "model": "GLM-5.2",
   "deployment": "B200 DP1/TP1/EP32",
-  "S": 65536,
+  "S": 32768,
   "seed": 0,
   "math": {
-    "expression": "sparse MLA: q[M,64,576] attends the top-2048 of kv[65536,1,576] -> out[M,64,512]",
+    "expression": "sparse MLA: q[M,64,576] attends the top-2048 of kv[32768,1,576] -> out[M,64,512]",
     "dims": {
       "heads": 64,
       "d_qk": 576,
@@ -57,7 +57,7 @@
         {
           "name": "kv",
           "shape": [
-            65536,
+            32768,
             1,
             576
           ],

@@ -7,10 +7,10 @@
   "family": "deepep",
   "model": "GLM-5.2",
   "deployment": "MI300X-DP1-TP1-EP32",
-  "S": 65536,
+  "S": 32768,
   "seed": 0,
   "math": {
-    "expression": "indexer logits[M,65536] = sum_h weights[M,h,1] * (q[M*h,128] . k[65536,128]),  h=32",
+    "expression": "indexer logits[M,32768] = sum_h weights[M,h,1] * (q[M*h,128] . k[32768,128]),  h=32",
     "dims": {
       "heads": 32,
       "head_dim": 128
