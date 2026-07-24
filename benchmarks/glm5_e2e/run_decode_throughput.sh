@@ -73,6 +73,22 @@ MAX_BS=$(printf "%s\n" "${BATCH_SIZE[@]}" | sort -n | tail -1)
 BS_NEED=$(( MAX_BS * (INPUT_LEN + OUTPUT_LEN) ))
 [[ "$KV_TOKENS" -lt "$BS_NEED" ]] && KV_TOKENS="$BS_NEED"
 
+# ROOT CAUSE of previous bs=256 crash: sglang's dsa_backend allocates
+# `self.kv_indices = torch.zeros(max_bs * dsa_index_topk, ...)` where
+# `max_bs = model_runner.req_to_token_pool.size` (set by sglang from
+# max_running_requests). At runtime `get_valid_kv_indices(page_table,
+# kv_indptr, self.kv_indices, bs)` writes bs*dsa_index_topk int32s into
+# self.kv_indices. If sglang's inferred max_running_requests < our bench
+# bs, the write overruns the buffer → illegal memory access, process
+# stuck in D-state, GPUs unreleasable until amdgpu times out.
+#
+# Fix: pin max-running-requests to at least the largest bs in the sweep,
+# so req_to_token_pool.size is guaranteed adequate.
+MAX_RUNNING_REQUESTS="${KDA_E2E_MAX_RUNNING_REQUESTS:-$MAX_BS}"
+if [[ "$MAX_RUNNING_REQUESTS" -lt "$MAX_BS" ]]; then
+  MAX_RUNNING_REQUESTS="$MAX_BS"
+fi
+
 python3 - <<PY > "$RUN_DIR/manifest.json"
 import json, os, socket
 bs_str = "${BATCH_SIZE[*]}"
@@ -97,6 +113,7 @@ PY
 echo "═══ GLM-5.2 decode throughput sweep ═══"
 echo "  batch_size = ${BATCH_SIZE[*]},  input_len = $INPUT_LEN,  output_len = $OUTPUT_LEN"
 echo "  TP = $TP,  KV = $KV_TOKENS  (auto-raised to fit batch × in+out)"
+echo "  max_running_requests = $MAX_RUNNING_REQUESTS  (pinned >= max bs to size dsa kv_indices)"
 echo "  overrides = ${OVERRIDES:-(none — vanilla sglang)}"
 echo "  results   = $RESULT_FILE"
 echo "═══════════════════════════════════════"
@@ -110,6 +127,7 @@ exec "$PYTHON" -m sglang.bench_one_batch \
   --trust-remote-code \
   --mem-fraction-static "$MEM_FRAC" \
   --max-total-tokens "$KV_TOKENS" \
+  --max-running-requests "$MAX_RUNNING_REQUESTS" \
   --dsa-topk-backend torch \
   --dsa-prefill-backend aiter \
   --dsa-decode-backend aiter \
