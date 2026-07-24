@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # GLM-5.2 prefill TTFT — thin wrapper around `python -m sglang.bench_one_batch`.
 # Matches llm_flops's prefill scenario:
-#   input_len ∈ {1024, 2048, 4096}, KV cache = 65536, output_len = 1, TP = 8
+#   input_len ∈ {1024, 2048, 4096}, KV cache = 32768, output_len = 1, TP = 8
 #
 # The heavy lifting is `sglang.bench_one_batch` (which natively supports
 # --input-len 1024 2048 4096 as a sweep; each shape gets its own RESULT_JSON
@@ -28,7 +28,7 @@ OVERRIDES=""
 OUT_ROOT="${KDA_E2E_OUT:-/tmp/glm5_e2e}"
 MODEL_PATH="${KDA_E2E_MODEL:-/mnt/public/qinhaiyan/models/GLM-5.2-FP8}"
 TP="${KDA_E2E_TP:-8}"
-KV_TOKENS="${KDA_E2E_KV_TOKENS:-65536}"
+KV_TOKENS="${KDA_E2E_KV_TOKENS:-32768}"
 MEM_FRAC="${KDA_E2E_MEM_FRAC:-0.95}"
 EXTRA_ARGS=()
 

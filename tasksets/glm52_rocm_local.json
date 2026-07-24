@@ -10,7 +10,7 @@
     "timer": "event"
   },
   "defaults": {
-    "S": 65536,
+    "S": 32768,
     "prefill_M": [
       1024,
       2048,
