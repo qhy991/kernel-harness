@@ -2,6 +2,12 @@
 
 # by-bottleneck
 
+## compute
+
+- `glm52--moe_total_prefill--mi300x--20260724a` [win] moe_total/prefill — moe_total_prefill fp8 win on gfx942 is a bit-exact GROUP_SIZE_M L2-swizzle remap driving the reference's own _fused_moe_kernel_sequence: M1024->GM1, M2048->GM4, M4096->GM16(defer). Landing it as the committed candidate and re-gating from committed bytes (sha 738f856f) at unified S/KV=32768 reproduces geo 1.0464 (2 win + 1 neutral, 0 regress, worst_calc_diff 0.0). M4096 is reference-parity because the resolver already selects GM=16, so it is an honest neutral (correct-not-faster), not a regression; status=win holds via shapes_won>=1 with shapes_regressed==0, not via min_speedup_conservative (0.978).
+- `glm52--moe_total_prefill--mi300x--20260723a` [win] moe_total/prefill — After an fp8-MoE reference is rebuilt/restored, a bit-exact 'drive the reference's own Triton kernels with a faster launch config' candidate can lose a tail-shape win because the optimal scheduling knob SHIFTS (here prefill M=4096 GROUP_SIZE_M 4->16 once the pinned-CK reference got faster), not because the candidate regressed. Re-sweep the bit-exact tile-scheduling knob (GROUP_SIZE_M for prefill, BLOCK_SIZE_M for decode) for the softened shape ONLY and gate the winner at --repeat 10 twice; never touch BLOCK_SIZE_K, so calc_diff stays 0.0.
+- `glm52--moe_total_prefill--mi300x--20260722a` [win] moe_total/prefill — The correctness-preserving MoE lever is PHASE-dependent: decode (small M, memory/launch-bound) wins on BLOCK_SIZE_M padding removal, but prefill (large M, compute/MFU-bound) has no padding to remove -- there the bit-exact knob is GROUP_SIZE_M L2-swizzle. Same principle both times: override only a tile-scheduling knob, never BLOCK_SIZE_K.
+
 ## kernel-count
 
 - `glm52--routed_swiglu_prefill--b200--20260715a` [win] Routed Expert SwiGLU+FP8 Quant/prefill — Contiguous SwiGLU+FP8 GLM prefill wins that write quantized payloads into provided out buffers ARE real sglang drop-ins at the dsv4/sgl_kernel launch site. If integrate fails on Float8, fix the harness compare path before abandoning the solution.
@@ -9,6 +15,8 @@
 
 ## launch-overhead
 
+- `glm52--moe_total_decode--mi300x--20260724a` [win] moe_total/decode — moe_total_decode fp8 win on gfx942 is a bit-exact BLOCK_SIZE_M shrink (min-only, dense topk==E & M<=32) driving the reference's own _fused_moe_kernel_sequence: sha-matched re-gate from committed bytes (sha 76dc7553) at unified S/KV=32768 gives 2/2 win geo 1.059 (M16 1.085 / M32 1.034, worst_calc_diff 0.0), and the authority taskset sweep confirms 6/6 (M in {1,4,8,16,32,64}). Landing MUST set the reference fallback phase to 'decode' -- a prior commit shipped reference('moe_total','prefill'), a latent wrong-phase bug the landing fixed. Never touch BLOCK_SIZE_K.
+- `glm52--moe_total_decode--mi300x--20260722a` [win] moe_total/decode — For dense-degenerate fp8 MoE decode (top_k==num_experts, tiny M), do NOT re-implement the fp8 GEMMs (fp8 saturation cliff makes calc_diff<=5e-6 unreachable). Instead reuse the reference Triton kernels and override ONLY BLOCK_SIZE_M (the tile-grid knob, not BLOCK_SIZE_K) to match the per-expert row count and kill moe_align padding: bit-exact and 1.05-1.08x.
 - `glm52--routed_down_decode--b200--20260715a` [win] Routed Expert Down/decode — Masked grouped-MoE decode drop-in verification must ignore empty-expert padded slots. A harness WIN that removes device-scalar layout reads is production-safe once active rows match bit-exactly under deep_gemm_wrapper.grouped_gemm_nt_f8f8bf16_masked.
 - `glm52--routed_gateup_nvfp4_decode--b200--20260714b` [no-win] Routed Expert Gate+Up NVFP4/decode — For GLM-5.2 NVFP4 MoE decode on sm_100, enabling FlashInfer PDL may shift median latency by about 1-2%, but it is not stable enough to satisfy the conservative gate on the M=16/32 sweep. The main remaining headroom is likely reducing fixed TRT-LLM runner overhead or exposing a gate-up-only primitive instead of timing the fused MoE path.
 - `glm52--routed_gateup_nvfp4_decode--b200--20260714a` [no-win] Routed Expert Gate+Up NVFP4/decode — For a new SGLang NVFP4 MoE task, first validate the exact FlashInfer TRT-LLM packed tensor and scale contract separately from FP8 DeepGEMM. A pass-through baseline is useful for contract validation but provides no speedup; future work must reduce TRTLLM runner overhead or expose a gate-up-only primitive for the M=16/32 decode regime.
@@ -19,8 +27,14 @@
 
 - `glm52--o_proj_decode--b200--20260714a` [no-win] Attention O Projection/decode — For small-M B200 FP8 decode GEMMs with SGLang-packed UE8M0 scales, the production DeepGEMM wrapper is already the safe path. Python-wrapper bypasses do not improve CUPTI device-kernel timing, and alternate APIs either need different scale layouts or fail to beat both M=16 and M=32.
 
+## occupancy
+
+- `glm52--index_score_prefill--mi300x--20260724a` [win] index_score/prefill — For fp8 MQA-logits (index_score) prefill on gfx942, the aiter reference's LDS-fit heuristic picks a too-small BLOCK_KV for the 32k KV stream. A bit-exact candidate that re-launches the reference's OWN _fp8_mqa_logits_kernel with BLOCK_KV=256 / num_stages=1 -- guarded to fire only when the heuristic would have dropped to the small tile -- wins 1.44x / 4.17x / 4.19x at M=1024/2048/4096 (geo 2.93x) with worst_calc_diff 0.0. Never touch BLOCK_SIZE_K; on AMD recast Q/KV to float8_e4m3fnuz with matched x2 scale compensation to stay bit-exact.
+- `glm52--index_score_prefill--mi300x--20260722a` [win] index_score/prefill — When the reference is a Triton kernel whose own autotune/occupancy heuristic picks a suboptimal tile on this arch, the safe lever is to call the reference's OWN kernel with its EXACT preprocessing and override ONLY the tile-shape knob (here BLOCK_KV) -- KV-loop tiling doesn't change the head-dim dot reduction so it stays bit-exact. Watch for silent try/except fallbacks that mask a ~1.0 ratio as 'not faster'.
+
 ## other
 
+- `glm52--dsa_prefill_attn--mi300x--20260722a` [win] dsa_attn/prefill — When the reference is a slow monolithic compiled kernel with no config knob, correctness is defined by the official gate (calc_diff<=5e-6), NOT by bit-exactness. A faster independent reimplementation that passes the gate is legitimate -- and passing may require being MORE precise than the naive path (fp32 QK matmul to match the reference's fp32 logits), not less.
 - `glm52--sparse_mla_decode--b200--20260714a` [win] Sparse MLA Decode/decode — For FlashInfer TRT-LLM FP8 sparse MLA decode on Blackwell, preserve device tensor scale inputs when the wrapper supports them; converting scalar scale tensors to Python floats can silently select a slower static-scale path. Do not shrink sparse_mla_top_k unless the block-table shape and production semantics also change.
 - `glm52--routed_swiglu_decode--b200--20260714a` [no-win] Routed Expert SwiGLU+FP8 Quant/decode — For GLM-5.2 masked routed SwiGLU decode on B200, the production SGLang C++ kernel is already close to the small-shape floor despite sparse active rows. Removing the CTA prefix mapping is not enough; a replacement must match the production vectorized bf16x2/fp8x2 instruction quality and beat run-to-run noise on M=16.
 

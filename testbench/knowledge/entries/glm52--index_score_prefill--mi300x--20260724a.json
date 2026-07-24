@@ -1,0 +1,68 @@
+{
+  "schema_version": 1,
+  "id": "glm52--index_score_prefill--mi300x--20260724a",
+  "date": "2026-07-24",
+  "model": "glm52",
+  "task": "glm52/index_score_prefill",
+  "op": "index_score",
+  "family": "score",
+  "phase": "prefill",
+  "shapes": {
+    "M_sweep": [
+      1024,
+      2048,
+      4096
+    ],
+    "S": 32768,
+    "heads": 32,
+    "head_size": 128,
+    "q_scale": "(M, 32) float32",
+    "note": "unified S/KV=32768 (DEC-4, 2026-07-24); fp8 MQA logits, output logits over the K-S range"
+  },
+  "hardware": {
+    "gpu": "AMD Instinct MI300X",
+    "sm": "gfx942"
+  },
+  "stack": {
+    "sglang_commit": "20fc529ab",
+    "torch": "2.10.0+rocm7.0",
+    "aiter_commit": "2ca7878e2",
+    "ck_commit": "b67594561",
+    "sgl_kernel": "0.4.3",
+    "hip": "7.0.51831",
+    "triton": "3.6.0"
+  },
+  "baseline_kernel": "aiter Triton _fp8_mqa_logits_kernel (fp8 MQA logits, float8_e4m3fnuz) via aiter.ops.triton.fp8_mqa_logits",
+  "bottleneck": {
+    "kind": "occupancy",
+    "evidence": "sha-matched result.json runs/glm52/index_score_prefill/20260724T214925Z-293d35 (candidate.sha256 d43b484f...e8e45baa8 == committed testbench/tasks/glm52_amd/index_score_prefill/candidate.py, git_dirty=False) at unified S/KV=32768, --repeat 10 --iterations 30 --warmup 3: per-shape speedup M1024 1.4423 / M2048 4.169 / M4096 4.1888 (conservative 1.3439/4.1252/4.1676), worst_calc_diff 0.0, 3/3 shape_verdict=win, min_speedup_conservative 1.3439. The reference's gfx942 LDS-fit heuristic drops to the small BLOCK_KV=128 tile for the 32768-long KV stream and under-occupies the CU; the win scales with the KV tile (largest at M2048/4096 ~4.2x)."
+  },
+  "approaches": [
+    {
+      "technique": "bit-exact-block-kv-large-tile",
+      "summary": "Drive the reference's OWN aiter _fp8_mqa_logits_kernel with BLOCK_KV=256, num_stages=1 on gfx942 (float8_e4m3fnuz recast with matched scale compensation), but ONLY when the reference's _gfx942_tile_fits_lds heuristic would have dropped to the small BLOCK_KV=128 tile; otherwise defer to the untouched reference. Launch/tiling config only -- BLOCK_SIZE_K and the MQA math are untouched. Landed as the committed AMD candidate and re-gated from committed bytes.",
+      "outcome": "win",
+      "geomean_speedup": 2.9313,
+      "why": "The heuristic under-tiles the 32768-long KV stream on gfx942; forcing the larger KV tile amortizes per-tile setup and lifts occupancy. Because only the KV tiling/stage count changes (never the fp8 accumulation width) calc_diff stays 0.0. The win is largest where the small-tile heuristic bit hardest (M2048/4096 ~4.2x)."
+    }
+  ],
+  "result": {
+    "status": "win",
+    "geomean_speedup": 2.9313,
+    "min_speedup_conservative": 1.3439,
+    "repeat": 10,
+    "integrate": "not-run",
+    "shapes_won": 3,
+    "shapes_regressed": 0
+  },
+  "lesson": "For fp8 MQA-logits (index_score) prefill on gfx942, the aiter reference's LDS-fit heuristic picks a too-small BLOCK_KV for the 32k KV stream. A bit-exact candidate that re-launches the reference's OWN _fp8_mqa_logits_kernel with BLOCK_KV=256 / num_stages=1 -- guarded to fire only when the heuristic would have dropped to the small tile -- wins 1.44x / 4.17x / 4.19x at M=1024/2048/4096 (geo 2.93x) with worst_calc_diff 0.0. Never touch BLOCK_SIZE_K; on AMD recast Q/KV to float8_e4m3fnuz with matched x2 scale compensation to stay bit-exact.",
+  "transfers_to": [
+    "fp8 MQA/MLA logits kernels on gfx942 whose tile-fit heuristic under-tiles a long KV stream",
+    "any bit-exact aiter-Triton candidate that only enlarges the KV/N tile of the reference's own kernel (BLOCK_SIZE_K fixed)"
+  ],
+  "caveats": [
+    "AMD uses float8_e4m3fnuz (not e4m3fn): the candidate recasts Q/KV to fnuz with a x2 scale compensation to stay bit-exact -- do not port the recast to an e4m3fn build unchanged.",
+    "index_score correctness tol is the tight 5e-6; worst_calc_diff must stay 0.0 -- verified on the sha-matched run.",
+    "The win is conditional on the reference heuristic dropping to the small tile; where it already selects the large tile the candidate defers to the untouched reference (no regression)."
+  ]
+}

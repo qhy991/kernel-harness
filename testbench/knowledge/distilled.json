@@ -1,5 +1,5 @@
 {
-  "generated_from_entries": 12,
+  "generated_from_entries": 20,
   "mistakes": [
     {
       "class": "launch-overhead::integration-empty-expert-diagnosis",
@@ -176,6 +176,63 @@
       "recurring": false
     },
     {
+      "class": "other::bit-exact-config-knob",
+      "bottleneck": "other",
+      "technique": "bit-exact-config-knob",
+      "count": 1,
+      "distinct_entries": 1,
+      "ops": [
+        "dsa_attn"
+      ],
+      "outcomes": [
+        "abandoned"
+      ],
+      "whys": [
+        "the TileLang sparse-MLA reference exposes no config knob to override, so the MoE-style bit-exact lever is not available"
+      ],
+      "suggested_owner": "doc|reviewer",
+      "promoted": false,
+      "recurring": false
+    },
+    {
+      "class": "other::bf16-qk-torch-reimpl",
+      "bottleneck": "other",
+      "technique": "bf16-qk-torch-reimpl",
+      "count": 1,
+      "distinct_entries": 1,
+      "ops": [
+        "dsa_attn"
+      ],
+      "outcomes": [
+        "incorrect"
+      ],
+      "whys": [
+        "bf16 QK matmul rounds the logits -> calc_diff 6.5e-6 which FAILS the 5e-6 gate; correctness here requires MORE numerical precision than the naive path, not less"
+      ],
+      "suggested_owner": "typed-boundary|diagnostic",
+      "promoted": false,
+      "recurring": false
+    },
+    {
+      "class": "occupancy::missing-weights-squeeze",
+      "bottleneck": "occupancy",
+      "technique": "missing-weights-squeeze",
+      "count": 1,
+      "distinct_entries": 1,
+      "ops": [
+        "index_score"
+      ],
+      "outcomes": [
+        "error"
+      ],
+      "whys": [
+        "stride unpack stride_w_s, stride_w_h = weights.stride() raises on a 3D tensor -> silent try/except fallback to reference (official ratio ~1.0, looks like correct_not_faster); always confirm the fast path actually runs (calc_diff==0, not raising) before trusting a ~1.0 official ratio"
+      ],
+      "suggested_owner": "typed-boundary|diagnostic",
+      "promoted": false,
+      "recurring": false
+    },
+    {
       "class": "memory-bandwidth::sglang-triton-w8a8-block-fp8",
       "bottleneck": "memory-bandwidth",
       "technique": "sglang-triton-w8a8-block-fp8",
@@ -271,6 +328,44 @@
       "recurring": false
     },
     {
+      "class": "launch-overhead::full-fp8-reimplementation",
+      "bottleneck": "launch-overhead",
+      "technique": "full-fp8-reimplementation",
+      "count": 1,
+      "distinct_entries": 1,
+      "ops": [
+        "moe_total"
+      ],
+      "outcomes": [
+        "incorrect"
+      ],
+      "whys": [
+        "fp8 intermediate saturates (act amax ~76288 vs FP8_MAX 224, ~45% of values clamp at +/-224) so any tiny gemm1/quant diff flips many fp8 codes: feeding the reference's exact intermediate still gave calc_diff 3.15e-2 (~3000x over the 5e-6 gate)"
+      ],
+      "suggested_owner": "typed-boundary|diagnostic",
+      "promoted": false,
+      "recurring": false
+    },
+    {
+      "class": "launch-overhead::block-size-m-shrink-at-large-m",
+      "bottleneck": "launch-overhead",
+      "technique": "block-size-m-shrink-at-large-m",
+      "count": 1,
+      "distinct_entries": 1,
+      "ops": [
+        "moe_total"
+      ],
+      "outcomes": [
+        "slower"
+      ],
+      "whys": [
+        "at M>32 padding is a smaller fraction and the shrunk tile loses occupancy; measured ~0.7% regression, so run() falls back to reference for M>32"
+      ],
+      "suggested_owner": "doc|reviewer",
+      "promoted": false,
+      "recurring": false
+    },
+    {
       "class": "kernel-count::sgl-kernel-fused-swiglu-quant",
       "bottleneck": "kernel-count",
       "technique": "sgl-kernel-fused-swiglu-quant",
@@ -305,6 +400,63 @@
         "The swizzled DSV4 kernel requires a different scale tensor layout and rejected the task buffer with a TensorMatcher stride/size error."
       ],
       "suggested_owner": "typed-boundary|diagnostic",
+      "promoted": false,
+      "recurring": false
+    },
+    {
+      "class": "compute::group-size-m-full-sweep-m4096",
+      "bottleneck": "compute",
+      "technique": "group-size-m-full-sweep-m4096",
+      "count": 1,
+      "distinct_entries": 1,
+      "ops": [
+        "moe_total"
+      ],
+      "outcomes": [
+        "abandoned"
+      ],
+      "whys": [
+        "GM in {1,8} regressed (cons 0.958/0.975), GM in {2,4} went neutral/parity (cons 0.980/0.996 -- including the previously-optimal GM=4), GM in {16,32} won (cons 1.010/1.012); GM=16 was picked as the widest-margin win, so {1,2,4,8,32} are recorded as the non-selected sweep points"
+      ],
+      "suggested_owner": "doc|reviewer",
+      "promoted": false,
+      "recurring": false
+    },
+    {
+      "class": "compute::decode-block-size-m-preservation-check",
+      "bottleneck": "compute",
+      "technique": "decode-block-size-m-preservation-check",
+      "count": 1,
+      "distinct_entries": 1,
+      "ops": [
+        "moe_total"
+      ],
+      "outcomes": [
+        "abandoned"
+      ],
+      "whys": [
+        "BM=32 (the decode candidate's existing pick) is already the widest-margin win (cons 1.037 at --repeat 3; 2/2 official wins at --repeat 10 x2, min_cons 1.0411/1.0454); the Round-1 neutral was timing noise on a thin margin, so no decode code change was made -- recorded as preservation evidence, not a prefill measurement"
+      ],
+      "suggested_owner": "doc|reviewer",
+      "promoted": false,
+      "recurring": false
+    },
+    {
+      "class": "compute::block-size-m-shrink",
+      "bottleneck": "compute",
+      "technique": "block-size-m-shrink",
+      "count": 1,
+      "distinct_entries": 1,
+      "ops": [
+        "moe_total"
+      ],
+      "outcomes": [
+        "abandoned"
+      ],
+      "whys": [
+        "prefill padding is already negligible at M>=1024 (M/expert >> BLOCK_SIZE_M), so there is no padded-row work to remove; the win must come from L2 scheduling instead"
+      ],
+      "suggested_owner": "doc|reviewer",
       "promoted": false,
       "recurring": false
     }
@@ -391,6 +543,16 @@
       "median_geomean": 0.9959
     },
     {
+      "class": "other::fp32-qk-torch-sparse-mla-reimpl",
+      "bottleneck": "other",
+      "technique": "fp32-qk-torch-sparse-mla-reimpl",
+      "count": 1,
+      "ops": [
+        "dsa_attn"
+      ],
+      "median_geomean": 1.3044
+    },
+    {
       "class": "other::flashinfer-tensor-bmm1-scale",
       "bottleneck": "other",
       "technique": "flashinfer-tensor-bmm1-scale",
@@ -399,6 +561,26 @@
         "Sparse MLA Decode"
       ],
       "median_geomean": 1.0611
+    },
+    {
+      "class": "occupancy::bit-exact-block-kv-override",
+      "bottleneck": "occupancy",
+      "technique": "bit-exact-block-kv-override",
+      "count": 1,
+      "ops": [
+        "index_score"
+      ],
+      "median_geomean": 2.8371
+    },
+    {
+      "class": "occupancy::bit-exact-block-kv-large-tile",
+      "bottleneck": "occupancy",
+      "technique": "bit-exact-block-kv-large-tile",
+      "count": 1,
+      "ops": [
+        "index_score"
+      ],
+      "median_geomean": 2.9313
     },
     {
       "class": "launch-overhead::harness-integrate-active-rows-fix",
@@ -421,6 +603,26 @@
       "median_geomean": 1.0171
     },
     {
+      "class": "launch-overhead::bit-exact-block-size-m-shrink-landed",
+      "bottleneck": "launch-overhead",
+      "technique": "bit-exact-block-size-m-shrink-landed",
+      "count": 1,
+      "ops": [
+        "moe_total"
+      ],
+      "median_geomean": 1.059
+    },
+    {
+      "class": "launch-overhead::bit-exact-block-size-m-shrink",
+      "bottleneck": "launch-overhead",
+      "technique": "bit-exact-block-size-m-shrink",
+      "count": 1,
+      "ops": [
+        "moe_total"
+      ],
+      "median_geomean": 1.0655
+    },
+    {
       "class": "kernel-count::harness-integrate-fp8-compare-fix",
       "bottleneck": "kernel-count",
       "technique": "harness-integrate-fp8-compare-fix",
@@ -429,6 +631,36 @@
         "Routed Expert SwiGLU+FP8 Quant"
       ],
       "median_geomean": 1.9974
+    },
+    {
+      "class": "compute::bit-exact-group-size-m-swizzle",
+      "bottleneck": "compute",
+      "technique": "bit-exact-group-size-m-swizzle",
+      "count": 1,
+      "ops": [
+        "moe_total"
+      ],
+      "median_geomean": 1.0809
+    },
+    {
+      "class": "compute::bit-exact-group-size-m-reshift",
+      "bottleneck": "compute",
+      "technique": "bit-exact-group-size-m-reshift",
+      "count": 1,
+      "ops": [
+        "moe_total"
+      ],
+      "median_geomean": 1.0459
+    },
+    {
+      "class": "compute::bit-exact-group-size-m-remap-landed",
+      "bottleneck": "compute",
+      "technique": "bit-exact-group-size-m-remap-landed",
+      "count": 1,
+      "ops": [
+        "moe_total"
+      ],
+      "median_geomean": 1.0464
     }
   ]
 }

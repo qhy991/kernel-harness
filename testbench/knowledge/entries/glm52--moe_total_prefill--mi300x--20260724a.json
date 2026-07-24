@@ -1,0 +1,67 @@
+{
+  "schema_version": 1,
+  "id": "glm52--moe_total_prefill--mi300x--20260724a",
+  "date": "2026-07-24",
+  "model": "glm52",
+  "task": "glm52/moe_total_prefill",
+  "op": "moe_total",
+  "family": "moe_fused",
+  "phase": "prefill",
+  "shapes": {
+    "E": 8,
+    "top_k": 8,
+    "M_sweep": [
+      1024,
+      2048,
+      4096
+    ],
+    "S": 32768,
+    "note": "dense-degenerate: top_k==num_experts==8, topk_ids==arange(8); unified S/KV=32768 (DEC-4, 2026-07-24)"
+  },
+  "hardware": {
+    "gpu": "AMD Instinct MI300X",
+    "sm": "gfx942"
+  },
+  "stack": {
+    "sglang_commit": "20fc529ab",
+    "torch": "2.10.0+rocm7.0",
+    "aiter_commit": "2ca7878e2",
+    "ck_commit": "b67594561",
+    "sgl_kernel": "0.4.3",
+    "hip": "7.0.51831",
+    "triton": "3.6.0"
+  },
+  "baseline_kernel": "sglang fused_moe(use_fp8_w8a8=True) Triton _fused_moe_kernel_sequence (float8_e4m3fnuz w8a8), pinned-CK reference (CK b67594561 + aiter-JIT module_quant.so, AITER_TRITON_ONLY=0)",
+  "bottleneck": {
+    "kind": "compute",
+    "evidence": "sha-matched result.json runs/glm52/moe_total_prefill/20260724T220006Z-7c42ce (candidate.sha256 738f856f...3b68a9e == committed testbench/tasks/glm52_amd/moe_total_prefill/candidate.py, git_dirty=False) at unified S/KV=32768, --repeat 10 --iterations 30 --warmup 3: per-shape speedup M1024 1.1106 / M2048 1.0449 / M4096 0.9874 (conservative 1.1037/1.0314/0.9782), worst_calc_diff 0.0, shapes_won 2, shapes_neutral 1 (M4096), shapes_regressed 0. Compute/MFU-bound fused-MoE; the win is an L2-swizzle GROUP_SIZE_M remap on the reference's own _fused_moe_kernel_sequence."
+  },
+  "approaches": [
+    {
+      "technique": "bit-exact-group-size-m-remap-landed",
+      "summary": "Reuse sglang try_get_optimal_moe_config, override ONLY GROUP_SIZE_M (M<=1024->1, M<4096->4, M>=4096->16) on the gemm1/down fp8 configs, then call the reference's OWN _fused_moe_kernel_sequence. Landed as the committed AMD candidate and re-gated from committed bytes at S/KV=32768.",
+      "outcome": "win",
+      "geomean_speedup": 1.0464,
+      "why": "GROUP_SIZE_M reorders only the program->tile L2 swizzle (BLOCK_SIZE_K/N untouched) so calc_diff=0.0; the remap wins the compute-bound M1024/M2048 tiles (1.111/1.045) while M4096 is an honest neutral (0.987, cons 0.978) because the resolver already picks GM=16 there and the candidate defers."
+    }
+  ],
+  "result": {
+    "status": "win",
+    "geomean_speedup": 1.0464,
+    "min_speedup_conservative": 0.9782,
+    "repeat": 10,
+    "integrate": "not-run",
+    "shapes_won": 2,
+    "shapes_regressed": 0
+  },
+  "lesson": "moe_total_prefill fp8 win on gfx942 is a bit-exact GROUP_SIZE_M L2-swizzle remap driving the reference's own _fused_moe_kernel_sequence: M1024->GM1, M2048->GM4, M4096->GM16(defer). Landing it as the committed candidate and re-gating from committed bytes (sha 738f856f) at unified S/KV=32768 reproduces geo 1.0464 (2 win + 1 neutral, 0 regress, worst_calc_diff 0.0). M4096 is reference-parity because the resolver already selects GM=16, so it is an honest neutral (correct-not-faster), not a regression; status=win holds via shapes_won>=1 with shapes_regressed==0, not via min_speedup_conservative (0.978).",
+  "transfers_to": [
+    "fp8 fused-MoE prefill on gfx942 at compute-bound M where the resolver's GROUP_SIZE_M is suboptimal for small/mid M",
+    "any bit-exact Triton-config MoE candidate that overrides only the L2-swizzle grouping of the reference's own kernel"
+  ],
+  "caveats": [
+    "M4096 is neutral (conservative 0.9782 < 1.0): the resolver already picks GROUP_SIZE_M=16, so the candidate defers and grades correct-not-faster. status=win holds via shapes_won=2 / shapes_regressed=0, NOT via min_speedup_conservative.",
+    "Bit-exactness depends on BLOCK_SIZE_K/N staying fixed and AITER_TRITON_ONLY=0 (pinned-CK module_quant.so); otherwise the fp8 reference silently degrades.",
+    "float8_e4m3fnuz w8a8 on AMD; moe_total correctness tol is 1e-5."
+  ]
+}

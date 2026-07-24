@@ -1,0 +1,66 @@
+{
+  "schema_version": 1,
+  "id": "glm52--moe_total_decode--mi300x--20260724a",
+  "date": "2026-07-24",
+  "model": "glm52",
+  "task": "glm52/moe_total_decode",
+  "op": "moe_total",
+  "family": "moe_fused",
+  "phase": "decode",
+  "shapes": {
+    "E": 8,
+    "top_k": 8,
+    "M_sweep": [
+      16,
+      32
+    ],
+    "S": 32768,
+    "note": "dense-degenerate: top_k==num_experts==8, topk_ids==arange(8); sha-matched per-task gate measures M in {16,32}; the GATE-1 authority taskset sweep also runs M in {1,4,8,64} -> 6/6 win. unified S/KV=32768 (DEC-4, 2026-07-24)"
+  },
+  "hardware": {
+    "gpu": "AMD Instinct MI300X",
+    "sm": "gfx942"
+  },
+  "stack": {
+    "sglang_commit": "20fc529ab",
+    "torch": "2.10.0+rocm7.0",
+    "aiter_commit": "2ca7878e2",
+    "ck_commit": "b67594561",
+    "sgl_kernel": "0.4.3",
+    "hip": "7.0.51831",
+    "triton": "3.6.0"
+  },
+  "baseline_kernel": "sglang fused_moe(use_fp8_w8a8=True) Triton _fused_moe_kernel_sequence (float8_e4m3fnuz w8a8), pinned-CK reference (CK b67594561 + aiter-JIT module_quant.so, AITER_TRITON_ONLY=0)",
+  "bottleneck": {
+    "kind": "launch-overhead",
+    "evidence": "sha-matched result.json runs/glm52/moe_total_decode/20260724T221808Z-9066dd (candidate.sha256 76dc7553...93db6f07 == committed testbench/tasks/glm52_amd/moe_total_decode/candidate.py, git_dirty=False) at unified S/KV=32768, --repeat 10 --iterations 30 --warmup 3: per-shape speedup M16 1.0849 / M32 1.0338 (conservative 1.0725/1.0229), worst_calc_diff 0.0, 2/2 shape_verdict=win, shapes_regressed 0, min_speedup_conservative 1.0229. Authority taskset sweep independently 6/6 win geo ~1.059 (M in {1,4,8,16,32,64}). At tiny decode M the default BLOCK_SIZE_M=128 pads most rows per tile -> wasted launch/compute."
+  },
+  "approaches": [
+    {
+      "technique": "bit-exact-block-size-m-shrink-landed",
+      "summary": "Shrink BLOCK_SIZE_M to max(16, min(128, next_pow2(M))) (min-only; never grow) on both gemm1/down fp8 configs, gated to dense topk==E and M<=32, then call the reference's OWN _fused_moe_kernel_sequence. Landed as the committed AMD candidate -- fixing the prior committed wrong-phase fallback reference('moe_total','prefill') to reference('moe_total','decode') -- and re-gated from committed bytes at S/KV=32768.",
+      "outcome": "win",
+      "geomean_speedup": 1.059,
+      "why": "At tiny decode M the default BLOCK_SIZE_M=128 pads most rows per tile; shrinking to the next power of two matching per-expert rows cuts wasted launch/compute while leaving BLOCK_SIZE_K/N and the fp8 math untouched (calc_diff 0.0). Wins M16 1.0849 / M32 1.0338."
+    }
+  ],
+  "result": {
+    "status": "win",
+    "geomean_speedup": 1.059,
+    "min_speedup_conservative": 1.0229,
+    "repeat": 10,
+    "integrate": "not-run",
+    "shapes_won": 2,
+    "shapes_regressed": 0
+  },
+  "lesson": "moe_total_decode fp8 win on gfx942 is a bit-exact BLOCK_SIZE_M shrink (min-only, dense topk==E & M<=32) driving the reference's own _fused_moe_kernel_sequence: sha-matched re-gate from committed bytes (sha 76dc7553) at unified S/KV=32768 gives 2/2 win geo 1.059 (M16 1.085 / M32 1.034, worst_calc_diff 0.0), and the authority taskset sweep confirms 6/6 (M in {1,4,8,16,32,64}). Landing MUST set the reference fallback phase to 'decode' -- a prior commit shipped reference('moe_total','prefill'), a latent wrong-phase bug the landing fixed. Never touch BLOCK_SIZE_K.",
+  "transfers_to": [
+    "fp8 fused-MoE decode on gfx942 at tiny M where the resolver's BLOCK_SIZE_M over-pads the per-expert rows",
+    "any bit-exact Triton-config MoE candidate that shrinks (min-only) the row tile of the reference's own kernel at small M"
+  ],
+  "caveats": [
+    "The sha-matched per-task gate (evaluate_task.py) measures 2 shapes (M16, M32); the GATE-1 authority taskset sweep (evaluate_glm52_taskset.py) measures 6 (M in {1,4,8,16,32,64}) and independently reports 6/6 win geo ~1.059 -- both honest and mutually consistent. The KB numbers here are the 2-shape sha-matched aggregate.",
+    "Shrink-only and gated to dense topk==E & M<=32; real GLM-5.2 e2e decode is sparse (topk=8<<E) so this op-level win DEFERS at e2e (an honest Amdahl no-op, not a failure).",
+    "float8_e4m3fnuz w8a8; BLOCK_SIZE_K/N untouched; AITER_TRITON_ONLY=0 required or the fp8 reference silently degrades."
+  ]
+}
