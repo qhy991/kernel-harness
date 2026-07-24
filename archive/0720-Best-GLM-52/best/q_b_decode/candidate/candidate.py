@@ -24,7 +24,17 @@ import warnings
 import torch
 
 _HERE = os.path.dirname(os.path.abspath(__file__))
-_LOADER_DIR = "/home/qinhaiyan/KDA-Pilot-Exp/llm/scripts/deepgemm_glm52"
+_LOADER_CANDIDATES = [
+    os.environ.get("SGLANG_GLM52_DEEPGEMM_OVERLAY", "").strip(),
+    "/home/ubuntu/wwxq/SGLang-DGMK/third_party/deepgemm_glm52",
+    "/home/wwxq/SGLang-DGMK/third_party/deepgemm_glm52",
+    "/home/qinhaiyan/KDA-Pilot-Exp/llm/scripts/deepgemm_glm52",
+]
+_LOADER_DIR = next((p for p in _LOADER_CANDIDATES if p and os.path.isdir(p)), None)
+if _LOADER_DIR is None:
+    raise ModuleNotFoundError(
+        "deepgemm_glm52 loader not found; set SGLANG_GLM52_DEEPGEMM_OVERLAY"
+    )
 if _LOADER_DIR not in sys.path:
     sys.path.insert(0, _LOADER_DIR)
 

@@ -19,9 +19,21 @@ _cuda_default = next(
     Path("/usr/local/cuda"),
 )
 
+_sglang_default = next(
+    (
+        p
+        for p in (
+            _REPO.parent / "SGLang-DGMK",
+            _REPO.parent / "sglang",
+        )
+        if p.is_dir()
+    ),
+    _REPO.parent / "sglang",
+)
+
 _DEFAULTS = {
     "VENV": str(_REPO / ".venv"),
-    "SGLANG_DIR": str(_REPO.parent / "sglang"),
+    "SGLANG_DIR": str(_sglang_default),
     "CUDA_HOME": str(_cuda_default),
     "AITER_PATH": str(_REPO.parent / "aiter"),
 }

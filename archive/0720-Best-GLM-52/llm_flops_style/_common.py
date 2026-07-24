@@ -24,7 +24,13 @@ _BEST = _ARCHIVE / "best"
 _REPO = _ARCHIVE.parents[1]
 _HARNESS = _REPO / "testbench" / "harness"
 _TASKS = _REPO / "testbench" / "tasks" / "glm52"
-_LLM_FLOPS = Path("/home/qinhaiyan/llm_flops")
+_LLM_FLOPS = Path(
+    __import__("os").environ.get(
+        "LLM_FLOPS_DIR",
+        "/home/ubuntu/wwxq/llm_flops" if Path("/home/ubuntu/wwxq/llm_flops").is_dir()
+        else str(Path.home() / "llm_flops"),
+    )
+)
 
 NUM_WARMUP = 5
 NUM_RUNS = 20
