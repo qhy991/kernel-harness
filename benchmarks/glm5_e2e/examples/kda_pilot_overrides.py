@@ -184,14 +184,42 @@ def _pick_block_size_m(m: int) -> int:
     return max(16, min(128, _next_pow2(m)))
 
 
-def _split_config(result):
-    # resolver returns either a config-dict or (config, (down_config, max_bm)).
+def _clone_config(result):
+    """Clone the resolver's returned config structures so this override NEVER
+    mutates SGLang's shared, lru_cache'd up-config in place.
+
+    `try_get_optimal_moe_config` selects `config = configs[...]` straight out of
+    an `@functools.lru_cache`d map (`get_moe_configs`) and defensively copies
+    ONLY `down_config` (`dict(**down_config)`); the up-config is the cached dict
+    itself. Editing it in place would leak a tuned GROUP_SIZE_M / BLOCK_SIZE_M
+    into every later resolve that lands on the same cached entry (and corrupt the
+    defer/counter accounting, since a second call would read our own prior write
+    as the resolver's choice). So we shallow-copy the dict(s) here, mutate only
+    the copies, and rebuild the exact native return shape via `_rebuild`.
+
+    Returns (cfg, down, max_block_m, was_tuple):
+      - tuple form  (config, (down_config, max_block_m)) -> cloned cfg/down
+      - dict form   config                               -> cloned cfg, down=None
+    Non-dict configs are passed through unchanged (nothing to clone/apply).
+    """
     if isinstance(result, tuple):
-        cfg = result[0]
-        down = result[1][0] if isinstance(result[1], (tuple, list)) else None
-    else:
-        cfg, down = result, None
-    return cfg, down
+        cfg = dict(result[0]) if isinstance(result[0], dict) else result[0]
+        inner = result[1] if len(result) > 1 else None
+        if isinstance(inner, (tuple, list)):
+            down = dict(inner[0]) if isinstance(inner[0], dict) else inner[0]
+            max_block_m = inner[1] if len(inner) > 1 else None
+        else:
+            down, max_block_m = None, None
+        return cfg, down, max_block_m, True
+    cfg = dict(result) if isinstance(result, dict) else result
+    return cfg, None, None, False
+
+
+def _rebuild(cfg, down, max_block_m, was_tuple):
+    """Reassemble the resolver's native return shape from the cloned parts."""
+    if was_tuple:
+        return cfg, (down, max_block_m)
+    return cfg
 
 
 def _make_group_size_override(orig_fn):
@@ -208,7 +236,11 @@ def _make_group_size_override(orig_fn):
             M = int(M)
             E = int(w1_shape[0]) if w1_shape is not None else None
             topk = int(topk) if topk is not None else None
-            cfg, down = _split_config(result)
+
+            # Clone BEFORE touching anything: the up-config is SGLang's shared
+            # lru_cache'd dict, so we mutate copies and return a rebuilt object,
+            # never the cached original (Codex Round-0 [P1] statefulness fix).
+            cfg, down, max_block_m, was_tuple = _clone_config(result)
             if not isinstance(cfg, dict):
                 _STATS["moe_defer"] += 1
                 _note_moe(M, defer_reason="no-config-dict")
@@ -228,9 +260,10 @@ def _make_group_size_override(orig_fn):
                 if applied:
                     _STATS["moe_bm_applied"] += 1
                     _note_moe(M, bm=True)
-                else:
-                    _STATS["moe_defer"] += 1
-                    _note_moe(M, defer_reason="bm-already-small")
+                    return _rebuild(cfg, down, max_block_m, was_tuple)
+                # nothing changed -> the shared original is untouched; hand it back.
+                _STATS["moe_defer"] += 1
+                _note_moe(M, defer_reason="bm-already-small")
                 return result
 
             # (2) prefill path — mirror daddf4; only the validated M>=1024 regime.
@@ -246,9 +279,10 @@ def _make_group_size_override(orig_fn):
                 if applied:
                     _STATS["moe_gm_applied"] += 1
                     _note_moe(M, gm=gm)
-                else:
-                    _STATS["moe_defer"] += 1
-                    _note_moe(M, gm=gm, defer_reason="gm-already-set")
+                    return _rebuild(cfg, down, max_block_m, was_tuple)
+                # resolver already picked gm (now a TRUE read: clone is unmutated).
+                _STATS["moe_defer"] += 1
+                _note_moe(M, gm=gm, defer_reason="gm-already-set")
                 return result
 
             # (3) neither validated regime (small-M sparse decode, etc.) — defer.
@@ -301,3 +335,61 @@ def register():
         _REGISTER["moe"] = f"skipped:{type(exc).__name__}:{exc}"
 
     return changes
+
+
+# ── no-GPU regression probe (statefulness fix, Codex Round-0 [P1]) ────────────
+def _selftest_stateless():
+    """Prove the MoE override never mutates SGLang's shared lru_cache'd config in
+    place. Wrap a fake resolver that returns the SAME dict objects every call
+    (exactly the aliasing `try_get_optimal_moe_config` exposes: up-config is
+    `configs[...]` from the cache, only down-config is copied), run an M=1024
+    prefill resolve then an M=16 dense-decode resolve, and assert the shared
+    originals are byte-unchanged while the RETURNED configs carry the intended
+    override on a distinct object.
+
+    Pure dict logic — creates no tensors and touches no GPU — so it runs on any
+    node (invoke: `python benchmarks/glm5_e2e/examples/kda_pilot_overrides.py`).
+    """
+    # Shared cached structures — identity-stable across calls, like lru_cache.
+    up_cfg = {"BLOCK_SIZE_M": 64, "BLOCK_SIZE_N": 128, "BLOCK_SIZE_K": 128,
+              "GROUP_SIZE_M": 8, "num_warps": 8, "num_stages": 2}
+    down_cfg = {"BLOCK_SIZE_M": 64, "BLOCK_SIZE_N": 128, "BLOCK_SIZE_K": 128,
+                "GROUP_SIZE_M": 8, "num_warps": 8, "num_stages": 2}
+    up_before, down_before = dict(up_cfg), dict(down_cfg)
+    max_block_m = 128
+
+    def fake_orig_fn(*args, **kwargs):
+        # mirror try_get_optimal_moe_config(return_down_config=True): hands back
+        # the SHARED cached dicts (not copies) — the aliasing the fix must survive.
+        return up_cfg, (down_cfg, max_block_m)
+
+    wrapped = _make_group_size_override(fake_orig_fn)
+    E = 8  # moe_total: w1 (8, ...), topk_ids (M, 8) -> topk == E == 8 (dense)
+    shape_kw = dict(w1_shape=(E, 4096, 6144), w2_shape=(E, 6144, 2048),
+                    top_k=E, dtype="fp8_w8a8", return_down_config=True)
+
+    # M=1024 prefill -> path (2): GROUP_SIZE_M := _pick_group_size_m(1024).
+    cfg_pre, (down_pre, mbm_pre) = wrapped(M=1024, **shape_kw)
+    assert cfg_pre["GROUP_SIZE_M"] == _pick_group_size_m(1024), \
+        f"prefill override not applied to returned cfg: {cfg_pre}"
+    assert mbm_pre == max_block_m, "max_block_m not preserved through rebuild"
+    assert cfg_pre is not up_cfg and down_pre is not down_cfg, \
+        "returned config is the shared cached object (identity leak)"
+    assert up_cfg == up_before and down_cfg == down_before, \
+        f"SHARED config mutated by prefill resolve: {up_cfg} / {down_cfg}"
+
+    # M=16 dense-decode -> path (1): BLOCK_SIZE_M := _pick_block_size_m(16).
+    cfg_dec, (down_dec, _mbm) = wrapped(M=16, **shape_kw)
+    assert cfg_dec["BLOCK_SIZE_M"] == _pick_block_size_m(16), \
+        f"decode override not applied to returned cfg: {cfg_dec}"
+    assert cfg_dec is not up_cfg and down_dec is not down_cfg, \
+        "returned config is the shared cached object (identity leak)"
+    assert up_cfg == up_before and down_cfg == down_before, \
+        f"SHARED config mutated by decode resolve: {up_cfg} / {down_cfg}"
+
+    return True
+
+
+if __name__ == "__main__":
+    ok = _selftest_stateless()
+    print(f"[overrides] _selftest_stateless: {'PASS' if ok else 'FAIL'}", flush=True)
