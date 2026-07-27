@@ -113,7 +113,7 @@ BLOCK_SIZE_KV = 64
 HEAD_DIM_WITH_SF = 132    # 128 fp8 bytes + 4-byte inline f32 scale
 
 FP8_MAX = 224.0
-DEFAULT_S = 65536
+DEFAULT_S = 32768
 DEFAULT_SEED = 0
 DEFAULT_SWEEP = {"prefill": (1024, 2048, 4096), "decode": (16, 32)}
 

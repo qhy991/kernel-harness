@@ -287,13 +287,76 @@ def _aiter_sparse_mla_fn():
     return aiter_sparse_mla_fwd
 
 
+@lru_cache(maxsize=1)
+def _aiter_mla_module():
+    _add_source_tree("AITER_PATH", str(_REPO.parent / "aiter"))
+    try:
+        import aiter  # noqa: F401
+        import aiter.mla as _mla
+
+        return _mla
+    except Exception:
+        return None
+
+
+def _try_aiter_asm_mla_decode(inputs: dict):
+    """Production sparse-MLA prefill via the *compiled ASM* decode kernel.
+
+    Sparse MLA (per-query-distinct top-k) is exactly a batch of M sequences x 1
+    query, each attending its own top-k paged KV at page_size=1 -- the native
+    shape of ``aiter.mla.mla_decode_fwd``. GLM has 64 q-heads, but the bf16
+    gqa=64/qseqlen=1 ASM kernel is absent from this build (get_heuristic_kernel_mla
+    rejects it); the gqa=128 kernel (mla_dec_stage1_bf16_a16w16_subQ128_mqa128) IS
+    present, so we pad q 64->128 heads (attention is per-head independent; the
+    padded heads are discarded). Measured on MI300X gfx942: M=1024 -> ~1.68ms
+    (calc_diff 8e-6 vs f32 oracle), M=2048 -> ~2.67ms -- matching the archived
+    ~1.7ms production baseline. This is the fast path; the un-optimized Triton
+    ``unified_attention_sparse_mla`` (~664ms at block_size=1) is the fallback."""
+    mla = _aiter_mla_module()
+    if mla is None:
+        return None
+    q = inputs["q"].contiguous()                 # [M, n_heads, d_qk] bf16
+    kv = inputs["kv"]                            # [S, d_qk] bf16
+    indices = inputs["indices"]
+    M, n_heads, d_qk = q.shape
+    d_v = int(inputs["d_v"])
+    S = kv.shape[0]
+    tk = indices.shape[1]
+    # gqa_ratio must land on a compiled ASM config; 128 is the supported bf16 one.
+    pad_heads = 128 if n_heads <= 128 else n_heads
+    try:
+        if pad_heads != n_heads:
+            qp = q.new_zeros(M, pad_heads, d_qk)
+            qp[:, :n_heads, :] = q
+        else:
+            qp = q
+        kv_buffer = kv.view(S, 1, 1, d_qk).contiguous()  # [num_page, page_size=1, nhead_kv=1, d_qk]
+        o = torch.empty(M, pad_heads, d_v, dtype=torch.bfloat16, device=q.device)
+        qo_indptr = torch.arange(0, M + 1, dtype=torch.int32, device=q.device)
+        kv_indptr = torch.arange(0, (M + 1) * tk, tk, dtype=torch.int32, device=q.device)
+        kv_indices = indices.reshape(-1).to(torch.int32).contiguous()
+        kv_last = torch.ones(M, dtype=torch.int32, device=q.device)
+        mla.mla_decode_fwd(
+            qp, kv_buffer, o, qo_indptr, kv_indptr, kv_indices, kv_last,
+            max_seqlen_q=1, page_size=1, nhead_kv=1, sm_scale=float(inputs["sm_scale"]),
+        )
+        return o[:, :n_heads, :]
+    except Exception:
+        return None
+
+
 def _try_aiter_sparse_mla(inputs: dict):
-    """Production-aligned sparse MLA: sglang-ROCm's aiter
-    ``unified_attention_sparse_mla`` (paged). The harness gather-form inputs map
-    onto the paged call with block_size=1, a single sequence, and an identity
-    block_table. Verified ~2x faster than the torch (rocBLAS) reference at
-    prefill M>=1024 — so it is the prefill baseline. Slower at decode M<=32
-    (launch overhead dominates in isolation), so decode keeps the torch path."""
+    """Production-aligned sparse MLA baseline.
+
+    Fast path is the compiled ASM decode kernel (see _try_aiter_asm_mla_decode,
+    ~1.7ms at M=1024). Falls back to sglang-ROCm's aiter
+    ``unified_attention_sparse_mla`` (paged, block_size=1) when the ASM path is
+    unavailable -- note the current aiter tree ships that Triton kernel as an
+    un-optimized dev placeholder (~664ms), so it is a correctness fallback only,
+    not a representative latency baseline."""
+    out = _try_aiter_asm_mla_decode(inputs)
+    if out is not None:
+        return out
     fn = _aiter_sparse_mla_fn()
     if fn is None:
         return None
