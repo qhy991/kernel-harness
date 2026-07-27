@@ -60,10 +60,15 @@ scale compensation, same -inf logit fill), overriding one launch knob:
   (BLOCK_KV/num_stages/warps/waves/kpack) was exhausted at the incumbent
   256@1 tile; no further bit-exact gain exists → HONEST NO-GO this round.
 
-Op-level GATE-1 (--repeat 10 --iterations 30 --warmup 3, S=32768, committed
-sha 348bd67ba104, git_dirty=False): geomean 2.9127x vs the reference
-(M=1024 1.44x, M=2048 ~5.7x, M=4096 ~5.9x), 3/3 shapes win, 0 regress,
-worst calc_diff 0.0. Run 20260727T140602Z-458888.
+Op-level GATE-1 (--repeat 10 --iterations 30 --warmup 3, S=32768), re-gated
+from the committed bytes (git_dirty=False): geomean ~2.91x vs the reference
+(min conservative 1.43x at M=1024, M=2048/M=4096 both win), 3/3 shapes win,
+0 regress, worst calc_diff 0.0. The exact sha-matched clean run
+(result.json `candidate.sha256` == this committed file, timing_unstable_shapes
+== []) is recorded under runs/glm52/index_score_prefill/ and in the round
+summary — cited there rather than inline here, because hardcoding a candidate's
+own sha in its own header is self-referential (editing the header changes the
+sha it would name).
 
 run() wraps the fast path in try/except and falls back to the harness reference
 (`glm52_ops.reference`, i.e. the selected ROCm backend oracle) on any surprise
