@@ -1,0 +1,10 @@
+python:      /home/qinhaiyan/glm52-goal-runs/05-indexer_k_weights_prefill/kernel-harness/.venv/bin/python
+venv:        /home/qinhaiyan/glm52-goal-runs/05-indexer_k_weights_prefill/kernel-harness/.venv
+cuda home:   /usr/local/cuda
+sglang:      checkout /home/qinhaiyan/glm52-goal-runs/05-indexer_k_weights_prefill/sglang (2fbd443a1)
+gpu:         NVIDIA B200 sm_100
+visible gpus:1  CUDA_VISIBLE_DEVICES=1
+torch/cuda:  2.11.0+cu130 / 13.0
+M3 kernels:  present in SGLANG_DIR
+
+Environment check passed.

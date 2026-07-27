@@ -1,0 +1,67 @@
+{
+  "ranked_candidates": [
+    {
+      "backend": "sglang_cutedsl_tgv_direct",
+      "candidate_path": "/home/qinhaiyan/glm52-goal-runs/05-indexer_k_weights_prefill/kernel-harness/serving_native/candidates/indexer_wk_cutedsl_tgv.py",
+      "paired_p10_speedup": 0.2514568705662452,
+      "paired_p90_speedup": 0.5043566016774731,
+      "passes_3pct_median_gate": false,
+      "result": "/home/qinhaiyan/glm52-goal-runs/05-indexer_k_weights_prefill/kernel-harness/evidence/glm52_prod_05_indexer_k_weights_prefill/isolated_cutedsl_sweep.json",
+      "speedup": 0.37020391850897205
+    },
+    {
+      "backend": "flashinfer_mm_bf16_cutlass",
+      "candidate_path": "/home/qinhaiyan/glm52-goal-runs/05-indexer_k_weights_prefill/kernel-harness/serving_native/candidates/indexer_wk_flashinfer.py",
+      "paired_p10_speedup": 0.18648019409955127,
+      "paired_p90_speedup": 0.5319807458346895,
+      "passes_3pct_median_gate": false,
+      "result": "/home/qinhaiyan/glm52-goal-runs/05-indexer_k_weights_prefill/kernel-harness/evidence/glm52_prod_05_indexer_k_weights_prefill/isolated_flashinfer_cutlass_sweep.json",
+      "speedup": 0.3152616251294741
+    },
+    {
+      "backend": "flashinfer_mm_bf16_cudnn",
+      "candidate_path": "/home/qinhaiyan/glm52-goal-runs/05-indexer_k_weights_prefill/kernel-harness/serving_native/candidates/indexer_wk_flashinfer.py",
+      "paired_p10_speedup": 0.14776993773607364,
+      "paired_p90_speedup": 0.49895326402681445,
+      "passes_3pct_median_gate": false,
+      "result": "/home/qinhaiyan/glm52-goal-runs/05-indexer_k_weights_prefill/kernel-harness/evidence/glm52_prod_05_indexer_k_weights_prefill/isolated_flashinfer_cudnn_sweep.json",
+      "speedup": 0.3001182077264851
+    },
+    {
+      "backend": "flashinfer_mm_bf16_auto",
+      "candidate_path": "/home/qinhaiyan/glm52-goal-runs/05-indexer_k_weights_prefill/kernel-harness/serving_native/candidates/indexer_wk_flashinfer.py",
+      "paired_p10_speedup": 0.09155456398544826,
+      "paired_p90_speedup": 0.31977651702045345,
+      "passes_3pct_median_gate": false,
+      "result": "/home/qinhaiyan/glm52-goal-runs/05-indexer_k_weights_prefill/kernel-harness/evidence/glm52_prod_05_indexer_k_weights_prefill/isolated_flashinfer_auto_sweep.json",
+      "speedup": 0.21703048833123118
+    },
+    {
+      "backend": "flashinfer_mm_bf16_tgv",
+      "candidate_path": "/home/qinhaiyan/glm52-goal-runs/05-indexer_k_weights_prefill/kernel-harness/serving_native/candidates/indexer_wk_flashinfer.py",
+      "paired_p10_speedup": 0.13425155605724778,
+      "paired_p90_speedup": 0.27602690348114783,
+      "passes_3pct_median_gate": false,
+      "result": "/home/qinhaiyan/glm52-goal-runs/05-indexer_k_weights_prefill/kernel-harness/evidence/glm52_prod_05_indexer_k_weights_prefill/isolated_flashinfer_tgv_sweep.json",
+      "speedup": 0.1942194789764435
+    },
+    {
+      "backend": "flashinfer_mm_bf16_cublaslt",
+      "candidate_path": "/home/qinhaiyan/glm52-goal-runs/05-indexer_k_weights_prefill/kernel-harness/serving_native/candidates/indexer_wk_flashinfer.py",
+      "paired_p10_speedup": 0.06531893752058374,
+      "paired_p90_speedup": 0.14901851513148076,
+      "passes_3pct_median_gate": false,
+      "result": "/home/qinhaiyan/glm52-goal-runs/05-indexer_k_weights_prefill/kernel-harness/evidence/glm52_prod_05_indexer_k_weights_prefill/isolated_flashinfer_cublaslt_sweep.json",
+      "speedup": 0.10937546160994355
+    }
+  ],
+  "selected": {
+    "backend": "sglang_cutedsl_tgv_direct",
+    "candidate_path": "/home/qinhaiyan/glm52-goal-runs/05-indexer_k_weights_prefill/kernel-harness/serving_native/candidates/indexer_wk_cutedsl_tgv.py",
+    "paired_p10_speedup": 0.2514568705662452,
+    "paired_p90_speedup": 0.5043566016774731,
+    "passes_3pct_median_gate": false,
+    "result": "/home/qinhaiyan/glm52-goal-runs/05-indexer_k_weights_prefill/kernel-harness/evidence/glm52_prod_05_indexer_k_weights_prefill/isolated_cutedsl_sweep.json",
+    "speedup": 0.37020391850897205
+  }
+}

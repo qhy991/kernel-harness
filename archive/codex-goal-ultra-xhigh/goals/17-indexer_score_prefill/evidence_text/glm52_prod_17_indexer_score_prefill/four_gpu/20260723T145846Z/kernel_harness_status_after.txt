@@ -1,0 +1,20 @@
+ M serving_native/runner.py
+?? evidence/glm52_prod_17_indexer_score_prefill/four_gpu/20260723T144048Z/diagnostic_outcome.md
+?? evidence/glm52_prod_17_indexer_score_prefill/four_gpu/20260723T144048Z/environment.txt
+?? evidence/glm52_prod_17_indexer_score_prefill/four_gpu/20260723T144048Z/gpu_identity.csv
+?? evidence/glm52_prod_17_indexer_score_prefill/four_gpu/20260723T144048Z/logs/tp4_indexer_score_prefill_m4096_c256_diagnostic.series1.log
+?? evidence/glm52_prod_17_indexer_score_prefill/four_gpu/20260723T144048Z/logs/tp4_indexer_score_prefill_m4096_c256_diagnostic.series2.log
+?? evidence/glm52_prod_17_indexer_score_prefill/four_gpu/20260723T144048Z/status.tsv
+?? evidence/glm52_prod_17_indexer_score_prefill/four_gpu/20260723T145846Z/diagnostic_outcome.md
+?? evidence/glm52_prod_17_indexer_score_prefill/four_gpu/20260723T145846Z/environment.txt
+?? evidence/glm52_prod_17_indexer_score_prefill/four_gpu/20260723T145846Z/gpu_identity.csv
+?? evidence/glm52_prod_17_indexer_score_prefill/four_gpu/20260723T145846Z/kernel_harness_runner.diff
+?? evidence/glm52_prod_17_indexer_score_prefill/four_gpu/20260723T145846Z/kernel_harness_status_after.txt
+?? evidence/glm52_prod_17_indexer_score_prefill/four_gpu/20260723T145846Z/logs/tp4_indexer_score_prefill_m4096_c256_diagnostic.series1.log
+?? evidence/glm52_prod_17_indexer_score_prefill/four_gpu/20260723T145846Z/logs/tp4_indexer_score_prefill_m4096_c256_diagnostic.series2.log
+?? evidence/glm52_prod_17_indexer_score_prefill/four_gpu/20260723T145846Z/logs/tp4_indexer_score_prefill_m4096_c256_diagnostic.series3.log
+?? evidence/glm52_prod_17_indexer_score_prefill/four_gpu/20260723T145846Z/paired_summary.json
+?? evidence/glm52_prod_17_indexer_score_prefill/four_gpu/20260723T145846Z/paired_summary.md
+?? evidence/glm52_prod_17_indexer_score_prefill/four_gpu/20260723T145846Z/sha256.txt
+?? evidence/glm52_prod_17_indexer_score_prefill/four_gpu/20260723T145846Z/status.tsv
+?? evidence/glm52_prod_17_indexer_score_prefill/four_gpu/20260723T145846Z/summary.log

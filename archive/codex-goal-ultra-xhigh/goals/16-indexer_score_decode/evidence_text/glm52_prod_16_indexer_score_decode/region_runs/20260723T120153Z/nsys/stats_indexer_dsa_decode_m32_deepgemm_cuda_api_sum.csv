@@ -1,0 +1,13 @@
+Time (%),Total Time (ns),Num Calls,Avg (ns),Med (ns),Min (ns),Max (ns),StdDev (ns),Name
+44.1,146341,6,24390.2,12625.5,11285,83652,29061.1,cudaLaunchKernelExC_v11060
+18.0,59839,4,14959.8,13485.5,9191,23677,6961.0,cuLaunchKernelEx
+8.9,29371,4,7342.8,3775.5,1212,20608,9147.9,cudaEventRecordWithFlags_v11010
+6.2,20669,4,5167.3,1893.5,437,16445,7605.0,cudaEventCreateWithFlags
+6.0,19819,4,4954.8,3342.5,1276,11858,4946.4,cudaStreamWaitEvent
+4.9,16412,1,16412.0,16412.0,16412,16412,0.0,cuProfilerStart
+4.4,14610,1,14610.0,14610.0,14610,14610,0.0,cudaLaunchKernel
+2.5,8325,8,1040.6,269.5,215,5788,1935.8,cudaStreamIsCapturing_v10000
+2.5,8284,13,637.2,213.0,127,3761,1024.2,cuTensorMapEncodeTiled
+1.8,5912,4,1478.0,1411.5,301,2788,1145.8,cudaEventDestroy
+0.4,1187,2,593.5,593.5,81,1106,724.8,cuKernelGetAttribute
+0.3,925,1,925.0,925.0,925,925,0.0,cuKernelGetName

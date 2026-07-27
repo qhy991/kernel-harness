@@ -1,0 +1,37 @@
+Entering DeepGEMM JIT Pre-Compile session. It may take a long time (typically 10-20 mins) if you have not run `sglang.compile_deep_gemm`. It is recommended to run `sglang.compile_deep_gemm` with same args as `sglang.launch_server` for pre-compilation to reduce the overhead if you have not run it before. For example: `python3 -m sglang.compile_deep_gemm --model deepseek-ai/DeepSeek-V3 --tp 8 --trust-remote-code`
+DeepGEMM warmup:   0%|          | 0/16384 [00:00<?, ?it/s]DeepGEMM warmup:   8%|▊         | 1251/16384 [00:00<00:01, 12503.42it/s]DeepGEMM warmup:  17%|█▋        | 2751/16384 [00:00<00:00, 13965.87it/s]DeepGEMM warmup:  26%|██▌       | 4273/16384 [00:00<00:00, 14535.87it/s]DeepGEMM warmup:  35%|███▌      | 5776/16384 [00:00<00:00, 14729.36it/s]DeepGEMM warmup:  44%|████▍     | 7263/16384 [00:00<00:00, 14779.05it/s]DeepGEMM warmup:  54%|█████▎    | 8776/16384 [00:00<00:00, 14896.20it/s]DeepGEMM warmup:  63%|██████▎   | 10276/16384 [00:00<00:00, 14928.71it/s]DeepGEMM warmup:  73%|███████▎  | 11892/16384 [00:00<00:00, 15318.15it/s]DeepGEMM warmup:  82%|████████▏ | 13424/16384 [00:00<00:00, 14631.45it/s]DeepGEMM warmup:  91%|█████████ | 14894/16384 [00:01<00:00, 13816.75it/s]DeepGEMM warmup:  99%|█████████▉| 16288/16384 [00:01<00:00, 13003.57it/s]DeepGEMM warmup: 100%|██████████| 16384/16384 [00:01<00:00, 14037.83it/s]
+{
+  "candidate": {
+    "median_ms": 0.0487040001899004,
+    "min_ms": 0.04227200150489807,
+    "p95_ms": 0.06668800115585327,
+    "paired_p10_speedup": 0.904288374277062,
+    "paired_p90_speedup": 1.408090806924241,
+    "passes_3pct_median_gate": true,
+    "path": "/home/qinhaiyan/Kernel-Harness/archive/serving_bakeoff_0720_vs_codex/serving_ports/0720/indexer_wq_b_packed.py",
+    "speedup": 1.0956931866349122
+  },
+  "execution_mode": "eager_cuda_event",
+  "reference": {
+    "median_ms": 0.052240001037716866,
+    "min_ms": 0.04540799930691719,
+    "p95_ms": 0.07267200201749802
+  },
+  "reference_policy": "SGLANG_GLM52_OPT=0 production path",
+  "schema_version": 1,
+  "timing_contract": "interleaved paired A/B; maximum CUDA-event latency across ranks",
+  "workload": {
+    "distributed": false,
+    "family": "packed_fp8_gemm",
+    "name": "linear_indexer_wq_b_decode_m32",
+    "notes": "Real DSA indexer.wq_b; distinct from self_attn.q_b_proj.",
+    "params": {
+      "k": 2048,
+      "m": 32,
+      "n": 4096
+    },
+    "phase": "decode",
+    "source_symbol": "sglang.kernels.ops.quantization.fp8_kernel.w8a8_block_fp8_matmul_deepgemm",
+    "world_size": 1
+  }
+}

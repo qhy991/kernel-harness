@@ -1,0 +1,101 @@
+{
+  "schema_version": 1,
+  "id": "glm52--dsa_prefill_attn--b200--20260722b",
+  "date": "2026-07-22",
+  "model": "glm52",
+  "task": "glm52/dsa_prefill_attn",
+  "op": "dsa_attn",
+  "family": "mla",
+  "phase": "prefill",
+  "shapes": {
+    "production_abi": "FlashInfer TRT-LLM paged FP8 sparse MLA prefill",
+    "M": 4096,
+    "q_heads": 64,
+    "qk_dim": 576,
+    "value_dim": 512,
+    "topk": 2048,
+    "page_size": 64,
+    "raw_pool_pages": 513,
+    "dummy_page_token_offset": 64,
+    "rank_local_profile_world_size": 1,
+    "diagnostic_world_size": 4,
+    "production_topology": "TP8/DP8/EP8"
+  },
+  "hardware": {
+    "gpu": "NVIDIA B200",
+    "sm": "sm_100"
+  },
+  "stack": {
+    "sglang_commit": "5a444f66cf5764d2d76003a3a4c4631af152a253",
+    "torch": "2.11.0+cu130",
+    "cuda": "13.0",
+    "flashinfer": "0.6.12"
+  },
+  "baseline_kernel": "FlashInfer TRT-LLM-gen Q64 PersistentKeepsAb sparse MLA with stock SGLang dispatch",
+  "bottleneck": {
+    "kind": "synchronization",
+    "evidence": "Decision-bearing Nsight Compute and Nsight Systems artifacts under profile/dsa-prefill-trtllm-m4096-rawpool-tactic-oracle-20260722 show that smaller shipped query-head tactics preserve tensor work and DRAM traffic but multiply CTA waves, shared-memory instructions, bank conflicts, and synchronization without increasing occupancy. These are advisory production-ABI profiler artifacts, not frozen-task result metrics."
+  },
+  "approaches": [
+    {
+      "technique": "checkpoint-free-real-backend-fixture",
+      "summary": "Reached DeepseekSparseAttnBackend.forward_extend through SGLang's actual TRT-LLM-gen prefill branch with the observed raw FP8 pool, dummy page, fused physical top-k table, RoPE/quantization, KV write, and attention leaf.",
+      "outcome": "abandoned",
+      "geomean_speedup": null,
+      "why": "The fixture proves the runtime class, branch, tensor ABI, and containing checkpoint-free region, but its synthetic top-k and identity correctness candidate cannot replace a live checkpoint-backed request or an independent mathematical oracle."
+    },
+    {
+      "technique": "flashinfer-shipped-q32-swaps-source-overlay",
+      "summary": "Applied a repo-local overlay of the FlashInfer 0.6.12 selector headers and forced the shipped Q32 PersistentSwapsAb tactic only for the exact raw-pool production shape, with stock fallback on every mismatch.",
+      "outcome": "slower",
+      "geomean_speedup": null,
+      "why": "The smaller query-head split doubled grid waves and global-load instructions, substantially increased shared-memory work and bank conflicts, and left occupancy unchanged, so every paired serving-native series regressed."
+    },
+    {
+      "technique": "flashinfer-shipped-q16-swaps-source-overlay",
+      "summary": "Forced the shipped Q16 PersistentSwapsAb tactic through the same exact-shape source overlay to test whether finer head splitting exposed otherwise idle parallelism.",
+      "outcome": "slower",
+      "geomean_speedup": null,
+      "why": "The finer split quadrupled grid waves and global-load instructions while increasing shared-memory and synchronization work without an occupancy benefit, producing an even larger regression."
+    },
+    {
+      "technique": "four-gpu-rank-local-diagnostic",
+      "summary": "Replayed the corrected rank-local leaf independently on all four host B200s with rank-maximum timing and a single serialized profiler allocation.",
+      "outcome": "abandoned",
+      "geomean_speedup": null,
+      "why": "The diagnostic established stable behavior across the available devices, but it contains no DSA collective and cannot satisfy or weaken the required TP8/DP8/EP8 production acceptance gate."
+    },
+    {
+      "technique": "inherited-pdl-evidence-audit",
+      "summary": "Audited the earlier direct enable_pdl-disabled candidate and temporary SGLang dispatch commits against their persisted command and candidate metadata.",
+      "outcome": "abandoned",
+      "geomean_speedup": null,
+      "why": "The persisted timing files measure the external leaf candidate rather than the temporary SGLang dispatch, so the neutral direct-leaf result cannot be relabeled as integrated SGLang performance."
+    }
+  ],
+  "result": {
+    "status": "no-win",
+    "geomean_speedup": null,
+    "min_speedup_conservative": null,
+    "repeat": null,
+    "integrate": "not-run"
+  },
+  "lesson": "For Blackwell sparse MLA, do not assume that splitting query heads into more CTAs improves an apparently synchronization-limited generated kernel. First compare the vendor's shipped tactic portfolio at the exact physical cache ABI: if occupancy stays fixed while waves and shared-memory synchronization multiply, retain the wider tactic and move optimization effort to a different backend seam.",
+  "transfers_to": [
+    "FlashInfer TRT-LLM sparse MLA prefill on B200",
+    "generated warp-specialized attention tactic selection",
+    "production-only attention paths with paged FP8 cache ABI",
+    "multi-GPU diagnostics that cannot reproduce the production rank count"
+  ],
+  "caveats": [
+    "This entry supersedes glm52--dsa_prefill_attn--b200--20260722a for evidence labeling: the inherited compact direct-leaf replay had 512 pages, while the reached SGLang physical ABI has 513 pages including a leading dummy page.",
+    "The earlier entry's PDL result was a direct external-candidate leaf measurement, not timing of the temporary SGLang integration; the integration was reverted and never performance-measured.",
+    "No evaluate_task.py result.json exists for this production-ABI session, so result speedups, repeat, conservative gate fields, and glm52 shape-gate counts are intentionally absent or null.",
+    "The frozen dsa_prefill_attn task uses flat BF16 FlashMLA tensors and is not an operational surrogate for the reached paged-FP8 TRT-LLM-gen path.",
+    "The configured GLM-5.2 checkpoint directory is empty, so live indexer output, complete model projections, scheduler behavior, and end-to-end serving were not exercised.",
+    "The host has four B200s; the unchanged eight-rank TP8/DP8/EP8 correctness and latency gate remains external and unpassed.",
+    "The checkpoint-free fixture uses deterministic synthetic physical top-k indices and process-global SGLang test seams.",
+    "No replacement was promoted; stock Q64 FlashInfer behavior remains active for every input."
+  ],
+  "agent": "Codex"
+}

@@ -1,0 +1,6 @@
+scope,runs,pairs_per_run,reference_p50_ms,candidate_p50_ms,median_run_paired_speedup,decision
+rawpool_stock_control,3,30,"0.874624;0.888160;0.977648","0.882448;0.887040;0.968560",1.000624,neutral
+rawpool_q32_swaps,3,30,"0.871088;0.873424;0.864928","1.608112;1.612208;1.600384",0.541023,reject
+rawpool_q16_swaps,3,30,"0.866640;0.967984;0.865968","2.924160;3.022368;2.923248",0.296514,reject
+backend_stock_control,3,20,"0.990112;0.979568;0.993392","0.994096;0.979088;0.994288",0.998658,neutral
+dp4_rank_max_stock_control,3,20,"0.911072;0.940944;0.941648","0.905200;0.943040;0.952880",1.003564,diagnostic-neutral

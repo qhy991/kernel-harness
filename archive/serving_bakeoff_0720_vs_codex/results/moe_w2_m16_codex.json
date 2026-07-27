@@ -1,0 +1,41 @@
+{
+  "candidate": {
+    "median_ms": 0.25699199736118317,
+    "min_ms": 0.18848000466823578,
+    "p95_ms": 0.3008959889411926,
+    "paired_p10_speedup": 0.960833066148654,
+    "paired_p90_speedup": 1.1491380013536125,
+    "passes_3pct_median_gate": true,
+    "path": "/home/qinhaiyan/Kernel-Harness/archive/serving_bakeoff_0720_vs_codex/serving_ports/codex/moe_w2_direct_launch_mainline.py",
+    "speedup": 1.0695844771036294
+  },
+  "execution_mode": "eager_cuda_event",
+  "reference": {
+    "median_ms": 0.28009600937366486,
+    "min_ms": 0.18812799453735352,
+    "p95_ms": 0.33244800567626953
+  },
+  "reference_policy": "SGLANG_GLM52_OPT=0 production path",
+  "schema_version": 1,
+  "timing_contract": "interleaved paired A/B; maximum CUDA-event latency across ranks",
+  "workload": {
+    "distributed": false,
+    "family": "moe_grouped_masked",
+    "name": "moe_w2_grouped_decode_m16",
+    "notes": "Real W2 grouped GEMM before DeepEP low-latency combine.",
+    "params": {
+      "decode_m": 16,
+      "expected_m": 4,
+      "expert_slab": 1024,
+      "experts_per_rank": 32,
+      "group_size": 128,
+      "k": 2048,
+      "n": 6144,
+      "topk": 8,
+      "valid_assignments": 128
+    },
+    "phase": "decode",
+    "source_symbol": "sglang.srt.layers.deep_gemm_wrapper.entrypoint.grouped_gemm_nt_f8f8bf16_masked",
+    "world_size": 1
+  }
+}

@@ -1,0 +1,16 @@
+Entering DeepGEMM JIT Pre-Compile session. It may take a long time (typically 10-20 mins) if you have not run `sglang.compile_deep_gemm`. It is recommended to run `sglang.compile_deep_gemm` with same args as `sglang.launch_server` for pre-compilation to reduce the overhead if you have not run it before. For example: `python3 -m sglang.compile_deep_gemm --model deepseek-ai/DeepSeek-V3 --tp 8 --trust-remote-code`
+DeepGEMM warmup:   0%|          | 0/16384 [00:00<?, ?it/s]DeepGEMM warmup:   7%|▋         | 1203/16384 [00:00<00:01, 12026.77it/s]DeepGEMM warmup:  16%|█▌        | 2626/16384 [00:00<00:01, 13319.16it/s]DeepGEMM warmup:  25%|██▍       | 4073/16384 [00:00<00:00, 13839.63it/s]DeepGEMM warmup:  34%|███▍      | 5641/16384 [00:00<00:00, 14565.59it/s]DeepGEMM warmup:  43%|████▎     | 7117/16384 [00:00<00:00, 14635.25it/s]DeepGEMM warmup:  53%|█████▎    | 8617/16384 [00:00<00:00, 14756.27it/s]DeepGEMM warmup:  62%|██████▏   | 10093/16384 [00:00<00:00, 14754.93it/s]DeepGEMM warmup:  71%|███████   | 11632/16384 [00:00<00:00, 14955.21it/s]DeepGEMM warmup:  80%|████████  | 13128/16384 [00:00<00:00, 14724.55it/s]DeepGEMM warmup:  89%|████████▉ | 14602/16384 [00:01<00:00, 13952.87it/s]DeepGEMM warmup:  98%|█████████▊| 16006/16384 [00:01<00:00, 13135.24it/s]DeepGEMM warmup: 100%|██████████| 16384/16384 [00:01<00:00, 13885.68it/s]
+Traceback (most recent call last):
+  File "/home/qinhaiyan/Kernel-Harness/serving_native/runner.py", line 946, in <module>
+    raise SystemExit(main())
+                     ^^^^^^
+  File "/home/qinhaiyan/Kernel-Harness/serving_native/runner.py", line 942, in main
+    return run_task(args)
+           ^^^^^^^^^^^^^^
+  File "/home/qinhaiyan/Kernel-Harness/serving_native/runner.py", line 838, in run_task
+    candidate_once = candidate_module.run(inputs, runtime)
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/qinhaiyan/Kernel-Harness/archive/codex-goal-ultra-xhigh/goals/15-indexer_wq_b_decode/candidates/indexer_wq_b_sms_dispatch.py", line 35, in run
+    return runtime.indexer_fused_prepare_store(inputs, candidate_wq=False)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: 'Runtime' object has no attribute 'indexer_fused_prepare_store'

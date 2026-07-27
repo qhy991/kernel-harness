@@ -1,0 +1,241 @@
+# Serving-native bake-off registry: archive-0720 ports vs Codex candidates.
+# All runnable rows use production packed UE8M0 ABI via serving_native/run.sh.
+#
+# status:
+#   run                — execute A/B vs stock reference
+#   absorbed_in_stock  — 0720 win was f32→packed scale pack; already in production
+#   already_stock      — 0720 candidate is the same backend as serving stock
+#   skip               — not in first-round matrix
+
+repo: /home/qinhaiyan/Kernel-Harness
+bakeoff_root: archive/serving_bakeoff_0720_vs_codex
+codex_root: archive/codex-goal-ultra-xhigh/goals
+warmup: 5
+repeat: 40
+
+cases:
+  # --- indexer wq_b: true head-to-head (0720 port == goal-15 packed; Codex variants) ---
+  - id: indexer_wq_b_m16_0720
+    op: indexer_wq_b
+    m: 16
+    workload: linear_indexer_wq_b_decode_m16
+    variant: "0720"
+    status: run
+    candidate: archive/serving_bakeoff_0720_vs_codex/serving_ports/0720/indexer_wq_b_packed.py
+    notes: "Serving port of hechenxi index_q_upproj (goal-15 packed)"
+
+  - id: indexer_wq_b_m16_codex_packed
+    op: indexer_wq_b
+    m: 16
+    workload: linear_indexer_wq_b_decode_m16
+    variant: codex
+    status: run
+    candidate: archive/codex-goal-ultra-xhigh/goals/15-indexer_wq_b_decode/candidates/indexer_wq_b_packed.py
+    notes: "Codex archive of same packed Triton (byte-identical lineage)"
+
+  - id: indexer_wq_b_m16_codex_sms
+    op: indexer_wq_b
+    m: 16
+    workload: linear_indexer_wq_b_decode_m16
+    variant: codex_alt
+    status: requires_goal_runtime
+    candidate: archive/codex-goal-ultra-xhigh/goals/15-indexer_wq_b_decode/candidates/indexer_wq_b_sms_dispatch.py
+    notes: "Needs runtime.indexer_fused_prepare_store (goal-15 runner only)"
+
+  - id: indexer_wq_b_m32_0720
+    op: indexer_wq_b
+    m: 32
+    workload: linear_indexer_wq_b_decode_m32
+    variant: "0720"
+    status: run
+    candidate: archive/serving_bakeoff_0720_vs_codex/serving_ports/0720/indexer_wq_b_packed.py
+    notes: "Serving port of hechenxi index_q_upproj (goal-15 packed)"
+
+  - id: indexer_wq_b_m32_codex_packed
+    op: indexer_wq_b
+    m: 32
+    workload: linear_indexer_wq_b_decode_m32
+    variant: codex
+    status: run
+    candidate: archive/codex-goal-ultra-xhigh/goals/15-indexer_wq_b_decode/candidates/indexer_wq_b_packed.py
+    notes: "Codex archive of same packed Triton"
+
+  - id: indexer_wq_b_m32_codex_sms
+    op: indexer_wq_b
+    m: 32
+    workload: linear_indexer_wq_b_decode_m32
+    variant: codex_alt
+    status: requires_goal_runtime
+    candidate: archive/codex-goal-ultra-xhigh/goals/15-indexer_wq_b_decode/candidates/indexer_wq_b_sms_dispatch.py
+    notes: "Needs runtime.indexer_fused_prepare_store (goal-15 runner only)"
+
+  # --- fused_qkv_a: 0720 packed Triton port vs stock (no Codex goal) ---
+  - id: fused_qkv_a_m16_0720
+    op: fused_qkv_a
+    m: 16
+    workload: linear_fused_qkv_a_decode_m16
+    variant: "0720"
+    status: run
+    candidate: archive/serving_bakeoff_0720_vs_codex/serving_ports/0720/fused_qkv_a_packed.py
+    notes: "New packed Triton port for N=2624 K=6144"
+
+  - id: fused_qkv_a_m32_0720
+    op: fused_qkv_a
+    m: 32
+    workload: linear_fused_qkv_a_decode_m32
+    variant: "0720"
+    status: run
+    candidate: archive/serving_bakeoff_0720_vs_codex/serving_ports/0720/fused_qkv_a_packed.py
+    notes: "New packed Triton port for N=2624 K=6144"
+
+  # --- q_b: 0720 fused-pack absorbed; Codex packed_warp ---
+  - id: q_b_m16_0720
+    op: q_b
+    m: 16
+    workload: linear_attn_q_b_decode_m16
+    variant: "0720"
+    status: absorbed_in_stock
+    candidate: null
+    notes: "0720 win was fp8_gemm_nt_fused f32→UE8M0 pack; production already packed"
+
+  - id: q_b_m16_codex
+    op: q_b
+    m: 16
+    workload: linear_attn_q_b_decode_m16
+    variant: codex
+    status: run
+    candidate: archive/codex-goal-ultra-xhigh/goals/14-attn_q_b_decode_packed/candidates/q_b_packed_warp.py
+    sglang_root: /home/qinhaiyan/glm52-goal-runs/14-attn_q_b_decode_packed/sglang
+    deepgemm_manifest: /home/qinhaiyan/glm52-goal-runs/14-attn_q_b_decode_packed/kernel-harness/serving_native/evidence/14_attn_q_b_decode_packed/packed_broadcast_v3_20260723a/overlay_runtime_manifest.json
+    deepgemm_variant: glm52-qb-sm100-packed-broadcast-v3
+    notes: "DeepGEMM fp8_gemm_nt_packed_warp overlay (goal-14 manifest)"
+
+  - id: q_b_m32_0720
+    op: q_b
+    m: 32
+    workload: linear_attn_q_b_decode_m32
+    variant: "0720"
+    status: absorbed_in_stock
+    candidate: null
+    notes: "0720 win was fp8_gemm_nt_fused f32→UE8M0 pack; production already packed"
+
+  - id: q_b_m32_codex
+    op: q_b
+    m: 32
+    workload: linear_attn_q_b_decode_m32
+    variant: codex
+    status: run
+    candidate: archive/codex-goal-ultra-xhigh/goals/14-attn_q_b_decode_packed/candidates/q_b_packed_warp.py
+    sglang_root: /home/qinhaiyan/glm52-goal-runs/14-attn_q_b_decode_packed/sglang
+    deepgemm_manifest: /home/qinhaiyan/glm52-goal-runs/14-attn_q_b_decode_packed/kernel-harness/serving_native/evidence/14_attn_q_b_decode_packed/packed_broadcast_v3_20260723a/overlay_runtime_manifest.json
+    deepgemm_variant: glm52-qb-sm100-packed-broadcast-v3
+    notes: "DeepGEMM fp8_gemm_nt_packed_warp overlay (goal-14 manifest)"
+
+  # --- moe_w13: Codex overlay; 0720 split gate/up absorbed ---
+  - id: moe_w13_m16_0720
+    op: moe_w13
+    m: 16
+    workload: moe_w13_grouped_decode_m16
+    variant: "0720"
+    status: absorbed_in_stock
+    candidate: null
+    notes: "0720 had separate moe_gate/up + pack; production is fused W13 packed"
+
+  - id: moe_w13_m16_codex
+    op: moe_w13
+    m: 16
+    workload: moe_w13_grouped_decode_m16
+    variant: codex
+    status: run
+    candidate: archive/serving_bakeoff_0720_vs_codex/serving_ports/codex/moe_w13_deepgemm_overlay_mainline.py
+    sglang_root: /home/qinhaiyan/glm52-goal-runs/19-moe_w13_decode_kernel/sglang
+    deepgemm_manifest: /home/qinhaiyan/glm52-goal-runs/19-moe_w13_decode_kernel/sglang/third_party/deepgemm_glm52/manifest.json
+    deepgemm_variant: w13-bm32-a674bcf69
+    notes: "Mainline-adapted goal-19 W13 DeepGEMM overlay"
+
+  - id: moe_w13_m32_0720
+    op: moe_w13
+    m: 32
+    workload: moe_w13_grouped_decode_m32
+    variant: "0720"
+    status: absorbed_in_stock
+    candidate: null
+    notes: "0720 had separate moe_gate/up + pack; production is fused W13 packed"
+
+  - id: moe_w13_m32_codex
+    op: moe_w13
+    m: 32
+    workload: moe_w13_grouped_decode_m32
+    variant: codex
+    status: run
+    candidate: archive/serving_bakeoff_0720_vs_codex/serving_ports/codex/moe_w13_deepgemm_overlay_mainline.py
+    sglang_root: /home/qinhaiyan/glm52-goal-runs/19-moe_w13_decode_kernel/sglang
+    deepgemm_manifest: /home/qinhaiyan/glm52-goal-runs/19-moe_w13_decode_kernel/sglang/third_party/deepgemm_glm52/manifest.json
+    deepgemm_variant: w13-bm32-a674bcf69
+    notes: "Mainline-adapted goal-19 W13 DeepGEMM overlay"
+
+  # --- moe_w2: Codex direct launch; 0720 down-proj pack absorbed ---
+  - id: moe_w2_m16_0720
+    op: moe_w2
+    m: 16
+    workload: moe_w2_grouped_decode_m16
+    variant: "0720"
+    status: absorbed_in_stock
+    candidate: null
+    notes: "0720 moe_down pack already in production packed path"
+
+  - id: moe_w2_m16_codex
+    op: moe_w2
+    m: 16
+    workload: moe_w2_grouped_decode_m16
+    variant: codex
+    status: run
+    candidate: archive/serving_bakeoff_0720_vs_codex/serving_ports/codex/moe_w2_direct_launch_mainline.py
+    notes: "Mainline-adapted goal-06 direct DeepGEMM launch"
+
+  - id: moe_w2_m32_0720
+    op: moe_w2
+    m: 32
+    workload: moe_w2_grouped_decode_m32
+    variant: "0720"
+    status: absorbed_in_stock
+    candidate: null
+    notes: "0720 moe_down pack already in production packed path"
+
+  - id: moe_w2_m32_codex
+    op: moe_w2
+    m: 32
+    workload: moe_w2_grouped_decode_m32
+    variant: codex
+    status: run
+    candidate: archive/serving_bakeoff_0720_vs_codex/serving_ports/codex/moe_w2_direct_launch_mainline.py
+    notes: "Mainline-adapted goal-06 direct DeepGEMM launch"
+
+  # --- DSA: 0720 hechenxi already is stock trtllm-gen ---
+  - id: dsa_m16_0720
+    op: dsa
+    m: 16
+    workload: dsa_trtllm_decode_m16
+    variant: "0720"
+    status: already_stock
+    candidate: null
+    notes: "hechenxi dsa_decode_attn is flashinfer trtllm-gen; same as serving stock"
+
+  - id: dsa_m32_0720
+    op: dsa
+    m: 32
+    workload: dsa_trtllm_decode_m32
+    variant: "0720"
+    status: already_stock
+    candidate: null
+    notes: "hechenxi dsa_decode_attn is flashinfer trtllm-gen; same as serving stock"
+
+  # --- o_proj: absorbed ---
+  - id: o_proj_m16_0720
+    op: o_proj
+    m: 16
+    workload: linear_attn_o_decode_m16
+    variant: "0720"
+    status: absorbed_in_stock
+    candidate: null
+    notes: "0720 win was scale_pack.cu + packed gemm; production already packed"

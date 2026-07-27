@@ -1,0 +1,45 @@
+{
+  "schema_version": 1,
+  "date": "2026-07-22",
+  "disposition": "no_replacement",
+  "leaf_gate": {
+    "scheduler_candidate": "performance_failed_both_buckets",
+    "bank_layout_candidate": "correctness_failed_before_timing",
+    "eligible_candidate_buckets": []
+  },
+  "containing_dsa_region": {
+    "stock_baseline": "not_available",
+    "candidate_comparison": "not_advanced",
+    "reason": "No candidate passed the required leaf gate, so a region speedup could not authorize promotion."
+  },
+  "complete_sglang_decode": {
+    "stock_baseline": "not_available",
+    "candidate_comparison": "not_advanced",
+    "reason": "No candidate passed the required leaf gate, and no GLM-5.2 model weights were present on the host."
+  },
+  "production_acceptance": {
+    "required_topology": "TP8/DP8/EP8 on one node",
+    "available_physical_b200_count": 4,
+    "status": "external_validation_unavailable",
+    "four_gpu_policy": "diagnostic_only_not_a_substitute",
+    "gate_weakened_or_relabelled": false,
+    "wrapper_policy": "All CUDA work used with_flexible_gpu.sh; the user-mandated scheduler was not bypassed."
+  },
+  "model_search": {
+    "status": "not_found",
+    "locations_checked": [
+      "/models",
+      "/data*",
+      "/home/qinhaiyan/.cache/huggingface",
+      "/home/qinhaiyan/models",
+      "mounted home paths"
+    ]
+  },
+  "interpretation": "The external topology/model limitations are preserved, but they are not the sole blocker: both candidates already fail the single-GPU leaf promotion gates.",
+  "fallback": {
+    "m16": "stock",
+    "m32": "stock",
+    "SGLANG_GLM52_OPT": "0",
+    "production_dispatch_modified": false
+  }
+}

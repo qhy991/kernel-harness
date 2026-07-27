@@ -1,0 +1,25 @@
+{
+  "available_gpu_count_evidence": "tp4_runs/20260723T121417Z/gpu_identity_start.txt records four B200s",
+  "configured_model_dir": "/mnt/OS-oKqEXySb/models/GLM-5.2-NVFP4",
+  "configured_model_files": [],
+  "disposition": "external validation blocked; stock fallback active",
+  "hf_snapshot": "/home/qinhaiyan/.cache/huggingface/hub/models--nvidia--GLM-5.2-NVFP4/snapshots/aec724e8c7b8ee9db3b48c01c320f63f9cdaf8aa",
+  "hf_snapshot_files": [
+    {
+      "name": "config.json",
+      "resolved": "/home/qinhaiyan/.cache/huggingface/hub/models--nvidia--GLM-5.2-NVFP4/blobs/b63d4c44cdd013e928cbc37a755633e8c001626f",
+      "size": 15517
+    },
+    {
+      "name": "generation_config.json",
+      "resolved": "/home/qinhaiyan/.cache/huggingface/hub/models--nvidia--GLM-5.2-NVFP4/blobs/4780e3aba8759054a8f8b3e4d1dc2277c1353e14",
+      "size": 215
+    }
+  ],
+  "repo_venv_module_specs": {
+    "deep_ep": null,
+    "modelopt": null
+  },
+  "required_topology": "TP8/DP8/EP8",
+  "schema_version": 1
+}

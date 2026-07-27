@@ -1,0 +1,6 @@
+PASS cutedsl
+PASS flashinfer-cutlass
+PASS flashinfer-tgv
+PASS flashinfer-cublaslt
+PASS flashinfer-cudnn
+PASS flashinfer-auto

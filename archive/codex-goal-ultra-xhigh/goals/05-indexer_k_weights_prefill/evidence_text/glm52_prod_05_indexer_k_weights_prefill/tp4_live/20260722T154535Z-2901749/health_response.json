@@ -1,0 +1,16 @@
+{
+  "attempt_count": 14,
+  "healthy": false,
+  "last_response": {
+    "elapsed_s": 0.0002716659801080823,
+    "endpoint": "/health_generate",
+    "exception": "URLError(ConnectionRefusedError(111, 'Connection refused'))",
+    "method": "GET",
+    "request_payload": null,
+    "response_body": "",
+    "response_headers": {},
+    "status_code": null,
+    "url": "http://127.0.0.1:44965/health_generate"
+  },
+  "reason": "tracked nsys process exited before health_generate"
+}

@@ -1,0 +1,165 @@
+{
+  "inputs": {
+    "block_tables": {
+      "bytes": 33554432,
+      "contiguous": true,
+      "data_ptr_alignment_128": 0,
+      "device": "cuda:0",
+      "dtype": "torch.int32",
+      "shape": [
+        4096,
+        1,
+        2048
+      ],
+      "stride": [
+        2048,
+        2048,
+        1
+      ]
+    },
+    "bmm1_scale": {
+      "type": "float",
+      "value": 0.0625
+    },
+    "kv_cache": {
+      "bytes": 18874368,
+      "contiguous": true,
+      "data_ptr_alignment_128": 0,
+      "device": "cuda:0",
+      "dtype": "torch.float8_e4m3fn",
+      "shape": [
+        512,
+        1,
+        64,
+        576
+      ],
+      "stride": [
+        36864,
+        36864,
+        576,
+        1
+      ]
+    },
+    "max_seq_len": {
+      "type": "int",
+      "value": 32768
+    },
+    "query": {
+      "bytes": 150994944,
+      "contiguous": true,
+      "data_ptr_alignment_128": 0,
+      "device": "cuda:0",
+      "dtype": "torch.float8_e4m3fn",
+      "shape": [
+        4096,
+        1,
+        64,
+        576
+      ],
+      "stride": [
+        36864,
+        36864,
+        576,
+        1
+      ]
+    },
+    "seq_lens": {
+      "bytes": 16384,
+      "contiguous": true,
+      "data_ptr_alignment_128": 0,
+      "device": "cuda:0",
+      "dtype": "torch.int32",
+      "shape": [
+        4096
+      ],
+      "stride": [
+        1
+      ]
+    },
+    "sparse_topk": {
+      "type": "int",
+      "value": 2048
+    },
+    "workspace": {
+      "bytes": 402653184,
+      "contiguous": true,
+      "data_ptr_alignment_128": 0,
+      "device": "cuda:0",
+      "dtype": "torch.uint8",
+      "shape": [
+        402653184
+      ],
+      "stride": [
+        1
+      ]
+    }
+  },
+  "production_reachability": {
+    "backend": "trtllm",
+    "eight_rank_serving_trace": "not_collected",
+    "model_class": "GlmMoeDsaForCausalLM",
+    "prefill_dispatch": "DeepseekSparseAttnBackend.forward_extend -> _forward_trtllm(is_prefill=True)",
+    "source_symbol": "sglang.srt.layers.attention.dsa_backend.DeepseekSparseAttnBackend._forward_trtllm -> flashinfer.decode.trtllm_batch_decode_with_kv_cache_mla"
+  },
+  "profile": {
+    "iterations": 1,
+    "nvtx_range": "dsa-prefill-trtllm-m4096-stock",
+    "warmup": 1
+  },
+  "runtime": {
+    "compute_capability": [
+      10,
+      0
+    ],
+    "cuda": "13.0",
+    "cuda_visible_devices": "3",
+    "device_name": "NVIDIA B200",
+    "dsa_backend": "/home/qinhaiyan/glm52-goal-runs/03-dsa_prefill_attention/sglang/python/sglang/srt/layers/attention/dsa_backend.py",
+    "dsa_backend_sha256": "c55b55e166bb10407070ecfb00bbf0650d54dd1d804715560ca59a7920b01adb",
+    "flashinfer-python": "0.6.12",
+    "is_current_stream_capturing": false,
+    "logical_device": 0,
+    "sgl-kernel": "0.4.4",
+    "sglang": "0.5.15",
+    "stream": 0,
+    "torch": "2.11.0+cu130"
+  },
+  "trace_kind": "exact_rank_local_library_call",
+  "workload": {
+    "distributed": false,
+    "family": "dsa_trtllm_prefill",
+    "name": "dsa_trtllm_prefill_m4096_ctx32768",
+    "notes": "Rank-local B200 TP8/DP8/EP8 ABI: the final 4096-token chunk of one 32768-token sequence. Each query has a deterministic scattered causal top-2048 table. Standalone world_size=1 isolates the exact production FlashInfer/TRT-LLM call; eight-rank serving acceptance remains separate.",
+    "params": {
+      "attention_dp": 8,
+      "attention_tp": 1,
+      "context": 32768,
+      "context_parallel": 1,
+      "context_per_request": 32768,
+      "deployment_world_size": 8,
+      "execution_mode": "eager",
+      "head_dim": 576,
+      "heads": 64,
+      "kv_dtype": "float8_e4m3fn",
+      "kv_lora_rank": 512,
+      "local_tokens": 4096,
+      "output_dtype": "bfloat16",
+      "page_size": 64,
+      "prefix_tokens": 28672,
+      "prefix_tokens_per_request": 28672,
+      "qk_head_dim": 256,
+      "qk_nope_head_dim": 192,
+      "qk_rope_head_dim": 64,
+      "query_dtype": "float8_e4m3fn",
+      "requests": 1,
+      "sequence_distribution": "single_sequence_final_chunk_scattered_topk",
+      "sparse_topk": 2048,
+      "tokens_per_request": 4096,
+      "value_dim": 512,
+      "workspace_bytes": 402653184
+    },
+    "phase": "prefill",
+    "source_symbol": "sglang.srt.layers.attention.dsa_backend.DeepseekSparseAttnBackend._forward_trtllm -> flashinfer.decode.trtllm_batch_decode_with_kv_cache_mla",
+    "world_size": 1
+  }
+}

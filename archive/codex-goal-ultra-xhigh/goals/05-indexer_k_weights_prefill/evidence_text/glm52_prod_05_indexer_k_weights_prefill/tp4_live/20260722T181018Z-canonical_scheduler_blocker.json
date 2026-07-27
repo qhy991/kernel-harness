@@ -1,0 +1,20 @@
+{
+  "schema_version": 1,
+  "run_id": "20260722T181018Z-canonical",
+  "requested_run_id_timestamp_utc": "2026-07-22T18:10:18Z",
+  "observation_completed_utc": "2026-07-22T18:41:13Z",
+  "wrapper": "/home/qinhaiyan/glm52-goal-runs/with_all_gpus_lock.sh",
+  "command": "evidence/glm52_prod_05_indexer_k_weights_prefill/run_tp4_live_diagnostic.sh",
+  "attempts": 180,
+  "retry_interval_seconds": 10,
+  "terminal_exit_code": 75,
+  "diagnostic_executed": false,
+  "run_directory_created": false,
+  "observed_wrapper_refusals": [
+    "another four-GPU request is already pending or running",
+    "an external or scheduled CUDA process is active; retry the four-GPU lane later"
+  ],
+  "kernel_harness_commit": "95060f35adbe5e6ea7f7cb35da78cd30d0e232a2",
+  "diagnostic_script_sha256": "0e063c3900f59eadd8c83e6725e0889b424cb3d64e885e838e00cba3ddabf1b2",
+  "scope": "Shared-host allocation evidence only. No CUDA command from this run ID executed, and this is neither TP4 reachability nor TP8 acceptance evidence."
+}

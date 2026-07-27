@@ -1,0 +1,94 @@
+{
+  "backend": "deepgemm",
+  "observed": {
+    "topk_indices": {
+      "dtype": "torch.int32",
+      "shape": [
+        32,
+        2048
+      ],
+      "stride": [
+        2048,
+        1
+      ]
+    }
+  },
+  "range": "indexer_complete_decode_m32_deepgemm",
+  "runtime_contract": {
+    "batch": 32,
+    "block_table": {
+      "device": "cuda:0",
+      "dtype": "torch.int32",
+      "shape": [
+        32,
+        128
+      ],
+      "stride": [
+        128,
+        1
+      ]
+    },
+    "context": 8192,
+    "graph_mode": "cuda_graph_decode",
+    "hidden_states": {
+      "device": "cuda:0",
+      "dtype": "torch.bfloat16",
+      "shape": [
+        32,
+        6144
+      ],
+      "stride": [
+        6144,
+        1
+      ]
+    },
+    "include_dsa": false,
+    "index_k_cache": {
+      "device": "cuda:0",
+      "dtype": "torch.uint8",
+      "shape": [
+        4096,
+        64,
+        1,
+        132
+      ],
+      "stride": [
+        8448,
+        132,
+        132,
+        1
+      ]
+    },
+    "num_sms": 148,
+    "production_topology": "TP8/DP8/EP8; rank-local M is not divided",
+    "q_lora": {
+      "device": "cuda:0",
+      "dtype": "torch.bfloat16",
+      "shape": [
+        32,
+        2048
+      ],
+      "stride": [
+        2048,
+        1
+      ]
+    },
+    "schedule_metadata": {
+      "device": "cuda:0",
+      "dtype": "torch.int32",
+      "shape": [
+        149,
+        2
+      ],
+      "stride": [
+        2,
+        1
+      ]
+    },
+    "score_backend": "deepgemm",
+    "score_mode": "split",
+    "source_symbol": "Indexer._fused_q_prepare_and_store -> Indexer._get_topk_paged",
+    "topk_transform": "topk_transform_512_v2"
+  },
+  "task": "indexer_complete_decode_m32"
+}

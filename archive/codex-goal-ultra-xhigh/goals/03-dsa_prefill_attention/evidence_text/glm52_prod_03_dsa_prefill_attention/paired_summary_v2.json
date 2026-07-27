@@ -1,0 +1,56 @@
+{
+  "schema_version": 1,
+  "decision_rule": "median paired speedup >= 1.03; no unpaired cross-GPU comparisons",
+  "series": [
+    {
+      "scope": "rawpool_stock_control",
+      "runs": 3,
+      "pairs_per_run": 30,
+      "reference_p50_ms": [0.8746239840984344, 0.888159990310669, 0.977647989988327],
+      "candidate_p50_ms": [0.8824480175971985, 0.887039989233017, 0.968559980392456],
+      "paired_speedup": [0.9998149335558639, 1.0006241018415647, 1.0040379488897573],
+      "median_run_paired_speedup": 1.0006241018415647,
+      "decision": "neutral"
+    },
+    {
+      "scope": "rawpool_q32_swaps",
+      "runs": 3,
+      "pairs_per_run": 30,
+      "reference_p50_ms": [0.8710879981517792, 0.8734240233898163, 0.8649279773235321],
+      "candidate_p50_ms": [1.6081119775772095, 1.6122080087661743, 1.600383996963501],
+      "paired_speedup": [0.5410229361745733, 0.5415719114668394, 0.5404259413713973],
+      "median_run_paired_speedup": 0.5410229361745733,
+      "decision": "reject"
+    },
+    {
+      "scope": "rawpool_q16_swaps",
+      "runs": 3,
+      "pairs_per_run": 30,
+      "reference_p50_ms": [0.8666400015354156, 0.9679839909076691, 0.8659679889678955],
+      "candidate_p50_ms": [2.9241600036621094, 3.0223679542541504, 2.923248052597046],
+      "paired_speedup": [0.2965143666198129, 0.319092712423684, 0.29591983620049855],
+      "median_run_paired_speedup": 0.2965143666198129,
+      "decision": "reject"
+    },
+    {
+      "scope": "backend_stock_control",
+      "runs": 3,
+      "pairs_per_run": 20,
+      "reference_p50_ms": [0.9901120066642761, 0.9795680046081543, 0.9933919906616211],
+      "candidate_p50_ms": [0.9940959811210632, 0.9790879786014557, 0.9942879974842072],
+      "paired_speedup": [0.9980747488650166, 0.9996075066538055, 0.9986580244527181],
+      "median_run_paired_speedup": 0.9986580244527181,
+      "decision": "neutral"
+    },
+    {
+      "scope": "dp4_rank_max_stock_control",
+      "runs": 3,
+      "pairs_per_run": 20,
+      "reference_p50_ms": [0.9110719859600067, 0.9409440159797668, 0.9416479766368866],
+      "candidate_p50_ms": [0.9051999747753143, 0.9430400133132935, 0.9528800249099731],
+      "paired_speedup": [1.0035635907824974, 1.0049599110527911, 0.9861108995550607],
+      "median_run_paired_speedup": 1.0035635907824974,
+      "decision": "diagnostic-neutral"
+    }
+  ]
+}

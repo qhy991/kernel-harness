@@ -1,0 +1,67 @@
+{
+  "cuda_visible_devices": "2",
+  "nvidia_smi": "Wed Jul 22 14:30:08 2026       \n+-----------------------------------------------------------------------------------------+\n| NVIDIA-SMI 610.43.02              KMD Version: 610.43.02     CUDA UMD Version: 13.3     |\n+-----------------------------------------+------------------------+----------------------+\n| GPU  Name                 Persistence-M | Bus-Id          Disp.A | Volatile Uncorr. ECC |\n| Fan  Temp   Perf          Pwr:Usage/Cap |           Memory-Usage | GPU-Util  Compute M. |\n|                                         |                        |               MIG M. |\n|=========================================+========================+======================|\n|   0  NVIDIA B200                    On  |   00000000:05:00.0 Off |                    0 |\n| N/A   38C    P0            206W / 1000W |       0MiB / 183359MiB |      0%      Default |\n|                                         |                        |             Disabled |\n+-----------------------------------------+------------------------+----------------------+\n|   1  NVIDIA B200                    On  |   00000000:06:00.0 Off |                    0 |\n| N/A   42C    P0            150W / 1000W |       4MiB / 183359MiB |      0%      Default |\n|                                         |                        |             Disabled |\n+-----------------------------------------+------------------------+----------------------+\n|   2  NVIDIA B200                    On  |   00000000:07:00.0 Off |                    0 |\n| N/A   40C    P0            144W / 1000W |       4MiB / 183359MiB |      0%      Default |\n|                                         |                        |             Disabled |\n+-----------------------------------------+------------------------+----------------------+\n|   3  NVIDIA B200                    On  |   00000000:08:00.0 Off |                    0 |\n| N/A   35C    P0            153W / 1000W |       1MiB / 183359MiB |      0%      Default |\n|                                         |                        |             Disabled |\n+-----------------------------------------+------------------------+----------------------+\n\n+-----------------------------------------------------------------------------------------+\n| Processes:                                                                              |\n|  GPU   GI   CI              PID   Type   Process name                        GPU Memory |\n|        ID   ID                                                               Usage      |\n|=========================================================================================|\n|  No running processes found                                                             |\n+-----------------------------------------------------------------------------------------+",
+  "packages": {
+    "flashinfer": {
+      "origin": "/home/qinhaiyan/glm52-goal-runs/05-indexer_k_weights_prefill/kernel-harness/.venv/lib/python3.12/site-packages/flashinfer/__init__.py",
+      "version": "not-installed"
+    },
+    "flashinfer-python": {
+      "origin": "not-found",
+      "version": "0.6.12"
+    },
+    "sglang": {
+      "origin": "/home/qinhaiyan/glm52-goal-runs/05-indexer_k_weights_prefill/sglang/python/sglang/__init__.py",
+      "version": "0.5.15"
+    },
+    "sglang-kernel": {
+      "origin": "not-found",
+      "version": "0.4.4"
+    }
+  },
+  "physical_gpu_query": "2, GPU-df8b1d78-b06c-39a2-54f0-66b9fabf3a99, NVIDIA B200, 120 MHz, 3996 MHz, P0, 40, 144.61 W",
+  "relevant_environment": {
+    "CUDA_VISIBLE_DEVICES": "2",
+    "INDEXER_WK_FLASHINFER_BACKEND": null,
+    "SGLANG_DISABLE_DSA_INDEXER_FUSION": null,
+    "SGLANG_GLM52_OPT": "0",
+    "SGLANG_ROOT": "/home/qinhaiyan/glm52-goal-runs/05-indexer_k_weights_prefill/sglang"
+  },
+  "repositories": {
+    "kernel_harness": {
+      "branch": "goal/glm52-prod-05-indexer_k_weights_prefill",
+      "head": "bcd005409e65786af82c86f621507ebef12b2766",
+      "path": "/home/qinhaiyan/glm52-goal-runs/05-indexer_k_weights_prefill/kernel-harness",
+      "status": [
+        "M serving_native/README.md",
+        " M serving_native/runner.py",
+        " M serving_native/selftest.py",
+        " M serving_native/workloads.py",
+        "?? evidence/",
+        "?? profile/",
+        "?? serving_native/candidates/indexer_wk_cutedsl_tgv.py",
+        "?? serving_native/candidates/indexer_wk_flashinfer.py"
+      ]
+    },
+    "sglang": {
+      "branch": "goal/glm52-prod-05-indexer_k_weights_prefill",
+      "head": "f93f8867b4bc124c9809c9110ec7361ed11b6b4a",
+      "path": "/home/qinhaiyan/glm52-goal-runs/05-indexer_k_weights_prefill/sglang",
+      "status": []
+    }
+  },
+  "tools": {
+    "ncu": "NVIDIA (R) Nsight Compute Command Line Profiler\nCopyright (c) 2018-2026 NVIDIA Corporation\nVersion 2026.1.1.0 (build 37634170) (public-release)",
+    "nsys": "NVIDIA Nsight Systems version 2025.6.3.541-256337736014v0"
+  },
+  "torch": {
+    "compute_capability": [
+      10,
+      0
+    ],
+    "cuda": "13.0",
+    "device_name": "NVIDIA B200",
+    "total_memory": 191490555904,
+    "version": "2.11.0+cu130"
+  }
+}

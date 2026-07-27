@@ -1,0 +1,84 @@
+{
+  "schema_version": 1,
+  "id": "glm52--moe_gate_proj_decode--b200--20260723a",
+  "date": "2026-07-23",
+  "model": "glm52",
+  "task": "glm52/moe_gate_proj_decode",
+  "op": "moe_gate",
+  "family": "moe",
+  "phase": "decode",
+  "shapes": {
+    "K": 6144,
+    "N": 2048,
+    "E": 8,
+    "top_k": 8,
+    "M_sweep": [
+      16,
+      32
+    ]
+  },
+  "hardware": {
+    "gpu": "NVIDIA B200",
+    "sm": "sm_100"
+  },
+  "stack": {
+    "sglang_commit": "f93f8867b",
+    "torch": "2.11.0+cu130",
+    "cuda": "13.0"
+  },
+  "baseline_kernel": "deep_gemm.fp8_m_grouped_gemm_nt_masked",
+  "bottleneck": {
+    "kind": "memory-bandwidth",
+    "evidence": "Exact-symbol NCU on the reachable fused production W13 path identifies a one-wave shared-memory-limited SM100 DeepGEMM whose dominant speed-of-light signal is memory throughput and whose source hotspots are TMA data-arrival and barrier waits; paired Nsys windows contain no timed scale pack, layout conversion, allocation/free, or SM reconfiguration."
+  },
+  "approaches": [
+    {
+      "technique": "packed-ue8m0-wrapper-bypass",
+      "summary": "Called the exact DeepGEMM masked grouped primitive directly on the current packed activation and weight scales to bound all removable SGLang wrapper work.",
+      "outcome": "abandoned",
+      "geomean_speedup": null,
+      "why": "The direct floor removed required hooks, recipes, policy, and overlap contracts while its containing local compute region remained below the production promotion threshold."
+    },
+    {
+      "technique": "deepgemm-default-packed-arguments",
+      "summary": "Compared explicit packed-scale suppression with DeepGEMM's default arguments on the same immutable inputs.",
+      "outcome": "abandoned",
+      "geomean_speedup": null,
+      "why": "Both forms launched the same exact W13 symbol with no scale-path kernel, so argument spelling exposed no device work to remove."
+    },
+    {
+      "technique": "process-global-output-reuse",
+      "summary": "Measured a preallocated output floor to isolate cached-allocator bookkeeping around the W13 handoff.",
+      "outcome": "abandoned",
+      "geomean_speedup": null,
+      "why": "A process-global tensor aliases concurrent requests, streams, and graph instances, while the warmed stock path already issues no timed CUDA allocation API."
+    },
+    {
+      "technique": "serving-safe-registry-bucket",
+      "summary": "Enabled only the existing fail-closed M16/M32 moe_gate_proj registry configuration while retaining packed inputs and stock fallback.",
+      "outcome": "slower",
+      "geomean_speedup": null,
+      "why": "The contract-preserving path added host policy and telemetry work without changing the device kernel, and the containing local compute region regressed."
+    }
+  ],
+  "result": {
+    "status": "no-win",
+    "geomean_speedup": null,
+    "min_speedup_conservative": null,
+    "repeat": null,
+    "integrate": "no-recipe"
+  },
+  "lesson": "When DeepEP already supplies packed integer UE8M0 scales, first prove the timed kernel sequence before adding an adapter. For small-M fused MoE decode, a wrapper-only gain must survive SwiGLU, W2, communication, graph, and end-to-end gates; otherwise retain the library kernel and stock fallback.",
+  "transfers_to": [
+    "packed-UE8M0 DeepGEMM MoE decode paths on SM100",
+    "launch-overhead experiments whose isolated gain is diluted by a containing fused region",
+    "serving registries that must preserve graph, stream, recipe, and overlap contracts"
+  ],
+  "caveats": [
+    "The plan explicitly says the separate frozen moe_gate_proj_decode task is not the replacement boundary; it was not run, and no frozen result.json number is claimed here.",
+    "The task fields and shapes above are copied from the nearest current knowledge-base task only; the production campaign targets fused W13 with a different expert geometry and output width.",
+    "All quantitative serving_native and profiler results remain in the goal evidence directory and are intentionally not copied into the knowledge result fields.",
+    "Four-rank diagnostics are not eight-rank production evidence, and the exact FP8 server acceptance lane remains external."
+  ],
+  "agent": "codex"
+}

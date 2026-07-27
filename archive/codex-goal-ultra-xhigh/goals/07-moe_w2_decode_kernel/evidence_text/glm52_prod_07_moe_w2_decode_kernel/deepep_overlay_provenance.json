@@ -1,0 +1,13 @@
+{
+  "deep_ep_source_commit": "9af0e0d0e74f3577af1979c9b9e1ac2cad0104ee",
+  "deep_ep_version": "1.2.1+9af0e0d",
+  "extension_path": "/home/qinhaiyan/glm52-goal-runs/07-moe_w2_decode_kernel/sglang/build/deepep-overlay/deep_ep_cpp.cpython-312-x86_64-linux-gnu.so",
+  "extension_sha256": "3e857a1c88023e3a459d4848d20008f93a7766e86934b349420b836070abedb0",
+  "installed_in_place": false,
+  "nvshmem_version": "3.4.5",
+  "nvshmem_host_sha256": "c43004bb93053aa70603a204fe0c9052bdd29f38822d3048599183f8d5930d8f",
+  "overlay_role": "stock diagnostic dependency",
+  "schema_version": 1,
+  "source_wheel": "/home/qinhaiyan/glm52-goal-runs/25-deepep_dispatch_combine/sglang/build/DeepEP/dist/deep_ep-1.2.1+9af0e0d-cp312-cp312-linux_x86_64.whl",
+  "source_wheel_sha256": "f5bec528e02fddf5b3cc92eca8c672e9575cc88699b5372bc2dcf88090e25088"
+}

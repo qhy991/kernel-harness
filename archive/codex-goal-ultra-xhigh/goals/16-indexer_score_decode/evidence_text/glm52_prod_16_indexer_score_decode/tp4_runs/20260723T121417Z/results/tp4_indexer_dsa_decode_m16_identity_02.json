@@ -1,0 +1,309 @@
+{
+  "candidate": {
+    "median_ms": 0.05260800011456013,
+    "min_ms": 0.04918399825692177,
+    "p95_ms": 0.06032000109553337,
+    "paired_p10_speedup": 0.9373134400971912,
+    "paired_p90_speedup": 1.0516581870822497,
+    "paired_speedups": [
+      0.6941323671814004,
+      0.9444116478936916,
+      1.0256869633829317,
+      0.9522673551563445,
+      0.9294389838619008,
+      1.0250611020332618,
+      0.9401759735427908,
+      0.958895748505188,
+      0.9724137688258548,
+      0.9522776715091612,
+      0.9781324271102118,
+      0.9561509862724219,
+      0.9975742689520122,
+      0.7204486881630224,
+      0.9484173657272736,
+      1.42648001780243,
+      0.9830508594015801,
+      0.9850746517617982,
+      1.0104938352338015,
+      1.0516581870822497,
+      0.9373134400971912,
+      0.9781250511590782,
+      1.0367601144424268,
+      1.0370820672134673,
+      0.9756542480643916,
+      1.057230773992087,
+      0.9938195550977608,
+      0.9561350942156699,
+      1.1577180851919255,
+      0.9477392288657491,
+      1.0337500395630206,
+      1.0404040552514189,
+      0.9247184157027497,
+      0.9987714894596227,
+      1.0456885951487023,
+      0.9572058300559013,
+      0.9621118028141415,
+      0.9877419176036409,
+      1.0228571690439907,
+      1.06115811359909
+    ],
+    "passes_3pct_median_gate": false,
+    "path": "/home/qinhaiyan/glm52-goal-runs/16-indexer_score_decode/kernel-harness/serving_native/candidates/reference.py",
+    "samples_ms": [
+      0.07689599692821503,
+      0.05411199852824211,
+      0.053568001836538315,
+      0.05363199859857559,
+      0.05532800033688545,
+      0.052352000027894974,
+      0.05455999821424484,
+      0.05215999856591225,
+      0.06032000109553337,
+      0.059007998555898666,
+      0.0541439987719059,
+      0.0525440014898777,
+      0.05276799947023392,
+      0.07417599856853485,
+      0.05459199845790863,
+      0.05027199909090996,
+      0.05286400020122528,
+      0.053599998354911804,
+      0.05183999985456467,
+      0.050175998359918594,
+      0.053599998354911804,
+      0.05119999870657921,
+      0.05135999992489815,
+      0.052639998495578766,
+      0.05257600173354149,
+      0.052000001072883606,
+      0.05177599936723709,
+      0.05398400127887726,
+      0.05721599981188774,
+      0.054496001452207565,
+      0.05119999870657921,
+      0.0506879985332489,
+      0.05398400127887726,
+      0.05209600180387497,
+      0.04972799867391586,
+      0.05084799975156784,
+      0.05152000114321709,
+      0.04960000142455101,
+      0.05040000006556511,
+      0.04918399825692177
+    ],
+    "sha256": "cd7c03e7f394193f654f9c98529ed76954465e811d81c36e340eb660723e81cf",
+    "speedup": 0.9805916432558959
+  },
+  "correctness_contract": "pre- and post-timing exact dtype/shape; floating rtol=2e-2/atol=2e-2; indexer top-k set equivalence; other integer equality",
+  "correctness_details": {
+    "bidirectional_candidate_graph_replays": "pass",
+    "bidirectional_reference_graph_replays": "pass",
+    "post_timing_candidate": "pass",
+    "post_timing_reference": "pass",
+    "pre_timing_candidate": "pass",
+    "pre_timing_reference": "pass"
+  },
+  "execution_mode": "cuda_graph_replay_cuda_event",
+  "graph_capture_policy": "bidirectional_R-C_then_C-R_round_robin",
+  "reference": {
+    "median_ms": 0.0520160011947155,
+    "min_ms": 0.04867200180888176,
+    "p95_ms": 0.0586559996008873
+  },
+  "reference_policy": "SGLANG_GLM52_OPT=0 production path",
+  "reference_samples_ms": [
+    0.05337600037455559,
+    0.05110400170087814,
+    0.0549440011382103,
+    0.051072001457214355,
+    0.05142400041222572,
+    0.05366399884223938,
+    0.05129599943757057,
+    0.050016000866889954,
+    0.0586559996008873,
+    0.05619199946522713,
+    0.052960000932216644,
+    0.05023999884724617,
+    0.052639998495578766,
+    0.05344000086188316,
+    0.05177599936723709,
+    0.07171200215816498,
+    0.05196800082921982,
+    0.052799999713897705,
+    0.05238400027155876,
+    0.05276799947023392,
+    0.05023999884724617,
+    0.05008000135421753,
+    0.053247999399900436,
+    0.05459199845790863,
+    0.05129599943757057,
+    0.054976001381874084,
+    0.05145600065588951,
+    0.05161599814891815,
+    0.06623999774456024,
+    0.05164799839258194,
+    0.052928000688552856,
+    0.05273599922657013,
+    0.04992000013589859,
+    0.052032001316547394,
+    0.052000001072883606,
+    0.04867200180888176,
+    0.04956800118088722,
+    0.04899200052022934,
+    0.051552001386880875,
+    0.052191998809576035
+  ],
+  "runtime_contract": {
+    "batch": 16,
+    "block_table": {
+      "device": "cuda:0",
+      "dtype": "torch.int32",
+      "shape": [
+        16,
+        128
+      ],
+      "stride": [
+        128,
+        1
+      ]
+    },
+    "context": 8192,
+    "dsa_backend": "flashinfer TRT-LLM trtllm-gen",
+    "dsa_kv_cache": {
+      "device": "cuda:0",
+      "dtype": "torch.float8_e4m3fn",
+      "shape": [
+        2048,
+        1,
+        64,
+        576
+      ],
+      "stride": [
+        36864,
+        36864,
+        576,
+        1
+      ]
+    },
+    "dsa_query": {
+      "device": "cuda:0",
+      "dtype": "torch.float8_e4m3fn",
+      "shape": [
+        16,
+        1,
+        64,
+        576
+      ],
+      "stride": [
+        36864,
+        36864,
+        576,
+        1
+      ]
+    },
+    "graph_mode": "cuda_graph_decode",
+    "hidden_states": {
+      "device": "cuda:0",
+      "dtype": "torch.bfloat16",
+      "shape": [
+        16,
+        6144
+      ],
+      "stride": [
+        6144,
+        1
+      ]
+    },
+    "include_dsa": true,
+    "index_k_cache": {
+      "device": "cuda:0",
+      "dtype": "torch.uint8",
+      "shape": [
+        2048,
+        64,
+        1,
+        132
+      ],
+      "stride": [
+        8448,
+        132,
+        132,
+        1
+      ]
+    },
+    "num_sms": 148,
+    "production_topology": "TP4/DP4 diagnostic only; not TP8/DP8 acceptance",
+    "q_lora": {
+      "device": "cuda:0",
+      "dtype": "torch.bfloat16",
+      "shape": [
+        16,
+        2048
+      ],
+      "stride": [
+        2048,
+        1
+      ]
+    },
+    "schedule_metadata": {
+      "device": "cuda:0",
+      "dtype": "torch.int32",
+      "shape": [
+        149,
+        2
+      ],
+      "stride": [
+        2,
+        1
+      ]
+    },
+    "score_backend": "deepgemm",
+    "score_mode": "split",
+    "source_symbol": "Indexer._fused_q_prepare_and_store -> Indexer._get_topk_paged",
+    "topk_transform": "topk_transform_512_v2"
+  },
+  "schema_version": 2,
+  "source_provenance": {
+    "runner_path": "/home/qinhaiyan/glm52-goal-runs/16-indexer_score_decode/kernel-harness/serving_native/runner.py",
+    "runner_sha256": "3e6dbc8317c053f4c227eeb3fdf539ec7128817a0c55d33250063d6d0e484c0c",
+    "workloads_path": "/home/qinhaiyan/glm52-goal-runs/16-indexer_score_decode/kernel-harness/serving_native/workloads.py",
+    "workloads_sha256": "4ac6235602737d24a6a4072faa26b046348ed93f1f67e432a23d626b29165f9d"
+  },
+  "timing_contract": "interleaved paired A/B; maximum CUDA-event latency across ranks",
+  "workload": {
+    "distributed": true,
+    "family": "indexer_dsa_containing_region",
+    "name": "tp4_indexer_dsa_decode_m16",
+    "notes": "Four-rank diagnostic of the rank-local indexer plus TRT-LLM DSA region; latency is the maximum across ranks.",
+    "params": {
+      "batch": 16,
+      "context": 8192,
+      "dsa_head_dim": 576,
+      "dsa_heads": 64,
+      "fp8_block_size": [
+        128,
+        128
+      ],
+      "graph_mode": "cuda_graph_decode",
+      "hidden": 6144,
+      "include_dsa": true,
+      "index_head_dim": 128,
+      "index_heads": 32,
+      "index_topk": 2048,
+      "is_neox_style": false,
+      "layer_norm_eps": 1e-06,
+      "max_position_embeddings": 1048576,
+      "page_size": 64,
+      "production_topology": "TP4/DP4 diagnostic only; not TP8/DP8 acceptance",
+      "q_lora_rank": 2048,
+      "rope_head_dim": 64,
+      "rope_scaling": null,
+      "rope_theta": 8000000.0,
+      "wk_weights_output": 160,
+      "wq_output": 4096
+    },
+    "phase": "decode",
+    "source_symbol": "Indexer._fused_q_prepare_and_store -> Indexer._get_topk_paged -> flashinfer.decode.trtllm_batch_decode_with_kv_cache_mla",
+    "world_size": 4
+  }
+}

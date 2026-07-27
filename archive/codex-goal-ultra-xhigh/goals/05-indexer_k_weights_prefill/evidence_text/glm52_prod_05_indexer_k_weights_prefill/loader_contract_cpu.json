@@ -1,0 +1,36 @@
+{
+  "bf16_direct": {
+    "fused_dtype": "torch.bfloat16",
+    "fused_shape": [
+      160,
+      6144
+    ],
+    "weights_rows": [
+      128,
+      160
+    ],
+    "wk_rows": [
+      0,
+      128
+    ]
+  },
+  "fallback_when_fused_param_absent": true,
+  "fallback_when_fused_param_not_bf16": true,
+  "fp8_block_dequant": {
+    "block_size": [
+      128,
+      128
+    ],
+    "output_dtype": "torch.bfloat16",
+    "scale_shape": [
+      1,
+      48
+    ],
+    "weight_dtype": "torch.float8_e4m3fn",
+    "weight_shape": [
+      128,
+      6144
+    ]
+  },
+  "status": "pass"
+}

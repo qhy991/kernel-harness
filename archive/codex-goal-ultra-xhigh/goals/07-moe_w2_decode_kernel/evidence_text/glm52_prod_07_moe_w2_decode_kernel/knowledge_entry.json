@@ -1,0 +1,86 @@
+{
+  "schema_version": 1,
+  "id": "glm52--moe_down_proj_decode--b200--20260722a",
+  "date": "2026-07-22",
+  "model": "glm52",
+  "task": "glm52/moe_down_proj_decode",
+  "op": "moe_down",
+  "family": "moe",
+  "phase": "decode",
+  "shapes": {
+    "M_sweep": [
+      16,
+      32
+    ],
+    "E": 32,
+    "slab": 1024,
+    "K": 2048,
+    "N": 6144,
+    "expected_m_plan": [
+      4,
+      8
+    ],
+    "expected_m_current_source": [
+      5,
+      9
+    ],
+    "scale_layout": "packed int32 UE8M0"
+  },
+  "hardware": {
+    "gpu": "NVIDIA B200",
+    "sm": "sm_100"
+  },
+  "stack": {
+    "sglang_commit": "49dc279b59753485c9ad6fa366d289018ecc41d3",
+    "torch": "2.11.0+cu130",
+    "cuda": "13.0",
+    "deep_gemm": "0.1.4.post1"
+  },
+  "baseline_kernel": "SGLang grouped_gemm_nt_f8f8bf16_masked -> DeepGEMM fp8_m_grouped_gemm_nt_masked, stock alignment 128",
+  "bottleneck": {
+    "kind": "synchronization",
+    "evidence": "Across the four pinned production-ABI workloads, NCU measured stock kernel duration 75.520--76.256 us and alignment-16 duration 68.576--70.112 us; the alignment-16 kernel retained only 4.18--4.23% tensor-pipe active time, 0.059--0.060 eligible warps per scheduler, and a 21.47--21.62 long-scoreboard ratio, while SourceCounters placed the dominant samples in barrier and TMA-wait paths."
+  },
+  "approaches": [
+    {
+      "technique": "deep-gemm-m-alignment-portfolio",
+      "summary": "Swept alignments 128, 32, 64, 96, and 16 over the two plan buckets and the two current-source expected-M variants using three sessions of 30 alternating pairs per row.",
+      "outcome": "abandoned",
+      "geomean_speedup": null,
+      "why": "Alignment 16 was correct and had exact paired medians of 1.0804698551877183, 1.087435633273191, 1.0755644970165608, and 1.0620687136354947, but its selector is process-global and therefore cannot provide fail-closed per-bucket production dispatch."
+    },
+    {
+      "technique": "evidence-directed-source-portfolio",
+      "summary": "Evaluated a BM32 dynamic tail, SM reservation, cluster-N=1, static-M compilation, and a new CLC/persistent scheduler against the measured config and profiler evidence.",
+      "outcome": "abandoned",
+      "geomean_speedup": null,
+      "why": "The stock library already exposes the best measured BM16 leaf, all four expected-M hints select the same code shape, and none of the proposed rewrites resolves the process-global dispatch or unavailable eight-rank acceptance boundary."
+    },
+    {
+      "technique": "static-production-oracle",
+      "summary": "Specified a fail-closed oracle over SM100, 148 SMs, E32/slab1024, N6144/K2048, packed int32 UE8M0 scales, no recipe or overlap, and the exact M/expected-M pairs 16/4, 16/5, 32/8, and 32/9.",
+      "outcome": "abandoned",
+      "geomean_speedup": null,
+      "why": "No safe per-call DeepGEMM selector exists in the pinned API, and the four-GPU host cannot validate live EP8 masks, overlap contracts, or the unchanged TP8 full-region and end-to-end gates."
+    }
+  ],
+  "result": {
+    "status": "no-win",
+    "geomean_speedup": null,
+    "min_speedup_conservative": null,
+    "repeat": null,
+    "integrate": "no-recipe"
+  },
+  "lesson": "A smaller M tile can remove padded epilogue and store work in low-row grouped GEMM decode while leaving MMA and input-TMA counts unchanged, but a leaf speedup is not deployable when configuration is process-global. Require a fail-closed per-call selector plus the real distributed topology, overlap, graph, full-region, and end-to-end gates; otherwise keep stock active.",
+  "transfers_to": [
+    "packed-UE8M0 masked FP8 grouped GEMM decode on sm_100",
+    "persistent MoE down-projection kernels with low per-expert row counts and padded M epilogues"
+  ],
+  "caveats": [
+    "The measured masks are deterministic E32 production-ABI test data, not live TP8/DP8/EP8 router observations.",
+    "CUDA Graph and edge-mask validation covers only the single-GPU leaf; a four-rank diagnostic cannot satisfy the unchanged eight-rank acceptance gates.",
+    "Alignment 16 can increase logical tile count and B reloads for experts with more than 16 rows, so the fixed-bucket result must not be generalized to arbitrary masks.",
+    "This serving-native production-ABI campaign is not a frozen task run.sh result, so result speedup, conservative speedup, and repeat fields are intentionally null."
+  ],
+  "agent": "codex"
+}

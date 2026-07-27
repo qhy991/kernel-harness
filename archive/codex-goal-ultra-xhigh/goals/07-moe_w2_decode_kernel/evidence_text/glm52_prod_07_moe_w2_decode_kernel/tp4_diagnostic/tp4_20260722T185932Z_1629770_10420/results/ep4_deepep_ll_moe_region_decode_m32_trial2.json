@@ -1,0 +1,186 @@
+{
+  "candidate": null,
+  "correctness": {
+    "ep4_handoff_contract": {
+      "data": {
+        "dtype": "torch.float8_e4m3fn",
+        "shape": [
+          64,
+          512,
+          2048
+        ],
+        "stride": [
+          1048576,
+          2048,
+          1
+        ]
+      },
+      "probe_excluded_from_timing": true,
+      "scale": {
+        "aligned_mn": 512,
+        "dtype": "torch.int32",
+        "logical_granularity_k": 128,
+        "packed_scales_per_int32": 4,
+        "shape": [
+          64,
+          512,
+          4
+        ],
+        "stride": [
+          2048,
+          1,
+          512
+        ]
+      }
+    },
+    "ep4_region_validation": {
+      "actual_group_size": 4,
+      "dispatch_scale_contract": {
+        "aligned_mn": 512,
+        "dtype": "torch.int32",
+        "logical_granularity_k": 128,
+        "packed_scales_per_int32": 4,
+        "shape": [
+          64,
+          512,
+          12
+        ],
+        "stride": [
+          6144,
+          1,
+          512
+        ]
+      },
+      "expected_global_tokens": 1024,
+      "fresh_repeat_allclose_passed": true,
+      "global_received_tokens": 1024,
+      "global_sent_tokens": 1024,
+      "handle_scalar_contract": [
+        128,
+        6144,
+        256
+      ],
+      "independent_math_oracle": false,
+      "recv_count_bounds": [
+        0,
+        512
+      ],
+      "scope": "lower_level_eager_no_overlap_ep4_not_production_graph",
+      "status": "pass",
+      "valid_outputs_finite": true,
+      "validation_kind": "structural_contract_and_repeatability",
+      "w13_weight_scale_contract": {
+        "aligned_mn": 4096,
+        "dtype": "torch.int32",
+        "logical_granularity_k": 128,
+        "packed_scales_per_int32": 4,
+        "shape": [
+          64,
+          4096,
+          12
+        ],
+        "stride": [
+          49152,
+          1,
+          4096
+        ]
+      },
+      "w2_activation_scale_contract": {
+        "aligned_mn": 512,
+        "dtype": "torch.int32",
+        "logical_granularity_k": 128,
+        "packed_scales_per_int32": 4,
+        "shape": [
+          64,
+          512,
+          4
+        ],
+        "stride": [
+          2048,
+          1,
+          512
+        ]
+      },
+      "w2_weight_scale_contract": {
+        "aligned_mn": 6144,
+        "dtype": "torch.int32",
+        "logical_granularity_k": 128,
+        "packed_scales_per_int32": 4,
+        "shape": [
+          64,
+          6144,
+          4
+        ],
+        "stride": [
+          24576,
+          1,
+          6144
+        ]
+      }
+    },
+    "fresh_external_input_storage": {
+      "all_storage_distinct": true,
+      "checked_keys": [
+        "x_bf16",
+        "topk_idx",
+        "topk_weights",
+        "w13_weight_fp8",
+        "w13_weight_scale",
+        "w2_weight_fp8",
+        "w2_weight_scale"
+      ],
+      "deepep_internal_buffers": "reused_by_library_contract"
+    },
+    "fresh_post_timing_inputs_checked": true,
+    "reference_completed": true
+  },
+  "deep_gemm_pdl_policy": {
+    "active_before_restore": true,
+    "active_during_setup_and_measurement": true,
+    "applicable": true,
+    "environment_key": "SGLANG_DEEPGEMM_PDL",
+    "family": "deepep_ll_moe_region",
+    "module_path": "/home/qinhaiyan/glm52-goal-runs/07-moe_w2_decode_kernel/sglang/build/deep-gemm-stock-0.1.4.post1/deep_gemm/__init__.py",
+    "original": false,
+    "policy_source": "sglang.srt.layers.deep_gemm_wrapper.entrypoint.update_deep_gemm_config",
+    "requested": true,
+    "restored": true,
+    "restored_value": false,
+    "setter_called_after_cuda_device_assignment": true
+  },
+  "evidence_scope": "diagnostic_ep4_lower_level_eager_no_overlap",
+  "execution_mode": "eager_cuda_event",
+  "reference": {
+    "median_ms": 0.5947200059890747,
+    "min_ms": 0.5247359871864319,
+    "p95_ms": 0.6917759776115417
+  },
+  "reference_policy": "SGLANG_GLM52_OPT=0 production path",
+  "schema_version": 2,
+  "timing_contract": "maximum CUDA-event latency across ranks",
+  "workload": {
+    "distributed": true,
+    "evidence_scope": "diagnostic_ep4_lower_level_eager_no_overlap",
+    "family": "deepep_ll_moe_region",
+    "name": "ep4_deepep_ll_moe_region_decode_m32",
+    "notes": "Lower-level eager no-overlap EP4 diagnostic: raw dispatch->W13->SwiGLU/quant->W2->raw combine; current-source expected_m headroom, never production graph, active-overlap, or EP8 evidence.",
+    "params": {
+      "expected_m": 5,
+      "expert_slab": 512,
+      "experts": 256,
+      "experts_per_rank": 64,
+      "group_size": 128,
+      "hidden": 6144,
+      "local_tokens": 32,
+      "max_dispatch_tokens": 128,
+      "topk": 8,
+      "w13_k": 6144,
+      "w13_n": 4096,
+      "w2_k": 2048,
+      "w2_n": 6144
+    },
+    "phase": "decode",
+    "source_symbol": "deep_ep.Buffer.low_latency_dispatch -> sglang.srt.layers.deep_gemm_wrapper.entrypoint.grouped_gemm_nt_f8f8bf16_masked -> sglang.srt.layers.moe.moe_runner.deep_gemm._varlen_deep_gemm_silu_mul_quant -> sglang.srt.layers.deep_gemm_wrapper.entrypoint.grouped_gemm_nt_f8f8bf16_masked -> deep_ep.Buffer.low_latency_combine",
+    "world_size": 4
+  }
+}

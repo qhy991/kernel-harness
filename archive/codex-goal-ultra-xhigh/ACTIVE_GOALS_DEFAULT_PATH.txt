@@ -1,0 +1,13 @@
+# Default B200/SM100 FP8 production-path goals only (remaining campaign)
+# KEEP: 09 10 13 14 15 16 17 18 19
+# SKIP: 11 12 20 21 22  (and previously 01 02 04 are flashmla_kv-only; already finished)
+
+09 moe_w13_prefill
+10 attn_o_decode_baseline
+13 attn_o_prefill
+14 attn_q_b_decode_packed
+15 indexer_wq_b_decode
+16 indexer_score_decode
+17 indexer_score_prefill
+18 moe_w13_decode_scale_path
+19 moe_w13_decode_kernel

@@ -1,0 +1,43 @@
+Entering DeepGEMM JIT Pre-Compile session. It may take a long time (typically 10-20 mins) if you have not run `sglang.compile_deep_gemm`. It is recommended to run `sglang.compile_deep_gemm` with same args as `sglang.launch_server` for pre-compilation to reduce the overhead if you have not run it before. For example: `python3 -m sglang.compile_deep_gemm --model deepseek-ai/DeepSeek-V3 --tp 8 --trust-remote-code`
+DeepGEMM warmup:   0%|          | 0/16384 [00:00<?, ?it/s]DeepGEMM warmup:   6%|▋         | 1046/16384 [00:00<00:01, 10456.99it/s]DeepGEMM warmup:  13%|█▎        | 2092/16384 [00:00<00:01, 9578.24it/s] DeepGEMM warmup:  19%|█▊        | 3055/16384 [00:00<00:01, 9339.05it/s]DeepGEMM warmup:  24%|██▍       | 3992/16384 [00:00<00:01, 9226.62it/s]DeepGEMM warmup:  30%|███       | 4916/16384 [00:00<00:01, 9163.41it/s]DeepGEMM warmup:  36%|███▌      | 5833/16384 [00:00<00:01, 9124.26it/s]DeepGEMM warmup:  41%|████      | 6746/16384 [00:00<00:01, 9099.17it/s]DeepGEMM warmup:  47%|████▋     | 7657/16384 [00:00<00:00, 9082.77it/s]DeepGEMM warmup:  52%|█████▏    | 8566/16384 [00:00<00:00, 9071.16it/s]DeepGEMM warmup:  58%|█████▊    | 9474/16384 [00:01<00:00, 9063.55it/s]DeepGEMM warmup:  63%|██████▎   | 10381/16384 [00:01<00:00, 9058.25it/s]DeepGEMM warmup:  69%|██████▉   | 11287/16384 [00:01<00:00, 9054.07it/s]DeepGEMM warmup:  74%|███████▍  | 12193/16384 [00:01<00:00, 9052.19it/s]DeepGEMM warmup:  80%|███████▉  | 13099/16384 [00:01<00:00, 9050.22it/s]DeepGEMM warmup:  85%|████████▌ | 14005/16384 [00:01<00:00, 9048.98it/s]DeepGEMM warmup:  91%|█████████ | 14910/16384 [00:01<00:00, 9048.51it/s]DeepGEMM warmup:  97%|█████████▋| 15815/16384 [00:01<00:00, 9048.36it/s]DeepGEMM warmup: 100%|██████████| 16384/16384 [00:01<00:00, 9124.45it/s]
+{
+  "candidate": {
+    "median_ms": 0.2571360021829605,
+    "min_ms": 0.2439039945602417,
+    "p95_ms": 0.40118399262428284,
+    "paired_p10_speedup": 0.991166522152383,
+    "paired_p90_speedup": 1.1825656322987883,
+    "passes_3pct_median_gate": true,
+    "path": "/home/qinhaiyan/Kernel-Harness/archive/serving_bakeoff_0720_vs_codex/serving_ports/codex/moe_w13_deepgemm_overlay_mainline.py",
+    "speedup": 1.053088881432486
+  },
+  "execution_mode": "eager_cuda_event",
+  "reference": {
+    "median_ms": 0.26736000180244446,
+    "min_ms": 0.2555840015411377,
+    "p95_ms": 0.45103999972343445
+  },
+  "reference_policy": "SGLANG_GLM52_OPT=0 production path",
+  "schema_version": 1,
+  "timing_contract": "interleaved paired A/B; maximum CUDA-event latency across ranks",
+  "workload": {
+    "distributed": false,
+    "family": "moe_grouped_masked",
+    "name": "moe_w13_grouped_decode_m16",
+    "notes": "Real fused W13 grouped GEMM after DeepEP low-latency dispatch.",
+    "params": {
+      "decode_m": 16,
+      "expected_m": 4,
+      "expert_slab": 1024,
+      "experts_per_rank": 32,
+      "group_size": 128,
+      "k": 6144,
+      "n": 4096,
+      "topk": 8,
+      "valid_assignments": 128
+    },
+    "phase": "decode",
+    "source_symbol": "sglang.srt.layers.deep_gemm_wrapper.entrypoint.grouped_gemm_nt_f8f8bf16_masked",
+    "world_size": 1
+  }
+}

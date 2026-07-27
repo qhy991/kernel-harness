@@ -1,0 +1,43 @@
+Entering DeepGEMM JIT Pre-Compile session. It may take a long time (typically 10-20 mins) if you have not run `sglang.compile_deep_gemm`. It is recommended to run `sglang.compile_deep_gemm` with same args as `sglang.launch_server` for pre-compilation to reduce the overhead if you have not run it before. For example: `python3 -m sglang.compile_deep_gemm --model deepseek-ai/DeepSeek-V3 --tp 8 --trust-remote-code`
+DeepGEMM warmup:   0%|          | 0/16384 [00:00<?, ?it/s]DeepGEMM warmup:  10%|█         | 1672/16384 [00:00<00:00, 16717.70it/s]DeepGEMM warmup:  22%|██▏       | 3611/16384 [00:00<00:00, 18285.44it/s]DeepGEMM warmup:  34%|███▍      | 5571/16384 [00:00<00:00, 18881.97it/s]DeepGEMM warmup:  46%|████▌     | 7460/16384 [00:00<00:00, 18793.38it/s]DeepGEMM warmup:  57%|█████▋    | 9340/16384 [00:00<00:00, 18743.98it/s]DeepGEMM warmup:  68%|██████▊   | 11215/16384 [00:00<00:00, 18714.52it/s]DeepGEMM warmup:  80%|███████▉  | 13087/16384 [00:00<00:00, 18696.39it/s]DeepGEMM warmup:  91%|█████████▏| 14957/16384 [00:00<00:00, 18680.44it/s]DeepGEMM warmup: 100%|██████████| 16384/16384 [00:00<00:00, 18623.34it/s]
+{
+  "candidate": {
+    "median_ms": 0.19356799870729446,
+    "min_ms": 0.18246400356292725,
+    "p95_ms": 0.20259200036525726,
+    "paired_p10_speedup": 0.985010707295097,
+    "paired_p90_speedup": 1.0928248520908221,
+    "passes_3pct_median_gate": true,
+    "path": "/home/qinhaiyan/Kernel-Harness/archive/serving_bakeoff_0720_vs_codex/serving_ports/codex/moe_w2_direct_launch_mainline.py",
+    "speedup": 1.0354278189013675
+  },
+  "execution_mode": "eager_cuda_event",
+  "reference": {
+    "median_ms": 0.20022399723529816,
+    "min_ms": 0.19011199474334717,
+    "p95_ms": 0.21145600080490112
+  },
+  "reference_policy": "SGLANG_GLM52_OPT=0 production path",
+  "schema_version": 1,
+  "timing_contract": "interleaved paired A/B; maximum CUDA-event latency across ranks",
+  "workload": {
+    "distributed": false,
+    "family": "moe_grouped_masked",
+    "name": "moe_w2_grouped_decode_m32",
+    "notes": "Real W2 grouped GEMM before DeepEP low-latency combine.",
+    "params": {
+      "decode_m": 32,
+      "expected_m": 8,
+      "expert_slab": 1024,
+      "experts_per_rank": 32,
+      "group_size": 128,
+      "k": 2048,
+      "n": 6144,
+      "topk": 8,
+      "valid_assignments": 256
+    },
+    "phase": "decode",
+    "source_symbol": "sglang.srt.layers.deep_gemm_wrapper.entrypoint.grouped_gemm_nt_f8f8bf16_masked",
+    "world_size": 1
+  }
+}

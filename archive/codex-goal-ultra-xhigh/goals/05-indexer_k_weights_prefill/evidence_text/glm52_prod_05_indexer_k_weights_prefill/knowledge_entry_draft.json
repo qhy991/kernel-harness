@@ -1,0 +1,82 @@
+{
+  "schema_version": 1,
+  "id": "glm52-prod--indexer-k-weights-prefill--b200--20260722a",
+  "date": "2026-07-22",
+  "model": "glm52_prod",
+  "task": "glm52_prod/indexer_k_weights_prefill_m4096",
+  "op": "indexer_wk_weights_fused",
+  "family": "indexer-fused-prepare-store",
+  "phase": "prefill",
+  "shapes": {
+    "M": 4096,
+    "N_wk_weights": 160,
+    "K_hidden": 6144,
+    "q_lora_rank": 2048,
+    "indexer_heads": 32,
+    "head_dim": 128,
+    "page_size": 64
+  },
+  "hardware": {
+    "gpu": "NVIDIA B200",
+    "sm": "sm_100"
+  },
+  "stack": {
+    "sglang_commit": "f93f8867b4bc124c9809c9110ec7361ed11b6b4a",
+    "torch": "2.11.0+cu130",
+    "cuda": "13.0"
+  },
+  "baseline_kernel": "SGLang fused eager dual-stream indexer with torch.nn.functional.linear BF16 wk_weights_proj",
+  "bottleneck": {
+    "kind": "launch-overhead",
+    "evidence": "The saved Nsight Systems range analysis shows zero device-kernel overlap and launch gaps dominating both stock captures; Nsight Compute shows the narrow BF16 GEMM is only one short part of the containing region."
+  },
+  "approaches": [
+    {
+      "technique": "sglang-cutedsl-tgv-direct",
+      "summary": "Bypass the production N>=1024 guard and call the SM100 CuTe-DSL TGV BF16 GEMM at the exact narrow-N shape.",
+      "outcome": "slower",
+      "geomean_speedup": null,
+      "why": "The TGV launch and tactic overhead exceeded stock cuBLAS latency and made every confirmed full-region repeat regress."
+    },
+    {
+      "technique": "flashinfer-bf16-backend-sweep",
+      "summary": "Measure FlashInfer auto, cuBLASLt, cuDNN, CUTLASS, and TGV BF16 backends without changing the caller ABI.",
+      "outcome": "slower",
+      "geomean_speedup": null,
+      "why": "Every backend lost on the isolated projection, so none could plausibly improve the containing indexer schedule."
+    },
+    {
+      "technique": "aten-torch-mm-direct",
+      "summary": "Replace functional linear with direct torch.mm using the transposed BF16 weight view.",
+      "outcome": "slower",
+      "geomean_speedup": null,
+      "why": "All isolated repeats regressed and the region's single favorable repeat was not stable against the measured identity-control noise."
+    },
+    {
+      "technique": "k-before-q-stream-schedule",
+      "summary": "Run K preparation on the current stream before waiting for alternate-stream wq_b, then run Q on the current stream.",
+      "outcome": "slower",
+      "geomean_speedup": null,
+      "why": "The source trial did not produce stable paired gains and its profiler capture enlarged host and projected-GPU spans while leaving kernel time unchanged, so it was reverted."
+    }
+  ],
+  "result": {
+    "status": "no-win",
+    "geomean_speedup": null,
+    "min_speedup_conservative": null,
+    "repeat": null,
+    "integrate": "no-recipe"
+  },
+  "lesson": "For a narrow projection inside a Python-launched multi-stream fused region, first prove device overlap with Nsight Systems. If launch gaps serialize the stages, swapping an isolated GEMM backend or reordering two short kernels cannot transfer unless the containing launches are fused and pass the same-topology region gate.",
+  "transfers_to": [
+    "SGLang eager multi-stream indexer paths on SM100",
+    "narrow-N BF16 projections embedded in larger launch-bound regions",
+    "prefill fusion work where source-level overlap is not visible on the device"
+  ],
+  "caveats": [
+    "The production TP8/DP8/EP8 end-to-end gate requires eight B200 GPUs and was unavailable on this four-GPU host.",
+    "The fixed production recipe does not enable indexer LoRA; LoRA behavior was statically scoped out rather than validated.",
+    "The retired frozen index_k_prefill task is not the current fused callable and its results do not support this entry."
+  ],
+  "agent": "Codex GPT-5"
+}

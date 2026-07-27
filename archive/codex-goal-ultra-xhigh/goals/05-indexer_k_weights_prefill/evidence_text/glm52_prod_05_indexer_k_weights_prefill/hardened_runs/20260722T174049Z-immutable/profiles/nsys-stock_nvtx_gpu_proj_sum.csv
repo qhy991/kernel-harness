@@ -1,0 +1,2 @@
+Range,Style,Total Proj Time (ns),Total Range Time (ns),Range Instances,Proj Avg (ns),Proj Med (ns),Proj Min (ns),Proj Max (ns),Proj StdDev (ns),Total GPU Ops,Avg GPU Ops,Avg Range Lvl,Avg Num Child
+:indexer-fused-prefill-m4096-eager-dual-stock,PushPop,532223,1445249,1,532223.0,532223.0,532223,532223,0.0,4,4.0,0.0,0.0

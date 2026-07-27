@@ -1,0 +1,198 @@
+{
+  "active_gpu_uuid": "GPU-30b619de-87f2-1862-0d07-a595da8fe417",
+  "alignment": 16,
+  "artifact_counts": {
+    "edge": 4,
+    "edge_cases": 12,
+    "graph": 4
+  },
+  "campaign_id": "glm52-w2-alignment-2bae536257aa929b957fdb28",
+  "check": "glm52_production_moe_w2_leaf_evidence",
+  "edge": {
+    "moe_w2_grouped_decode_m16": {
+      "bytes": 15282,
+      "campaign_binding": "manifest_measurement_heads_and_edge_harness_sha256",
+      "campaign_id": null,
+      "case_names": [
+        "front_loaded_boundaries",
+        "scattered_boundaries_with_empty_ends",
+        "small_tile_boundaries_15_16_17"
+      ],
+      "kernel_harness_head": "ac9d47fe3731bca46ee2de2f77b004e124352934",
+      "path": "/home/qinhaiyan/glm52-goal-runs/07-moe_w2_decode_kernel/kernel-harness/profile/moe-w2-alignment16/analysis/edge/edge_glm52-w2-alignment-2bae536257aa929b957fdb28_20260722T180840Z_1150888_6820/moe_w2_grouped_decode_m16_alignment16.json",
+      "required_mask_counts": [
+        0,
+        15,
+        16,
+        17,
+        31,
+        32,
+        33,
+        127,
+        1024
+      ],
+      "sglang_head": "49dc279b59753485c9ad6fa366d289018ecc41d3",
+      "sha256": "bca60f4ab1875f11b26a2e69eded245ff63343650d2cc854eae8360e799016c4"
+    },
+    "moe_w2_grouped_decode_m16_current_source_m5": {
+      "bytes": 15348,
+      "campaign_binding": "manifest_measurement_heads_and_edge_harness_sha256",
+      "campaign_id": null,
+      "case_names": [
+        "front_loaded_boundaries",
+        "scattered_boundaries_with_empty_ends",
+        "small_tile_boundaries_15_16_17"
+      ],
+      "kernel_harness_head": "ac9d47fe3731bca46ee2de2f77b004e124352934",
+      "path": "/home/qinhaiyan/glm52-goal-runs/07-moe_w2_decode_kernel/kernel-harness/profile/moe-w2-alignment16/analysis/edge/edge_glm52-w2-alignment-2bae536257aa929b957fdb28_20260722T180840Z_1150888_6820/moe_w2_grouped_decode_m16_current_source_m5_alignment16.json",
+      "required_mask_counts": [
+        0,
+        15,
+        16,
+        17,
+        31,
+        32,
+        33,
+        127,
+        1024
+      ],
+      "sglang_head": "49dc279b59753485c9ad6fa366d289018ecc41d3",
+      "sha256": "84aaad03efb26a81eb1036207d85ce5e32d66f1be78e9a46d904fc392318e0fa"
+    },
+    "moe_w2_grouped_decode_m32": {
+      "bytes": 15282,
+      "campaign_binding": "manifest_measurement_heads_and_edge_harness_sha256",
+      "campaign_id": null,
+      "case_names": [
+        "front_loaded_boundaries",
+        "scattered_boundaries_with_empty_ends",
+        "small_tile_boundaries_15_16_17"
+      ],
+      "kernel_harness_head": "ac9d47fe3731bca46ee2de2f77b004e124352934",
+      "path": "/home/qinhaiyan/glm52-goal-runs/07-moe_w2_decode_kernel/kernel-harness/profile/moe-w2-alignment16/analysis/edge/edge_glm52-w2-alignment-2bae536257aa929b957fdb28_20260722T180840Z_1150888_6820/moe_w2_grouped_decode_m32_alignment16.json",
+      "required_mask_counts": [
+        0,
+        15,
+        16,
+        17,
+        31,
+        32,
+        33,
+        127,
+        1024
+      ],
+      "sglang_head": "49dc279b59753485c9ad6fa366d289018ecc41d3",
+      "sha256": "a53b77ddaa5a39b01b39e007fce98bfa47187a6da2bc72aae2e9c1fc4a4a151a"
+    },
+    "moe_w2_grouped_decode_m32_current_source_m9": {
+      "bytes": 15348,
+      "campaign_binding": "manifest_measurement_heads_and_edge_harness_sha256",
+      "campaign_id": null,
+      "case_names": [
+        "front_loaded_boundaries",
+        "scattered_boundaries_with_empty_ends",
+        "small_tile_boundaries_15_16_17"
+      ],
+      "kernel_harness_head": "ac9d47fe3731bca46ee2de2f77b004e124352934",
+      "path": "/home/qinhaiyan/glm52-goal-runs/07-moe_w2_decode_kernel/kernel-harness/profile/moe-w2-alignment16/analysis/edge/edge_glm52-w2-alignment-2bae536257aa929b957fdb28_20260722T180840Z_1150888_6820/moe_w2_grouped_decode_m32_current_source_m9_alignment16.json",
+      "required_mask_counts": [
+        0,
+        15,
+        16,
+        17,
+        31,
+        32,
+        33,
+        127,
+        1024
+      ],
+      "sglang_head": "49dc279b59753485c9ad6fa366d289018ecc41d3",
+      "sha256": "23d1e884ba73d5db7301b8dd351a61ca9a6d99cb181974c983f913bdad3ffe5f"
+    }
+  },
+  "edge_gpu_inventory": [
+    {
+      "index": "0",
+      "name": "NVIDIA B200",
+      "uuid": "GPU-30b619de-87f2-1862-0d07-a595da8fe417"
+    },
+    {
+      "index": "1",
+      "name": "NVIDIA B200",
+      "uuid": "GPU-5b9be10b-5bfc-b658-9b31-f7ae8516dc54"
+    },
+    {
+      "index": "2",
+      "name": "NVIDIA B200",
+      "uuid": "GPU-df8b1d78-b06c-39a2-54f0-66b9fabf3a99"
+    },
+    {
+      "index": "3",
+      "name": "NVIDIA B200",
+      "uuid": "GPU-705cc39e-af1d-c4c0-d97d-4155237646af"
+    }
+  ],
+  "evidence_scope": "single_gpu_leaf_graph_and_edge_correctness_not_tp8_acceptance",
+  "graph": {
+    "moe_w2_grouped_decode_m16": {
+      "bytes": 11567,
+      "campaign_id": "glm52-w2-alignment-2bae536257aa929b957fdb28",
+      "kernel_harness_head": "ac9d47fe3731bca46ee2de2f77b004e124352934",
+      "median_ms": 0.08399999886751175,
+      "p10_ms": 0.0838719978928566,
+      "p90_ms": 0.0862400010228157,
+      "path": "/home/qinhaiyan/glm52-goal-runs/07-moe_w2_decode_kernel/kernel-harness/profile/moe-w2-alignment16/analysis/graph/m16_alignment16.json",
+      "replays": 30,
+      "sglang_head": "49dc279b59753485c9ad6fa366d289018ecc41d3",
+      "sha256": "6d0a561fe1e23dece3e27c6f72d92cbedb17f9586df83ff256aa5240f393d8c5"
+    },
+    "moe_w2_grouped_decode_m16_current_source_m5": {
+      "bytes": 11657,
+      "campaign_id": "glm52-w2-alignment-2bae536257aa929b957fdb28",
+      "kernel_harness_head": "ac9d47fe3731bca46ee2de2f77b004e124352934",
+      "median_ms": 0.08406399935483932,
+      "p10_ms": 0.08396799862384796,
+      "p90_ms": 0.08601599931716919,
+      "path": "/home/qinhaiyan/glm52-goal-runs/07-moe_w2_decode_kernel/kernel-harness/profile/moe-w2-alignment16/analysis/graph/m16_current_source_m5_alignment16.json",
+      "replays": 30,
+      "sglang_head": "49dc279b59753485c9ad6fa366d289018ecc41d3",
+      "sha256": "21189c0b59320b528bccdb10b638dcaee69510410ef0f6b0c64a2eaef712748e"
+    },
+    "moe_w2_grouped_decode_m32": {
+      "bytes": 11581,
+      "campaign_id": "glm52-w2-alignment-2bae536257aa929b957fdb28",
+      "kernel_harness_head": "ac9d47fe3731bca46ee2de2f77b004e124352934",
+      "median_ms": 0.08399999886751175,
+      "p10_ms": 0.08390399813652039,
+      "p90_ms": 0.08601599931716919,
+      "path": "/home/qinhaiyan/glm52-goal-runs/07-moe_w2_decode_kernel/kernel-harness/profile/moe-w2-alignment16/analysis/graph/m32_alignment16.json",
+      "replays": 30,
+      "sglang_head": "49dc279b59753485c9ad6fa366d289018ecc41d3",
+      "sha256": "2ec26751185d3fd48ec1ec350a7dabe6da76dc4f57773520a27d4eda8090fae9"
+    },
+    "moe_w2_grouped_decode_m32_current_source_m9": {
+      "bytes": 11664,
+      "campaign_id": "glm52-w2-alignment-2bae536257aa929b957fdb28",
+      "kernel_harness_head": "ac9d47fe3731bca46ee2de2f77b004e124352934",
+      "median_ms": 0.08396799862384796,
+      "p10_ms": 0.08393599838018417,
+      "p90_ms": 0.08604799956083298,
+      "path": "/home/qinhaiyan/glm52-goal-runs/07-moe_w2_decode_kernel/kernel-harness/profile/moe-w2-alignment16/analysis/graph/m32_current_source_m9_alignment16.json",
+      "replays": 30,
+      "sglang_head": "49dc279b59753485c9ad6fa366d289018ecc41d3",
+      "sha256": "516f1a6fb30826e9ecffaf9dc15f2f2d6fffd5358ae4c09e174e3a7302ef4ae4"
+    }
+  },
+  "measurement_heads": {
+    "kernel_harness": "ac9d47fe3731bca46ee2de2f77b004e124352934",
+    "sglang": "49dc279b59753485c9ad6fa366d289018ecc41d3"
+  },
+  "num_sms": null,
+  "run_name": "moe-w2-alignment16",
+  "schema_version": 1,
+  "status": "PASS",
+  "validator": {
+    "path": "/home/qinhaiyan/glm52-goal-runs/07-moe_w2_decode_kernel/kernel-harness/evidence/glm52_prod_07_moe_w2_decode_kernel/validate_leaf_evidence.py",
+    "sha256": "20c5b1c7d84202e12777bf78098649cdb3686201514c92ccf781ada3accf2ad0"
+  }
+}

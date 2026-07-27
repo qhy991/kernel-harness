@@ -1,0 +1,68 @@
+{
+  "schema_version": 1,
+  "id": "glm52--moe_gate_proj_decode--b200--20260723a",
+  "date": "2026-07-23",
+  "model": "glm52",
+  "task": "glm52/moe_gate_proj_decode",
+  "op": "moe_gate",
+  "family": "moe",
+  "phase": "decode",
+  "shapes": {
+    "regime": "production fused W13 decode; frozen separate-projection task not evaluated"
+  },
+  "hardware": {
+    "gpu": "NVIDIA B200",
+    "sm": "sm_100"
+  },
+  "stack": {
+    "sglang_commit": "177940cf9",
+    "torch": "2.11.0+cu130",
+    "cuda": "13.0"
+  },
+  "baseline_kernel": "DeepGEMM masked grouped GEMM on the fused production W13 path; the frozen separate gate-projection baseline was not evaluated",
+  "bottleneck": {
+    "kind": "other",
+    "evidence": "The source and runtime trace showed that current serving reaches fused packed W13, while the frozen task models a separate projection with a different shape and scale ABI."
+  },
+  "approaches": [
+    {
+      "technique": "frozen-separate-projection",
+      "summary": "Considered the frozen moe_gate_proj_decode task as a development target.",
+      "outcome": "abandoned",
+      "geomean_speedup": null,
+      "why": "It omits the fused up-projection half and does not preserve the production packed-scale ABI, so its result cannot establish a serving replacement."
+    },
+    {
+      "technique": "masked-grouped-gemm-tile-alignment",
+      "summary": "Built a clean DeepGEMM source overlay that derives masked-layout alignment from the expected tiny-row bucket and left other layouts unchanged.",
+      "outcome": "abandoned",
+      "geomean_speedup": null,
+      "why": "The source variant remains diagnostic-only because the required full production-rank MoE region and server acceptance cannot run on this host."
+    },
+    {
+      "technique": "persistent-clc-scheduler-rewrite",
+      "summary": "Evaluated a dynamic work-scheduling rewrite from the captured tile and wave geometry.",
+      "outcome": "abandoned",
+      "geomean_speedup": null,
+      "why": "The observed waste was repeated padded work inside expert tiles rather than material last-wave underfill, so a scheduler rewrite did not target the measured loss."
+    }
+  ],
+  "result": {
+    "status": "no-win",
+    "geomean_speedup": null,
+    "min_speedup_conservative": null,
+    "repeat": null,
+    "integrate": "no-recipe"
+  },
+  "lesson": "Trace the current serving fusion and tensor ABI before optimizing a similarly named frozen operator. Keep an isolated kernel improvement opt-in until the complete distributed region and server gate are available at the production rank count.",
+  "transfers_to": [
+    "fused MoE grouped-GEMM decode paths",
+    "production tasks whose frozen operator predates serving fusion",
+    "distributed kernel changes requiring unavailable acceptance topology"
+  ],
+  "caveats": [
+    "Serving-native measurements are intentionally not copied into this frozen-task knowledge result.",
+    "The available four-rank diagnostic lane cannot substitute for production eight-rank acceptance."
+  ],
+  "agent": "Codex GPT-5"
+}

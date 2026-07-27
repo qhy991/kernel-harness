@@ -1,0 +1,70 @@
+{
+  "schema_version": 1,
+  "id": "glm52--dsa_attn_decode--b200--20260722a",
+  "date": "2026-07-22",
+  "model": "glm52",
+  "task": "glm52/dsa_attn_decode",
+  "op": "dsa_attn",
+  "family": "mla",
+  "phase": "decode",
+  "shapes": {
+    "production_backend": "flashmla_kv",
+    "local_M_buckets": [16, 32],
+    "sparse_topk": 2048,
+    "query_heads": 64,
+    "head_dim": 576,
+    "value_dim": 512,
+    "context": 8192
+  },
+  "hardware": {
+    "gpu": "NVIDIA B200",
+    "sm": "sm_100"
+  },
+  "stack": {
+    "sglang_commit": "5db482acd95020a3113ff4c1d65e8406d71f5a14",
+    "sglang_base": "f93f8867b4bc124c9809c9110ec7361ed11b6b4a",
+    "flashmla_commit": "05e26647fe840b8baedae486c2d86d5ce4efeb7c",
+    "torch": "2.11.0+cu130",
+    "cuda": "13.0"
+  },
+  "baseline_kernel": "FlashMLA SM100 V32 flash_fwd_splitkv_mla_fp8_sparse_kernel plus flash_fwd_mla_combine_kernel",
+  "bottleneck": {
+    "kind": "synchronization",
+    "evidence": "Serving-native Nsight Compute on the exact explicit flashmla_kv ABI shows one shared-memory-heavy CTA per SM, very few eligible warps, long-scoreboard and barrier stalls, and substantial excessive shared-memory wavefronts/bank conflicts; Nsight Systems shows the fused main kernel dominates or matches the separate combine cost."
+  },
+  "approaches": [
+    {
+      "technique": "flashmla-useful-split-partition-reduction",
+      "summary": "Preserved the fixed metadata envelope but reduced useful split partitions separately for the two production buckets to lower combine partial-output traffic.",
+      "outcome": "slower",
+      "geomean_speedup": null,
+      "why": "Combine traffic and duration fell, but reduced split parallelism slowed the dominant main kernel and every repeated eager paired series regressed in both buckets."
+    },
+    {
+      "technique": "flashmla-v32-group-major-raw-nope-bank-rotation",
+      "summary": "Built an isolated FlashMLA binary that staged each dequant group's four rows together with padding intended to rotate shared-memory banks.",
+      "outcome": "error",
+      "geomean_speedup": null,
+      "why": "The padded group stride violated the SM100 gather4 TMA destination alignment contract and faulted before output; an aligned pad exceeds the shared-memory cap while zero padding removes the intended rotation."
+    }
+  ],
+  "result": {
+    "status": "no-win",
+    "geomean_speedup": null,
+    "min_speedup_conservative": null,
+    "repeat": null,
+    "integrate": "not-run"
+  },
+  "lesson": "For one-wave FlashMLA sparse decode, fewer split partitions can reduce combine bytes yet still lose because main-kernel parallelism is more valuable.  Any bank-rotation layout for bulk tensor gather must satisfy the instruction's shared-address alignment and the full dynamic-shared-memory budget before GPU testing; source-level logical mapping and compilation are not enough.",
+  "transfers_to": [
+    "FlashMLA split-KV decode schedulers on B200",
+    "SM100 kernels using multidimensional TMA gather into padded shared layouts",
+    "warp-specialized attention kernels near the dynamic shared-memory limit"
+  ],
+  "caveats": [
+    "This entry records a production serving-native no-replacement session, not a frozen synthetic result.json, so numeric result fields are intentionally null.",
+    "The explicit flashmla_kv lane is distinct from the default TRT-LLM DSA backend.",
+    "Containing-region and eight-rank end-to-end gates were not advanced because no leaf candidate qualified."
+  ],
+  "agent": "Codex"
+}

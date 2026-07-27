@@ -1,0 +1,95 @@
+{
+  "schema_version": 1,
+  "id": "glm52-prod--indexer-k-weights-prefill--b200--20260722b",
+  "date": "2026-07-22",
+  "model": "glm52_prod",
+  "task": "glm52_prod/indexer_k_weights_prefill_m4096",
+  "op": "indexer_wk_weights_fused",
+  "family": "indexer-fused-prepare-store",
+  "phase": "prefill",
+  "shapes": {
+    "M": 4096,
+    "N_wk_weights": 160,
+    "K_hidden": 6144,
+    "q_lora_rank": 2048,
+    "wq_output": 4096,
+    "wq_weight_dtype": "bfloat16",
+    "indexer_heads": 32,
+    "head_dim": 128,
+    "page_size": 64,
+    "max_position_embeddings": 1048576,
+    "rope_theta": 8000000,
+    "model_revision": "aec724e8c7b8ee9db3b48c01c320f63f9cdaf8aa"
+  },
+  "hardware": {
+    "gpu": "NVIDIA B200",
+    "sm": "sm_100"
+  },
+  "stack": {
+    "sglang_commit": "2fbd443a17edb4cb7cbf7c57d22cf6f435898948",
+    "torch": "2.11.0+cu130",
+    "cuda": "13.0"
+  },
+  "baseline_kernel": "Stock SGLang fused eager dual-stream Indexer with unquantized BF16 wq_b and BF16 wk_weights_proj; no replacement is enabled and stock remains the fallback",
+  "bottleneck": {
+    "kind": "launch-overhead",
+    "evidence": "This supersedes glm52-prod--indexer-k-weights-prefill--b200--20260722a's full-region diagnosis: fixed_model_contract_cpu.json proves the pinned checkpoint uses BF16 wq_b, so the earlier FP8-wq trace with an activation-quant kernel is not production evidence. In exact_bf16_wq_range_analysis.json, the corrected stock four-kernel region has 99.392 us of kernels inside a 438.560 us projected GPU span, 339.168 us or 77.34% projected idle time, a 1.165776 ms host range, and zero cross-stream kernel overlap. Launch/dispatch gaps therefore dominate the corrected BF16-wq path independently of the invalidated FP8 trace."
+  },
+  "approaches": [
+    {
+      "technique": "fixed-model-contract-audit",
+      "summary": "Resolve the pinned checkpoint tensor headers, quantization dispatch, and RoPE configuration before interpreting the earlier fused-region campaign.",
+      "outcome": "abandoned",
+      "geomean_speedup": null,
+      "why": "The audit found BF16 wq_b and RoPE 1048576/8000000, so the old FP8-wq full-region, K-before-Q, and post-revert region measurements exercised the wrong executable graph and are retained only as superseded provenance."
+    },
+    {
+      "technique": "sglang-cutedsl-tgv-direct",
+      "summary": "Replace only the BF16 wk_weights_proj call with the direct SM100 CuTe-DSL TGV backend in the corrected BF16-wq fused region.",
+      "outcome": "slower",
+      "geomean_speedup": null,
+      "why": "The exact paired results in exact_bf16_wq/region_tgv_01.json through region_tgv_03.json are 0.568669x, 0.567336x, and 0.517108x, so every 60-pair repetition is a decisive regression."
+    },
+    {
+      "technique": "aten-torch-mm-direct",
+      "summary": "Replace functional linear with direct torch.mm while retaining the BF16 wq_b, official RoPE, streams, Q/gate outputs, and complete page-64 K-cache contract.",
+      "outcome": "slower",
+      "geomean_speedup": null,
+      "why": "Corrected isolated results are 0.991200x, 0.981217x, and 0.997276x; corrected full-region results are 1.009863x, 0.980541x, and 0.997941x, with no repetition clearing the 1.03x gate."
+    },
+    {
+      "technique": "stock-bf16-single-stream-schedule",
+      "summary": "Disable the stock dual-stream branch for the corrected fixed-model region to test whether stream-management overhead outweighs intended overlap.",
+      "outcome": "abandoned",
+      "geomean_speedup": null,
+      "why": "The three 60-pair results are 0.974558x, 1.201739x, and 0.971418x, so only one noisy repetition passes; exact_single_stream_range_analysis.json additionally shows 1.879x projected span and 1.475x host range versus matched stock."
+    },
+    {
+      "technique": "flashinfer-bf16-backend-sweep",
+      "summary": "Retain only the isolated BF16 wk_weights_proj portion of the earlier FlashInfer auto, cuBLASLt, cuDNN, CUTLASS, and TGV sweep.",
+      "outcome": "slower",
+      "geomean_speedup": null,
+      "why": "Those isolated rows do not construct wq_b or RoPE and remain valid, but every backend is slower at 0.109375x to 0.315262x; none warrants another corrected containing-region run."
+    }
+  ],
+  "result": {
+    "status": "no-win",
+    "geomean_speedup": null,
+    "min_speedup_conservative": null,
+    "repeat": null,
+    "integrate": "no-recipe"
+  },
+  "lesson": "Audit checkpoint quantization dispatch and model RoPE before profiling a fused serving region: a mathematically compatible FP8 reconstruction can insert a kernel that does not exist in production and invalidate the entire critical-path diagnosis. On the corrected BF16 lane, require repeat-stable containing-region gains plus stream-profile evidence; stock remains the only safe enable and fallback policy here.",
+  "transfers_to": [
+    "SGLang DSA indexer paths with checkpoint-dependent quantization dispatch",
+    "SM100 fused multi-stream regions dominated by Python or library launch gaps",
+    "production benchmark reconstructions that must match checkpoint tensor dtypes and RoPE"
+  ],
+  "caveats": [
+    "This entry explicitly supersedes glm52-prod--indexer-k-weights-prefill--b200--20260722a for all full-region, stream-critical-path, and K-before-Q claims; only that entry's isolated BF16 wk_weights_proj and loader evidence remains transferable.",
+    "The corrected workload is a production-shaped rank-local invocation of the real unbound scheduling method, not a full model-module or eight-rank request.",
+    "The required TP8/DP8/EP8 production gate needs eight B200 GPUs and remains externally unavailable on this four-GPU host; it is not weakened or relabeled, and no candidate is enabled while it is unmet.",
+    "The fixed production recipe has indexer LoRA disabled, so no LoRA behavior is claimed."
+  ],
+  "agent": "Codex GPT-5"
+}

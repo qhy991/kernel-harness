@@ -1,0 +1,3 @@
+run_dir=/home/qinhaiyan/glm52-goal-runs/16-indexer_score_decode/kernel-harness/evidence/glm52_prod_16_indexer_score_decode/tp4_runs/20260723T121417Z
+failures=0
+acceptance_status=diagnostic_only_not_tp8

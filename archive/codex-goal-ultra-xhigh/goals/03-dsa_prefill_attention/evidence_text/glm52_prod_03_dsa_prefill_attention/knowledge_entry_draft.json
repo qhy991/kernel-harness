@@ -1,0 +1,86 @@
+{
+  "schema_version": 1,
+  "id": "glm52--dsa_prefill_attn--b200--20260722a",
+  "date": "2026-07-22",
+  "model": "glm52",
+  "task": "glm52/dsa_prefill_attn",
+  "op": "dsa_attn",
+  "family": "mla",
+  "phase": "prefill",
+  "shapes": {
+    "production_abi": "FlashInfer TRT-LLM paged FP8 sparse MLA prefill",
+    "M": 4096,
+    "q_heads": 64,
+    "qk_dim": 576,
+    "value_dim": 512,
+    "topk": 2048,
+    "page_size": 64,
+    "rank_local_profile_world_size": 1,
+    "production_topology": "TP8/DP8/EP8",
+    "named_diagnostic_distributions": [
+      "one sequence with a final 4096-token chunk at context 32768 using scattered causal top-k",
+      "one sequence with a final 4096-token chunk at context 32768 using trailing causal top-k",
+      "eight sequences with 512 new tokens each at context 4096 using scattered causal top-k"
+    ]
+  },
+  "hardware": {
+    "gpu": "NVIDIA B200",
+    "sm": "sm_100"
+  },
+  "stack": {
+    "sglang_commit": "f93f8867b4bc124c9809c9110ec7361ed11b6b4a",
+    "torch": "2.11.0+cu130",
+    "cuda": "13.0",
+    "flashinfer": "0.6.12"
+  },
+  "baseline_kernel": "flashinfer.decode.trtllm_batch_decode_with_kv_cache_mla (trtllm-gen) with stock enable_pdl policy",
+  "bottleneck": {
+    "kind": "synchronization",
+    "evidence": "The stock Nsight Compute reports under profile/dsa-prefill-trtllm-m4096-stock-20260722 show long-scoreboard stalls concentrated around sparse-gather and cross-warp synchronization SASS, while the paired Nsight Systems report shows one dominant proprietary TRT-LLM FMHA kernel rather than a launch-count or tail opportunity. These are advisory production-ABI profiler artifacts, not testbench result metrics."
+  },
+  "approaches": [
+    {
+      "technique": "exact-production-abi-leaf-profile",
+      "summary": "Built a deterministic one-GPU rank-local replay of SGLang's exact FlashInfer TRT-LLM paged-FP8 DSA prefill call and captured Nsight Systems plus full and source-correlated Nsight Compute reports.",
+      "outcome": "abandoned",
+      "geomean_speedup": null,
+      "why": "The profile identified synchronization and sparse-gather pressure inside a proprietary vendor kernel, but exposed no source-editable SGLang kernel seam and therefore was diagnostic rather than a replacement."
+    },
+    {
+      "technique": "disable-flashinfer-pdl-on-exact-shape",
+      "summary": "Prototyped an exact-shape, fail-closed SGLang dispatch that passes enable_pdl=False only for the profiled production ABI and preserves FlashInfer's stock policy for every mismatch.",
+      "outcome": "slower",
+      "geomean_speedup": null,
+      "why": "The isolated paired serving-native records and matching profiler reports under evidence/glm52_prod_03_dsa_prefill_attention and profile/dsa-prefill-trtllm-m4096-pdl-off-20260722 did not show a stable improvement, so the trial was not promoted."
+    },
+    {
+      "technique": "named-distribution-correctness-matrix",
+      "summary": "Checked the exact-shape trial against scattered-causal, trailing-causal, and multi-sequence diagnostic index distributions while retaining stock fallback outside the exact guard.",
+      "outcome": "abandoned",
+      "geomean_speedup": null,
+      "why": "Correctness diagnostics could establish that the policy change preserved outputs for fabricated rank-local distributions, but they could not replace live request-distribution evidence or the required multi-rank production acceptance lane."
+    }
+  ],
+  "result": {
+    "status": "no-win",
+    "geomean_speedup": null,
+    "min_speedup_conservative": null,
+    "repeat": null,
+    "integrate": "not-run"
+  },
+  "lesson": "When a production-only sparse-attention replay lands almost entirely in a proprietary vendor kernel, first prove that a wrapper-level policy knob changes the generated kernel or its stable latency before expanding the dispatch surface. If it does not, keep the vendor default and preserve a fail-closed path until the real multi-rank workload and request distribution can be validated.",
+  "transfers_to": [
+    "FlashInfer TRT-LLM sparse MLA prefill on B200",
+    "SGLang wrapper-level tuning of opaque vendor attention kernels",
+    "production ABI investigations where the task-suite surrogate has a different storage ABI"
+  ],
+  "caveats": [
+    "No evaluate_task.py result.json exists for this production-ABI session; result speedups, repeat, and conservative gate fields are intentionally null, and no synthetic dsa_prefill_attn gate result is claimed.",
+    "The frozen testbench task uses flat BF16 tensors and a different FlashMLA kernel, so it is mathematically related but not operationally representative of the profiled paged-FP8 TRT-LLM path.",
+    "Only one authorized visible GPU was available and the local model directory was empty, so live GLM-5.2 reachability, the actual request distribution, full-region latency, and the required TP8/DP8/EP8 production acceptance remain external validation blockers.",
+    "The named correctness distributions are deterministic diagnostics, not observed production traffic.",
+    "The profiled TRT-LLM kernel is a proprietary precompiled binary with SASS visibility but no source-line mapping.",
+    "No replacement was promoted; the final production policy remains the stock FlashInfer fallback."
+  ],
+  "agent": "Codex"
+}

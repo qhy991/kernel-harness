@@ -1,0 +1,2 @@
+2026-07-22T17:58:08Z	START immutable same-GPU validation
+2026-07-22T18:02:57Z	disposition=PASS_NO_REPLACEMENT_INNER_GATE exit_code=0

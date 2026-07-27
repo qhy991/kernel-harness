@@ -1,0 +1,85 @@
+{
+  "schema_version": 1,
+  "id": "glm52-production--indexer-score-decode--b200--20260723a",
+  "date": "2026-07-23",
+  "model": "glm52-production",
+  "task": "glm52-production/indexer_score_decode",
+  "op": "indexer paged MQA score/top-k",
+  "family": "paged-fp8-mqa-topk",
+  "phase": "decode",
+  "shapes": {
+    "M_sweep": [
+      16,
+      32
+    ],
+    "context": 8192,
+    "index_heads": 32,
+    "head_dim": 128,
+    "page_size": 64,
+    "topk": 2048
+  },
+  "hardware": {
+    "gpu": "NVIDIA B200",
+    "sm": "sm_100"
+  },
+  "stack": {
+    "sglang_commit": "f93f8867b4bc",
+    "torch": "2.11.0+cu130",
+    "cuda": "13.0"
+  },
+  "baseline_kernel": "SGLang AUTO -> DeepGEMM fp8_paged_mqa_logits split mode, then topk_transform_512_v2",
+  "bottleneck": {
+    "kind": "occupancy",
+    "evidence": "NCU records a 148-CTA one-wave score launch with only 15.52-15.85% active warps, 0.125-0.146 eligible warps/cycle, 21.80-33.32% DRAM read peak, and dominant long-scoreboard sampling; Nsys shows separate fill, score, and top-k launches."
+  },
+  "approaches": [
+    {
+      "technique": "shipped-cutedsl-paged-mqa-backend",
+      "summary": "Switch only the exact paged score backend to SGLang's shipped SM100 CuTe-DSL implementation while preserving fused FP8 Q/K, FP32 gates, compact page tables, and top-k-v2.",
+      "outcome": "abandoned",
+      "geomean_speedup": null,
+      "why": "CUDA-graph M16 series were 1.019197x, 1.003703x, and 1.011231x; M32 was 0.977756x, 1.040790x, and 1.040749x, so neither bucket cleared 1.03x in every repetition and eager execution regressed."
+    },
+    {
+      "technique": "complete-indexer-propagation",
+      "summary": "Measure the same score change inside packed-FP8 wq_b, fused BF16 wk_weights_proj, Q/K preparation, RoPE, quantization, and page-64 cache store.",
+      "outcome": "abandoned",
+      "geomean_speedup": null,
+      "why": "M16 series were 1.014806x, 1.031918x, and 1.056648x; M32 was 1.028806x, 1.032633x, and 1.015328x, so the complete indexer failed the repeated 3% gate."
+    },
+    {
+      "technique": "selected-trtllm-dsa-propagation",
+      "summary": "Feed the exact top-k physical slots into the resolved TRT-LLM sparse DSA decode backend under bidirectional graph capture.",
+      "outcome": "abandoned",
+      "geomean_speedup": null,
+      "why": "The selected-DSA median-of-series speedups were only 1.011807x at M16 and 1.020334x at M32, with every series below 1.03x."
+    },
+    {
+      "technique": "four-rank-rank-max-diagnostic",
+      "summary": "Repeat complete indexer plus selected DSA on four ranks and time the maximum rank without changing local M.",
+      "outcome": "abandoned",
+      "geomean_speedup": null,
+      "why": "Diagnostic medians were 1.004793x at M16 and 1.023810x at M32; neither cleared the gate, and TP4 cannot substitute for TP8 acceptance."
+    }
+  ],
+  "result": {
+    "status": "no-win",
+    "geomean_speedup": null,
+    "min_speedup_conservative": null,
+    "repeat": 3,
+    "integrate": "no-recipe"
+  },
+  "lesson": "For small-M paged score kernels, lower register/shared-memory use does not help when the grid already supplies only one CTA per SM and the score-to-top-k path is launch-underfilled. Gate the complete fill/score/top-k and downstream attention region; isolated score savings can disappear behind top-k, projections, and DSA.",
+  "transfers_to": [
+    "small-M paged FP8 MQA on SM100",
+    "indexer score-to-top-k pipelines",
+    "one-wave CUDA-graph kernels with separate materialization and selection launches"
+  ],
+  "caveats": [
+    "The exact production-shaped tensors are deterministic reconstructions; the real GLM-5.2 checkpoint and tokenizer were unavailable.",
+    "The host has four B200s, so the required TP8/DP8/EP8 end-to-end gate remains externally blocked and is not weakened.",
+    "Serving-native result JSON is not the frozen-task result.json schema; its raw samples, source hashes, pre/post correctness, and manifests are retained separately.",
+    "The first campaign had broken profiler commands and unbalanced graph capture order; it is explicitly superseded by the corrected campaign."
+  ],
+  "agent": "Codex GPT-5"
+}

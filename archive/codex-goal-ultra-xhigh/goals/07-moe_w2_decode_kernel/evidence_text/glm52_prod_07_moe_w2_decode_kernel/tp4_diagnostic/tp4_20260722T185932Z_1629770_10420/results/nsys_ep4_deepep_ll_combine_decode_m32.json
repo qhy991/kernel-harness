@@ -1,0 +1,42 @@
+{
+  "candidate": null,
+  "correctness": {
+    "ep4_handoff_contract": null,
+    "ep4_region_validation": null,
+    "fresh_external_input_storage": null,
+    "fresh_post_timing_inputs_checked": false,
+    "reference_completed": true
+  },
+  "deep_gemm_pdl_policy": {
+    "applicable": false,
+    "family": "deepep_ll_combine",
+    "reason": "workload does not invoke the target grouped DeepGEMM path"
+  },
+  "evidence_scope": "diagnostic_ep4_not_production",
+  "execution_mode": "eager_cuda_event",
+  "reference": {
+    "median_ms": 0.12614400684833527,
+    "min_ms": 0.10092800110578537,
+    "p95_ms": 0.12614400684833527
+  },
+  "reference_policy": "SGLANG_GLM52_OPT=0 production path",
+  "schema_version": 2,
+  "timing_contract": "maximum CUDA-event latency across ranks",
+  "workload": {
+    "distributed": true,
+    "evidence_scope": "diagnostic_ep4_not_production",
+    "family": "deepep_ll_combine",
+    "name": "ep4_deepep_ll_combine_decode_m32",
+    "notes": "EP4 low-latency combine using the dispatch-produced handle.",
+    "params": {
+      "experts": 256,
+      "hidden": 6144,
+      "local_tokens": 32,
+      "max_dispatch_tokens": 128,
+      "topk": 8
+    },
+    "phase": "decode",
+    "source_symbol": "deep_ep.Buffer.low_latency_combine",
+    "world_size": 4
+  }
+}

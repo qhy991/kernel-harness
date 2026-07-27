@@ -1,0 +1,283 @@
+{
+  "artifact_counts": {
+    "baseline_results": 18,
+    "collection_command_logs": 29,
+    "nsys_reports": 6,
+    "nsys_results": 6
+  },
+  "artifact_sha256": {
+    "logs/ep4_deepep_ll_combine_decode_m16_trial1.log": "8b869cc4059e1b42db81fdb3a1039f1f8b92c2cf253b8137ef173f7ce622f5ea",
+    "logs/ep4_deepep_ll_combine_decode_m16_trial2.log": "5d82eda16e41c71626c48a7bff6d417b56e3e391ed15a3ebfe923125b38c1210",
+    "logs/ep4_deepep_ll_combine_decode_m16_trial3.log": "0a2604f3fc03a1a4d0eabe8173ce97173b01e1dea60b11567b1537ceef138c9e",
+    "logs/ep4_deepep_ll_combine_decode_m32_trial1.log": "c0c270ce0afc89a5bbacca1adea82feda9afa7fa9950f9bb888b94998f994f50",
+    "logs/ep4_deepep_ll_combine_decode_m32_trial2.log": "493134ab148fa7d319fe4fc8a1dc77c9eda887d698b436c9c83877ffd4d7dcc8",
+    "logs/ep4_deepep_ll_combine_decode_m32_trial3.log": "e64316fe9b6d4058addf02837b21f8afb275fd60b11774168f249dd2c29d1153",
+    "logs/ep4_deepep_ll_dispatch_decode_m16_trial1.log": "38c8d413a827d6ffeb70bb847c49947e8a2d88a0e4dbd7c336d6fa3029f2c7f7",
+    "logs/ep4_deepep_ll_dispatch_decode_m16_trial2.log": "3b2d7c25fa0e57634fa1e1acca268bc40297292c7efffe9aed6a72c6fb4255a2",
+    "logs/ep4_deepep_ll_dispatch_decode_m16_trial3.log": "a1ed599a53069c64c65523e9c8f97d6596ed7d34026d8f3b7dcc91cf9b8c3935",
+    "logs/ep4_deepep_ll_dispatch_decode_m32_trial1.log": "3af7c222e6e0b181ccf8a16b950fcd2ed5ab7cb88c4e1c7f43a0ca56c326762f",
+    "logs/ep4_deepep_ll_dispatch_decode_m32_trial2.log": "16675b288ded81a05d76ca7485d60ea576df5253ca020062541e68bb22f8bf7f",
+    "logs/ep4_deepep_ll_dispatch_decode_m32_trial3.log": "bedbc53d3052e222b3dc45f0c167b8102168e32c2c876645b2e98e4d3bf6cd30",
+    "logs/ep4_deepep_ll_moe_region_decode_m16_trial1.log": "7cd11f176e9c5574334845b8d8dad00e7b7e348421661accd6db3eba1d2c81b1",
+    "logs/ep4_deepep_ll_moe_region_decode_m16_trial2.log": "dea3a2a69204b70b65aa0e0dd90660767ddfd20bc469897fd62e8986924e3a63",
+    "logs/ep4_deepep_ll_moe_region_decode_m16_trial3.log": "3af8387c74d8186b359af00ab5e954a05f86d2aa1a8fd0b481d97a89dcfb1d25",
+    "logs/ep4_deepep_ll_moe_region_decode_m32_trial1.log": "3320abf7011356ed6bfb624535d652fc3f32d4a1d429fd9db5b528d35f1306c1",
+    "logs/ep4_deepep_ll_moe_region_decode_m32_trial2.log": "6e3a2169bf400951fa7e16b390d1853f88acceb3bce6db29116ed0b44cdae618",
+    "logs/ep4_deepep_ll_moe_region_decode_m32_trial3.log": "259d84e50212946b803339e950a52cb85cd0cf93001f55a7527bdca3680ad81a",
+    "logs/gpu_state_after.log": "3d08e4eb50e49d23660ce1ace67a4b0fe24fab08a0f06da4366269019d107999",
+    "logs/gpu_state_before.log": "7780936701cc04e4837dccbc19373f0687a279fb9e064bb56c0e5aafb151b915",
+    "logs/nsys_ep4_deepep_ll_combine_decode_m16.log": "cb81ff67e712f91c5a002400b49dc671fa6ffbe8d25878a2e0f6ce0a8c2b0eda",
+    "logs/nsys_ep4_deepep_ll_combine_decode_m32.log": "30667c6ebfd30019b2bb039062f61e6295685f7a8f71bc64db691bb6c9675f00",
+    "logs/nsys_ep4_deepep_ll_dispatch_decode_m16.log": "68e29ca8aec5c34fe2276f0159d5353ce400ed10f0a7d6fc91dc1a5f217e4afb",
+    "logs/nsys_ep4_deepep_ll_dispatch_decode_m32.log": "1f233d04a34735115387fccdf1b8c9d61bfc62ae9e1cba2bba3fc6452ff8d30e",
+    "logs/nsys_ep4_deepep_ll_moe_region_decode_m16.log": "7e49f6a53ec95a56aeaade0540a60a76eb744f329d1b80a24ca588730e6f3122",
+    "logs/nsys_ep4_deepep_ll_moe_region_decode_m32.log": "3746a402a13320b2eb8fffa538cf9b2a9cf83a5af64e365a322436f5fa44c756",
+    "logs/nvlink.log": "b32c78652aedf709c4f63d8770df87de8860772d5c7ce780a900e6d4288baf80",
+    "logs/runtime_probe.log": "332c1dfcb5cdbcab1c7a27ec7851a866b476bb65a1b2a2c63d3268945dc4e262",
+    "logs/topology.log": "5798bf8fdb5c04b1cd5fab8c7f0656fdb0aa2284d8cf8198f0c305edeea44726",
+    "manifest.tsv": "0c3a111850302be677b693ca67965c97717bee8a862add11a310cbb5dba4de08",
+    "results/ep4_deepep_ll_combine_decode_m16_trial1.json": "7009f952d0337b024736ee6bf22b9d59c369334fef80e708332ec5d67bf726a6",
+    "results/ep4_deepep_ll_combine_decode_m16_trial2.json": "fe8c6c71c7ae7163b3036c20f9f7a77cb09d9e320ae84053135353fc054974ce",
+    "results/ep4_deepep_ll_combine_decode_m16_trial3.json": "54779431b6a1f33a7242565cc1176f9a1e9d0a914ef69b784aef59db33582c39",
+    "results/ep4_deepep_ll_combine_decode_m32_trial1.json": "e26f191b6bbd4c15a70360e600b54a9047ee70f1bb3bc41a65ae9319dc095488",
+    "results/ep4_deepep_ll_combine_decode_m32_trial2.json": "52f163e169f2702da96943124c84a5f822aaecd928b64199b6c7332a27f990cb",
+    "results/ep4_deepep_ll_combine_decode_m32_trial3.json": "36e4cbe0a471783f2c566875d8f10a2d1308b9bb8b757040a278100279047980",
+    "results/ep4_deepep_ll_dispatch_decode_m16_trial1.json": "2fffb099489b3619d969969a73b8676d11a3c6a26825fc088b107d929eb7a9bf",
+    "results/ep4_deepep_ll_dispatch_decode_m16_trial2.json": "1f48a4e02e3aef6f5789200b1fb29f781234036276bae17e007ed9588925ff07",
+    "results/ep4_deepep_ll_dispatch_decode_m16_trial3.json": "b49ff244d2e7f424e5a51b3714c6826d7f82123cd74b1be14c5bc56f0ce00fec",
+    "results/ep4_deepep_ll_dispatch_decode_m32_trial1.json": "a6f79ab5859e9de3916948947ef62505aee78ca364825fbe1214029f4d141adf",
+    "results/ep4_deepep_ll_dispatch_decode_m32_trial2.json": "61da29c1336eadd53684b9d1d1246a44cba372dead34628bebbfd92178becb52",
+    "results/ep4_deepep_ll_dispatch_decode_m32_trial3.json": "0aa05a108336666802b0b169f14b1ea27f62d6581dfe7c24d80030b1f28f9c8a",
+    "results/ep4_deepep_ll_moe_region_decode_m16_trial1.json": "4c631aa45c68ba859d087ed9e503a6a0c2cb0ba099fe95787f888350b843cbe8",
+    "results/ep4_deepep_ll_moe_region_decode_m16_trial2.json": "616ceda89865775d9e9da9e231dc24cfa515001a59edc391b1e68eb455f92bee",
+    "results/ep4_deepep_ll_moe_region_decode_m16_trial3.json": "59260b88ebac9dac1705da6d46ee81e8cad0684309817ed22d7165b452ebd22a",
+    "results/ep4_deepep_ll_moe_region_decode_m32_trial1.json": "b9010f7d18e3485962eee15c637d7ae12f4326ddb2819897b6a8b5e8604dd057",
+    "results/ep4_deepep_ll_moe_region_decode_m32_trial2.json": "0a9c948e641d63acd9e575a8adf323889fd09720eec2c53f1627cf17e4d41042",
+    "results/ep4_deepep_ll_moe_region_decode_m32_trial3.json": "121b0d504bc2cf309fee9f38d0e9c43733f2d1ac83d3c89161471399dff45dff",
+    "results/nsys_ep4_deepep_ll_combine_decode_m16.json": "e56967896a201d4c2c19154b6cec017139bc4cd16ad799ea8e6d2fdf220060ce",
+    "results/nsys_ep4_deepep_ll_combine_decode_m32.json": "8688ad7a7abf1dcc0b0f82bc09b3a1dbb78c7b0b59e37798f34a117f1962d309",
+    "results/nsys_ep4_deepep_ll_dispatch_decode_m16.json": "e4807ed03c805fb22e470634f198315347a2e90db9c0371275754821f1bdb690",
+    "results/nsys_ep4_deepep_ll_dispatch_decode_m32.json": "074944ac82f3337f695df5b8d17286250de40856d41a7c270ac96250b24a8b92",
+    "results/nsys_ep4_deepep_ll_moe_region_decode_m16.json": "4ada3e5d83b55f1cf4255944d8a6b1c915c2cd88f59110d5a4ff76b58958bda2",
+    "results/nsys_ep4_deepep_ll_moe_region_decode_m32.json": "98ac5731ecd7997a799e239d14311832bc083607e7b4c4a7cf7c43c7a38107e3",
+    "runtime_probe.json": "cc9319f3ef680ee9b281ce8817ff0b791250e609f9ddc406e357934675ec7b77"
+  },
+  "attempt": "tp4_20260722T185932Z_1629770_10420",
+  "collection_contract": {
+    "baseline_repeat": 10,
+    "baseline_warmup": 3,
+    "collector": "evidence/glm52_prod_07_moe_w2_decode_kernel/run_tp4_diagnostics.sh",
+    "collector_sha256": "838abbf7ca114be3fec1b4f44363ac238a2468abe5d8eab7fa9cc268ced241c6",
+    "nsys_repeat": 3,
+    "nsys_warmup": 1
+  },
+  "diagnostic_environment": {
+    "deep_ep_communication_sms": 20,
+    "ibgda_transport_initialization": "failed",
+    "process_group_nccl_device_mapping": "guessed_from_global_rank",
+    "timing_interpretation": "fallback_environment_diagnostic_not_tuned_production_communication"
+  },
+  "evidence_scope": "TP4/DP4/EP4 diagnostic only; never TP8/DP8/EP8 acceptance",
+  "nsys": {
+    "ep4_deepep_ll_combine_decode_m16": {
+      "kernel_summary": "analysis/nsys_cuda_gpu_kern_sum_ep4_deepep_ll_combine_decode_m16.csv",
+      "kernel_summary_sha256": "0682f3822ef634c7892dddbdcf1a19648fcc3b17860001917473aa0be8474a04",
+      "report": "profiles/ep4_deepep_ll_combine_decode_m16.nsys-rep",
+      "report_bytes": 13634441,
+      "report_sha256": "598c909f2ac11a8e51b979c6a1a7e30fa6a40cc88143766d0cbbc5952e17986e"
+    },
+    "ep4_deepep_ll_combine_decode_m32": {
+      "kernel_summary": "analysis/nsys_cuda_gpu_kern_sum_ep4_deepep_ll_combine_decode_m32.csv",
+      "kernel_summary_sha256": "acfbe5626af29a9ff61ab1a47711be23dc065d50d5165c18afd77807881fa4ac",
+      "report": "profiles/ep4_deepep_ll_combine_decode_m32.nsys-rep",
+      "report_bytes": 18558677,
+      "report_sha256": "7afa8cb002d186aa516eea7d74fd39be66357e4f57ca0cdf3ce1a935543a3da2"
+    },
+    "ep4_deepep_ll_dispatch_decode_m16": {
+      "kernel_summary": "analysis/nsys_cuda_gpu_kern_sum_ep4_deepep_ll_dispatch_decode_m16.csv",
+      "kernel_summary_sha256": "4882ffd252e709974343935b0e8e77724d31870b96ac895480f542210e278916",
+      "report": "profiles/ep4_deepep_ll_dispatch_decode_m16.nsys-rep",
+      "report_bytes": 15632153,
+      "report_sha256": "2681a332739b43dcb4c7a21509a0f0f8a35b0650b73dc3472c5bd89fd21bc45a"
+    },
+    "ep4_deepep_ll_dispatch_decode_m32": {
+      "kernel_summary": "analysis/nsys_cuda_gpu_kern_sum_ep4_deepep_ll_dispatch_decode_m32.csv",
+      "kernel_summary_sha256": "db6db8e2b0bcd316b0a86cca487d1ce8c737e5d3201f1645613f78205b1cdff2",
+      "report": "profiles/ep4_deepep_ll_dispatch_decode_m32.nsys-rep",
+      "report_bytes": 13858953,
+      "report_sha256": "ae1409f31ab3afd76b4c8b382a87d7366c92a302d5e2af9572fdbd9487ef8e35"
+    },
+    "ep4_deepep_ll_moe_region_decode_m16": {
+      "kernel_summary": "analysis/nsys_cuda_gpu_kern_sum_ep4_deepep_ll_moe_region_decode_m16.csv",
+      "kernel_summary_sha256": "6f595ed4acf6d80669b681248a2c4c71eda7c9e11da139eca3f01ef9e880c616",
+      "report": "profiles/ep4_deepep_ll_moe_region_decode_m16.nsys-rep",
+      "report_bytes": 20301795,
+      "report_sha256": "2171d63d4369615e1df38325103b45f79af5fc3c04b84bbee2ce4a881a1a7ce4"
+    },
+    "ep4_deepep_ll_moe_region_decode_m32": {
+      "kernel_summary": "analysis/nsys_cuda_gpu_kern_sum_ep4_deepep_ll_moe_region_decode_m32.csv",
+      "kernel_summary_sha256": "a4279207ec3616f0ee48ec2121aa1ff36fd0cd9010b5e0211662237cc86ab1ad",
+      "report": "profiles/ep4_deepep_ll_moe_region_decode_m32.nsys-rep",
+      "report_bytes": 17961712,
+      "report_sha256": "8580351a1ebab0b2b031eb20c6c44ab81488152ed189d8e4421012304058ba57"
+    }
+  },
+  "prior_validation_manifest_tail": [
+    {
+      "exit_code": 1,
+      "label": "validate_tp4"
+    },
+    {
+      "exit_code": 1,
+      "label": "failures"
+    }
+  ],
+  "production_gates": {
+    "eight_rank_sglang_e2e": "BLOCKED_NOT_RUN_ON_FOUR_GPU_HOST",
+    "tp8_full_region": "BLOCKED_NOT_RUN_ON_FOUR_GPU_HOST"
+  },
+  "runtime_probe": {
+    "deep_ep_config_capture": "opaque_object_presence_only_not_semantic_config",
+    "deep_ep_extension_sha256": "3e857a1c88023e3a459d4848d20008f93a7766e86934b349420b836070abedb0",
+    "deep_gemm_extension_sha256": "cd8beab174071777c972c5948af7706ae2cfb5d2adcdbb7e6fbea253ce3a81bf",
+    "devices": [
+      {
+        "capability": [
+          10,
+          0
+        ],
+        "logical_index": 0,
+        "multi_processor_count": 148,
+        "name": "NVIDIA B200",
+        "total_memory": 191490555904
+      },
+      {
+        "capability": [
+          10,
+          0
+        ],
+        "logical_index": 1,
+        "multi_processor_count": 148,
+        "name": "NVIDIA B200",
+        "total_memory": 191490555904
+      },
+      {
+        "capability": [
+          10,
+          0
+        ],
+        "logical_index": 2,
+        "multi_processor_count": 148,
+        "name": "NVIDIA B200",
+        "total_memory": 191490555904
+      },
+      {
+        "capability": [
+          10,
+          0
+        ],
+        "logical_index": 3,
+        "multi_processor_count": 148,
+        "name": "NVIDIA B200",
+        "total_memory": 191490555904
+      }
+    ],
+    "kernel_harness_head": "224a826caa78309d839ee4c6dc17cc57b3366408",
+    "sglang_head": "49dc279b59753485c9ad6fa366d289018ecc41d3"
+  },
+  "schema_version": 1,
+  "timing": {
+    "ep4_deepep_ll_combine_decode_m16": {
+      "max_trial_median_ms": 0.052239999175071716,
+      "median_of_trial_medians_ms": 0.051311999559402466,
+      "min_trial_median_ms": 0.047359999269247055,
+      "trial_median_ms": [
+        0.051311999559402466,
+        0.052239999175071716,
+        0.047359999269247055
+      ]
+    },
+    "ep4_deepep_ll_combine_decode_m32": {
+      "max_trial_median_ms": 0.09132799878716469,
+      "median_of_trial_medians_ms": 0.05307199992239475,
+      "min_trial_median_ms": 0.05252800136804581,
+      "trial_median_ms": [
+        0.09132799878716469,
+        0.05252800136804581,
+        0.05307199992239475
+      ]
+    },
+    "ep4_deepep_ll_dispatch_decode_m16": {
+      "max_trial_median_ms": 0.7379199862480164,
+      "median_of_trial_medians_ms": 0.05742400139570236,
+      "min_trial_median_ms": 0.05673599988222122,
+      "trial_median_ms": [
+        0.7379199862480164,
+        0.05742400139570236,
+        0.05673599988222122
+      ]
+    },
+    "ep4_deepep_ll_dispatch_decode_m32": {
+      "max_trial_median_ms": 0.06156800128519535,
+      "median_of_trial_medians_ms": 0.057071998715400696,
+      "min_trial_median_ms": 0.055503999814391136,
+      "trial_median_ms": [
+        0.057071998715400696,
+        0.055503999814391136,
+        0.06156800128519535
+      ]
+    },
+    "ep4_deepep_ll_moe_region_decode_m16": {
+      "max_trial_median_ms": 0.5921600162982941,
+      "median_of_trial_medians_ms": 0.5836319923400879,
+      "min_trial_median_ms": 0.5660160183906555,
+      "trial_median_ms": [
+        0.5921600162982941,
+        0.5836319923400879,
+        0.5660160183906555
+      ]
+    },
+    "ep4_deepep_ll_moe_region_decode_m32": {
+      "max_trial_median_ms": 0.6608319878578186,
+      "median_of_trial_medians_ms": 0.616703987121582,
+      "min_trial_median_ms": 0.5947200059890747,
+      "trial_median_ms": [
+        0.6608319878578186,
+        0.5947200059890747,
+        0.616703987121582
+      ]
+    }
+  },
+  "topology": {
+    "active_nvlink_status_records": 72,
+    "directed_gpu_pairs_nv18": 12,
+    "gpu_inventory": [
+      {
+        "index": "0",
+        "name": "NVIDIA B200",
+        "pci_bus_id": "00000000:05:00.0",
+        "uuid": "GPU-30b619de-87f2-1862-0d07-a595da8fe417"
+      },
+      {
+        "index": "1",
+        "name": "NVIDIA B200",
+        "pci_bus_id": "00000000:06:00.0",
+        "uuid": "GPU-5b9be10b-5bfc-b658-9b31-f7ae8516dc54"
+      },
+      {
+        "index": "2",
+        "name": "NVIDIA B200",
+        "pci_bus_id": "00000000:07:00.0",
+        "uuid": "GPU-df8b1d78-b06c-39a2-54f0-66b9fabf3a99"
+      },
+      {
+        "index": "3",
+        "name": "NVIDIA B200",
+        "pci_bus_id": "00000000:08:00.0",
+        "uuid": "GPU-705cc39e-af1d-c4c0-d97d-4155237646af"
+      }
+    ],
+    "nvlink_rate_gb_per_s": 53.125
+  },
+  "validation": "PASS"
+}

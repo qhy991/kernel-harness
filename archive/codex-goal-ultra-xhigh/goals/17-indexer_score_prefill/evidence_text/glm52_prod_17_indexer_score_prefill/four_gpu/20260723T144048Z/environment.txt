@@ -1,0 +1,7 @@
+run_id=20260723T144048Z
+started_utc=2026-07-23T14:40:48Z
+cuda_visible_devices=0,1,2,3
+kernel_harness_head=35547dc9ebace222d67d9419f433fda8bc865c34
+sglang_head=f93f8867b4bc124c9809c9110ec7361ed11b6b4a
+topology=TP4/DP4/EP4 diagnostic only
+official_tp8_acceptance=NOT_SATISFIED

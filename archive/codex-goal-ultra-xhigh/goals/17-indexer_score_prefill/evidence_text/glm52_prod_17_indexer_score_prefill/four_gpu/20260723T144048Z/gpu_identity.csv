@@ -1,0 +1,5 @@
+index, name, uuid, pci.bus_id, pstate, clocks.current.sm [MHz], clocks.current.memory [MHz], power.draw [W], temperature.gpu, memory.total [MiB], memory.free [MiB]
+0, NVIDIA B200, GPU-30b619de-87f2-1862-0d07-a595da8fe417, 00000000:05:00.0, P0, 1965 MHz, 3996 MHz, 201.44 W, 33, 183359 MiB, 182620 MiB
+1, NVIDIA B200, GPU-5b9be10b-5bfc-b658-9b31-f7ae8516dc54, 00000000:06:00.0, P0, 120 MHz, 3996 MHz, 145.10 W, 34, 183359 MiB, 182620 MiB
+2, NVIDIA B200, GPU-df8b1d78-b06c-39a2-54f0-66b9fabf3a99, 00000000:07:00.0, P0, 120 MHz, 3996 MHz, 141.94 W, 33, 183359 MiB, 182620 MiB
+3, NVIDIA B200, GPU-705cc39e-af1d-c4c0-d97d-4155237646af, 00000000:08:00.0, P0, 120 MHz, 3996 MHz, 145.12 W, 31, 183359 MiB, 182620 MiB

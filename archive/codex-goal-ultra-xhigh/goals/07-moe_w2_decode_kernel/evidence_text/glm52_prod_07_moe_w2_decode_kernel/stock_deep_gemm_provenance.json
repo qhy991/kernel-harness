@@ -1,0 +1,38 @@
+{
+  "schema_version": 1,
+  "distribution": "sgl-deep-gemm",
+  "version": "0.1.4.post1",
+  "upstream": "https://github.com/sgl-project/DeepGEMM.git",
+  "tag": "v0.1.4.post1",
+  "tag_object": "ced66f1bf6efbcc5bcc1cf21f61abbd940a6106d",
+  "source_commit": "edcf77b276965de8f03cdc47c23f01b08bf7c7ab",
+  "submodules": {
+    "third-party/cutlass": "f3fde58372d33e9a5650ba7b80fc48b3b49d40c8",
+    "third-party/fmt": "553ec11ec06fbe0beebfbb45f9dc3c9eabd83d28"
+  },
+  "wheel": {
+    "filename": "sgl_deep_gemm-0.1.4.post1-py3-none-manylinux2014_x86_64.whl",
+    "sha256": "c0a887048133655fbaf7fc262937afbb68ad6e5208cbdf42b4fd7526315c83a4",
+    "bytes": 4711648,
+    "download_command": ".venv/bin/python -m pip download --no-deps sgl-deep-gemm==0.1.4.post1"
+  },
+  "isolated_overlay": {
+    "path": "/home/qinhaiyan/glm52-goal-runs/07-moe_w2_decode_kernel/sglang/build/deep-gemm-stock-0.1.4.post1",
+    "install_command": ".venv/bin/python -m pip install --target <overlay> --no-deps --upgrade sgl-deep-gemm==0.1.4.post1",
+    "python_sha256": "b33e89deacdce241f01f5070d321918f5e5480e3e6d3af569678d4192db4f2a7",
+    "extension_sha256": "cd8beab174071777c972c5948af7706ae2cfb5d2adcdbb7e6fbea253ce3a81bf",
+    "extension_bytes": 2508816
+  },
+  "target_device_source": {
+    "path": "deep_gemm/include/deep_gemm/impls/sm100_fp8_fp4_gemm_1d1d.cuh",
+    "sha256": "9c1e70677ede6ba09ab98e629482da7874182f8227907382efe0a81658da5a37",
+    "same_as_local_0_1_4_wheel": true
+  },
+  "repo_venv_mismatch": {
+    "installed_version": "0.1.4",
+    "required_by_sglang_python_pyproject": "0.1.4.post1",
+    "installed_extension_sha256": "0901459aa5687df50b030f1516d1de38afb24ed920d060583d932fb465f70a07",
+    "resolution": "All goal measurements prepend the isolated 0.1.4.post1 overlay; the venv is not overwritten."
+  },
+  "api_note": "Neither 0.1.4.post1 nor its target masked grouped GEMM exposes enable_overlap/max_block_n/signal. Current B200 SGLang source disables two-stream down/combine overlap, so the exact W2 leaf is still reached without those optional keywords. The wrapper contract remains tested and stock fallback stays active."
+}

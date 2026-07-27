@@ -1,0 +1,50 @@
+{
+  "campaign": "alignment",
+  "campaign_id": "glm52-w2-alignment-2bae536257aa929b957fdb28",
+  "created_utc": "2026-07-22T17:14:35.324250+00:00",
+  "git_heads": {
+    "kernel_harness": "ac9d47fe3731bca46ee2de2f77b004e124352934",
+    "sglang": "49dc279b59753485c9ad6fa366d289018ecc41d3"
+  },
+  "harness_sha256": {
+    "alignment_driver": "db958c2734542c6e4bee8a8c3d88711386f347da6cfed725fab734c9d5cb1603",
+    "benchmark": "6b7f526807ee8d6909d6e97a214b05f78a370d7768368f6ebb2c28d0a84260bc",
+    "config_probe": "f7cbb573b6c3104153532daba49d7e52c18632b9237e5bdb537f60405c668c38",
+    "edge": "aa5b6d5a0bd3bbc48479d8aeda685cf5e2cd99d36e92fe17b45e3f0a242437dd",
+    "graph": "19899d73cc3f110a2699dd93b17ab973b164fbef38b7c7ee66d61ea1424ca7b2",
+    "graph_driver": "234b0d7930d61a9db43e62fec7edef195a51edcd90e37b591fc17b974c933e39",
+    "inventory": "c1722a44ef68bb86e17925028c992e5d83498cdb3d1a52019ad18bbc09e26cf4",
+    "profile_driver": "fd4aaab4bb095617113fbac9060b15d085f1d63b441a5d308a0f8561722606ba",
+    "summarizer": "b3324a3e602435663f54b6f064ef0c9f920977436add8e6fabb5d5f98045f5b9"
+  },
+  "measurement_contract": {
+    "alignments": [
+      128,
+      32,
+      64,
+      96,
+      16
+    ],
+    "repeat": 30,
+    "sessions": 3,
+    "warmup": 5,
+    "workloads": [
+      "moe_w2_grouped_decode_m16",
+      "moe_w2_grouped_decode_m32",
+      "moe_w2_grouped_decode_m16_current_source_m5",
+      "moe_w2_grouped_decode_m32_current_source_m9"
+    ]
+  },
+  "pinned": {
+    "deep_gemm_device_source_sha256": "9c1e70677ede6ba09ab98e629482da7874182f8227907382efe0a81658da5a37",
+    "deep_gemm_extension_sha256": "cd8beab174071777c972c5948af7706ae2cfb5d2adcdbb7e6fbea253ce3a81bf",
+    "deep_gemm_python_sha256": "b33e89deacdce241f01f5070d321918f5e5480e3e6d3af569678d4192db4f2a7",
+    "deep_gemm_version": "0.1.4.post1"
+  },
+  "roots": {
+    "deep_gemm": "/home/qinhaiyan/glm52-goal-runs/07-moe_w2_decode_kernel/sglang/build/deep-gemm-stock-0.1.4.post1",
+    "kernel_harness": "/home/qinhaiyan/glm52-goal-runs/07-moe_w2_decode_kernel/kernel-harness",
+    "sglang": "/home/qinhaiyan/glm52-goal-runs/07-moe_w2_decode_kernel/sglang"
+  },
+  "schema_version": 1
+}

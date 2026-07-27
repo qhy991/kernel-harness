@@ -1,0 +1,69 @@
+{
+  "candidate": null,
+  "correctness_contract": "reference execution only",
+  "correctness_details": {
+    "pre_timing_reference": "pass"
+  },
+  "execution_mode": "eager_cuda_event",
+  "reference": {
+    "median_ms": 0.03129600081592798,
+    "min_ms": 0.027744000777602196,
+    "p95_ms": 0.043776001781225204
+  },
+  "reference_policy": "SGLANG_GLM52_OPT=0 production path",
+  "reference_samples_ms": [
+    0.04809600114822388,
+    0.03209599852561951,
+    0.02831999957561493,
+    0.02908799983561039,
+    0.046911999583244324,
+    0.036768000572919846,
+    0.030880000442266464,
+    0.02956799976527691,
+    0.029503999277949333,
+    0.03142400085926056,
+    0.0315839983522892,
+    0.028511999174952507,
+    0.02953599952161312,
+    0.03232000023126602,
+    0.04233599826693535,
+    0.035232000052928925,
+    0.03177599981427193,
+    0.031168000772595406,
+    0.03142400085926056,
+    0.027744000777602196,
+    0.029055999591946602,
+    0.043776001781225204,
+    0.037151999771595,
+    0.0315839983522892,
+    0.028991999104619026,
+    0.029664000496268272,
+    0.028831999748945236,
+    0.029120000079274178,
+    0.029823999851942062,
+    0.03203200176358223
+  ],
+  "schema_version": 1,
+  "source_provenance": {
+    "runner_path": "/home/qinhaiyan/glm52-goal-runs/05-indexer_k_weights_prefill/kernel-harness/serving_native/runner.py",
+    "runner_sha256": "0d850422e6a50e1478b24b22fa22b51190a81a81d5f5777fec91a631efcbc154",
+    "workloads_path": "/home/qinhaiyan/glm52-goal-runs/05-indexer_k_weights_prefill/kernel-harness/serving_native/workloads.py",
+    "workloads_sha256": "a4318ecae99380bde9165ec24fde4fe9216738f37dc97369252227d90ba07308"
+  },
+  "timing_contract": "maximum CUDA-event latency across ranks",
+  "workload": {
+    "distributed": false,
+    "family": "bf16_linear",
+    "name": "indexer_wk_weights_prefill_m4096",
+    "notes": "Fused BF16 wk_weights_proj backend: key[128] + head weights[32].",
+    "params": {
+      "dtype": "bfloat16",
+      "k": 6144,
+      "m": 4096,
+      "n": 160
+    },
+    "phase": "prefill",
+    "source_symbol": "sglang.srt.layers.quantization.unquant.UnquantizedLinearMethod.apply -> torch.nn.functional.linear",
+    "world_size": 1
+  }
+}

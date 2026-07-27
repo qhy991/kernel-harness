@@ -1,0 +1,15 @@
+commit 5a444f66cf5764d2d76003a3a4c4631af152a253
+Author:     qhy991 <846726600@qq.com>
+AuthorDate: Wed Jul 22 13:41:13 2026 +0000
+Commit:     qhy991 <846726600@qq.com>
+CommitDate: Wed Jul 22 13:41:13 2026 +0000
+
+    Revert "perf(glm52): trial exact DSA prefill PDL policy"
+    
+    This reverts commit b03db3f648f9db5b9264638716d20adacc510d6e.
+
+ python/sglang/srt/layers/attention/dsa_backend.py  | 49 --------------
+ python/sglang/srt/layers/glm52_opt/config.py       | 15 -----
+ python/sglang/srt/layers/glm52_opt/dsa_prefill.py  | 47 --------------
+ test/registered/kernels/test_glm52_opt_registry.py | 74 ----------------------
+ 4 files changed, 185 deletions(-)

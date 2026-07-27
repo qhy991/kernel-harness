@@ -1,0 +1,189 @@
+{
+  "campaign_dir": "/home/qinhaiyan/glm52-goal-runs/17-indexer_score_prefill/kernel-harness/evidence/glm52_prod_17_indexer_score_prefill/campaigns/20260723T142005Z-mixed-confirmation",
+  "parse_failures": [],
+  "rows": [
+    {
+      "all_series_correct": true,
+      "balanced_candidate_max_rows": 2048,
+      "candidate_median_ms": 2.2839839458465576,
+      "chunked": true,
+      "family": "indexer_complete_prefill",
+      "files": [
+        "paired/indexer_complete_prefill_m4096_mixed.series1.json",
+        "paired/indexer_complete_prefill_m4096_mixed.series2.json",
+        "paired/indexer_complete_prefill_m4096_mixed.series3.json"
+      ],
+      "k_count": 241664,
+      "no_series_regresses": false,
+      "paired_median_speedup": 1.0039475199929364,
+      "paired_p10_speedup": 0.9658014547736782,
+      "paired_p90_speedup": 1.0706911803328047,
+      "passes_3pct_gate": false,
+      "q_count": 4096,
+      "reference_median_ms": 2.3030240535736084,
+      "samples_per_side": 72,
+      "series": 3,
+      "series_median_speedups": [
+        1.0150667029239653,
+        1.007062920692416,
+        0.9958962572794714
+      ],
+      "stock_chunk_rows": [
+        3169,
+        927
+      ],
+      "workload": "indexer_complete_prefill_m4096_mixed"
+    },
+    {
+      "all_series_correct": true,
+      "balanced_candidate_max_rows": 2048,
+      "candidate_median_ms": 3.1553280353546143,
+      "chunked": true,
+      "family": "indexer_dsa_prefill",
+      "files": [
+        "paired/indexer_dsa_prefill_m4096_mixed.series1.json",
+        "paired/indexer_dsa_prefill_m4096_mixed.series2.json",
+        "paired/indexer_dsa_prefill_m4096_mixed.series3.json"
+      ],
+      "k_count": 241664,
+      "no_series_regresses": false,
+      "paired_median_speedup": 1.0077336464628512,
+      "paired_p10_speedup": 0.9692806934850163,
+      "paired_p90_speedup": 1.0444023274638583,
+      "passes_3pct_gate": false,
+      "q_count": 4096,
+      "reference_median_ms": 3.1723520755767822,
+      "samples_per_side": 72,
+      "series": 3,
+      "series_median_speedups": [
+        1.0125825944171643,
+        0.9979535776006603,
+        1.0056088347041237
+      ],
+      "stock_chunk_rows": [
+        3169,
+        927
+      ],
+      "workload": "indexer_dsa_prefill_m4096_mixed"
+    },
+    {
+      "all_series_correct": true,
+      "balanced_candidate_max_rows": 2048,
+      "candidate_median_ms": 2.238976001739502,
+      "chunked": true,
+      "family": "indexer_graph_split_prefill",
+      "files": [
+        "paired/indexer_graph_split_prefill_m4096_mixed.series1.json",
+        "paired/indexer_graph_split_prefill_m4096_mixed.series2.json",
+        "paired/indexer_graph_split_prefill_m4096_mixed.series3.json"
+      ],
+      "k_count": 241664,
+      "no_series_regresses": false,
+      "paired_median_speedup": 0.998294141790137,
+      "paired_p10_speedup": 0.9680690343795397,
+      "paired_p90_speedup": 1.0378547772554123,
+      "passes_3pct_gate": false,
+      "q_count": 4096,
+      "reference_median_ms": 2.249776005744934,
+      "samples_per_side": 72,
+      "series": 3,
+      "series_median_speedups": [
+        0.9990500582013266,
+        1.0222171211886586,
+        0.9919565128726362
+      ],
+      "stock_chunk_rows": [
+        3169,
+        927
+      ],
+      "workload": "indexer_graph_split_prefill_m4096_mixed"
+    },
+    {
+      "all_series_correct": true,
+      "balanced_candidate_max_rows": null,
+      "candidate_median_ms": 0.4272159934043884,
+      "chunked": false,
+      "family": "indexer_score_prefill",
+      "files": [
+        "paired/indexer_score_prefill_m4096.fallback.json"
+      ],
+      "k_count": 65536,
+      "no_series_regresses": false,
+      "paired_median_speedup": 0.9749465623598292,
+      "paired_p10_speedup": 0.8942094613867767,
+      "paired_p90_speedup": 1.0648593621442217,
+      "passes_3pct_gate": false,
+      "q_count": 4096,
+      "reference_median_ms": 0.4201759994029999,
+      "samples_per_side": 16,
+      "series": 1,
+      "series_median_speedups": [
+        0.9749465623598292
+      ],
+      "stock_chunk_rows": [
+        4096
+      ],
+      "workload": "indexer_score_prefill_m4096"
+    },
+    {
+      "all_series_correct": true,
+      "balanced_candidate_max_rows": 2048,
+      "candidate_median_ms": 1.0818079710006714,
+      "chunked": true,
+      "family": "indexer_score_prefill",
+      "files": [
+        "paired/indexer_score_prefill_m4096_c256.fallback.json"
+      ],
+      "k_count": 262144,
+      "no_series_regresses": true,
+      "paired_median_speedup": 1.0195663724164803,
+      "paired_p10_speedup": 0.8381857846813705,
+      "paired_p90_speedup": 1.0810963542030867,
+      "passes_3pct_gate": false,
+      "q_count": 4096,
+      "reference_median_ms": 1.074176013469696,
+      "samples_per_side": 16,
+      "series": 1,
+      "series_median_speedups": [
+        1.0195663724164803
+      ],
+      "stock_chunk_rows": [
+        2921,
+        1175
+      ],
+      "workload": "indexer_score_prefill_m4096_c256"
+    },
+    {
+      "all_series_correct": true,
+      "balanced_candidate_max_rows": 2048,
+      "candidate_median_ms": 1.4195839762687683,
+      "chunked": true,
+      "family": "indexer_score_prefill",
+      "files": [
+        "paired/indexer_score_prefill_m4096_mixed.series1.json",
+        "paired/indexer_score_prefill_m4096_mixed.series2.json",
+        "paired/indexer_score_prefill_m4096_mixed.series3.json"
+      ],
+      "k_count": 241664,
+      "no_series_regresses": true,
+      "paired_median_speedup": 1.032905404940621,
+      "paired_p10_speedup": 0.9806439098430574,
+      "paired_p90_speedup": 1.090415309574182,
+      "passes_3pct_gate": true,
+      "q_count": 4096,
+      "reference_median_ms": 1.4761599898338318,
+      "samples_per_side": 120,
+      "series": 3,
+      "series_median_speedups": [
+        1.0592354616603141,
+        1.005473879582368,
+        1.0353193457233891
+      ],
+      "stock_chunk_rows": [
+        3169,
+        927
+      ],
+      "workload": "indexer_score_prefill_m4096_mixed"
+    }
+  ]
+}

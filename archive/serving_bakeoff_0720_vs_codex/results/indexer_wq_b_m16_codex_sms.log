@@ -1,0 +1,16 @@
+Entering DeepGEMM JIT Pre-Compile session. It may take a long time (typically 10-20 mins) if you have not run `sglang.compile_deep_gemm`. It is recommended to run `sglang.compile_deep_gemm` with same args as `sglang.launch_server` for pre-compilation to reduce the overhead if you have not run it before. For example: `python3 -m sglang.compile_deep_gemm --model deepseek-ai/DeepSeek-V3 --tp 8 --trust-remote-code`
+DeepGEMM warmup:   0%|          | 0/16384 [00:00<?, ?it/s]DeepGEMM warmup:   8%|▊         | 1369/16384 [00:00<00:01, 13682.22it/s]DeepGEMM warmup:  18%|█▊        | 2888/16384 [00:00<00:00, 14567.97it/s]DeepGEMM warmup:  27%|██▋       | 4419/16384 [00:00<00:00, 14904.90it/s]DeepGEMM warmup:  37%|███▋      | 6016/16384 [00:00<00:00, 15322.21it/s]DeepGEMM warmup:  47%|████▋     | 7628/16384 [00:00<00:00, 15608.17it/s]DeepGEMM warmup:  56%|█████▌    | 9193/16384 [00:00<00:00, 15622.13it/s]DeepGEMM warmup:  66%|██████▌   | 10796/16384 [00:00<00:00, 15754.10it/s]DeepGEMM warmup:  76%|███████▌  | 12372/16384 [00:00<00:00, 15492.38it/s]DeepGEMM warmup:  85%|████████▍ | 13923/16384 [00:00<00:00, 14591.14it/s]DeepGEMM warmup:  94%|█████████▍| 15393/16384 [00:01<00:00, 13697.05it/s]DeepGEMM warmup: 100%|██████████| 16384/16384 [00:01<00:00, 14405.22it/s]
+Traceback (most recent call last):
+  File "/home/qinhaiyan/Kernel-Harness/serving_native/runner.py", line 946, in <module>
+    raise SystemExit(main())
+                     ^^^^^^
+  File "/home/qinhaiyan/Kernel-Harness/serving_native/runner.py", line 942, in main
+    return run_task(args)
+           ^^^^^^^^^^^^^^
+  File "/home/qinhaiyan/Kernel-Harness/serving_native/runner.py", line 838, in run_task
+    candidate_once = candidate_module.run(inputs, runtime)
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/qinhaiyan/Kernel-Harness/archive/codex-goal-ultra-xhigh/goals/15-indexer_wq_b_decode/candidates/indexer_wq_b_sms_dispatch.py", line 35, in run
+    return runtime.indexer_fused_prepare_store(inputs, candidate_wq=False)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: 'Runtime' object has no attribute 'indexer_fused_prepare_store'

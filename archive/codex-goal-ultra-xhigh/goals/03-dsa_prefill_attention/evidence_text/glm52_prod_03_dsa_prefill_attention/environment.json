@@ -1,0 +1,70 @@
+{
+  "build_and_import": {
+    "candidate": "/home/qinhaiyan/glm52-goal-runs/03-dsa_prefill_attention/kernel-harness/serving_native/candidates/dsa_prefill_pdl_off.py",
+    "reached_kernel": "FlashInfer packaged TRT-LLM AOT binary; no package modified",
+    "sglang": "no build; isolated source imported through SGLANG_ROOT/python"
+  },
+  "collected_utc": "2026-07-22T13:44:19Z",
+  "gpu": {
+    "compute_capability": [
+      10,
+      0
+    ],
+    "host_topology_read_only": "\u001b[4mGPU0\tGPU1\tGPU2\tGPU3\tCPU Affinity\tNUMA Affinity\tGPU NUMA ID\u001b[0m\nGPU0\t X \tNV18\tNV18\tNV18\t0-119\t0\t\tN/A\nGPU1\tNV18\t X \tNV18\tNV18\t0-119\t0\t\tN/A\nGPU2\tNV18\tNV18\t X \tNV18\t0-119\t0\t\tN/A\nGPU3\tNV18\tNV18\tNV18\t X \t0-119\t0\t\tN/A\n\nLegend:\n\n  X    = Self\n  SYS  = Connection traversing PCIe as well as the SMP interconnect between NUMA nodes (e.g., QPI/UPI)\n  NODE = Connection traversing PCIe as well as the interconnect between PCIe Host Bridges within a NUMA node\n  PHB  = Connection traversing PCIe as well as a PCIe Host Bridge (typically the CPU)\n  PXB  = Connection traversing multiple PCIe bridges (without traversing the PCIe Host Bridge)\n  PIX  = Connection traversing at most a single PCIe bridge\n  NV#  = Connection traversing a bonded set of # NVLinks",
+    "name": "NVIDIA B200",
+    "nvidia_smi_physical_3": "3, GPU-705cc39e-af1d-c4c0-d97d-4155237646af, NVIDIA B200, P0, 36, 183359, 10280, 1965, 206.09, 1000.00, 610.43.02",
+    "total_memory_bytes": 191490555904
+  },
+  "packages": {
+    "deep_gemm": {
+      "path": "/home/qinhaiyan/glm52-goal-runs/03-dsa_prefill_attention/kernel-harness/.venv/lib/python3.12/site-packages/deep_gemm/__init__.py",
+      "version": "0.1.4"
+    },
+    "flashinfer_python": {
+      "decode_path": "/home/qinhaiyan/glm52-goal-runs/03-dsa_prefill_attention/kernel-harness/.venv/lib/python3.12/site-packages/flashinfer/decode.py",
+      "path": "/home/qinhaiyan/glm52-goal-runs/03-dsa_prefill_attention/kernel-harness/.venv/lib/python3.12/site-packages/flashinfer/__init__.py",
+      "version": "0.6.12"
+    },
+    "sgl_kernel": {
+      "path": "/home/qinhaiyan/glm52-goal-runs/03-dsa_prefill_attention/kernel-harness/.venv/lib/python3.12/site-packages/sgl_kernel/__init__.py",
+      "version": "0.4.4"
+    },
+    "sglang": {
+      "path": "/home/qinhaiyan/glm52-goal-runs/03-dsa_prefill_attention/sglang/python/sglang/__init__.py",
+      "version": "0.5.15"
+    },
+    "torch": {
+      "path": "/home/qinhaiyan/glm52-goal-runs/03-dsa_prefill_attention/kernel-harness/.venv/lib/python3.12/site-packages/torch/__init__.py",
+      "version": "2.11.0+cu130"
+    },
+    "torch_cuda": "13.0"
+  },
+  "python": {
+    "executable": "/home/qinhaiyan/glm52-goal-runs/03-dsa_prefill_attention/kernel-harness/.venv/bin/python",
+    "version": "3.12.13 | packaged by Anaconda, Inc. | (main, Jul  9 2026, 14:38:16) [GCC 14.3.0]"
+  },
+  "repositories": {
+    "kernel_harness": {
+      "head": "b305e7baa997dfd166c7287e6c79d88d3462e401",
+      "root": "/home/qinhaiyan/glm52-goal-runs/03-dsa_prefill_attention/kernel-harness",
+      "status": "?? evidence/\n?? profile/"
+    },
+    "sglang": {
+      "base": "f93f8867b4bc124c9809c9110ec7361ed11b6b4a",
+      "root": "/home/qinhaiyan/glm52-goal-runs/03-dsa_prefill_attention/sglang",
+      "status": "",
+      "stock_revert_head": "5a444f66cf5764d2d76003a3a4c4631af152a253",
+      "trial": "b03db3f648f9db5b9264638716d20adacc510d6e"
+    }
+  },
+  "tools": {
+    "ncu": "NVIDIA (R) Nsight Compute Command Line Profiler\nCopyright (c) 2018-2026 NVIDIA Corporation\nVersion 2026.1.1.0 (build 37634170) (public-release)",
+    "nsys": "NVIDIA Nsight Systems version 2025.6.3.541-256337736014v0"
+  },
+  "visibility": {
+    "CUDA_VISIBLE_DEVICES": "3",
+    "logical_device": 0,
+    "physical_device": 3,
+    "visible_count": 1
+  }
+}

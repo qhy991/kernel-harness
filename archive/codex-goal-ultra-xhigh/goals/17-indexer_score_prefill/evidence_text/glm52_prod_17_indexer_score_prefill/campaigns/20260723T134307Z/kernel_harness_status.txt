@@ -1,0 +1,13 @@
+ M serving_native/README.md
+ M serving_native/runner.py
+ M serving_native/selftest.py
+ M serving_native/workloads.py
+?? evidence/
+?? serving_native/candidates/indexer_score_balanced_chunks.py
+?? serving_native/candidates/indexer_score_gather_b128_w4.py
+?? serving_native/candidates/indexer_score_gather_b128_w8.py
+?? serving_native/candidates/indexer_score_gather_b64_w4.py
+?? serving_native/candidates/indexer_score_gather_tuned.py
+?? serving_native/history/indexer-score-prefill-notes.md
+?? serving_native/indexer_prefill_region.py
+?? serving_native/indexer_score_prefill.py

@@ -1,0 +1,21 @@
+{
+  "distributed": false,
+  "family": "moe_grouped_masked",
+  "name": "moe_w2_grouped_decode_m32_current_source_m9",
+  "notes": "Current-source W2 component with DeepEP-LL one-denominator expected_m headroom; single GPU and not EP8 acceptance.",
+  "params": {
+    "current_source_expected_m_headroom": true,
+    "decode_m": 32,
+    "expected_m": 9,
+    "expert_slab": 1024,
+    "experts_per_rank": 32,
+    "group_size": 128,
+    "k": 2048,
+    "n": 6144,
+    "topk": 8,
+    "valid_assignments": 256
+  },
+  "phase": "decode",
+  "source_symbol": "sglang.srt.layers.deep_gemm_wrapper.entrypoint.grouped_gemm_nt_f8f8bf16_masked",
+  "world_size": 1
+}

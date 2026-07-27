@@ -1,0 +1,209 @@
+{
+  "checks": [
+    {
+      "command": [
+        "/home/qinhaiyan/glm52-goal-runs/16-indexer_score_decode/kernel-harness/.venv/bin/python",
+        "testbench/bin/check_env.py"
+      ],
+      "cwd": "/home/qinhaiyan/glm52-goal-runs/16-indexer_score_decode/kernel-harness",
+      "label": "check_env",
+      "returncode": 0,
+      "stderr": "",
+      "stdout": "python:      /home/qinhaiyan/glm52-goal-runs/16-indexer_score_decode/kernel-harness/.venv/bin/python\nvenv:        /home/qinhaiyan/glm52-goal-runs/16-indexer_score_decode/kernel-harness/.venv\ncuda home:   /usr/local/cuda\nsglang:      checkout /home/qinhaiyan/glm52-goal-runs/16-indexer_score_decode/sglang (f93f8867b)\ngpu:         NVIDIA B200 sm_100\nvisible gpus:1  CUDA_VISIBLE_DEVICES=0\ntorch/cuda:  2.11.0+cu130 / 13.0\nM3 kernels:  present in SGLANG_DIR\n\nEnvironment check passed.\n"
+    },
+    {
+      "command": [
+        "/home/qinhaiyan/glm52-goal-runs/16-indexer_score_decode/kernel-harness/.venv/bin/python",
+        "serving_native/selftest.py"
+      ],
+      "cwd": "/home/qinhaiyan/glm52-goal-runs/16-indexer_score_decode/kernel-harness",
+      "label": "serving_native_selftest",
+      "returncode": 0,
+      "stderr": "",
+      "stdout": "serving_native selftest OK: 47 fixed workloads\n"
+    },
+    {
+      "command": [
+        "python3",
+        "testbench/bin/selftest.py"
+      ],
+      "cwd": "/home/qinhaiyan/glm52-goal-runs/16-indexer_score_decode/kernel-harness",
+      "label": "testbench_selftest",
+      "returncode": 0,
+      "stderr": "",
+      "stdout": "selftest: 24 tasks, 0 problems\n"
+    },
+    {
+      "command": [
+        "python3",
+        "testbench/bin/verify_harness.py",
+        "--json"
+      ],
+      "cwd": "/home/qinhaiyan/glm52-goal-runs/16-indexer_score_decode/kernel-harness",
+      "label": "verify_harness",
+      "parsed_stdout": {
+        "checks": [
+          {
+            "cmd": [
+              "/home/qinhaiyan/miniconda3/bin/python3",
+              "-m",
+              "py_compile",
+              "testbench/bin/check_env.py",
+              "testbench/bin/audit_result.py",
+              "testbench/bin/selftest.py",
+              "testbench/bin/brief.py",
+              "testbench/bin/bw_ceiling.py",
+              "testbench/bin/knowledge.py",
+              "testbench/bin/kwiki_bridge.py",
+              "testbench/bin/sync_glm52_tasks.py",
+              "testbench/bin/verify_harness.py",
+              "testbench/harness/evaluate_task.py",
+              "testbench/harness/glm52_ops.py",
+              "testbench/harness/gpu_lease.py",
+              "testbench/harness/result_store.py"
+            ],
+            "returncode": 0,
+            "stderr": "",
+            "stdout": ""
+          },
+          {
+            "cmd": [
+              "/home/qinhaiyan/miniconda3/bin/python3",
+              "testbench/bin/selftest.py"
+            ],
+            "returncode": 0,
+            "stderr": "",
+            "stdout": "selftest: 24 tasks, 0 problems\n"
+          },
+          {
+            "cmd": [
+              "/home/qinhaiyan/miniconda3/bin/python3",
+              "testbench/bin/knowledge.py",
+              "lint"
+            ],
+            "returncode": 0,
+            "stderr": "",
+            "stdout": "knowledge lint: 13 entries, 0 problems\n"
+          },
+          {
+            "cmd": [
+              "/home/qinhaiyan/miniconda3/bin/python3",
+              "testbench/bin/knowledge.py",
+              "index",
+              "--check"
+            ],
+            "returncode": 0,
+            "stderr": "",
+            "stdout": "index --check: 0 stale\n"
+          },
+          {
+            "cmd": [
+              "/home/qinhaiyan/miniconda3/bin/python3",
+              "testbench/bin/knowledge.py",
+              "distill",
+              "--check"
+            ],
+            "returncode": 0,
+            "stderr": "",
+            "stdout": "distill --check: up to date\n"
+          },
+          {
+            "cmd": [
+              "/mnt/OS-oKqEXySb/home/qinhaiyan/miniconda3/envs/sglang/bin/python",
+              "testbench/bin/sync_glm52_tasks.py",
+              "--check"
+            ],
+            "returncode": 0,
+            "stderr": "",
+            "stdout": "24 task dirs are in sync with glm52_ops\n"
+          },
+          {
+            "cmd": [
+              "git",
+              "diff",
+              "--check",
+              "--",
+              "AGENTS.md",
+              "testbench/README.md",
+              "testbench/VERIFY.md",
+              "testbench/setup_env.sh",
+              "testbench/bin",
+              "testbench/harness",
+              "testbench/knowledge",
+              "testbench/tasks/glm52",
+              ":(exclude)testbench/tasks/glm52/*/candidate.py"
+            ],
+            "returncode": 0,
+            "stderr": "",
+            "stdout": ""
+          },
+          {
+            "audited": 0,
+            "cmd": [
+              "audit_result.py",
+              "runs/glm52/*/*/result.json"
+            ],
+            "invalid": 0,
+            "official": 0,
+            "provisional": 0,
+            "returncode": 0,
+            "strict": false
+          },
+          {
+            "_problem": {
+              "detail": "runs/index.jsonl is missing",
+              "kind": "index",
+              "path": "/home/qinhaiyan/glm52-goal-runs/16-indexer_score_decode/kernel-harness/runs/index.jsonl"
+            },
+            "cmd": [
+              "verify_harness.py",
+              "pointer-audit"
+            ],
+            "index_rows": 0,
+            "latest_files": 0,
+            "malformed": 1,
+            "mismatched": 0,
+            "problem_count": 1,
+            "returncode": 0,
+            "stale_index": 0,
+            "stale_latest": 0,
+            "strict": false
+          }
+        ],
+        "ok": true
+      },
+      "returncode": 0,
+      "stderr": "",
+      "stdout": "{\n  \"ok\": true,\n  \"checks\": [\n    {\n      \"cmd\": [\n        \"/home/qinhaiyan/miniconda3/bin/python3\",\n        \"-m\",\n        \"py_compile\",\n        \"testbench/bin/check_env.py\",\n        \"testbench/bin/audit_result.py\",\n        \"testbench/bin/selftest.py\",\n        \"testbench/bin/brief.py\",\n        \"testbench/bin/bw_ceiling.py\",\n        \"testbench/bin/knowledge.py\",\n        \"testbench/bin/kwiki_bridge.py\",\n        \"testbench/bin/sync_glm52_tasks.py\",\n        \"testbench/bin/verify_harness.py\",\n        \"testbench/harness/evaluate_task.py\",\n        \"testbench/harness/glm52_ops.py\",\n        \"testbench/harness/gpu_lease.py\",\n        \"testbench/harness/result_store.py\"\n      ],\n      \"returncode\": 0,\n      \"stdout\": \"\",\n      \"stderr\": \"\"\n    },\n    {\n      \"cmd\": [\n        \"/home/qinhaiyan/miniconda3/bin/python3\",\n        \"testbench/bin/selftest.py\"\n      ],\n      \"returncode\": 0,\n      \"stdout\": \"selftest: 24 tasks, 0 problems\\n\",\n      \"stderr\": \"\"\n    },\n    {\n      \"cmd\": [\n        \"/home/qinhaiyan/miniconda3/bin/python3\",\n        \"testbench/bin/knowledge.py\",\n        \"lint\"\n      ],\n      \"returncode\": 0,\n      \"stdout\": \"knowledge lint: 13 entries, 0 problems\\n\",\n      \"stderr\": \"\"\n    },\n    {\n      \"cmd\": [\n        \"/home/qinhaiyan/miniconda3/bin/python3\",\n        \"testbench/bin/knowledge.py\",\n        \"index\",\n        \"--check\"\n      ],\n      \"returncode\": 0,\n      \"stdout\": \"index --check: 0 stale\\n\",\n      \"stderr\": \"\"\n    },\n    {\n      \"cmd\": [\n        \"/home/qinhaiyan/miniconda3/bin/python3\",\n        \"testbench/bin/knowledge.py\",\n        \"distill\",\n        \"--check\"\n      ],\n      \"returncode\": 0,\n      \"stdout\": \"distill --check: up to date\\n\",\n      \"stderr\": \"\"\n    },\n    {\n      \"cmd\": [\n        \"/mnt/OS-oKqEXySb/home/qinhaiyan/miniconda3/envs/sglang/bin/python\",\n        \"testbench/bin/sync_glm52_tasks.py\",\n        \"--check\"\n      ],\n      \"returncode\": 0,\n      \"stdout\": \"24 task dirs are in sync with glm52_ops\\n\",\n      \"stderr\": \"\"\n    },\n    {\n      \"cmd\": [\n        \"git\",\n        \"diff\",\n        \"--check\",\n        \"--\",\n        \"AGENTS.md\",\n        \"testbench/README.md\",\n        \"testbench/VERIFY.md\",\n        \"testbench/setup_env.sh\",\n        \"testbench/bin\",\n        \"testbench/harness\",\n        \"testbench/knowledge\",\n        \"testbench/tasks/glm52\",\n        \":(exclude)testbench/tasks/glm52/*/candidate.py\"\n      ],\n      \"returncode\": 0,\n      \"stdout\": \"\",\n      \"stderr\": \"\"\n    },\n    {\n      \"cmd\": [\n        \"audit_result.py\",\n        \"runs/glm52/*/*/result.json\"\n      ],\n      \"returncode\": 0,\n      \"strict\": false,\n      \"audited\": 0,\n      \"invalid\": 0,\n      \"official\": 0,\n      \"provisional\": 0\n    },\n    {\n      \"cmd\": [\n        \"verify_harness.py\",\n        \"pointer-audit\"\n      ],\n      \"returncode\": 0,\n      \"strict\": false,\n      \"index_rows\": 0,\n      \"latest_files\": 0,\n      \"stale_index\": 0,\n      \"stale_latest\": 0,\n      \"malformed\": 1,\n      \"mismatched\": 0,\n      \"problem_count\": 1,\n      \"_problem\": {\n        \"kind\": \"index\",\n        \"path\": \"/home/qinhaiyan/glm52-goal-runs/16-indexer_score_decode/kernel-harness/runs/index.jsonl\",\n        \"detail\": \"runs/index.jsonl is missing\"\n      }\n    }\n  ]\n}\n"
+    },
+    {
+      "command": [
+        "git",
+        "diff",
+        "--check"
+      ],
+      "cwd": "/home/qinhaiyan/glm52-goal-runs/16-indexer_score_decode/kernel-harness",
+      "label": "kernel_harness_diff_check",
+      "returncode": 0,
+      "stderr": "",
+      "stdout": ""
+    },
+    {
+      "command": [
+        "git",
+        "status",
+        "--porcelain"
+      ],
+      "cwd": "/home/qinhaiyan/glm52-goal-runs/16-indexer_score_decode/sglang",
+      "label": "sglang_status",
+      "returncode": 0,
+      "stderr": "",
+      "stdout": ""
+    }
+  ],
+  "cuda_visible_devices": "0",
+  "ok": true,
+  "python": "/home/qinhaiyan/glm52-goal-runs/16-indexer_score_decode/kernel-harness/.venv/bin/python",
+  "schema_version": 1,
+  "timestamp_utc": "2026-07-23T12:36:27.286322+00:00"
+}

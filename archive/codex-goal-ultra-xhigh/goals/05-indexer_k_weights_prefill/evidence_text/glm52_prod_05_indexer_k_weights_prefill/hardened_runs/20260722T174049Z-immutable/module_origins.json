@@ -1,0 +1,22 @@
+{
+  "cutlass": {
+    "origin": "/mnt/OS-oKqEXySb/home/qinhaiyan/miniconda3/envs/sglang/lib/python3.12/site-packages/nvidia_cutlass_dsl/python_packages/cutlass/__init__.py",
+    "sha256": "6d3b92d28fb31c81efb687ebcec8ec946de5e50e40b5241612d8d0f45e6f1a3a"
+  },
+  "sgl_kernel": {
+    "origin": "/mnt/OS-oKqEXySb/home/qinhaiyan/miniconda3/envs/sglang/lib/python3.12/site-packages/sgl_kernel/__init__.py",
+    "sha256": "82119a6bef1cae7195162b580a1c4e28075bc32ba125345470c291d46a04cc54"
+  },
+  "sglang": {
+    "origin": "/home/qinhaiyan/glm52-goal-runs/05-indexer_k_weights_prefill/sglang/python/sglang/__init__.py",
+    "sha256": "ffda05a78218ed47a7fad82a86c8a1068ac6549cb0ddecf9959fe8752034b9c8"
+  },
+  "torch": {
+    "origin": "/mnt/OS-oKqEXySb/home/qinhaiyan/miniconda3/envs/sglang/lib/python3.12/site-packages/torch/__init__.py",
+    "sha256": "0387d8b811b289287479c8bfdf4e1dac3a71b246f938d82da1331cf2dc8bf001"
+  },
+  "tvm_ffi": {
+    "origin": "/mnt/OS-oKqEXySb/home/qinhaiyan/miniconda3/envs/sglang/lib/python3.12/site-packages/tvm_ffi/__init__.py",
+    "sha256": "bdb390cbf41acf57ef4a21f27b868dc2f607f0009c302922e67a7da7e118cf15"
+  }
+}

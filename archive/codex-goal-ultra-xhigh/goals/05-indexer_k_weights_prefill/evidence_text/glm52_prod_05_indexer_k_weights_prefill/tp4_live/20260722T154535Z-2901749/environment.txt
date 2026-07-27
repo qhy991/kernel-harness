@@ -1,0 +1,38 @@
+timestamp_utc=2026-07-22T15:45:35Z
+run_id=20260722T154535Z-2901749
+base_url=http://127.0.0.1:44965
+model_path=nvidia/GLM-5.2-NVFP4
+model_revision=aec724e8c7b8ee9db3b48c01c320f63f9cdaf8aa
+cuda_visible_devices=0,1,2,3
+kh_sha=bcd005409e65786af82c86f621507ebef12b2766
+sglang_sha=2fbd443a17edb4cb7cbf7c57d22cf6f435898948
+python=Python 3.12.13
+nsys=NVIDIA Nsight Systems version 2025.6.3.541-256337736014v0
+
+GPU inventory at launch:
+index, uuid, name, pstate, clocks.current.sm [MHz], clocks.current.memory [MHz], power.draw [W]
+0, GPU-30b619de-87f2-1862-0d07-a595da8fe417, NVIDIA B200, P0, 1965 MHz, 3996 MHz, 213.41 W
+1, GPU-5b9be10b-5bfc-b658-9b31-f7ae8516dc54, NVIDIA B200, P0, 1965 MHz, 3996 MHz, 209.99 W
+2, GPU-df8b1d78-b06c-39a2-54f0-66b9fabf3a99, NVIDIA B200, P0, 120 MHz, 3996 MHz, 142.92 W
+3, GPU-705cc39e-af1d-c4c0-d97d-4155237646af, NVIDIA B200, P0, 1965 MHz, 3996 MHz, 251.49 W
+
+Kernel-Harness status:
+ M serving_native/README.md
+ M serving_native/runner.py
+ M serving_native/selftest.py
+ M serving_native/workloads.py
+ M testbench/knowledge/distilled.json
+ M testbench/knowledge/distilled.md
+ M testbench/knowledge/queries/by-bottleneck.md
+ M testbench/knowledge/queries/by-op.md
+ M testbench/knowledge/queries/by-technique.md
+?? evidence/
+?? profile/
+?? serving_native/candidates/indexer_single_stream.py
+?? serving_native/candidates/indexer_wk_cutedsl_tgv.py
+?? serving_native/candidates/indexer_wk_flashinfer.py
+?? serving_native/candidates/indexer_wk_torch_mm.py
+?? serving_native/history/indexer-k-weights-prefill-notes.md
+?? testbench/knowledge/entries/glm52-prod--indexer-k-weights-prefill--b200--20260722a.json
+
+SGLang status:

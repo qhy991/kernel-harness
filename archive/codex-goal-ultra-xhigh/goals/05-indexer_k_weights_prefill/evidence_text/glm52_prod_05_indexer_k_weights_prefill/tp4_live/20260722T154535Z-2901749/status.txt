@@ -1,0 +1,3 @@
+2026-07-22T15:45:35Z	START TP4 dummy-weight eager diagnostic base_url=http://127.0.0.1:44965
+2026-07-22T15:45:36Z	TRACK nsys process group 2901869
+2026-07-22T15:46:02Z	FAIL TP4 diagnostic exit_code=1

@@ -1,0 +1,20 @@
+{
+  "distributed": false,
+  "family": "moe_grouped_masked",
+  "name": "moe_w2_grouped_decode_m16",
+  "notes": "Real W2 grouped GEMM before DeepEP low-latency combine.",
+  "params": {
+    "decode_m": 16,
+    "expected_m": 4,
+    "expert_slab": 1024,
+    "experts_per_rank": 32,
+    "group_size": 128,
+    "k": 2048,
+    "n": 6144,
+    "topk": 8,
+    "valid_assignments": 128
+  },
+  "phase": "decode",
+  "source_symbol": "sglang.srt.layers.deep_gemm_wrapper.entrypoint.grouped_gemm_nt_f8f8bf16_masked",
+  "world_size": 1
+}

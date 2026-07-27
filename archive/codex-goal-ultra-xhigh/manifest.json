@@ -1,0 +1,397 @@
+{
+  "campaign": "codex-goal-ultra-xhigh",
+  "goals": [
+    {
+      "id": "01",
+      "goal": "01-dsa_decode_value_path",
+      "disposition": "no-replacement",
+      "status": "analyzed",
+      "candidates": [],
+      "n_candidates": 0,
+      "n_reports": 1,
+      "n_evidence_files": 0,
+      "branch": "goal/glm52-prod-01-dsa_decode_value_path",
+      "sha": "5c359d1",
+      "note": "FlashMLA combine MAX_SPLITS; eager gain, graph ~1.0\u00d7"
+    },
+    {
+      "id": "02",
+      "goal": "02-dsa_decode_attention",
+      "disposition": "no-replacement",
+      "status": "analyzed",
+      "candidates": [
+        "dsa_direct_trtllm.py",
+        "dsa_flashmla_kv_bank_layout.py",
+        "dsa_flashmla_kv_sched_override.py",
+        "dsa_pdl_disabled.py",
+        "dsa_preallocated_out.py",
+        "dsa_split9/",
+        "dsa_tensor_bmm1_scale.py"
+      ],
+      "n_candidates": 7,
+      "n_reports": 2,
+      "n_evidence_files": 0,
+      "branch": "goal/glm52-prod-02-dsa_decode_attention",
+      "sha": "d91dc16",
+      "note": "scheduler regress; bank-layout correctness fail"
+    },
+    {
+      "id": "03",
+      "goal": "03-dsa_prefill_attention",
+      "disposition": "local-reject + blocked",
+      "status": "analyzed",
+      "candidates": [
+        "dsa_prefill_pdl_off.py",
+        "dsa_prefill_swaps_tactic/"
+      ],
+      "n_candidates": 2,
+      "n_reports": 3,
+      "n_evidence_files": 41,
+      "branch": "goal/glm52-prod-03-dsa_prefill_attention",
+      "sha": "640f7e4",
+      "note": "tactic regress; missing ckpt / 8-GPU"
+    },
+    {
+      "id": "04",
+      "goal": "04-dsa_decode_score_path",
+      "disposition": "no-replacement",
+      "status": "analyzed",
+      "candidates": [],
+      "n_candidates": 0,
+      "n_reports": 1,
+      "n_evidence_files": 0,
+      "branch": "goal/glm52-prod-04-dsa_decode_score_path",
+      "sha": "9d2f5db",
+      "note": "page64 flatten; graph ~1.0\u00d7; page64-002 voided"
+    },
+    {
+      "id": "05",
+      "goal": "05-indexer_k_weights_prefill",
+      "disposition": "no-replacement (inner-gate)",
+      "status": "analyzed",
+      "candidates": [
+        "indexer_single_stream.py",
+        "indexer_wk_cutedsl_tgv.py",
+        "indexer_wk_flashinfer.py",
+        "indexer_wk_torch_mm.py"
+      ],
+      "n_candidates": 4,
+      "n_reports": 1,
+      "n_evidence_files": 163,
+      "branch": "goal/glm52-prod-05-indexer_k_weights_prefill",
+      "sha": "1e38cef",
+      "note": "TGV regress; torch.mm/single-stream miss 1.03\u00d7"
+    },
+    {
+      "id": "06",
+      "goal": "06-moe_w2_decode_pack_launch",
+      "disposition": "local no-replacement + blocked",
+      "status": "analyzed",
+      "candidates": [
+        "moe_w2_direct_launch.py",
+        "moe_w2_registry_integration.py",
+        "moe_w2_reuse_output_floor.py"
+      ],
+      "n_candidates": 3,
+      "n_reports": 0,
+      "n_evidence_files": 0,
+      "branch": "goal/glm52-prod-06-moe_w2_decode_pack_launch",
+      "sha": "8e6d8ca",
+      "note": "no online pack; direct floor illegal; EP8 blocked"
+    },
+    {
+      "id": "07",
+      "goal": "07-moe_w2_decode_kernel",
+      "disposition": "leaf-win + no-replacement",
+      "status": "analyzed",
+      "candidates": [],
+      "n_candidates": 0,
+      "n_reports": 0,
+      "n_evidence_files": 62,
+      "branch": "goal/glm52-prod-07-moe_w2_decode_kernel",
+      "sha": "8bca9f9",
+      "note": "BM16 leaf 1.06\u20131.09\u00d7; process-global alignment unsafe"
+    },
+    {
+      "id": "08",
+      "goal": "08-moe_w2_prefill",
+      "disposition": "leaf-win + no-replacement",
+      "status": "analyzed",
+      "candidates": [
+        "_moe_w2_contig_psum.py",
+        "moe_w2_contig_psum.py",
+        "moe_w2_contig_psum_expected_none.py",
+        "moe_w2_contig_psum_mnk.py",
+        "moe_w2_contig_psum_zero_padding.py"
+      ],
+      "n_candidates": 5,
+      "n_reports": 4,
+      "n_evidence_files": 2,
+      "branch": "goal/glm52-prod-08-moe_w2_prefill",
+      "sha": "10190d8",
+      "note": "PSUM ~1.064\u00d7; missing ckpt/8-GPU"
+    },
+    {
+      "id": "09",
+      "goal": "09-moe_w13_prefill",
+      "disposition": "pending analysis",
+      "status": "pending",
+      "candidates": [
+        "_moe_w13_contig_psum.py",
+        "moe_w13_contig_psum.py",
+        "moe_w13_contig_psum_expected_none.py",
+        "moe_w13_contig_psum_mnk.py",
+        "moe_w13_contig_psum_zero_padding.py"
+      ],
+      "n_candidates": 5,
+      "n_reports": 1,
+      "n_evidence_files": 1,
+      "branch": "goal/glm52-prod-09-moe_w13_prefill",
+      "sha": "3d363b7",
+      "note": "w13 contig PSUM candidates present"
+    },
+    {
+      "id": "10",
+      "goal": "10-attn_o_decode_baseline",
+      "disposition": "pending analysis",
+      "status": "pending",
+      "candidates": [],
+      "n_candidates": 0,
+      "n_reports": 1,
+      "n_evidence_files": 0,
+      "branch": "goal/glm52-prod-10-attn_o_decode_baseline",
+      "sha": "229f4dd",
+      "note": "baseline report only"
+    },
+    {
+      "id": "11",
+      "goal": "11-attn_o_decode_packed_port",
+      "disposition": "thin / little local artifact",
+      "status": "sparse",
+      "candidates": [],
+      "n_candidates": 0,
+      "n_reports": 0,
+      "n_evidence_files": 0,
+      "branch": "goal/glm52-prod-11-attn_o_decode_packed_port",
+      "sha": "bcd0054",
+      "note": "worktree exists; no custom candidates archived"
+    },
+    {
+      "id": "12",
+      "goal": "12-attn_o_decode_source_tuning",
+      "disposition": "thin / little local artifact",
+      "status": "sparse",
+      "candidates": [],
+      "n_candidates": 0,
+      "n_reports": 0,
+      "n_evidence_files": 0,
+      "branch": "goal/glm52-prod-12-attn_o_decode_source_tuning",
+      "sha": "bcd0054",
+      "note": "worktree exists; no custom candidates archived"
+    },
+    {
+      "id": "13",
+      "goal": "13-attn_o_prefill",
+      "disposition": "pending analysis",
+      "status": "pending",
+      "candidates": [],
+      "n_candidates": 0,
+      "n_reports": 1,
+      "n_evidence_files": 10,
+      "branch": "goal/glm52-prod-13-attn_o_prefill",
+      "sha": "0d2d8d2",
+      "note": "production stage5 FINAL_REPORT present"
+    },
+    {
+      "id": "14",
+      "goal": "14-attn_q_b_decode_packed",
+      "disposition": "pending analysis",
+      "status": "pending",
+      "candidates": [
+        "q_b_packed_warp.py",
+        "q_b_packed_warp_static_nk.py"
+      ],
+      "n_candidates": 2,
+      "n_reports": 1,
+      "n_evidence_files": 7,
+      "branch": "goal/glm52-prod-14-attn_q_b_decode_packed",
+      "sha": "93fc189",
+      "note": "q_b_packed_warp candidates + reports"
+    },
+    {
+      "id": "15",
+      "goal": "15-indexer_wq_b_decode",
+      "disposition": "pending analysis",
+      "status": "pending",
+      "candidates": [
+        "indexer_wq_b_packed.py",
+        "indexer_wq_b_region_sglang.py",
+        "indexer_wq_b_sglang_dispatch.py",
+        "indexer_wq_b_sms_dispatch.py"
+      ],
+      "n_candidates": 4,
+      "n_reports": 1,
+      "n_evidence_files": 0,
+      "branch": "goal/glm52-prod-15-indexer_wq_b_decode",
+      "sha": "c8c9cb9",
+      "note": "indexer_wq_b packed/region/sms candidates"
+    },
+    {
+      "id": "16",
+      "goal": "16-indexer_score_decode",
+      "disposition": "pending analysis",
+      "status": "pending",
+      "candidates": [
+        "indexer_region_cutedsl.py",
+        "indexer_score_cutedsl.py"
+      ],
+      "n_candidates": 2,
+      "n_reports": 1,
+      "n_evidence_files": 206,
+      "branch": "goal/glm52-prod-16-indexer_score_decode",
+      "sha": "768eecf",
+      "note": "cutedsl candidates + large evidence"
+    },
+    {
+      "id": "17",
+      "goal": "17-indexer_score_prefill",
+      "disposition": "pending analysis",
+      "status": "pending",
+      "candidates": [
+        "indexer_score_balanced_chunks.py",
+        "indexer_score_balanced_mixed_bucket.py",
+        "indexer_score_gather_b128_w4.py",
+        "indexer_score_gather_b128_w8.py",
+        "indexer_score_gather_b64_w4.py",
+        "indexer_score_gather_tuned.py"
+      ],
+      "n_candidates": 6,
+      "n_reports": 0,
+      "n_evidence_files": 83,
+      "branch": "goal/glm52-prod-17-indexer_score_prefill",
+      "sha": "bc45ddc",
+      "note": "gather/bucket tune candidates"
+    },
+    {
+      "id": "18",
+      "goal": "18-moe_w13_decode_scale_path",
+      "disposition": "pending analysis",
+      "status": "pending",
+      "candidates": [
+        "moe_w13_direct_default_args.py",
+        "moe_w13_direct_launch.py",
+        "moe_w13_registry_integration.py",
+        "moe_w13_reuse_output_floor.py"
+      ],
+      "n_candidates": 4,
+      "n_reports": 1,
+      "n_evidence_files": 1,
+      "branch": "goal/glm52-prod-18-moe_w13_decode_scale_path",
+      "sha": "a980a91",
+      "note": "direct launch / registry / floor candidates"
+    },
+    {
+      "id": "19",
+      "goal": "19-moe_w13_decode_kernel",
+      "disposition": "pending analysis",
+      "status": "pending",
+      "candidates": [
+        "moe_w13_deepgemm_overlay.py",
+        "moe_w13_deepgemm_overlay_ep4_region.py",
+        "moe_w13_deepgemm_overlay_region.py",
+        "moe_w13_deepgemm_policy.py"
+      ],
+      "n_candidates": 4,
+      "n_reports": 0,
+      "n_evidence_files": 1,
+      "branch": "goal/glm52-prod-19-moe_w13_decode_kernel",
+      "sha": "b941f5f",
+      "note": "deepgemm overlay candidates"
+    },
+    {
+      "id": "20",
+      "goal": "20-moe_w13_prefill_graph",
+      "disposition": "thin / little local artifact",
+      "status": "sparse",
+      "candidates": [],
+      "n_candidates": 0,
+      "n_reports": 0,
+      "n_evidence_files": 0,
+      "branch": "goal/glm52-prod-20-moe_w13_prefill_graph",
+      "sha": "bcd0054",
+      "note": "worktree exists; no custom candidates archived"
+    },
+    {
+      "id": "21",
+      "goal": "21-attn_q_b_decode_source_fork",
+      "disposition": "thin / little local artifact",
+      "status": "sparse",
+      "candidates": [],
+      "n_candidates": 0,
+      "n_reports": 0,
+      "n_evidence_files": 0,
+      "branch": "goal/glm52-prod-21-attn_q_b_decode_source_fork",
+      "sha": "bcd0054",
+      "note": "worktree exists; no custom candidates archived"
+    },
+    {
+      "id": "22",
+      "goal": "22-dsa_flashmla_kv_production",
+      "disposition": "no-replacement",
+      "status": "analyzed",
+      "candidates": [
+        "flashmla_goal22_overlay.py"
+      ],
+      "n_candidates": 1,
+      "n_reports": 2,
+      "n_evidence_files": 0,
+      "branch": "goal/glm52-prod-22-dsa_flashmla_kv_production",
+      "sha": "660f88e",
+      "note": "combine max_num_splits=32; graph ~1.0\u00d7"
+    },
+    {
+      "id": "23",
+      "goal": "23-dp_allgather_production",
+      "disposition": "no-replacement + blocked",
+      "status": "analyzed",
+      "candidates": [
+        "allgather_grouped_broadcast.py",
+        "allgather_pynccl_native.py"
+      ],
+      "n_candidates": 2,
+      "n_reports": 1,
+      "n_evidence_files": 0,
+      "branch": "goal/glm52-prod-23-dp_allgather_production",
+      "sha": "fdc227a",
+      "note": "oracle zero seat; exit 75 after lock upgrade"
+    },
+    {
+      "id": "24",
+      "goal": "24-tp_allreduce_reachability",
+      "disposition": "in-progress",
+      "status": "in-progress",
+      "candidates": [],
+      "n_candidates": 0,
+      "n_reports": 0,
+      "n_evidence_files": 0,
+      "branch": "goal/glm52-prod-24-tp_allreduce_reachability",
+      "sha": "bea4a8c",
+      "note": "infra ready; campaign incomplete; quota exhausted"
+    },
+    {
+      "id": "25",
+      "goal": "25-deepep_dispatch_combine",
+      "disposition": "no-replacement",
+      "status": "analyzed",
+      "candidates": [
+        "deepep_config_env.py"
+      ],
+      "n_candidates": 1,
+      "n_reports": 0,
+      "n_evidence_files": 0,
+      "branch": "goal/glm52-prod-25-deepep_dispatch_combine",
+      "sha": "ab78c4c",
+      "note": "source candidate regress; EP4 joint Config diagnostic-only"
+    }
+  ]
+}

@@ -1,0 +1,78 @@
+{
+  "schema_version": 1,
+  "date": "2026-07-22",
+  "status": "pass_with_documented_no_replacement",
+  "checks": [
+    {
+      "command": "python3 testbench/bin/selftest.py",
+      "status": "pass",
+      "result": "24 tasks, 0 problems"
+    },
+    {
+      "command": ".venv/bin/python serving_native/selftest.py",
+      "status": "pass",
+      "result": "41 fixed workloads"
+    },
+    {
+      "command": ".venv/bin/python serving_native/test_dsa_flashmla_kv_sched_override.py",
+      "status": "pass",
+      "result": "scheduler override CPU checks passed"
+    },
+    {
+      "command": "serving_native/run.sh --list and --describe for dsa_flashmla_kv_decode_m16/m32",
+      "status": "pass",
+      "result": "both exact named workloads are discoverable and render their fixed contracts"
+    },
+    {
+      "command": "bash -n on serving-native and campaign scripts",
+      "status": "pass"
+    },
+    {
+      "command": ".venv/bin/python -m py_compile on changed Python sources",
+      "status": "pass"
+    },
+    {
+      "command": "python3 testbench/bin/knowledge.py lint",
+      "status": "pass",
+      "result": "13 entries, 0 problems"
+    },
+    {
+      "command": "python3 testbench/bin/knowledge.py index --check",
+      "status": "pass",
+      "result": "0 stale"
+    },
+    {
+      "command": "python3 testbench/bin/knowledge.py distill --check",
+      "status": "pass",
+      "result": "up to date"
+    },
+    {
+      "command": "with_flexible_gpu.sh -- python3 testbench/bin/verify_harness.py",
+      "status": "pass",
+      "physical_gpu": 1,
+      "gpu_uuid": "GPU-5b9be10b-5bfc-b658-9b31-f7ae8516dc54",
+      "result": "24 task directories in sync; compile, selftest, knowledge, projection, and diff gates passed",
+      "advisory": "The normal pointer audit reported missing runs/index.jsonl; strict pointer audit was not requested and the verifier exited 0."
+    },
+    {
+      "command": "git diff --check in Kernel-Harness, SGLang, and isolated FlashMLA",
+      "status": "pass"
+    }
+  ],
+  "diagnostics": [
+    {
+      "command": "CPU-only python3 testbench/bin/verify_harness.py",
+      "status": "superseded_environment_failure",
+      "result": "The configured SGLang interpreter reported no CUDA and omitted generated tensor tables, making all 48 generated problem/README projections appear stale.  No forbidden generated file was changed; the required wrapper run above passed on B200."
+    },
+    {
+      "command": "with_flexible_gpu.sh -- profile/dsa_flashmla_kv_bank_conflict_20260722/harness/run_memcheck.sh",
+      "status": "expected_candidate_failure",
+      "result": "The rejected source candidate reproduced 130 misaligned shared/local address errors at main-kernel PC +0xa420."
+    }
+  ],
+  "audit_result": {
+    "status": "not_applicable",
+    "reason": "No frozen synthetic result.json is cited or used for the production disposition."
+  }
+}

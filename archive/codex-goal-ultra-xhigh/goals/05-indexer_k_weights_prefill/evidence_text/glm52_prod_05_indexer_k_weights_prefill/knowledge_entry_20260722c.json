@@ -1,0 +1,100 @@
+{
+  "schema_version": 1,
+  "id": "glm52-prod--indexer-k-weights-prefill--b200--20260722c",
+  "date": "2026-07-22",
+  "model": "glm52_prod",
+  "task": "glm52_prod/indexer_k_weights_prefill_m4096",
+  "op": "indexer_wk_weights_fused",
+  "family": "indexer-fused-prepare-store",
+  "phase": "prefill",
+  "shapes": {
+    "M": 4096,
+    "N_wk_weights": 160,
+    "K_hidden": 6144,
+    "q_lora_rank": 2048,
+    "wq_output": 4096,
+    "wq_weight_dtype": "bfloat16",
+    "indexer_heads": 32,
+    "head_dim": 128,
+    "page_size": 64,
+    "max_position_embeddings": 1048576,
+    "rope_theta": 8000000,
+    "model_revision": "aec724e8c7b8ee9db3b48c01c320f63f9cdaf8aa"
+  },
+  "hardware": {
+    "gpu": "NVIDIA B200",
+    "sm": "sm_100"
+  },
+  "stack": {
+    "sglang_commit": "2fbd443a17edb4cb7cbf7c57d22cf6f435898948",
+    "torch": "2.11.0+cu130",
+    "cuda": "13.0"
+  },
+  "baseline_kernel": "Stock SGLang fused eager dual-stream Indexer with unquantized BF16 wq_b and BF16 wk_weights_proj; no replacement is enabled and stock remains the fallback",
+  "bottleneck": {
+    "kind": "none-identified",
+    "evidence": "This supersedes 20260722b's launch-overhead classification. The immutable Nsight Systems stock capture reports an in-process CUDA-event time of 1.085568 ms, whereas the three unprofiled stock medians are 0.144048, 0.143616, and 0.175168 ms; 6.20x-7.56x profiler perturbation means the captured gaps and idle fraction cannot diagnose the unprofiled bottleneck. Source dependencies and capture-local durations still identify max(wq_b,wk) then max(Q,K), with wq_b+Q the longer branch at 78.368 us and wk+K on the shorter overlap branches. No immutable candidate reaches 1.03x in every repeated fused prepare/store series, so the no-replacement result does not depend on an absolute bottleneck label the profiler cannot prove."
+  },
+  "approaches": [
+    {
+      "technique": "profiler-fidelity-audit",
+      "summary": "Compare the CUDA-event time printed inside the corrected Nsys capture with the unprofiled same-campaign stock baselines before interpreting launch gaps.",
+      "outcome": "abandoned",
+      "geomean_speedup": null,
+      "why": "Nsys inflated the region by more than 6.2x, so its absolute gaps and idle fraction are retained only as instrumented-trace data and the launch-overhead bottleneck label is withdrawn."
+    },
+    {
+      "technique": "sglang-cutedsl-tgv-direct",
+      "summary": "Replace only the BF16 wk_weights_proj call with the direct SM100 CuTe-DSL TGV backend in the corrected BF16-wq fused region.",
+      "outcome": "slower",
+      "geomean_speedup": null,
+      "why": "The immutable paired fused prepare/store results are 0.564382x, 0.562612x, and 0.553539x, while isolated results are 0.329284x, 0.322368x, and 0.361148x; every 60-pair repetition regresses decisively."
+    },
+    {
+      "technique": "aten-torch-mm-direct",
+      "summary": "Replace functional linear with direct torch.mm while retaining BF16 wq_b, fixed-model RoPE, streams, outputs, and complete page-64 cache mutation.",
+      "outcome": "slower",
+      "geomean_speedup": null,
+      "why": "Immutable isolated results are 0.984024x, 0.995630x, and 0.996183x; immutable fused prepare/store results are 1.003540x, 1.032630x, and 1.002945x, so only one repetition clears 1.03x."
+    },
+    {
+      "technique": "exact-stock-linear-single-stream-control",
+      "summary": "Disable only the stock dual-stream branch while retaining the exact ReplicatedLinear and UnquantizedLinearMethod sentinels, kernels, layouts, and output contracts.",
+      "outcome": "slower",
+      "geomean_speedup": null,
+      "why": "Immutable fused prepare/store results are 1.012753x, 0.985414x, and 0.978400x, so no repetition clears 1.03x; the matched capture serializes all four operations on one stream but is too perturbed for its timing to replace the unprofiled result."
+    },
+    {
+      "technique": "flashinfer-bf16-backend-sweep",
+      "summary": "Measure FlashInfer auto, cuBLASLt, cuDNN, CUTLASS, and TGV on the isolated exact BF16 projection.",
+      "outcome": "slower",
+      "geomean_speedup": null,
+      "why": "Every isolated backend is slower at 0.109375x to 0.315262x, so none can plausibly recover its adapter and kernel loss in the target prepare/store subregion."
+    }
+  ],
+  "result": {
+    "status": "no-win",
+    "geomean_speedup": null,
+    "min_speedup_conservative": null,
+    "repeat": 3,
+    "integrate": "no-recipe"
+  },
+  "lesson": "Always compare an in-profile CUDA-event measurement with an unprofiled baseline before turning a CUPTI timeline's gaps into a bottleneck claim. A heavily perturbed trace can still establish executable identity, order, streams, and kernel context, while promotion decisions must come from unprofiled interleaved A/B results.",
+  "transfers_to": [
+    "short Python-launched CUDA regions profiled with CUPTI",
+    "SGLang multi-stream eager paths on SM100",
+    "fixed-model serving reconstructions with profiler-sensitive launch timing"
+  ],
+  "caveats": [
+    "This entry supersedes 20260722b's launch-overhead diagnosis and 20260722a's wrong-FP8 prepare/store evidence; the append-only prior entries remain historical only.",
+    "The corrected Nsys trace is still valid for fixed-model operation identity, launch order, grids, stream assignment, and measurements explicitly labeled as instrumented; it is not an unprofiled idle-fraction measurement.",
+    "The workload is a world-size-1 production-shaped reconstruction on fixed deterministic synthetic tensors, not a live full-model request.",
+    "The saved performance artifacts end at fused prepare/store and do not cover score/top-k or the selected DSA attention backend; all candidates fail this necessary inner gate.",
+    "The immutable campaign validates pre-timing and fresh-seed post-timing Q/gate/full-cache correctness, dual-poison write coverage, result/profile/source/JIT hashes, module origins, and final repository state; earlier campaigns remain provisional historical evidence.",
+    "The preliminary single-stream artifacts changed the host linear-method adapter as well as scheduling and remain exploratory only; the immutable exact-stock-linear control supplies schedule-only evidence.",
+    "The corrected TP4/DP4/EP4 diagnostic did not execute after 180 locked wrapper attempts returned exit 75 under shared-host contention, so no live four-rank reachability or performance claim is made.",
+    "The no-replacement disposition is validated at the necessary world-size-1 rank-local fused prepare/store inner gate; it is not TP8 production acceptance or completion evidence.",
+    "The required TP8/DP8/EP8 gate remains externally unavailable on this four-GPU host and is not weakened or relabeled; no candidate is enabled."
+  ],
+  "agent": "Codex GPT-5"
+}

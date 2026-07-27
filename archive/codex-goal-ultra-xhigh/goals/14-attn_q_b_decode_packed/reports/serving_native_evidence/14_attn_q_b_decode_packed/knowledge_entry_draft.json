@@ -1,0 +1,75 @@
+{
+  "schema_version": 1,
+  "id": "glm52--q_b_decode--b200--20260723a",
+  "date": "2026-07-23",
+  "model": "glm52",
+  "task": "glm52/q_b_decode",
+  "op": "q_b",
+  "family": "gemm",
+  "phase": "decode",
+  "shapes": {
+    "K": 2048,
+    "N": 16384,
+    "M_sweep": [
+      16,
+      32
+    ]
+  },
+  "hardware": {
+    "gpu": "NVIDIA B200",
+    "sm": "sm_100"
+  },
+  "stack": {
+    "sglang_commit": "f93f8867b",
+    "torch": "2.11.0+cu130",
+    "cuda": "13.0"
+  },
+  "baseline_kernel": "deep_gemm.fp8_gemm_nt f32-blockwise-scale synthetic reference",
+  "bottleneck": {
+    "kind": "synchronization",
+    "evidence": "The audited frozen result was correct and neutral at both M buckets with zero wins and zero regressions; production profiling separately identified a one-wave, shared-memory-limited TMA pipeline dominated by scoreboard and barrier waiting."
+  },
+  "approaches": [
+    {
+      "technique": "packed-native-warp-scale-staging",
+      "summary": "Added an isolated SM100 DeepGEMM entry that consumes production int32 packed UE8M0 scales directly and stages scale words in the transposer warp.",
+      "outcome": "slower",
+      "geomean_speedup": null,
+      "why": "Replacing stock scale TMAs with ordinary warp loads and shared stores increased device instructions and synchronization work."
+    },
+    {
+      "technique": "static-nk-specialization",
+      "summary": "Specialized the fixed q_b N and K dimensions while preserving the production packed ABI.",
+      "outcome": "slower",
+      "geomean_speedup": null,
+      "why": "Removing dynamic dimensions did not offset the extra scale-staging work."
+    },
+    {
+      "technique": "prefetch-vector-store-and-warp-broadcast",
+      "summary": "Prefetched packed words across the A/B barrier, vectorized shared stores, restored the stock SM count, and broadcast the uniform weight scale from lane zero.",
+      "outcome": "slower",
+      "geomean_speedup": null,
+      "why": "The final kernel remained slower in graph replay at both production buckets even after reducing redundant loads."
+    }
+  ],
+  "result": {
+    "status": "no-win",
+    "geomean_speedup": 0.9853,
+    "min_speedup_conservative": 0.504,
+    "repeat": 10,
+    "integrate": "fail",
+    "shapes_won": 0,
+    "shapes_regressed": 0
+  },
+  "lesson": "For tiny-M SM100 DeepGEMM, a faster Python submission path can look like a large CUDA-event win while the underlying kernel is slower. Always validate with CUDA Graph replay and NCU; moving tiny scale transfers from TMA to a consumer warp can add more shared-store and scoreboard cost than it removes.",
+  "transfers_to": [
+    "SM100 tiny-M FP8 linear kernels using TMA-aligned UE8M0 scales",
+    "Serving candidates whose Python or custom-op launch wrappers differ"
+  ],
+  "caveats": [
+    "The frozen result is PROVISIONAL because the evidence tree was uncommitted during evaluation; candidate and frozen harness files were clean.",
+    "The frozen task uses f32 block scales and is not the production packed-int32 ABI.",
+    "Full TP8 SGLang decode was blocked by an absent checkpoint and a four-GPU host."
+  ],
+  "agent": "codex"
+}

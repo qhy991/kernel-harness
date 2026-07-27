@@ -1,0 +1,128 @@
+{
+  "captured_utc": "2026-07-22T17:14:40.748569+00:00",
+  "contract_environment": {
+    "DEEP_GEMM_ROOT": "/home/qinhaiyan/glm52-goal-runs/07-moe_w2_decode_kernel/sglang/build/deep-gemm-stock-0.1.4.post1",
+    "DG_JIT_CACHE_DIR": null,
+    "DG_JIT_DUMP_ASM": "1",
+    "DG_JIT_PTXAS_VERBOSE": "1",
+    "DG_JIT_USE_NVRTC": "0",
+    "DG_JIT_WITH_LINEINFO": "1",
+    "DG_PRINT_CONFIGS": "1",
+    "DG_USE_NVIDIA_TOOLS": "1",
+    "EXPECTED_DEEP_GEMM_DEVICE_SOURCE_SHA256": "9c1e70677ede6ba09ab98e629482da7874182f8227907382efe0a81658da5a37",
+    "EXPECTED_DEEP_GEMM_EXTENSION_SHA256": "cd8beab174071777c972c5948af7706ae2cfb5d2adcdbb7e6fbea253ce3a81bf",
+    "EXPECTED_DEEP_GEMM_VERSION": "0.1.4.post1",
+    "SGLANG_DEEPEP_NUM_MAX_DISPATCH_TOKENS_PER_RANK": "1024",
+    "SGLANG_DEEPGEMM_PDL": "true",
+    "SGLANG_DEEPGEMM_SANITY_CHECK": "0",
+    "SGLANG_DG_CACHE_DIR": null,
+    "SGLANG_GLM52_OPT": "0",
+    "SGLANG_JIT_DEEPGEMM_FAST_WARMUP": "0",
+    "SGLANG_JIT_DEEPGEMM_PRECOMPILE": "0",
+    "SGLANG_ROOT": "/home/qinhaiyan/glm52-goal-runs/07-moe_w2_decode_kernel/sglang",
+    "SGL_DG_USE_NVRTC": "0"
+  },
+  "cuda_visible_devices": "0,1,2,3",
+  "deep_gemm": {
+    "alignment": 128,
+    "device_source_path": "/home/qinhaiyan/glm52-goal-runs/07-moe_w2_decode_kernel/sglang/build/deep-gemm-stock-0.1.4.post1/deep_gemm/include/deep_gemm/impls/sm100_fp8_fp4_gemm_1d1d.cuh",
+    "device_source_sha256": "9c1e70677ede6ba09ab98e629482da7874182f8227907382efe0a81658da5a37",
+    "distribution_version": "0.1.4.post1",
+    "extension_path": "/home/qinhaiyan/glm52-goal-runs/07-moe_w2_decode_kernel/sglang/build/deep-gemm-stock-0.1.4.post1/deep_gemm/_C.so",
+    "extension_sha256": "cd8beab174071777c972c5948af7706ae2cfb5d2adcdbb7e6fbea253ce3a81bf",
+    "grouped_masked_signature": "(a, b, d, masked_m, expected_m, recipe=None, recipe_a=None, recipe_b=None, compiled_dims='nk', disable_ue8m0_cast=False)",
+    "jit_cache": null,
+    "num_sms": 148,
+    "pdl": true,
+    "pdl_before_production_setup": false,
+    "pdl_policy": "SGLang default SGLANG_DEEPGEMM_PDL=true",
+    "pdl_restore": {
+      "restored": true,
+      "restored_value": false
+    },
+    "python_path": "/home/qinhaiyan/glm52-goal-runs/07-moe_w2_decode_kernel/sglang/build/deep-gemm-stock-0.1.4.post1/deep_gemm/__init__.py",
+    "python_sha256": "b33e89deacdce241f01f5070d321918f5e5480e3e6d3af569678d4192db4f2a7",
+    "theoretical_alignment_expected_m4": 32,
+    "theoretical_alignment_expected_m5": 32,
+    "theoretical_alignment_expected_m8": 32,
+    "theoretical_alignment_expected_m9": 32
+  },
+  "git": {
+    "kernel_harness": {
+      "branch": "goal/glm52-prod-07-moe_w2_decode_kernel",
+      "head": "ac9d47fe3731bca46ee2de2f77b004e124352934",
+      "root": "/home/qinhaiyan/glm52-goal-runs/07-moe_w2_decode_kernel/kernel-harness",
+      "status": [
+        "?? evidence/glm52_prod_07_moe_w2_decode_kernel/alignment_campaign_manifest.json",
+        "?? evidence/glm52_prod_07_moe_w2_decode_kernel/environment_glm52-w2-alignment-2bae536257aa929b957fdb28.log.tmp.465330"
+      ]
+    },
+    "sglang": {
+      "branch": "goal/glm52-prod-07-moe_w2_decode_kernel",
+      "head": "49dc279b59753485c9ad6fa366d289018ecc41d3",
+      "root": "/home/qinhaiyan/glm52-goal-runs/07-moe_w2_decode_kernel/sglang",
+      "status": []
+    }
+  },
+  "ncu": [
+    "NVIDIA (R) Nsight Compute Command Line Profiler",
+    "Copyright (c) 2018-2026 NVIDIA Corporation",
+    "Version 2026.1.1.0 (build 37634170) (public-release)"
+  ],
+  "nsys": [
+    "NVIDIA Nsight Systems version 2025.6.3.541-256337736014v0"
+  ],
+  "nvcc": [
+    "nvcc: NVIDIA (R) Cuda compiler driver",
+    "Copyright (c) 2005-2026 NVIDIA Corporation",
+    "Built on Thu_Mar_19_11:12:51_PM_PDT_2026",
+    "Cuda compilation tools, release 13.2, V13.2.78",
+    "Build cuda_13.2.r13.2/compiler.37668154_0"
+  ],
+  "nvidia_smi_list": [
+    "GPU 0: NVIDIA B200 (UUID: GPU-30b619de-87f2-1862-0d07-a595da8fe417)",
+    "GPU 1: NVIDIA B200 (UUID: GPU-5b9be10b-5bfc-b658-9b31-f7ae8516dc54)",
+    "GPU 2: NVIDIA B200 (UUID: GPU-df8b1d78-b06c-39a2-54f0-66b9fabf3a99)",
+    "GPU 3: NVIDIA B200 (UUID: GPU-705cc39e-af1d-c4c0-d97d-4155237646af)"
+  ],
+  "nvidia_smi_query": [
+    "0, GPU-30b619de-87f2-1862-0d07-a595da8fe417, NVIDIA B200, 610.43.02, 1965, 3996, 32, 201.70",
+    "1, GPU-5b9be10b-5bfc-b658-9b31-f7ae8516dc54, NVIDIA B200, 610.43.02, 120, 3996, 33, 146.01",
+    "2, GPU-df8b1d78-b06c-39a2-54f0-66b9fabf3a99, NVIDIA B200, 610.43.02, 1965, 3996, 35, 202.95",
+    "3, GPU-705cc39e-af1d-c4c0-d97d-4155237646af, NVIDIA B200, 610.43.02, 120, 3996, 31, 145.77"
+  ],
+  "nvidia_smi_topology": [
+    "\u001b[4mGPU0\tGPU1\tGPU2\tGPU3\tCPU Affinity\tNUMA Affinity\tGPU NUMA ID\u001b[0m",
+    "GPU0\t X \tNV18\tNV18\tNV18\t0-119\t0\t\tN/A",
+    "GPU1\tNV18\t X \tNV18\tNV18\t0-119\t0\t\tN/A",
+    "GPU2\tNV18\tNV18\t X \tNV18\t0-119\t0\t\tN/A",
+    "GPU3\tNV18\tNV18\tNV18\t X \t0-119\t0\t\tN/A",
+    "",
+    "Legend:",
+    "",
+    "  X    = Self",
+    "  SYS  = Connection traversing PCIe as well as the SMP interconnect between NUMA nodes (e.g., QPI/UPI)",
+    "  NODE = Connection traversing PCIe as well as the interconnect between PCIe Host Bridges within a NUMA node",
+    "  PHB  = Connection traversing PCIe as well as a PCIe Host Bridge (typically the CPU)",
+    "  PXB  = Connection traversing multiple PCIe bridges (without traversing the PCIe Host Bridge)",
+    "  PIX  = Connection traversing at most a single PCIe bridge",
+    "  NV#  = Connection traversing a bonded set of # NVLinks"
+  ],
+  "platform": "Linux-6.8.0-100-generic-x86_64-with-glibc2.39",
+  "python": "3.12.13 | packaged by Anaconda, Inc. | (main, Jul  9 2026, 14:38:16) [GCC 14.3.0]",
+  "python_executable": "/home/qinhaiyan/glm52-goal-runs/07-moe_w2_decode_kernel/kernel-harness/.venv/bin/python",
+  "schema_version": 1,
+  "sglang_import": "/home/qinhaiyan/glm52-goal-runs/07-moe_w2_decode_kernel/sglang/python/sglang/__init__.py",
+  "torch": {
+    "compute_capability": [
+      10,
+      0
+    ],
+    "cuda": "13.0",
+    "device_count": 4,
+    "device_name": "NVIDIA B200",
+    "multi_processor_count": 148,
+    "total_memory": 191490555904,
+    "version": "2.11.0+cu130"
+  }
+}

@@ -1,0 +1,48 @@
+timestamp_utc=2026-07-22T17:58:00Z
+run_id=20260722T174049Z-immutable
+fixed_model_revision=aec724e8c7b8ee9db3b48c01c320f63f9cdaf8aa
+selected_physical_gpu=0
+wrapper_lock_path=/home/qinhaiyan/glm52-goal-runs/locks/gpu0.lock
+wrapper_lock_canonical_path=/home/qinhaiyan/glm52-goal-runs/locks/gpu0.lock
+wrapper_lock_fd=10
+kh_head=727cc58f39bcfb11e3f7128a4ebe0d7ef72c2a1c
+kh_branch=goal/glm52-prod-05-indexer_k_weights_prefill
+sglang_head=2fbd443a17edb4cb7cbf7c57d22cf6f435898948
+sglang_branch=goal/glm52-prod-05-indexer_k_weights_prefill
+python_realpath=/mnt/OS-oKqEXySb/home/qinhaiyan/miniconda3/envs/sglang/bin/python3.12
+python_prefix=/mnt/OS-oKqEXySb/home/qinhaiyan/miniconda3/envs/sglang
+python_version=Python 3.12.13
+PYTHONNOUSERSITE=1
+PYTHONSAFEPATH=1
+CUDA_DEVICE_ORDER=PCI_BUS_ID
+CUDA_LAUNCH_BLOCKING=unset
+CUDA_DEVICE_MAX_CONNECTIONS=unset
+CUDA_CACHE_DISABLE=unset
+CUDA_FORCE_PTX_JIT=unset
+CUBLAS_WORKSPACE_CONFIG=unset
+NVIDIA_TF32_OVERRIDE=unset
+TORCH_ALLOW_TF32_CUBLAS_OVERRIDE=unset
+sgl_kernel_root=/mnt/OS-oKqEXySb/home/qinhaiyan/miniconda3/envs/sglang/lib/python3.12/site-packages/sgl_kernel
+sgl_kernel_init=/mnt/OS-oKqEXySb/home/qinhaiyan/miniconda3/envs/sglang/lib/python3.12/site-packages/sgl_kernel/__init__.py
+sgl_kernel_elementwise=/mnt/OS-oKqEXySb/home/qinhaiyan/miniconda3/envs/sglang/lib/python3.12/site-packages/sgl_kernel/elementwise.py
+sgl_kernel_sm100_common_ops=/mnt/OS-oKqEXySb/home/qinhaiyan/miniconda3/envs/sglang/lib/python3.12/site-packages/sgl_kernel/sm100/common_ops.abi3.so
+sgl_kernel_elementwise_matches_source=true
+nsys_version=NVIDIA Nsight Systems version 2025.6.3.541-256337736014v0
+SGLANG_ROOT=/home/qinhaiyan/glm52-goal-runs/05-indexer_k_weights_prefill/sglang
+SGLANG_GLM52_OPT=0
+SGLANG_GLM52_ENV_FILE=/home/qinhaiyan/glm52-goal-runs/05-indexer_k_weights_prefill/kernel-harness/evidence/glm52_prod_05_indexer_k_weights_prefill/hardened_runs/20260722T174049Z-immutable/glm52_opt.empty.env
+SGLANG_GLM52_NSYS_GATE=0
+TVM_FFI_CACHE_DIR=/home/qinhaiyan/glm52-goal-runs/05-indexer_k_weights_prefill/kernel-harness/evidence/glm52_prod_05_indexer_k_weights_prefill/hardened_runs/20260722T174049Z-immutable/tvm_ffi_cache
+RANK=0 LOCAL_RANK=0 WORLD_SIZE=1
+SGLANG_DISABLE_DSA_INDEXER_FUSION=unset
+SGLANG_NVFP4_CKPT_FP8_GEMM_IN_ATTN=unset
+
+Kernel-Harness status before artifact creation:
+
+
+SGLang status before artifact creation:
+
+
+Selected GPU identity and clocks:
+index, uuid, name, pstate, clocks.current.sm [MHz], clocks.current.memory [MHz], power.draw [W]
+0, GPU-30b619de-87f2-1862-0d07-a595da8fe417, NVIDIA B200, P0, 120 MHz, 3996 MHz, 142.37 W

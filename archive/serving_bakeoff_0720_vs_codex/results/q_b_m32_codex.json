@@ -1,0 +1,35 @@
+{
+  "candidate": {
+    "median_ms": 0.04646399989724159,
+    "min_ms": 0.040383998304605484,
+    "p95_ms": 0.05987200140953064,
+    "paired_p10_speedup": 1.1433060897578957,
+    "paired_p90_speedup": 1.6409155373562014,
+    "passes_3pct_median_gate": true,
+    "path": "/home/qinhaiyan/Kernel-Harness/archive/codex-goal-ultra-xhigh/goals/14-attn_q_b_decode_packed/candidates/q_b_packed_warp.py",
+    "speedup": 1.3488175401390943
+  },
+  "execution_mode": "eager_cuda_event",
+  "reference": {
+    "median_ms": 0.06492799893021584,
+    "min_ms": 0.05641600117087364,
+    "p95_ms": 0.0799039974808693
+  },
+  "reference_policy": "SGLANG_GLM52_OPT=0 production path",
+  "schema_version": 1,
+  "timing_contract": "interleaved paired A/B; maximum CUDA-event latency across ranks",
+  "workload": {
+    "distributed": false,
+    "family": "packed_fp8_gemm",
+    "name": "linear_attn_q_b_decode_m32",
+    "notes": "DP-attention Q-B uses all 64 heads on each rank.",
+    "params": {
+      "k": 2048,
+      "m": 32,
+      "n": 16384
+    },
+    "phase": "decode",
+    "source_symbol": "sglang.kernels.ops.quantization.fp8_kernel.w8a8_block_fp8_matmul_deepgemm",
+    "world_size": 1
+  }
+}

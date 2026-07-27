@@ -1,0 +1,67 @@
+{
+  "schema_version": 1,
+  "id": "glm52--moe_down_proj_prefill--b200--20260722a",
+  "date": "2026-07-22",
+  "model": "glm52",
+  "task": "glm52/moe_down_proj_prefill",
+  "op": "moe_down",
+  "family": "moe",
+  "phase": "prefill",
+  "shapes": {
+    "E": 8,
+    "K": 2048,
+    "N": 6144,
+    "M_sweep": [
+      1024,
+      2048,
+      4096
+    ]
+  },
+  "hardware": {
+    "gpu": "NVIDIA B200",
+    "sm": "sm_100"
+  },
+  "stack": {
+    "sglang_commit": "07802235f",
+    "torch": "2.11.0+cu130",
+    "cuda": "13.0"
+  },
+  "baseline_kernel": "deep_gemm.fp8_m_grouped_gemm_nt_masked",
+  "bottleneck": {
+    "kind": "none-identified",
+    "evidence": "No frozen-task result.json was produced: source reachability proved that this E=8 masked, float-scale task is not the normal-DeepEP production W2 path, so measuring it would not diagnose the requested deployment bottleneck."
+  },
+  "approaches": [
+    {
+      "technique": "production-reachability-pivot",
+      "summary": "Traced current SGLang normal-DeepEP prefill from dispatch through ep_scatter and found flat contiguous W2 with packed int32 UE8M0 scales instead of the frozen masked E=8 callable.",
+      "outcome": "abandoned",
+      "geomean_speedup": null,
+      "why": "The frozen task's expert geometry, grouped layout, and scale ABI are not the live production contract, so optimizing it would create non-transferable evidence."
+    },
+    {
+      "technique": "serving-native-psum-layout-probe",
+      "summary": "Moved the production investigation to an explicitly named serving-native contiguous W2 workload and the library-native PSUM endpoint control.",
+      "outcome": "abandoned",
+      "geomean_speedup": null,
+      "why": "Serving-native measurements are retained in their own evidence tree and cannot be transcribed into this frozen-task knowledge entry without a frozen result.json."
+    }
+  ],
+  "result": {
+    "status": "failed",
+    "geomean_speedup": null,
+    "min_speedup_conservative": null,
+    "repeat": null,
+    "integrate": "not-run"
+  },
+  "lesson": "Lock current serving reachability before using a similarly named frozen MoE task: normal-DeepEP prefill may use contiguous grouped GEMM and packed UE8M0 scales while a frozen oracle uses masked geometry and float scales. Keep production-native evidence separate rather than copying its numbers into the frozen knowledge schema.",
+  "transfers_to": [
+    "MoE tasks whose prefill and decode dispatchers select different grouped layouts",
+    "FP8 serving paths where packed UE8M0 and float block scales coexist"
+  ],
+  "caveats": [
+    "This entry contains no frozen-task performance result and makes no speed claim",
+    "The serving-native EP8 router fixture is provisional rather than checkpoint-derived"
+  ],
+  "agent": "codex"
+}

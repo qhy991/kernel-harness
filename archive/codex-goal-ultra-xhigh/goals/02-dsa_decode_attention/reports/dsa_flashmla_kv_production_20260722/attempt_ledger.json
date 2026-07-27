@@ -1,0 +1,113 @@
+{
+  "schema_version": 1,
+  "date": "2026-07-22",
+  "target": "GLM-5.2 explicit flashmla_kv decode on NVIDIA B200",
+  "disposition": "no_replacement",
+  "authoritative_campaign": "../dsa_flashmla_kv_scheduler_campaign_20260722/runs/screen3",
+  "measurement_identity": {
+    "physical_gpu": 1,
+    "gpu_uuid": "GPU-5b9be10b-5bfc-b658-9b31-f7ae8516dc54",
+    "reference_policy": "SGLANG_GLM52_OPT=0",
+    "pairing": "alternating reference/candidate in one process and one flexible-GPU wrapper invocation"
+  },
+  "attempts": [
+    {
+      "id": "useful_split_partition_reduction",
+      "type": "configuration",
+      "hypothesis": "Reduce the 128 partial outputs read by combine while retaining enough main-kernel parallelism.",
+      "baseline_evidence": {
+        "scheduler_rows": 148,
+        "useful_rows": 128,
+        "m16_splits_per_request": 8,
+        "m32_splits_per_request": 4,
+        "observation": "The combine rereads the same aggregate partial-output volume in both stock buckets, while 20 launched rows are no-ops."
+      },
+      "exact_delta": {
+        "source": "serving_native/candidates/dsa_flashmla_kv_sched_override.py",
+        "m16_useful_partitions": 120,
+        "m32_useful_partitions": 112,
+        "metadata_rows_preserved": 148,
+        "dispatch": "external candidate only; no production source changed"
+      },
+      "expected_effect": "Lower combine DRAM reads and duration without changing the production ABI or synchronizing on host metadata.",
+      "correctness": {
+        "status": "pass",
+        "coverage": "strict eager comparison plus fresh-input CUDA-graph replay for M16 and M32"
+      },
+      "paired_timing": {
+        "m16_speedups": [0.9581732565773289, 0.8780138105901152, 0.9501532928098019],
+        "m32_speedups": [0.8705682380287497, 0.8852012292092832, 0.8746855372302884],
+        "samples_per_eager_series": 200,
+        "m16_graph_speedup": 1.0354312361203064,
+        "m16_graph_p10_speedup": 0.9809725552720513,
+        "m16_graph_p90_speedup": 1.1040974712091245,
+        "m32_graph_speedup": 0.8952349035593027
+      },
+      "profiler_delta": {
+        "m16_main_us": [22.336, 24.096],
+        "m16_combine_us": [11.456, 10.208],
+        "m32_main_us": [30.432, 35.488],
+        "m32_combine_us": [8.736, 8.064],
+        "m16_combine_dram_read_bytes": [16818176, 14717184],
+        "m32_combine_dram_read_bytes": [16818432, 12615936],
+        "interpretation": "The reduction saves traffic, but less split parallelism slows the dominant main kernel by more than combine improves."
+      },
+      "risk": "A favorable single graph median can mask a repeated eager regression when the latency distribution is wide.",
+      "decision": "reject",
+      "rollback": "Unset GLM52_FLASHMLA_NUM_SM_PARTS and use stock metadata; production dispatch was never changed.",
+      "evidence": "../dsa_flashmla_kv_scheduler_campaign_20260722/REPORT.md"
+    },
+    {
+      "id": "v32_group_major_raw_nope_bank_rotation",
+      "type": "source",
+      "hypothesis": "Rotate the four raw FP8 rows consumed by each dequant group across shared-memory banks to reduce the measured excessive wavefronts and bank conflicts.",
+      "baseline_evidence": {
+        "m16_excessive_shared_wavefronts": 262144,
+        "m32_excessive_shared_wavefronts": 393216,
+        "m16_shared_load_store_conflicts": [152955, 151122],
+        "m32_shared_load_store_conflicts": [325705, 191740]
+      },
+      "exact_delta": {
+        "sglang_namespace_commit": "5db482acd95020a3113ff4c1d65e8406d71f5a14",
+        "flashmla_commit": "beeba02f55bc577786737c2d8addad204ebccf50",
+        "source_patch": "../dsa_flashmla_kv_bank_conflict_20260722/source/0001-experiment-rotate-V32-raw-NoPE-staging-banks.patch",
+        "layout": "four 512-byte rows per group plus 16-byte padding",
+        "group_stride_bytes": 2064,
+        "dynamic_shared_memory_bytes": 232144,
+        "artifact_sha256": "a978dd3f307a5d25dc90595b2b2cb832fdc726c1094df32a7179ac6e82e83560",
+        "operator_namespace": "sgl_kernel_goal02"
+      },
+      "expected_effect": "Reduce shared-bank replay in the main kernel without changing logical row, scale, mask, output, or combine semantics.",
+      "correctness": {
+        "status": "fail_before_output",
+        "task": "dsa_flashmla_kv_decode_m16",
+        "error": "CUDA misaligned shared address",
+        "memcheck": "thread 160, main-kernel PC +0xa420, UTMALDG.2D.GATHER4",
+        "root_cause": "The 2064-byte stride advances the second destination from aligned 0x24000 to misaligned 0x24810, violating 128-byte shared-address alignment."
+      },
+      "paired_timing": {
+        "status": "not_run",
+        "reason": "The correctness gate failed before timing."
+      },
+      "graph": {
+        "status": "not_run",
+        "reason": "A known-invalid device binary was not captured."
+      },
+      "profiler_delta": {
+        "status": "not_collected",
+        "reason": "No candidate NCU or NSYS collection is valid after a correctness fault; offline ptxas resources only are preserved."
+      },
+      "risk": "TMA destination alignment is stricter than the original source assertion; static mapping and successful compilation cannot validate an async-copy layout.",
+      "decision": "reject",
+      "rollback": "FlashMLA parent 05e26647fe840b8baedae486c2d86d5ce4efeb7c; stock production namespace and binary remained active.",
+      "evidence": "../dsa_flashmla_kv_bank_conflict_20260722/REVIEW.md"
+    }
+  ],
+  "fallback_policy": {
+    "m16": "stock sgl_kernel::fwd_kvcache_mla",
+    "m32": "stock sgl_kernel::fwd_kvcache_mla",
+    "enabled_candidate_buckets": [],
+    "unsupported_cases": "stock",
+    "production_dispatch_modified": false
+  }
+}

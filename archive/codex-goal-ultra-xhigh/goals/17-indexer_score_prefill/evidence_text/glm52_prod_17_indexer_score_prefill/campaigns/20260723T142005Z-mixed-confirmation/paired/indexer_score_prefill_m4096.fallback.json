@@ -1,0 +1,176 @@
+{
+  "candidate": {
+    "correctness": "PASS",
+    "median_ms": 0.4272159934043884,
+    "metadata": {
+      "dispatch_reads_device_state": false,
+      "enabled_chunk_rows": [
+        2048,
+        2048
+      ],
+      "fallback": "stock Indexer._get_topk_ragged for every other bucket",
+      "policy": "enable only local M4096, K241664, batch16, exact fixed mixed context/extend distribution, stock chunks [3169,927]"
+    },
+    "min_ms": 0.4007680118083954,
+    "p95_ms": 0.44707199931144714,
+    "paired_p10_speedup": 0.9017921317326779,
+    "paired_p90_speedup": 1.0648593621442217,
+    "paired_speedups": [
+      0.9549709293551994,
+      1.00841424612206,
+      0.9651683165652697,
+      0.9300163677547958,
+      1.0648593621442217,
+      0.9136669818545408,
+      1.122498481103987,
+      0.9844430777207781,
+      0.990189514975778,
+      1.0632530131599511,
+      0.8942094613867767,
+      1.0324401932370297,
+      0.9654500469988805,
+      0.9296302046922679,
+      1.0651548762476535,
+      0.9017921317326779
+    ],
+    "passes_3pct_median_gate": false,
+    "path": "/home/qinhaiyan/glm52-goal-runs/17-indexer_score_prefill/kernel-harness/serving_native/candidates/indexer_score_balanced_mixed_bucket.py",
+    "samples_ms": [
+      0.45126399397850037,
+      0.41833600401878357,
+      0.436383992433548,
+      0.43027201294898987,
+      0.4060479998588562,
+      0.4373759925365448,
+      0.40934398770332336,
+      0.42579200863838196,
+      0.43055999279022217,
+      0.4037120044231415,
+      0.44707199931144714,
+      0.40246400237083435,
+      0.4269759953022003,
+      0.42745599150657654,
+      0.4007680118083954,
+      0.446399986743927
+    ],
+    "speedup": 0.9749465623598292
+  },
+  "execution_mode": "eager_cuda_event",
+  "reference": {
+    "median_ms": 0.4201759994029999,
+    "min_ms": 0.39737600088119507,
+    "p95_ms": 0.43238401412963867,
+    "samples_ms": [
+      0.4309439957141876,
+      0.42185598611831665,
+      0.4211840033531189,
+      0.400160014629364,
+      0.43238401412963867,
+      0.399616003036499,
+      0.45948800444602966,
+      0.41916799545288086,
+      0.42633599042892456,
+      0.42924800515174866,
+      0.39977601170539856,
+      0.4155200123786926,
+      0.4122239947319031,
+      0.39737600088119507,
+      0.42688000202178955,
+      0.4025599956512451
+    ]
+  },
+  "reference_policy": "SGLANG_GLM52_OPT=0 production path",
+  "runtime_metadata": {
+    "balanced_candidate_max_rows": null,
+    "batch_size_local": 8,
+    "chunked": false,
+    "clean_logits": false,
+    "current_forward_skips_logits": false,
+    "expanded_seq_len_max": 8192,
+    "expanded_seq_len_min": 7681,
+    "extend_lens": [
+      512,
+      512,
+      512,
+      512,
+      512,
+      512,
+      512,
+      512
+    ],
+    "free_memory_bytes_at_build": 190580719616,
+    "graph_split_short_extend_skips_inside_split": true,
+    "k_count": 65536,
+    "k_range": [
+      0,
+      65536
+    ],
+    "logits_budget_contract": "min(free_cuda_bytes * 0.2, total_cuda_bytes * (1 - mem_fraction_static) * 0.2, total_cuda_bytes * 0.3)",
+    "logits_bytes": 1073741824,
+    "mqa_backend": "deep_gemm.fp8_mqa_logits",
+    "pipeline_parallel_size": 1,
+    "pipeline_recv_reserved_sms": 0,
+    "production_logits_budget_bytes": 3063848894,
+    "production_symbol_invoked": "sglang.srt.layers.attention.dsa.dsa_indexer.Indexer._get_topk_ragged",
+    "q_count": 4096,
+    "seq_lens": [
+      8192,
+      8192,
+      8192,
+      8192,
+      8192,
+      8192,
+      8192,
+      8192
+    ],
+    "short_extend_without_speculative_skips_logits": true,
+    "sm_count": 148,
+    "stock_chunk_rows": [
+      4096
+    ],
+    "topk": 2048,
+    "topk_backend": "sgl-kernel",
+    "topk_transform": "paged",
+    "total_memory_bytes": 191490555904
+  },
+  "schema_version": 1,
+  "timing_contract": "interleaved paired A/B; maximum CUDA-event latency across ranks",
+  "workload": {
+    "distributed": false,
+    "family": "indexer_score_prefill",
+    "name": "indexer_score_prefill_m4096",
+    "notes": "Official balanced TP8/DP8 prefill lane: local M=4096, eight local requests, K=65536; normally below the B200 logits-memory guard.",
+    "params": {
+      "extend_lens": [
+        512,
+        512,
+        512,
+        512,
+        512,
+        512,
+        512,
+        512
+      ],
+      "head_dim": 128,
+      "heads": 32,
+      "logits_free_mem_fraction": 0.2,
+      "mem_fraction_static": 0.92,
+      "page_size": 64,
+      "seq_lens": [
+        8192,
+        8192,
+        8192,
+        8192,
+        8192,
+        8192,
+        8192,
+        8192
+      ],
+      "sparse_topk": 2048,
+      "topk_transform": "paged"
+    },
+    "phase": "prefill",
+    "source_symbol": "sglang.srt.layers.attention.dsa.dsa_indexer.Indexer._get_topk_ragged -> deep_gemm.fp8_mqa_logits -> sgl_kernel.fast_topk_transform_fused",
+    "world_size": 1
+  }
+}

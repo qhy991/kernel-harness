@@ -1,0 +1,10 @@
+timestamp_utc=2026-07-22T15:13:57Z
+cuda_visible_devices=0
+kh_sha=bcd005409e65786af82c86f621507ebef12b2766
+sglang_sha=2fbd443a17edb4cb7cbf7c57d22cf6f435898948
+dsa_indexer_sha256=2399c19c2ecce0c16e33fdc75eccb49383ea1fdba84da1458e191dd39173b730  /home/qinhaiyan/glm52-goal-runs/05-indexer_k_weights_prefill/sglang/python/sglang/srt/layers/attention/dsa/dsa_indexer.py
+index, uuid, name, pstate, clocks.current.sm [MHz], clocks.current.memory [MHz], power.draw [W]
+0, GPU-30b619de-87f2-1862-0d07-a595da8fe417, NVIDIA B200, P0, 120 MHz, 3996 MHz, 140.88 W
+1, GPU-5b9be10b-5bfc-b658-9b31-f7ae8516dc54, NVIDIA B200, P0, 120 MHz, 3996 MHz, 146.47 W
+2, GPU-df8b1d78-b06c-39a2-54f0-66b9fabf3a99, NVIDIA B200, P0, 120 MHz, 3996 MHz, 143.05 W
+3, GPU-705cc39e-af1d-c4c0-d97d-4155237646af, NVIDIA B200, P0, 1965 MHz, 3996 MHz, 207.87 W

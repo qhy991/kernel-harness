@@ -1,0 +1,59 @@
+{
+  "candidate": null,
+  "execution_mode": "eager_cuda_event",
+  "reference": {
+    "median_ms": 0.02497600018978119,
+    "min_ms": 0.023871999233961105,
+    "p95_ms": 0.031072000041604042
+  },
+  "reference_policy": "SGLANG_GLM52_OPT=0 production path",
+  "reference_samples_ms": [
+    0.032255999743938446,
+    0.031072000041604042,
+    0.026784000918269157,
+    0.024927999824285507,
+    0.025472000241279602,
+    0.02457600086927414,
+    0.026016000658273697,
+    0.027264000847935677,
+    0.02486399933695793,
+    0.023871999233961105,
+    0.036768000572919846,
+    0.026655999943614006,
+    0.02534399926662445,
+    0.02473600022494793,
+    0.02502400055527687,
+    0.025567999109625816,
+    0.029952000826597214,
+    0.026016000658273697,
+    0.02489599958062172,
+    0.024800000712275505,
+    0.02409599907696247,
+    0.02454400062561035,
+    0.028672000393271446,
+    0.024447999894618988,
+    0.02473600022494793,
+    0.024639999493956566,
+    0.024480000138282776,
+    0.02454400062561035,
+    0.0261439997702837,
+    0.023871999233961105
+  ],
+  "schema_version": 1,
+  "timing_contract": "maximum CUDA-event latency across ranks",
+  "workload": {
+    "distributed": false,
+    "family": "bf16_linear",
+    "name": "indexer_wk_weights_prefill_m4096",
+    "notes": "Fused BF16 wk_weights_proj backend: key[128] + head weights[32].",
+    "params": {
+      "dtype": "bfloat16",
+      "k": 6144,
+      "m": 4096,
+      "n": 160
+    },
+    "phase": "prefill",
+    "source_symbol": "sglang.srt.layers.quantization.unquant.UnquantizedLinearMethod.apply -> torch.nn.functional.linear",
+    "world_size": 1
+  }
+}

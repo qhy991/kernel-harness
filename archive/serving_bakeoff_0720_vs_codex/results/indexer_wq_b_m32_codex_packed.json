@@ -1,0 +1,35 @@
+{
+  "candidate": {
+    "median_ms": 0.05076799914240837,
+    "min_ms": 0.04259200021624565,
+    "p95_ms": 0.07267200201749802,
+    "paired_p10_speedup": 0.9360072449260964,
+    "paired_p90_speedup": 1.6432722204745758,
+    "passes_3pct_median_gate": true,
+    "path": "/home/qinhaiyan/Kernel-Harness/archive/codex-goal-ultra-xhigh/goals/15-indexer_wq_b_decode/candidates/indexer_wq_b_packed.py",
+    "speedup": 1.1592714151412915
+  },
+  "execution_mode": "eager_cuda_event",
+  "reference": {
+    "median_ms": 0.05681600049138069,
+    "min_ms": 0.04825599864125252,
+    "p95_ms": 0.08611200004816055
+  },
+  "reference_policy": "SGLANG_GLM52_OPT=0 production path",
+  "schema_version": 1,
+  "timing_contract": "interleaved paired A/B; maximum CUDA-event latency across ranks",
+  "workload": {
+    "distributed": false,
+    "family": "packed_fp8_gemm",
+    "name": "linear_indexer_wq_b_decode_m32",
+    "notes": "Real DSA indexer.wq_b; distinct from self_attn.q_b_proj.",
+    "params": {
+      "k": 2048,
+      "m": 32,
+      "n": 4096
+    },
+    "phase": "decode",
+    "source_symbol": "sglang.kernels.ops.quantization.fp8_kernel.w8a8_block_fp8_matmul_deepgemm",
+    "world_size": 1
+  }
+}

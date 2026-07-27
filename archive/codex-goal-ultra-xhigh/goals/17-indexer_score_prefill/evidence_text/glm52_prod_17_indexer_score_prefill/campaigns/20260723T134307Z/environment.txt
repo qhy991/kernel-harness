@@ -1,0 +1,11 @@
+run_id=20260723T134307Z
+started_utc=2026-07-23T13:43:07Z
+hostname=dry-vm-embraces-fin-03
+cuda_visible_devices=0
+kernel_harness_root=/home/qinhaiyan/glm52-goal-runs/17-indexer_score_prefill/kernel-harness
+sglang_root=/home/qinhaiyan/glm52-goal-runs/17-indexer_score_prefill/sglang
+python=/home/qinhaiyan/miniconda3/envs/sglang/bin/python
+kernel_harness_head=bcd005409e65786af82c86f621507ebef12b2766
+sglang_head=f93f8867b4bc124c9809c9110ec7361ed11b6b4a
+candidate_sha256=197a52308cbffd00f580f7ba8c5fb4535d4041c842f83442d5f23560cf27c130
+finished_utc=2026-07-23T13:56:44Z

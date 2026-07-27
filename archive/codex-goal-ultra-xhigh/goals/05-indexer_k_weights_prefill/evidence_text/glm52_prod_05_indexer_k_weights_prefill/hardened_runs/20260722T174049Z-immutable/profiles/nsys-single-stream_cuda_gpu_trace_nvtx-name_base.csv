@@ -1,0 +1,5 @@
+Start (ns),Duration (ns),CorrId,GrdX,GrdY,GrdZ,BlkX,BlkY,BlkZ,Reg/Trd,StcSMem (MB),DymSMem (MB),Bytes (MB),Throughput (MB/s),SrcMemKd,DstMemKd,Device,Ctx,GreenCtx,Strm,Name
+34854166,15840,228,128,1,1,256,1,1,255,0.000,0.224,,,,,NVIDIA B200 (0),1,,7,indexer-fused-prefill-m4096-eager-dual-candidate/nvjet_sm100_tst_96x64_64x15_2x2_2cta_h_bz_TNN
+35075989,3424,231,1024,1,1,128,1,1,28,0.000,0.000,,,,,NVIDIA B200 (0),1,,7,indexer-fused-prefill-m4096-eager-dual-candidate/fused_k_indexer_norm_rope_store
+35168981,43872,245,512,1,1,256,1,1,255,0.000,0.213,,,,,NVIDIA B200 (0),1,,7,indexer-fused-prefill-m4096-eager-dual-candidate/nvjet_sm100_tst_128x256_64x6_2x2_2cta_h_bz_TNT
+35320277,35807,262,32768,1,1,128,1,1,20,0.000,0.000,,,,,NVIDIA B200 (0),1,,7,indexer-fused-prefill-m4096-eager-dual-candidate/fused_q_indexer_rope_hadamard_quant

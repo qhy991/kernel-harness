@@ -1,0 +1,221 @@
+{
+  "status": "pass",
+  "rows": [
+    {
+      "workload": "indexer_score_decode_m16",
+      "cuda_graph_replay_correctness": "pass",
+      "logits_allclose_rtol_2e-2_atol_2e-2": true,
+      "max_abs_logit_diff": 2.384185791015625e-07,
+      "topk_exact_order": false,
+      "topk_set_exact": true,
+      "topk_min_overlap_of_2048": 2048,
+      "topk_rows_with_nonidentical_set": 0,
+      "runtime_contract": {
+        "resolved_score_backend": "deepgemm",
+        "score_mode": "split",
+        "metadata_builder": "deep_gemm.get_paged_mqa_logits_metadata",
+        "clean_logits": false,
+        "masking": {
+          "index_init_tokens": 0,
+          "index_local_tokens": 0
+        },
+        "topk_transform": "sglang.jit_kernel.dsv4.topk_transform_512_v2",
+        "graph_mode": "cuda_graph_decode",
+        "pp_reserved_sms": 0,
+        "num_sms": 148,
+        "sequence_lengths": {
+          "count": 16,
+          "min": 8192,
+          "max": 8192,
+          "uniform": true
+        },
+        "q_fp8": {
+          "shape": [
+            16,
+            32,
+            128
+          ],
+          "dtype": "torch.float8_e4m3fn",
+          "stride": [
+            4096,
+            128,
+            1
+          ],
+          "device": "cuda:0"
+        },
+        "kv_fused": {
+          "shape": [
+            2048,
+            64,
+            1,
+            132
+          ],
+          "dtype": "torch.uint8",
+          "stride": [
+            8448,
+            132,
+            132,
+            1
+          ],
+          "device": "cuda:0"
+        },
+        "head_weights": {
+          "shape": [
+            16,
+            32
+          ],
+          "dtype": "torch.float32",
+          "stride": [
+            32,
+            1
+          ],
+          "device": "cuda:0"
+        },
+        "block_table": {
+          "shape": [
+            16,
+            128
+          ],
+          "dtype": "torch.int32",
+          "stride": [
+            128,
+            1
+          ],
+          "device": "cuda:0"
+        },
+        "schedule_metadata": {
+          "shape": [
+            149,
+            2
+          ],
+          "dtype": "torch.int32",
+          "stride": [
+            2,
+            1
+          ],
+          "device": "cuda:0"
+        },
+        "topk_plan": {
+          "shape": [
+            17,
+            2
+          ],
+          "dtype": "torch.int32",
+          "stride": [
+            2,
+            1
+          ],
+          "device": "cuda:0"
+        }
+      }
+    },
+    {
+      "workload": "indexer_score_decode_m32",
+      "cuda_graph_replay_correctness": "pass",
+      "logits_allclose_rtol_2e-2_atol_2e-2": true,
+      "max_abs_logit_diff": 2.384185791015625e-07,
+      "topk_exact_order": false,
+      "topk_set_exact": true,
+      "topk_min_overlap_of_2048": 2048,
+      "topk_rows_with_nonidentical_set": 0,
+      "runtime_contract": {
+        "resolved_score_backend": "deepgemm",
+        "score_mode": "split",
+        "metadata_builder": "deep_gemm.get_paged_mqa_logits_metadata",
+        "clean_logits": false,
+        "masking": {
+          "index_init_tokens": 0,
+          "index_local_tokens": 0
+        },
+        "topk_transform": "sglang.jit_kernel.dsv4.topk_transform_512_v2",
+        "graph_mode": "cuda_graph_decode",
+        "pp_reserved_sms": 0,
+        "num_sms": 148,
+        "sequence_lengths": {
+          "count": 32,
+          "min": 8192,
+          "max": 8192,
+          "uniform": true
+        },
+        "q_fp8": {
+          "shape": [
+            32,
+            32,
+            128
+          ],
+          "dtype": "torch.float8_e4m3fn",
+          "stride": [
+            4096,
+            128,
+            1
+          ],
+          "device": "cuda:0"
+        },
+        "kv_fused": {
+          "shape": [
+            4096,
+            64,
+            1,
+            132
+          ],
+          "dtype": "torch.uint8",
+          "stride": [
+            8448,
+            132,
+            132,
+            1
+          ],
+          "device": "cuda:0"
+        },
+        "head_weights": {
+          "shape": [
+            32,
+            32
+          ],
+          "dtype": "torch.float32",
+          "stride": [
+            32,
+            1
+          ],
+          "device": "cuda:0"
+        },
+        "block_table": {
+          "shape": [
+            32,
+            128
+          ],
+          "dtype": "torch.int32",
+          "stride": [
+            128,
+            1
+          ],
+          "device": "cuda:0"
+        },
+        "schedule_metadata": {
+          "shape": [
+            149,
+            2
+          ],
+          "dtype": "torch.int32",
+          "stride": [
+            2,
+            1
+          ],
+          "device": "cuda:0"
+        },
+        "topk_plan": {
+          "shape": [
+            33,
+            2
+          ],
+          "dtype": "torch.int32",
+          "stride": [
+            2,
+            1
+          ],
+          "device": "cuda:0"
+        }
+      }
+    }
+  ]
+}

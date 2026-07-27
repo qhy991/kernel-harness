@@ -1,0 +1,37 @@
+Entering DeepGEMM JIT Pre-Compile session. It may take a long time (typically 10-20 mins) if you have not run `sglang.compile_deep_gemm`. It is recommended to run `sglang.compile_deep_gemm` with same args as `sglang.launch_server` for pre-compilation to reduce the overhead if you have not run it before. For example: `python3 -m sglang.compile_deep_gemm --model deepseek-ai/DeepSeek-V3 --tp 8 --trust-remote-code`
+DeepGEMM warmup:   0%|          | 0/16384 [00:00<?, ?it/s]DeepGEMM warmup:   7%|▋         | 1121/16384 [00:00<00:01, 11152.84it/s]DeepGEMM warmup:  15%|█▌        | 2528/16384 [00:00<00:01, 12864.76it/s]DeepGEMM warmup:  24%|██▍       | 3898/16384 [00:00<00:00, 13244.69it/s]DeepGEMM warmup:  32%|███▏      | 5223/16384 [00:00<00:00, 11603.23it/s]DeepGEMM warmup:  39%|███▉      | 6410/16384 [00:00<00:00, 10217.53it/s]DeepGEMM warmup:  46%|████▌     | 7467/16384 [00:00<00:00, 9056.01it/s] DeepGEMM warmup:  51%|█████▏    | 8408/16384 [00:00<00:00, 8161.71it/s]DeepGEMM warmup:  56%|█████▋    | 9253/16384 [00:01<00:00, 7418.99it/s]DeepGEMM warmup:  61%|██████    | 10017/16384 [00:01<00:00, 6791.01it/s]DeepGEMM warmup:  65%|██████▌   | 10712/16384 [00:01<00:00, 6268.14it/s]DeepGEMM warmup:  69%|██████▉   | 11349/16384 [00:01<00:00, 5829.27it/s]DeepGEMM warmup:  73%|███████▎  | 11938/16384 [00:01<00:00, 5450.70it/s]DeepGEMM warmup:  76%|███████▌  | 12486/16384 [00:01<00:00, 5138.37it/s]DeepGEMM warmup:  79%|███████▉  | 13001/16384 [00:01<00:00, 4864.24it/s]DeepGEMM warmup:  82%|████████▏ | 13487/16384 [00:01<00:00, 4625.33it/s]DeepGEMM warmup:  85%|████████▌ | 13948/16384 [00:02<00:00, 4419.05it/s]DeepGEMM warmup:  88%|████████▊ | 14388/16384 [00:02<00:00, 4241.72it/s]DeepGEMM warmup:  90%|█████████ | 14810/16384 [00:02<00:00, 4085.14it/s]DeepGEMM warmup:  93%|█████████▎| 15216/16384 [00:02<00:00, 3947.83it/s]DeepGEMM warmup:  95%|█████████▌| 15609/16384 [00:02<00:00, 3823.49it/s]DeepGEMM warmup:  98%|█████████▊| 15990/16384 [00:02<00:00, 3709.80it/s]DeepGEMM warmup: 100%|█████████▉| 16360/16384 [00:02<00:00, 3611.08it/s]DeepGEMM warmup: 100%|██████████| 16384/16384 [00:02<00:00, 6010.27it/s]
+{
+  "candidate": {
+    "median_ms": 0.03588800132274628,
+    "min_ms": 0.031039999797940254,
+    "p95_ms": 0.04774399846792221,
+    "paired_p10_speedup": 1.255657999303655,
+    "paired_p90_speedup": 2.0388060351558064,
+    "passes_3pct_median_gate": true,
+    "path": "/home/qinhaiyan/Kernel-Harness/archive/codex-goal-ultra-xhigh/goals/14-attn_q_b_decode_packed/candidates/q_b_packed_warp.py",
+    "speedup": 1.5071525908057013
+  },
+  "execution_mode": "eager_cuda_event",
+  "reference": {
+    "median_ms": 0.05302399955689907,
+    "min_ms": 0.04598399996757507,
+    "p95_ms": 0.07603199779987335
+  },
+  "reference_policy": "SGLANG_GLM52_OPT=0 production path",
+  "schema_version": 1,
+  "timing_contract": "interleaved paired A/B; maximum CUDA-event latency across ranks",
+  "workload": {
+    "distributed": false,
+    "family": "packed_fp8_gemm",
+    "name": "linear_attn_q_b_decode_m16",
+    "notes": "DP-attention Q-B uses all 64 heads on each rank.",
+    "params": {
+      "k": 2048,
+      "m": 16,
+      "n": 16384
+    },
+    "phase": "decode",
+    "source_symbol": "sglang.kernels.ops.quantization.fp8_kernel.w8a8_block_fp8_matmul_deepgemm",
+    "world_size": 1
+  }
+}

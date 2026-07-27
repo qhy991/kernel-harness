@@ -1,0 +1,148 @@
+{
+  "configs": {
+    "ep4_combine": "<deep_ep_cpp.Config object at 0x746b4abc6730>",
+    "ep4_dispatch": "<deep_ep_cpp.Config object at 0x746b4abc6730>",
+    "ep8_combine": "<deep_ep_cpp.Config object at 0x746b4abc6830>",
+    "ep8_dispatch": "<deep_ep_cpp.Config object at 0x746b4abc6e30>"
+  },
+  "contract_environment": {
+    "CUDA_VISIBLE_DEVICES": "0,1,2,3",
+    "DEEP_EP_ROOT": "/home/qinhaiyan/glm52-goal-runs/07-moe_w2_decode_kernel/sglang/build/deepep-overlay",
+    "DEEP_GEMM_ROOT": "/home/qinhaiyan/glm52-goal-runs/07-moe_w2_decode_kernel/sglang/build/deep-gemm-stock-0.1.4.post1",
+    "DG_JIT_CACHE_DIR": "/home/qinhaiyan/glm52-goal-runs/07-moe_w2_decode_kernel/kernel-harness/evidence/glm52_prod_07_moe_w2_decode_kernel/tp4_diagnostic/tp4_20260722T185932Z_1629770_10420/deep_gemm_cache",
+    "DG_JIT_DUMP_ASM": "1",
+    "DG_JIT_PTXAS_VERBOSE": "1",
+    "DG_JIT_USE_NVRTC": "0",
+    "DG_JIT_WITH_LINEINFO": "1",
+    "DG_PRINT_CONFIGS": "1",
+    "DG_USE_NVIDIA_TOOLS": "1",
+    "PYTHONNOUSERSITE": "1",
+    "SGLANG_DEEPEP_NUM_MAX_DISPATCH_TOKENS_PER_RANK": "128",
+    "SGLANG_DEEPGEMM_PDL": "true",
+    "SGLANG_DEEPGEMM_SANITY_CHECK": "0",
+    "SGLANG_DG_CACHE_DIR": "/home/qinhaiyan/glm52-goal-runs/07-moe_w2_decode_kernel/kernel-harness/evidence/glm52_prod_07_moe_w2_decode_kernel/tp4_diagnostic/tp4_20260722T185932Z_1629770_10420/deep_gemm_cache",
+    "SGLANG_GLM52_OPT": "0",
+    "SGLANG_JIT_DEEPGEMM_FAST_WARMUP": "0",
+    "SGLANG_JIT_DEEPGEMM_PRECOMPILE": "0",
+    "SGLANG_ROOT": "/home/qinhaiyan/glm52-goal-runs/07-moe_w2_decode_kernel/sglang",
+    "SGL_DG_USE_NVRTC": "0"
+  },
+  "cuda_visible_devices": "0,1,2,3",
+  "deep_ep": {
+    "distribution_version": "1.2.1+9af0e0d",
+    "extension": "/home/qinhaiyan/glm52-goal-runs/07-moe_w2_decode_kernel/sglang/build/deepep-overlay/deep_ep_cpp.cpython-312-x86_64-linux-gnu.so",
+    "extension_sha256": "3e857a1c88023e3a459d4848d20008f93a7766e86934b349420b836070abedb0",
+    "module": "/home/qinhaiyan/glm52-goal-runs/07-moe_w2_decode_kernel/sglang/build/deepep-overlay/deep_ep/__init__.py",
+    "module_sha256": "14bc5e4bdf184ad3bee7da4b6da70f063c950789d004c092e81bd0fad6aedc13",
+    "provenance": "/home/qinhaiyan/glm52-goal-runs/07-moe_w2_decode_kernel/kernel-harness/evidence/glm52_prod_07_moe_w2_decode_kernel/deepep_overlay_provenance.json",
+    "provenance_sha256": "5e4022612cc0a236cf3721f0c80e8a34f98da6494676b40858320c6c4ff7cc2a",
+    "source_commit": "9af0e0d0e74f3577af1979c9b9e1ac2cad0104ee"
+  },
+  "deep_gemm": {
+    "device_source": "/home/qinhaiyan/glm52-goal-runs/07-moe_w2_decode_kernel/sglang/build/deep-gemm-stock-0.1.4.post1/deep_gemm/include/deep_gemm/impls/sm100_fp8_fp4_gemm_1d1d.cuh",
+    "device_source_sha256": "9c1e70677ede6ba09ab98e629482da7874182f8227907382efe0a81658da5a37",
+    "distribution_version": "0.1.4.post1",
+    "extension": "/home/qinhaiyan/glm52-goal-runs/07-moe_w2_decode_kernel/sglang/build/deep-gemm-stock-0.1.4.post1/deep_gemm/_C.so",
+    "extension_sha256": "cd8beab174071777c972c5948af7706ae2cfb5d2adcdbb7e6fbea253ce3a81bf",
+    "pdl_before_worker_runtime_setup": false,
+    "provenance": "/home/qinhaiyan/glm52-goal-runs/07-moe_w2_decode_kernel/kernel-harness/evidence/glm52_prod_07_moe_w2_decode_kernel/stock_deep_gemm_provenance.json",
+    "provenance_sha256": "fa72f4b0e11b2d75fbf54d77e76d8457973e90f81d3bbbe3ca8e7f485267be4f",
+    "python": "/home/qinhaiyan/glm52-goal-runs/07-moe_w2_decode_kernel/sglang/build/deep-gemm-stock-0.1.4.post1/deep_gemm/__init__.py",
+    "python_sha256": "b33e89deacdce241f01f5070d321918f5e5480e3e6d3af569678d4192db4f2a7"
+  },
+  "devices": [
+    {
+      "capability": [
+        10,
+        0
+      ],
+      "logical_index": 0,
+      "multi_processor_count": 148,
+      "name": "NVIDIA B200",
+      "total_memory": 191490555904
+    },
+    {
+      "capability": [
+        10,
+        0
+      ],
+      "logical_index": 1,
+      "multi_processor_count": 148,
+      "name": "NVIDIA B200",
+      "total_memory": 191490555904
+    },
+    {
+      "capability": [
+        10,
+        0
+      ],
+      "logical_index": 2,
+      "multi_processor_count": 148,
+      "name": "NVIDIA B200",
+      "total_memory": 191490555904
+    },
+    {
+      "capability": [
+        10,
+        0
+      ],
+      "logical_index": 3,
+      "multi_processor_count": 148,
+      "name": "NVIDIA B200",
+      "total_memory": 191490555904
+    }
+  ],
+  "evidence_scope": "diagnostic_tp4_not_production_tp8",
+  "git": {
+    "kernel_harness": {
+      "branch": "goal/glm52-prod-07-moe_w2_decode_kernel",
+      "head": "224a826caa78309d839ee4c6dc17cc57b3366408",
+      "root": "/home/qinhaiyan/glm52-goal-runs/07-moe_w2_decode_kernel/kernel-harness",
+      "status": [
+        "?? evidence/glm52_prod_07_moe_w2_decode_kernel/tp4_diagnostic/"
+      ]
+    },
+    "sglang": {
+      "branch": "goal/glm52-prod-07-moe_w2_decode_kernel",
+      "head": "49dc279b59753485c9ad6fa366d289018ecc41d3",
+      "root": "/home/qinhaiyan/glm52-goal-runs/07-moe_w2_decode_kernel/sglang",
+      "status": []
+    }
+  },
+  "nvrtc_derivation": {
+    "declared_dg_jit_use_nvrtc": "0",
+    "derived_dg_jit_use_nvrtc": "0",
+    "source_environment_key": "SGL_DG_USE_NVRTC"
+  },
+  "paths": {
+    "attempt": "/home/qinhaiyan/glm52-goal-runs/07-moe_w2_decode_kernel/kernel-harness/evidence/glm52_prod_07_moe_w2_decode_kernel/tp4_diagnostic/tp4_20260722T185932Z_1629770_10420",
+    "deep_gemm_cache": "/home/qinhaiyan/glm52-goal-runs/07-moe_w2_decode_kernel/kernel-harness/evidence/glm52_prod_07_moe_w2_decode_kernel/tp4_diagnostic/tp4_20260722T185932Z_1629770_10420/deep_gemm_cache",
+    "deep_gemm_overlay": "/home/qinhaiyan/glm52-goal-runs/07-moe_w2_decode_kernel/sglang/build/deep-gemm-stock-0.1.4.post1",
+    "deepep_overlay": "/home/qinhaiyan/glm52-goal-runs/07-moe_w2_decode_kernel/sglang/build/deepep-overlay",
+    "kernel_harness": "/home/qinhaiyan/glm52-goal-runs/07-moe_w2_decode_kernel/kernel-harness",
+    "sglang_root": "/home/qinhaiyan/glm52-goal-runs/07-moe_w2_decode_kernel/sglang"
+  },
+  "python": "3.12.13 | packaged by Anaconda, Inc. | (main, Jul  9 2026, 14:38:16) [GCC 14.3.0]",
+  "python_executable": "/home/qinhaiyan/glm52-goal-runs/07-moe_w2_decode_kernel/kernel-harness/.venv/bin/python",
+  "python_path": [
+    "/home/qinhaiyan/glm52-goal-runs/07-moe_w2_decode_kernel/kernel-harness/evidence/glm52_prod_07_moe_w2_decode_kernel",
+    "/home/qinhaiyan/glm52-goal-runs/07-moe_w2_decode_kernel/sglang/build/deepep-overlay",
+    "/home/qinhaiyan/glm52-goal-runs/07-moe_w2_decode_kernel/sglang/build/deep-gemm-stock-0.1.4.post1",
+    "/home/qinhaiyan/glm52-goal-runs/07-moe_w2_decode_kernel/sglang/python",
+    "/home/qinhaiyan/glm52-goal-runs/07-moe_w2_decode_kernel/kernel-harness",
+    "/home/qinhaiyan/glm52-goal-runs/07-moe_w2_decode_kernel/kernel-harness/.venv/lib/python312.zip",
+    "/home/qinhaiyan/glm52-goal-runs/07-moe_w2_decode_kernel/kernel-harness/.venv/lib/python3.12",
+    "/home/qinhaiyan/glm52-goal-runs/07-moe_w2_decode_kernel/kernel-harness/.venv/lib/python3.12/lib-dynload",
+    "/home/qinhaiyan/glm52-goal-runs/07-moe_w2_decode_kernel/kernel-harness/.venv/lib/python3.12/site-packages",
+    "/home/qinhaiyan/glm52-goal-runs/07-moe_w2_decode_kernel/kernel-harness/.venv/lib/python3.12/site-packages/nvidia_cutlass_dsl/python_packages",
+    "/home/qinhaiyan/glm52-goal-runs/07-moe_w2_decode_kernel/kernel-harness/.venv/lib/python3.12/site-packages/nvidia_cutlass_dsl/python_packages/cutlass/base_dsl"
+  ],
+  "schema_version": 2,
+  "sglang": {
+    "module": "/home/qinhaiyan/glm52-goal-runs/07-moe_w2_decode_kernel/sglang/python/sglang/__init__.py",
+    "module_sha256": "ffda05a78218ed47a7fad82a86c8a1068ac6549cb0ddecf9959fe8752034b9c8"
+  },
+  "torch": "2.11.0+cu130",
+  "torch_cuda": "13.0",
+  "visible_device_count": 4
+}

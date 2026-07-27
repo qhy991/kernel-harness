@@ -1,0 +1,1 @@
+2026-07-22T18:08:35Z	FAIL TP4 diagnostic exit_code=1

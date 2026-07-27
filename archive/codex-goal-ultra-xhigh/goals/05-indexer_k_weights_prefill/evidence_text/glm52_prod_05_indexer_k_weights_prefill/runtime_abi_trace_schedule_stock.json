@@ -1,0 +1,168 @@
+{
+  "candidate": null,
+  "full_model_request_trace": "reported separately; TP8 requires eight GPUs",
+  "inputs": {
+    "index_k_cache": {
+      "alignment_128": 0,
+      "bytes": 540672,
+      "contiguous": true,
+      "dtype": "torch.uint8",
+      "shape": [
+        64,
+        8448
+      ],
+      "stride": [
+        8448,
+        1
+      ]
+    },
+    "out_cache_loc": {
+      "alignment_128": 0,
+      "bytes": 32768,
+      "contiguous": true,
+      "dtype": "torch.int64",
+      "shape": [
+        4096
+      ],
+      "stride": [
+        1
+      ]
+    },
+    "positions": {
+      "alignment_128": 0,
+      "bytes": 32768,
+      "contiguous": true,
+      "dtype": "torch.int64",
+      "shape": [
+        4096
+      ],
+      "stride": [
+        1
+      ]
+    },
+    "q_lora": {
+      "alignment_128": 0,
+      "bytes": 16777216,
+      "contiguous": true,
+      "dtype": "torch.bfloat16",
+      "shape": [
+        4096,
+        2048
+      ],
+      "stride": [
+        2048,
+        1
+      ]
+    },
+    "wk_weight": {
+      "alignment_128": 0,
+      "bytes": 1966080,
+      "contiguous": true,
+      "dtype": "torch.bfloat16",
+      "shape": [
+        160,
+        6144
+      ],
+      "stride": [
+        6144,
+        1
+      ]
+    },
+    "wq_weight_fp8": {
+      "alignment_128": 0,
+      "bytes": 8388608,
+      "contiguous": true,
+      "dtype": "torch.float8_e4m3fn",
+      "shape": [
+        4096,
+        2048
+      ],
+      "stride": [
+        2048,
+        1
+      ]
+    },
+    "wq_weight_scale": {
+      "alignment_128": 0,
+      "bytes": 65536,
+      "contiguous": false,
+      "dtype": "torch.int32",
+      "shape": [
+        4096,
+        4
+      ],
+      "stride": [
+        1,
+        4096
+      ]
+    },
+    "x": {
+      "alignment_128": 0,
+      "bytes": 50331648,
+      "contiguous": true,
+      "dtype": "torch.bfloat16",
+      "shape": [
+        4096,
+        6144
+      ],
+      "stride": [
+        6144,
+        1
+      ]
+    }
+  },
+  "production_mapping": {
+    "mode": "eager_dual_stream",
+    "model": "GlmMoeDsaForCausalLM",
+    "source": "/home/qinhaiyan/glm52-goal-runs/05-indexer_k_weights_prefill/sglang/python/sglang/srt/layers/attention/dsa/dsa_indexer.py",
+    "source_sha256": "abdcd279d45dc844993e9fa4f7391461bd984526675368ba2a532af8ddbf370b",
+    "symbol": "Indexer._fused_q_prepare_and_store",
+    "topology": "one rank of balanced TP8/DP8/EP8"
+  },
+  "profile": {
+    "iterations": 1,
+    "nvtx_range": "indexer-fused-prefill-m4096-eager-dual-stock",
+    "warmup": 10
+  },
+  "streams": {
+    "alternate": 107322411368064,
+    "current": 0,
+    "distinct": true
+  },
+  "trace_kind": "exact_rank_local_production_symbol_call",
+  "workload": {
+    "distributed": false,
+    "family": "indexer_fused_prepare_store",
+    "name": "indexer_fused_prepare_store_prefill_m4096_eager_dual_stream",
+    "notes": "Production fused eager region: wq_b on the alternate stream overlaps BF16 wk_weights_proj on the current stream, then fused Q preparation overlaps LayerNorm/RoPE/quantized page-64 K-cache store.",
+    "params": {
+      "cache_dtype": "uint8",
+      "execution_mode": "eager_dual_stream",
+      "fp8_block_size": [
+        128,
+        128
+      ],
+      "head_dim": 128,
+      "hidden": 6144,
+      "input_dtype": "bfloat16",
+      "layer_norm_eps": 1e-06,
+      "m": 4096,
+      "max_position_embeddings": 4096,
+      "n_heads": 32,
+      "page_size": 64,
+      "q_lora_rank": 2048,
+      "q_output_dtype": "float8_e4m3fn",
+      "rope_head_dim": 64,
+      "rope_theta": 10000.0,
+      "weights_output_dtype": "float32",
+      "wk_weight_dtype": "bfloat16",
+      "wk_weights_output": 160,
+      "wq_output": 4096,
+      "wq_scale_dtype": "int32_ue8m0",
+      "wq_weight_dtype": "float8_e4m3fn"
+    },
+    "phase": "prefill",
+    "source_symbol": "sglang.srt.layers.attention.dsa.dsa_indexer.Indexer._fused_q_prepare_and_store",
+    "world_size": 1
+  }
+}

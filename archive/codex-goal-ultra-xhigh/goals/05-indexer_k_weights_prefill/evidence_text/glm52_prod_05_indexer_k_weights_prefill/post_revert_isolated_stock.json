@@ -1,0 +1,39 @@
+{
+  "candidate": null,
+  "execution_mode": "eager_cuda_event",
+  "reference": {
+    "median_ms": 0.02588800061494112,
+    "min_ms": 0.024512000381946564,
+    "p95_ms": 0.029759999364614487
+  },
+  "reference_policy": "SGLANG_GLM52_OPT=0 production path",
+  "reference_samples_ms": [
+    0.03673600032925606,
+    0.026944000273942947,
+    0.02521600015461445,
+    0.025760000571608543,
+    0.025599999353289604,
+    0.029759999364614487,
+    0.026016000658273697,
+    0.026176000013947487,
+    0.024512000381946564,
+    0.025760000571608543
+  ],
+  "schema_version": 1,
+  "timing_contract": "maximum CUDA-event latency across ranks",
+  "workload": {
+    "distributed": false,
+    "family": "bf16_linear",
+    "name": "indexer_wk_weights_prefill_m4096",
+    "notes": "Fused BF16 wk_weights_proj backend: key[128] + head weights[32].",
+    "params": {
+      "dtype": "bfloat16",
+      "k": 6144,
+      "m": 4096,
+      "n": 160
+    },
+    "phase": "prefill",
+    "source_symbol": "sglang.srt.layers.quantization.unquant.UnquantizedLinearMethod.apply -> torch.nn.functional.linear",
+    "world_size": 1
+  }
+}

@@ -1,0 +1,19 @@
+{
+  "authoritative_campaigns": {
+    "region": "evidence/glm52_prod_16_indexer_score_decode/region_runs/20260723T120153Z",
+    "score": "evidence/glm52_prod_16_indexer_score_decode/runs/20260723T113910Z",
+    "tp4_diagnostic": "evidence/glm52_prod_16_indexer_score_decode/tp4_runs/20260723T121417Z"
+  },
+  "json_parse": "pass",
+  "manifest_counts": {
+    "region": 126,
+    "score": 159,
+    "superseded": 103,
+    "tp4": 36
+  },
+  "outcome": "no replacement",
+  "schema_version": 1,
+  "sglang_head": "f93f8867b4bc124c9809c9110ec7361ed11b6b4a",
+  "sglang_worktree": "clean",
+  "superseded_campaign": "evidence/glm52_prod_16_indexer_score_decode/runs/20260723T112717Z"
+}

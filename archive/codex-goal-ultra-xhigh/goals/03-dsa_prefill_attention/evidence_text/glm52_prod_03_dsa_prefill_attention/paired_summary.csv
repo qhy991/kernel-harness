@@ -1,0 +1,3 @@
+label,runs,pairs,pooled_p10,pooled_median,pooled_p90,passes_3pct_gate
+isolated stock-vs-stock noise floor,3,60,0.9821989771761237,0.9993883980594833,1.0076809352074607,False
+isolated source-trial PDL-off vs stock,3,90,0.9876668504862951,0.9968165975551776,1.0042502758479968,False

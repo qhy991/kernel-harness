@@ -1,0 +1,64 @@
+{
+  "schema_version": 1,
+  "id": "glm52--absorbed_w_uv_decode--b200--20260722a",
+  "date": "2026-07-22",
+  "model": "glm52",
+  "task": "glm52/absorbed_W_UV_decode",
+  "op": "absorbed_W_UV",
+  "family": "dsa-flashmla-kv",
+  "phase": "decode",
+  "shapes": {
+    "production_workloads": [
+      "dsa_flashmla_kv_decode_m16",
+      "dsa_flashmla_kv_decode_m32"
+    ]
+  },
+  "hardware": {
+    "gpu": "NVIDIA B200",
+    "sm": "sm_100"
+  },
+  "stack": {
+    "sglang_commit": "f93f8867b4bc",
+    "torch": "2.11.0+cu130",
+    "cuda": "13.0"
+  },
+  "baseline_kernel": "sglang-kernel FlashMLA sparse split-KV plus combine",
+  "bottleneck": {
+    "kind": "memory-bandwidth",
+    "evidence": "Full NCU and nsys reports under profile/dsa-flashmla-kv-stock show that the fused main kernel is limited by sparse KV reads and scoreboard/barrier stalls, while combine is limited by the fixed partial-output read stream."
+  },
+  "approaches": [
+    {
+      "technique": "standalone-w-uv-reachability",
+      "summary": "Traced current SGLang before optimizing and pivoted from the former standalone W_UV operation to the reached flashmla_kv fused attention implementation.",
+      "outcome": "abandoned",
+      "geomean_speedup": null,
+      "why": "The standalone W_UV operation is not a production replacement point and cannot establish a deployable win."
+    },
+    {
+      "technique": "scheduler-bounded-combine-specialization",
+      "summary": "Selected the combine template from a graph-safe top-k block-capacity bound instead of the device-wide scheduler-part count.",
+      "outcome": "abandoned",
+      "geomean_speedup": null,
+      "why": "The change removed shared-memory bookkeeping but left partial-output traffic intact, and paired production CUDA-graph replay did not clear the promotion threshold in either bucket."
+    }
+  ],
+  "result": {
+    "status": "no-win",
+    "geomean_speedup": null,
+    "min_speedup_conservative": null,
+    "repeat": null,
+    "integrate": "no-recipe"
+  },
+  "lesson": "For GLM-5.2 DSA decode, treat the absorbed value path as part of the reached flashmla_kv split-KV plus combine chain. Reducing combine bookkeeping alone does not remove its partial-output traffic, and an eager micro-gain must be rejected when CUDA-graph replay is neutral.",
+  "transfers_to": [
+    "split-KV attention combine kernels",
+    "graph-replayed decode kernels",
+    "fused operators whose former standalone component is unreachable"
+  ],
+  "caveats": [
+    "The production rank-count end-to-end gate was unavailable in this scheduler allocation.",
+    "Serving-native timing is preserved in the profile report and is intentionally not copied into knowledge result fields, which accept only persisted frozen-task result.json numbers."
+  ],
+  "agent": "Codex GPT-5"
+}

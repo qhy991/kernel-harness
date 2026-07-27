@@ -1,0 +1,76 @@
+{
+  "schema_version": 1,
+  "id": "glm52--o_proj_decode--b200--20260723a",
+  "date": "2026-07-23",
+  "model": "glm52",
+  "task": "glm52/o_proj_decode",
+  "op": "o_proj",
+  "family": "gemm",
+  "phase": "decode",
+  "shapes": {
+    "K": 16384,
+    "N": 6144,
+    "M_sweep": [
+      16,
+      32
+    ]
+  },
+  "hardware": {
+    "gpu": "NVIDIA B200",
+    "sm": "sm_100"
+  },
+  "stack": {
+    "sglang_commit": "f93f8867b",
+    "torch": "2.11.0+cu130",
+    "cuda": "13.0"
+  },
+  "baseline_kernel": "deep_gemm.fp8_gemm_nt",
+  "bottleneck": {
+    "kind": "memory-bandwidth",
+    "evidence": "Current result.json classifies both frozen shapes memory-bound: M16 AI=31.8445 with reference reward/BW=0.2398, and M32 AI=63.3964 with reference reward/BW=0.2352."
+  },
+  "approaches": [
+    {
+      "technique": "identity-control",
+      "summary": "Invoked the unchanged frozen reference through an external candidate.",
+      "outcome": "slower",
+      "geomean_speedup": null,
+      "why": "The current repeat-10 result was correct but neutral on both shapes, with no frozen-task win."
+    },
+    {
+      "technique": "packed-ue8m0-deepgemm-nk-specialization",
+      "summary": "Used the archived packed-scale DeepGEMM candidate, which selects a fixed-N/K JIT specialization while preserving exact output.",
+      "outcome": "win",
+      "geomean_speedup": 1.5865,
+      "why": "It won both frozen shapes with no regressions because the frozen float32-scale reference is slower than the packed path."
+    },
+    {
+      "technique": "production-abi-integration-audit",
+      "summary": "Re-tested the same packed specialization through the exact production ABI and existing SGLang dispatch before considering promotion.",
+      "outcome": "abandoned",
+      "geomean_speedup": null,
+      "why": "The frozen-task win did not establish a deployable server win; execution-mode-sensitive integration overhead and unavailable end-to-end gates required stock fallback."
+    }
+  ],
+  "result": {
+    "status": "win",
+    "geomean_speedup": 1.5865,
+    "min_speedup_conservative": 1.5697,
+    "repeat": 10,
+    "integrate": "fail",
+    "shapes_won": 2,
+    "shapes_regressed": 0
+  },
+  "lesson": "A frozen f32-scale FP8 task can reward switching to production packed UE8M0 without proving a new production win. Always repeat the candidate against the exact packed ABI and through eager plus CUDA-graph integration; keep stock fallback when those modes disagree or end-to-end validation is unavailable.",
+  "transfers_to": [
+    "small-M FP8 projection GEMMs on SM100",
+    "tasks whose synthetic scale ABI differs from the serving caller",
+    "DeepGEMM JIT shape-specialization experiments"
+  ],
+  "caveats": [
+    "The cited frozen result is PROVISIONAL because the evidence worktree was dirty at evaluation time; the archived candidate file itself was clean.",
+    "Production paired and profiler measurements are documented in the session report but are intentionally not copied into this knowledge entry because knowledge result numbers must come from result.json.",
+    "No complete GLM-5.2 checkpoint or TP8/DP8/EP8 server gate was available."
+  ],
+  "agent": "Codex"
+}
