@@ -34,8 +34,8 @@ Baseline to beat: the call below, timed CUPTI cold-L2 on these same inputs.
     ./run.sh
 
 
-OPTIMIZATION (bit-exact launch-config override)
-===============================================
+OPTIMIZATION (launch-config override: bit-exact tile + fastest MFMA shape)
+==========================================================================
 The reference `deep_gemm.fp8_mqa_logits(...)` on this ROCm build dispatches to
 aiter's Triton kernel `aiter.ops.triton.attention.fp8_mqa_logits`. On gfx942
 (MI300X) that function's LDS-occupancy heuristic conservatively drops the KV
@@ -44,13 +44,26 @@ LDS, leaving MFMA throughput on the table for this compute-bound logits GEMM.
 
 This candidate calls the reference's OWN Triton kernel (`_fp8_mqa_logits_kernel`)
 with the reference's EXACT preprocessing (same `torch.float8_e4m3fnuz` recast +
-scale compensation, same -inf logit fill), overriding ONLY the launch tile to
-`BLOCK_KV=256, num_stages=1`. BLOCK_KV changes only how many KV positions one
-Triton program streams per step for L2/LDS locality — it never changes the
-per-output fp32 accumulation — so the logits are bit-identical to the reference.
-Standalone probe measured `calc_diff == 0.00e+00` (bit-exact) at M in
-{1024, 2048, 4096} while running 1.4x (M=1024) to ~3.8x (M=2048) faster than the
-heuristic tile.
+scale compensation, same -inf logit fill), overriding two launch knobs:
+
+  1. BLOCK_KV=256, num_stages=1 — the fastest tile among all LDS-feasible
+     bit-exact options (measured: 256@1 beats 128@2/512@1/256@2 at every M).
+     BLOCK_KV/num_stages only tile the KV loop; each logit is fully reduced
+     inside ONE tile iteration, so this NEVER changes the per-output fp32
+     accumulation → bit-identical to the reference (`calc_diff == 0.0`).
+
+  2. matrix_instr_nonkdim=16 for all M (reference uses 16@M<=1024 / 32@M>1024).
+     This is the fastest MFMA shape at every M. At M<=1024 it equals the
+     reference, so `calc_diff == 0.0`. At M>1024 it reorders the fp32
+     HEAD_SIZE=128 reduction by exactly 1 ULP (`calc_diff 1.11e-15`,
+     `max_abs_err ~4e-6`) and runs ~30% faster (MFU 11%->17%). That is NOT
+     bit-exact 0.0, but it passes the FROZEN index_score gate
+     (`calc_diff <= 5e-6`, the same tolerance class dsa uses) by ~9 orders of
+     magnitude. Owner-authorized this round (goal-tracker DEC-7).
+
+Op-level GATE-1 (--repeat 10 --iterations 30 --warmup 3, S=32768): geomean
+3.67x vs the reference (M=1024 1.43x bit-exact, M=2048 5.70x, M=4096 5.94x),
+3/3 shapes win, 0 regress, worst calc_diff 1.11e-15.
 
 run() wraps the fast path in try/except and falls back to the harness reference
 (`glm52_ops.reference`, i.e. the selected ROCm backend oracle) on any surprise
@@ -152,9 +165,17 @@ def _fast_index_score_prefill(inputs: dict):
     if scale_mul != 1.0:
         kv_scales = kv_scales.to(torch.float32) * scale_mul
 
-    # matrix_instr_nonkdim: keep the reference heuristic verbatim (it selects the
-    # MFMA instruction shape, which we must NOT change to stay bit-exact).
-    matrix_instr_nonkdim = 16 if seq_len <= 1024 else 32
+    # matrix_instr_nonkdim selects the MFMA instruction shape. Measured this round
+    # (op-level GATE-1, --repeat 10): mnk=16 is the fastest tile at every M, and unlike
+    # the sibling dsa flash kernel it is NOT pure-scheduling here — at M>1024 it reorders
+    # the fp32 HEAD_SIZE=128 reduction by exactly 1 ULP vs the reference's mnk=32
+    # (calc_diff 1.11e-15, max_abs_err ~4e-6), while running ~30% faster (MFU 11%->17%).
+    # At M<=1024 mnk=16 is what the reference itself uses, so it stays bit-exact 0.0.
+    # The 1-ULP reorder passes the FROZEN index_score gate (calc_diff <= 5e-6) by ~9
+    # orders of magnitude; it is NOT bit-exact 0.0 at M>1024. Owner-authorized this round
+    # to relax index_score from the self-imposed 0.0 rule to the frozen <=5e-6 tolerance
+    # (the same class dsa already uses) and take mnk=16 for all M. See goal-tracker DEC-7.
+    matrix_instr_nonkdim = 16
 
     stride_q_s, stride_q_h, stride_q_d = Q.stride()
     stride_kv_s, stride_kv_d = KV.stride()
