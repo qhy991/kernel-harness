@@ -165,17 +165,12 @@ def _fast_index_score_prefill(inputs: dict):
     if scale_mul != 1.0:
         kv_scales = kv_scales.to(torch.float32) * scale_mul
 
-    # matrix_instr_nonkdim selects the MFMA instruction shape. Measured this round
-    # (op-level GATE-1, --repeat 10): mnk=16 is the fastest tile at every M, and unlike
-    # the sibling dsa flash kernel it is NOT pure-scheduling here — at M>1024 it reorders
-    # the fp32 HEAD_SIZE=128 reduction by exactly 1 ULP vs the reference's mnk=32
-    # (calc_diff 1.11e-15, max_abs_err ~4e-6), while running ~30% faster (MFU 11%->17%).
-    # At M<=1024 mnk=16 is what the reference itself uses, so it stays bit-exact 0.0.
-    # The 1-ULP reorder passes the FROZEN index_score gate (calc_diff <= 5e-6) by ~9
-    # orders of magnitude; it is NOT bit-exact 0.0 at M>1024. Owner-authorized this round
-    # to relax index_score from the self-imposed 0.0 rule to the frozen <=5e-6 tolerance
-    # (the same class dsa already uses) and take mnk=16 for all M. See goal-tracker DEC-7.
-    matrix_instr_nonkdim = 16
+    # matrix_instr_nonkdim: replicate the reference's own per-M heuristic exactly.
+    # mnk=16 is NOT bit-exact at M>1024 (1-ULP fp32 reduction reorder, calc_diff
+    # 1.11e-15) — so it cannot be used under the plan's required calc_diff==0.0 rule
+    # for index_score. The reference uses mnk=16 at M<=1024 and mnk=32 at M>1024;
+    # we mirror that to stay bit-exact (calc_diff 0.0) at all M.
+    matrix_instr_nonkdim = 16 if seq_len <= 1024 else 32
 
     stride_q_s, stride_q_h, stride_q_d = Q.stride()
     stride_kv_s, stride_kv_d = KV.stride()

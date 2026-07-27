@@ -1,5 +1,5 @@
 {
-  "generated_from_entries": 23,
+  "generated_from_entries": 22,
   "mistakes": [
     {
       "class": "launch-overhead::integration-empty-expert-diagnosis",
@@ -641,16 +641,6 @@
         "dsa_attn"
       ],
       "median_geomean": 1.3266
-    },
-    {
-      "class": "compute::mfma-nonkdim16-all-m-stacked-on-block-kv256",
-      "bottleneck": "compute",
-      "technique": "mfma-nonkdim16-all-m-stacked-on-block-kv256",
-      "count": 1,
-      "ops": [
-        "index_score"
-      ],
-      "median_geomean": 3.6712
     },
     {
       "class": "compute::bit-exact-group-size-m-swizzle",
