@@ -1,5 +1,5 @@
 {
-  "generated_from_entries": 21,
+  "generated_from_entries": 23,
   "mistakes": [
     {
       "class": "launch-overhead::integration-empty-expert-diagnosis",
@@ -643,6 +643,16 @@
       "median_geomean": 1.3266
     },
     {
+      "class": "compute::mfma-nonkdim16-all-m-stacked-on-block-kv256",
+      "bottleneck": "compute",
+      "technique": "mfma-nonkdim16-all-m-stacked-on-block-kv256",
+      "count": 1,
+      "ops": [
+        "index_score"
+      ],
+      "median_geomean": 3.6712
+    },
+    {
       "class": "compute::bit-exact-group-size-m-swizzle",
       "bottleneck": "compute",
       "technique": "bit-exact-group-size-m-swizzle",
@@ -671,6 +681,16 @@
         "moe_total"
       ],
       "median_geomean": 1.0464
+    },
+    {
+      "class": "compute::bit-exact-block-size-m-grow-128-to-256-stacked-on-group-size-m",
+      "bottleneck": "compute",
+      "technique": "bit-exact-block-size-m-grow-128-to-256-stacked-on-group-size-m",
+      "count": 1,
+      "ops": [
+        "moe_total"
+      ],
+      "median_geomean": 1.1173
     }
   ]
 }

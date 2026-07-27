@@ -23,6 +23,10 @@
 
 - `glm52--index_score_prefill--mi300x--20260722a` [win] index_score/prefill — When the reference is a Triton kernel whose own autotune/occupancy heuristic picks a suboptimal tile on this arch, the safe lever is to call the reference's OWN kernel with its EXACT preprocessing and override ONLY the tile-shape knob (here BLOCK_KV) -- KV-loop tiling doesn't change the head-dim dot reduction so it stays bit-exact. Watch for silent try/except fallbacks that mask a ~1.0 ratio as 'not faster'.
 
+## bit-exact-block-size-m-grow-128-to-256-stacked-on-group-size-m
+
+- `glm52--moe_total_prefill--mi300x--20260727a` [win] moe_total/prefill — moe_total_prefill fp8 round-2 win on gfx942: BLOCK_SIZE_M is a bit-exact token-tile RESIZE (sibling to GROUP_SIZE_M) -- growing 128->256 amortizes shared fp8 weight loads for compute-bound fused-MoE, never touches BLOCK_SIZE_K, stays calc_diff 0.0. Always feed the overridden BM to moe_align_block_size (else grid/padding disagree). 512 overflows LDS. Stacked on the round-1 GROUP_SIZE_M remap: geo 1.0464 (round-1) -> 1.117 (round-2), 3/3 win (M=4096 flips from neutral 0.978 to win 1.105), 0 regress. Opposite regime from moe_total_decode: decode is memory-bound at tiny M and the correct direction is SHRINK BM to fit live rows; prefill is compute-bound at larger M and the correct direction is GROW BM to amortize weight loads.
+
 ## bit-exact-block-size-m-shrink
 
 - `glm52--moe_total_decode--mi300x--20260722a` [win] moe_total/decode — For dense-degenerate fp8 MoE decode (top_k==num_experts, tiny M), do NOT re-implement the fp8 GEMMs (fp8 saturation cliff makes calc_diff<=5e-6 unreachable). Instead reuse the reference Triton kernels and override ONLY BLOCK_SIZE_M (the tile-grid knob, not BLOCK_SIZE_K) to match the per-expert row count and kill moe_align padding: bit-exact and 1.05-1.08x.
@@ -136,6 +140,10 @@
 
 - `glm52--routed_down_decode--b200--20260714b` [win] Routed Expert Down/decode — For decode-only GLM52 grouped-MoE tasks, avoid reading scalar layout tensors inside run() when the workload sweep fixes layout=1. The saved device synchronization can be larger than the DeepGEMM kernel tuning headroom at tiny routed loads.
 - `glm52--routed_down_decode--b200--20260714a` [win] Routed Expert Down/decode — For decode-only GLM52 grouped-MoE tasks, avoid reading scalar layout tensors inside run() when the workload sweep fixes layout=1. The saved device synchronization can be larger than the DeepGEMM kernel tuning headroom at tiny routed loads.
+
+## mfma-nonkdim16-all-m-stacked-on-block-kv256
+
+- `glm52--index_score_prefill--mi300x--20260727a` [win] index_score/prefill — For fp8 MQA-logits (index_score) prefill on gfx942, matrix_instr_nonkdim is NOT a bit-exact knob in this kernel (unlike the dsa flash tl.dot): forcing mnk=16 at M>1024 reorders the fp32 HEAD_SIZE=128 reduction by 1 ULP (calc_diff 1.11e-15, max_abs ~4e-6). Under a self-imposed 0.0 rule this is a NO-GO; under the frozen gate tol (<=5e-6, same class as dsa) it is gate-legal and the fastest MFMA shape at every M. Stacked on the round-1 BLOCK_KV=256 win: geo 2.931 (round-1) -> 3.671 (round-2), 3/3 win, 0 regress. Always measure calc_diff before classifying matrix_instr_nonkdim as bit-exact -- it is pure-scheduling in the dsa flash tl.dot but a 1-ULP fp32-reduction reorder in the index_score mqa_logits kernel.
 
 ## missing-weights-squeeze
 
