@@ -1,5 +1,5 @@
 {
-  "generated_from_entries": 20,
+  "generated_from_entries": 21,
   "mistakes": [
     {
       "class": "launch-overhead::integration-empty-expert-diagnosis",
@@ -631,6 +631,16 @@
         "Routed Expert SwiGLU+FP8 Quant"
       ],
       "median_geomean": 1.9974
+    },
+    {
+      "class": "compute::native-64-head-triton-flash-sparse-mla-mfma16",
+      "bottleneck": "compute",
+      "technique": "native-64-head-triton-flash-sparse-mla-mfma16",
+      "count": 1,
+      "ops": [
+        "dsa_attn"
+      ],
+      "median_geomean": 1.3266
     },
     {
       "class": "compute::bit-exact-group-size-m-swizzle",

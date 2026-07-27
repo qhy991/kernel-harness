@@ -1,0 +1,72 @@
+{
+  "schema_version": 1,
+  "id": "glm52--dsa_prefill_attn--mi300x--20260727a",
+  "date": "2026-07-27",
+  "model": "glm52",
+  "task": "glm52/dsa_prefill_attn",
+  "op": "dsa_attn",
+  "family": "mla",
+  "phase": "prefill",
+  "shapes": {
+    "M_sweep": [
+      1024,
+      2048,
+      4096
+    ],
+    "S": 32768,
+    "heads": 64,
+    "head_size": 576,
+    "top_k": 2048,
+    "d_v": 512,
+    "d_rope": 64,
+    "note": "sparse MLA prefill: q[M,64,576] bf16 attends its per-query top-2048 rows of kv[32768,576] bf16 -> out[M,64,512] bf16, sm_scale=576**-0.5=1/24, seed 0. First 512 dims = value/latent, last 64 = rope; QK spans all 576, PV/out use only the first 512. Unified S/KV=32768 (DEC-4)."
+  },
+  "hardware": {
+    "gpu": "AMD Instinct MI300X",
+    "sm": "gfx942"
+  },
+  "stack": {
+    "sglang_commit": "20fc529ab",
+    "torch": "2.10.0+rocm7.0",
+    "aiter_commit": "2ca7878e2",
+    "ck_commit": "b67594561",
+    "sgl_kernel": "0.4.3",
+    "hip": "7.0.51831",
+    "triton": "3.6.0"
+  },
+  "baseline_kernel": "sglang aiter unified_attention_sparse_mla (paged); on gfx942 there is no native bf16 gqa=64 MLA kernel so it dispatches to the aiter ASM mla_decode_fwd path, which pads q 64->128 heads (~2x wasted QK^T + P.V FLOPs, ~13-16% useful MFU)",
+  "bottleneck": {
+    "kind": "compute",
+    "evidence": "sha-matched result.json runs/glm52/dsa_prefill_attn/20260727T060736Z-59337d (candidate.sha256 ced535b228ad...09cc873 == committed testbench/tasks/glm52_amd/dsa_prefill_attn/candidate.py, git_dirty=False, is_reference_fallback=False) at S/KV=32768, evaluate_task.py hipgraph --repeat 10 --iterations 30 --warmup 3: terminal_state COMPLETE_WIN, per-shape speedup M1024 1.4040 / M2048 1.2760 / M4096 1.3031 (conservative 1.3910/1.2710/1.2772), worst_calc_diff 1.8721815897571048e-06 (2.7x under the 5e-6 gate), elementwise_failed 0, 3/3 shape_verdict=win, shapes_regressed 0, min_speedup_conservative 1.271. bound=compute every shape (arithmetic intensity ~1547-1820 >> ridge 247), achieved ~245-262 TFLOP/s (MFU 18.7-20.0%) vs the reference's 13.3-15.7%. The win is structural: the ASM baseline pads 64->128 heads so it does ~2x the QK^T + P.V FLOPs; the native-64 kernel does half. M=1024 (the smallest, ~1200us shape) trips timing_unstable=True on the clean-tree run (spread 1.324) but still wins conservatively; two further clean-tree M=1024 re-gates (20260727T061310Z-3312f0 cons 1.287, 20260727T061541Z-2e1ade cons 1.315) confirm the win with margins (22-39%) far exceeding the timing noise, and the binding min-conservative-margin shape is the STABLE M=2048 (cons 1.271, timing_unstable=False)."
+  },
+  "approaches": [
+    {
+      "technique": "native-64-head-triton-flash-sparse-mla-mfma16",
+      "summary": "Purpose-built native-64-head Triton flash sparse-MLA prefill kernel replacing the passthrough. One program = one query row x 64 heads: single-pass fp32 online softmax over the per-query top-2048 keys, QK as bf16xbf16->fp32 MFMA over all 576 dims, PV as fp32-accumulated bf16 MFMA over the first 512 dims, bf16 output, no intermediate HBM. The decisive lever is matrix_instr_nonkdim=16: Triton's default MFMA selection (32x32x8) for this skinny-M (64-head) dot is ~40% slower than forcing the 16x16x16 instruction (pure scheduling, identical math). Winner launch config BH64/BK64/num_warps4/num_stages1/waves_per_eu1/bf16-PV/mfma16/kpack0. Does HALF the FLOPs of the padded-128 ASM baseline; falls back to the untouched reference on any shape/dtype/arch surprise (never load-bearing).",
+      "outcome": "win",
+      "geomean_speedup": 1.3266,
+      "why": "The ASM baseline pads 64->128 heads (~2x FLOPs) because gfx942 has no native bf16 gqa=64 MLA kernel; a native-64 kernel does half the compute. An index-locality probe showed the ASM path is compute/padding-bound not gather-bound (collapsing the gather to one cached row saves only ~15%), so the native-64 kernel has real headroom. matrix_instr_nonkdim=16 is the ~40% lever that turns a trending-NO-GO (default MFMA, 4-12% short of ASM) into a 3/3 win."
+    }
+  ],
+  "result": {
+    "status": "win",
+    "geomean_speedup": 1.3266,
+    "min_speedup_conservative": 1.271,
+    "repeat": 10,
+    "integrate": "not-run",
+    "shapes_won": 3,
+    "shapes_regressed": 0
+  },
+  "lesson": "For GLM-5.2 DSA sparse-MLA prefill on gfx942 (q[M,64,576] bf16, per-query top-2048 of kv[32768,576] bf16), the aiter reference dispatches to ASM mla_decode_fwd which pads q 64->128 heads (~2x wasted FLOPs) because gfx942 has no native bf16 gqa=64 MLA kernel. A purpose-built native-64-head Triton flash kernel (fp32 online softmax, bf16xbf16->fp32 QK MFMA over all 576 dims, fp32-accumulated bf16 PV over the first 512 dims) does half the compute and wins 3/3 (geo 1.33x, min cons 1.27x, worst calc_diff 1.87e-6). The decisive ~40% lever is matrix_instr_nonkdim=16: Triton's default 32x32x8 MFMA is wrong for the skinny-M 64-head dot; forcing the 16x16x16 instruction is pure scheduling (identical math, calc_diff unchanged). The win is STRUCTURAL (fewer FLOPs), not higher per-useful-FLOP efficiency (native-64 MFU ~20% vs ASM's real ~30%) -- ACCEPT and do not push. Keep QK/softmax/output-accumulator fp32; BK power-of-2 (64 best); num_stages=1 (ns=2 OOMs the 64KB LDS at BK64).",
+  "transfers_to": [
+    "any skinny-M (few-head) MLA/attention tl.dot on gfx942 where Triton's default 32x32x8 MFMA under-uses the matrix core -- force matrix_instr_nonkdim=16 (16x16x16) as a pure-scheduling knob",
+    "sparse-MLA / GQA prefill where the vendor path pads a small head count up to a supported tile -- a native-head-count Triton flash kernel wins by halving the padded FLOPs, not by out-MFU-ing the vendor kernel"
+  ],
+  "caveats": [
+    "The win is structural (half the FLOPs of the padded ASM baseline), NOT higher per-useful-FLOP efficiency: native-64 MFU ~20% vs the ASM baseline's real ~30% per-useful-FLOP. Codex (task7) reviewed and returned ACCEPT / do-not-push-higher; no low-risk lever remains after the full knob sweep.",
+    "bf16 PV (fp32 accumulator) is gate-safe HERE (worst calc_diff 1.87e-6, elementwise_failed 0 every shape) because prefill M is large; the sibling decode kernel kept fp32 PV opt-in-only for its tiny-M near-zero output elems. QK / online-softmax state / output accumulator MUST stay fp32.",
+    "BK must be a power of 2 (Triton block-dim constraint); BK=48 fails to compile. BK=64 num_stages=2 double-buffering OOMs the 64KB LDS (KV tile [64,576] bf16 ~72KB); num_stages=1 fits and is faster.",
+    "At M=1024 the aiter ASM reference itself fails the fully-f32 math oracle (calc_diff 5.44e-6 > 5e-6), so a fallback-to-reference at M=1024 would score INCORRECT -- the Triton path must (and does) succeed there; the fallback is a genuine-error safety net only.",
+    "Op-level GATE-1 result only; e2e/GATE-2 out of scope (dsa is off the e2e prefill hot path and the node lacks a legal TP config -- PLAN DEC-1)."
+  ]
+}

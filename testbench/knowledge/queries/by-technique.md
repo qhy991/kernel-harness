@@ -141,6 +141,10 @@
 
 - `glm52--index_score_prefill--mi300x--20260722a` [win] index_score/prefill — When the reference is a Triton kernel whose own autotune/occupancy heuristic picks a suboptimal tile on this arch, the safe lever is to call the reference's OWN kernel with its EXACT preprocessing and override ONLY the tile-shape knob (here BLOCK_KV) -- KV-loop tiling doesn't change the head-dim dot reduction so it stays bit-exact. Watch for silent try/except fallbacks that mask a ~1.0 ratio as 'not faster'.
 
+## native-64-head-triton-flash-sparse-mla-mfma16
+
+- `glm52--dsa_prefill_attn--mi300x--20260727a` [win] dsa_attn/prefill — For GLM-5.2 DSA sparse-MLA prefill on gfx942 (q[M,64,576] bf16, per-query top-2048 of kv[32768,576] bf16), the aiter reference dispatches to ASM mla_decode_fwd which pads q 64->128 heads (~2x wasted FLOPs) because gfx942 has no native bf16 gqa=64 MLA kernel. A purpose-built native-64-head Triton flash kernel (fp32 online softmax, bf16xbf16->fp32 QK MFMA over all 576 dims, fp32-accumulated bf16 PV over the first 512 dims) does half the compute and wins 3/3 (geo 1.33x, min cons 1.27x, worst calc_diff 1.87e-6). The decisive ~40% lever is matrix_instr_nonkdim=16: Triton's default 32x32x8 MFMA is wrong for the skinny-M 64-head dot; forcing the 16x16x16 instruction is pure scheduling (identical math, calc_diff unchanged). The win is STRUCTURAL (fewer FLOPs), not higher per-useful-FLOP efficiency (native-64 MFU ~20% vs ASM's real ~30%) -- ACCEPT and do not push. Keep QK/softmax/output-accumulator fp32; BK power-of-2 (64 best); num_stages=1 (ns=2 OOMs the 64KB LDS at BK64).
+
 ## packed-deepgemm-lower-op
 
 - `glm52--o_proj_decode--b200--20260714a` [no-win] Attention O Projection/decode — For small-M B200 FP8 decode GEMMs with SGLang-packed UE8M0 scales, the production DeepGEMM wrapper is already the safe path. Python-wrapper bypasses do not improve CUPTI device-kernel timing, and alternate APIs either need different scale layouts or fail to beat both M=16 and M=32.
