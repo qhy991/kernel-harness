@@ -1,34 +1,34 @@
-# Phase C2: Re-optimization Assessment
+# Re-optimization Assessment (op-level, S=32k)
 
-## Summary of Real Win/Loss Against Production
+Assessment refreshed 2026-07-27. **Scope: op-level GATE-1 only.** See `BASELINE.md` for
+the baseline numbers and the landed-winner run_ids.
 
-| Op | Production Verdict | Action Taken |
+## Win/loss vs the production baseline
+
+| Op | Verdict | Notes |
 |---|---|---|
-| moe_total_decode | WIN (noise, ~3%) | No change needed — already a small genuine win |
-| index_score_prefill | Neutral → depends on aiter kernel speed on target node | No change needed — candidate matches or beats depending on node |
-| dsa_prefill_attn | REGRESS 3.8-4.3x | **Cannot fix** — candidate is a PyTorch path (6.5ms), production baseline is aiter CK/ASM (1.7ms). Node lacks compiled CK kernel so can't benchmark alternatives. Needs new algorithm (Triton sparse-MLA) — research task. |
-| moe_total_prefill | WIN at M≤2048, neutral M4096 | **Hardened in C1** — import resilience + timeout + M4096 skip. Now 2 WIN / 0 REGRESS / 1 NEUTRAL. |
+| index_score_prefill | **WIN 2.90×** (3/3, bit-exact) | launch-config override of the aiter `_fp8_mqa_logits` Triton kernel (BLOCK_KV tiling only — never the reduction). |
+| moe_total_prefill | **WIN ~1.04–1.05×** (2/3; M=4096 borderline) | bit-exact `GROUP_SIZE_M` tiling; M=4096 sits at parity — the next-round headroom target. |
+| moe_total_decode | **WIN 1.0541×** (2/2, bit-exact) | `BLOCK_SIZE_M` shrink on the gated dense-degenerate path. |
+| dsa_prefill_attn | **WIN 1.3266×** (3/3, 0 regress, calc_diff 1.87e-6) | purpose-built native-64 Triton sparse-MLA kernel (half the padded-128 ASM FLOPs; `matrix_instr_nonkdim=16`, bf16 PV). **Supersedes** the earlier PyTorch candidate that regressed vs the ASM baseline. |
 
-## Key Finding: Node Environment Gap
+## Node environment gap (why the baseline looks the way it does)
 
-This node's aiter source-build dispatches critical kernels to slow fallbacks:
-- `aiter_sparse_mla_fwd`: 662ms (should be ~1.7ms on production build)
-- `fp8_mqa_logits`: 15ms (should be ~4.3ms on production build)
+This node's aiter source-build dispatches two critical kernels to slow fallbacks:
+- sparse-MLA fwd: ~662 ms Triton dev placeholder (production ~1.7 ms) → the baseline
+  instead uses the compiled ASM `mla_decode_fwd` (~1.7 ms); see `BASELINE.md`.
+- `fp8_mqa_logits`: ~15 ms (production ~4.3 ms) — the strongest available on this node.
 
-Root cause: CK/ASM components for gfx942 were not compiled in the source-build. 
-The harness **code** is correct (aligned with origin/amd-reopt-0723); the performance gap is purely runtime/binary.
+Root cause: CK/ASM components for gfx942 were not compiled into the source-build. The
+harness **code** is correct (aligned with `origin/amd-reopt-0723`); the gap is purely
+runtime/binary. This is why absolute µs are node-specific — the win (conservative
+speedup, zero regression) is what reproduces.
 
-## Retarget Campaign Priorities (from e2e profile)
+## Recommendations (next round)
 
-Per `rewardbench/amd/e2e_profile_20260722/e2e_prefill_op_share.csv`:
-1. **AllReduce** (34-53% of GPU time) — highest-impact target, requires `serving_native` tree
-2. **MoE fused** (13-16%) — our moe_total_prefill is already optimized (C1)
-3. **MLA/DSA** (5-14%) — blocked by CK/ASM build issue on this node
-4. **FP8 GEMM** (8-11%) — baseline already soft on this node
-
-## Recommendations
-
-1. **Push the hardened moe_total_prefill** — real measurable win, robust to sglang drift
-2. **Mark dsa_prefill_attn as BLOCKED** until the node gets a properly compiled aiter (CK for gfx942)
-3. **Deprioritize index_score_prefill** — neutral on production nodes, only looks like a win here
-4. **Next sprint: AllReduce optimization** via `serving_native/` tree — highest e2e impact
+1. **index_score_prefill** — biggest MFU headroom (still only ~11% MFU despite the 2.90×
+   win); push the bit-exact launch-config levers further.
+2. **moe_total_prefill** — move M=4096 off parity with bit-exact scheduling knobs.
+3. **moe_total_decode** — memory-bound; small headroom, dense-degenerate-only (honest).
+4. **dsa_prefill_attn** — near a structural cap (~20% MFU vs ASM's ~30% per-useful-FLOP);
+   accept a further win only if a genuinely new lever appears, never by reward-hacking.
