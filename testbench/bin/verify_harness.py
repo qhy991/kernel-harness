@@ -39,6 +39,8 @@ PY_FILES = [
     "serving_native/runner.py",
     "serving_native/selftest.py",
     "serving_native/test_contract_v2.py",
+    "serving_native/test_task26_driver.py",
+    "serving_native/validate_portfolio_audit.py",
     "serving_native/workloads.py",
 ]
 
@@ -52,6 +54,7 @@ DIFF_CHECK_PATHS = [
     "testbench/knowledge",
     "testbench/tasks/glm52",
     "serving_native",
+    "evidence/glm52_prod_26_moe_w2_decode_scoped_bm16",
     ":(exclude)testbench/tasks/glm52/*/candidate.py",
 ]
 
@@ -67,6 +70,7 @@ REVIEW_PATHS = [
     "testbench/tasks/glm52/*/problem.json",
     "testbench/tasks/glm52/*/task.json",
     "serving_native",
+    "evidence/glm52_prod_26_moe_w2_decode_scoped_bm16",
 ]
 
 REVIEW_DIFF_PATHS = [
@@ -79,6 +83,7 @@ REVIEW_DIFF_PATHS = [
     "testbench/knowledge",
     "testbench/tasks/glm52",
     "serving_native",
+    "evidence/glm52_prod_26_moe_w2_decode_scoped_bm16",
     ":(exclude)testbench/tasks/glm52/*/candidate.py",
 ]
 
@@ -483,7 +488,13 @@ def main() -> int:
         [sys.executable, "-m", "py_compile", *PY_FILES],
         [sys.executable, "testbench/bin/selftest.py"],
         [sys.executable, "serving_native/selftest.py"],
-        [sys.executable, "-m", "unittest", "serving_native.test_contract_v2"],
+        [
+            sys.executable,
+            "-m",
+            "unittest",
+            "serving_native.test_contract_v2",
+            "serving_native.test_task26_driver",
+        ],
         [sys.executable, "testbench/bin/knowledge.py", "lint"],
         [sys.executable, "testbench/bin/knowledge.py", "index", "--check"],
         [sys.executable, "testbench/bin/knowledge.py", "distill", "--check"],
