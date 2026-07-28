@@ -43,8 +43,20 @@ marker, and the manifest traceback.
 
 ## Disposition
 
-This is preserved as a mandatory failed preparation attempt, not a performance
-result and not a no-op identity control. Production remains default-off. Any
-future work must keep this v3 evidence immutable and must receive an
-independent fairness decision before defining a materially corrected,
-separately versioned build/launch flow.
+This is preserved as a mandatory failed preparation attempt and terminal
+`no-replacement` for v3, not a performance result and not a no-op identity
+control. Production remains default-off.
+
+The independent adjudication also found that the v3 driver declared only leaf
+eager, leaf CUDA Graph, and containing-region eager; the shared decode contract
+requires containing-region CUDA Graph as a fourth lane.
+
+The v3 sentinel, run, source identity, and failure evidence are immutable and
+may never be retried or reinterpreted. A separately versioned v4 is permissible
+only as a new material experiment because v3 exposed no timing observation.
+It must:
+
+- build and independently verify a fresh overlay before claiming its sentinel;
+- contain all four mandatory decode lanes;
+- use fresh v4 source/integration/build/JIT/cache/sentinel/evidence identities;
+- pass a new independent CPU/source release before any GPU claim.
