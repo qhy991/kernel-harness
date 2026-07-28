@@ -1561,6 +1561,20 @@ class ContractV2AuditTest(unittest.TestCase):
                 before,
             )
 
+    def test_packed_weight_scale_marker_matches_production_loader(self) -> None:
+        int32 = object()
+        runtime = object.__new__(Runtime)
+        runtime.torch = SimpleNamespace(int32=int32)
+        scale = SimpleNamespace(dtype=int32)
+        observed = runtime._mark_packed_ue8m0_weight_scale(scale)
+        self.assertIs(observed, scale)
+        self.assertIs(scale.format_ue8m0, True)
+
+        with self.assertRaisesRegex(RuntimeError, "not packed int32 UE8M0"):
+            runtime._mark_packed_ue8m0_weight_scale(
+                SimpleNamespace(dtype=object())
+            )
+
     def test_grouped_reference_uses_precomputed_views_without_mask_host_read(
         self,
     ) -> None:

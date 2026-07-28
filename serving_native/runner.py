@@ -445,6 +445,19 @@ class Runtime:
         )
         return masked_m, counts
 
+    def _mark_packed_ue8m0_weight_scale(self, scale: Any) -> Any:
+        """Mirror the production weight-loader marker after packed conversion."""
+        if scale.dtype != self.torch.int32:
+            raise RuntimeError(
+                "production MoE weight scale is not packed int32 UE8M0"
+            )
+        scale.format_ue8m0 = True
+        if getattr(scale, "format_ue8m0", False) is not True:
+            raise RuntimeError(
+                "production MoE weight scale rejected its UE8M0 ABI marker"
+            )
+        return scale
+
     def _build_moe_grouped_masked(self) -> dict[str, Any]:
         import deep_gemm
 
@@ -500,6 +513,7 @@ class Runtime:
             num_groups=experts,
             is_sfa=False,
         )
+        weight_scale = self._mark_packed_ue8m0_weight_scale(weight_scale)
         del activations_bf16, weights_bf16, activation_pairs, weight_pairs
         if activation_scale.dtype != self.torch.int32 or weight_scale.dtype != self.torch.int32:
             raise RuntimeError("production MoE task requires packed int32 UE8M0 scales")
@@ -604,6 +618,12 @@ class Runtime:
             recipe=(1, 128, 128),
             num_groups=experts,
             is_sfa=False,
+        )
+        w13_weight_scale = self._mark_packed_ue8m0_weight_scale(
+            w13_weight_scale
+        )
+        w2_weight_scale = self._mark_packed_ue8m0_weight_scale(
+            w2_weight_scale
         )
         del (
             activation_bf16,
