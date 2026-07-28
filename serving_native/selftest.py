@@ -27,7 +27,7 @@ def main() -> int:
     )
 
     names = set(WORKLOADS)
-    assert len(names) == 40
+    assert len(names) == 44
     assert "linear_attn_o_prefill_m4096" in names
     assert "linear_indexer_wq_b_decode_m16" in names
     assert "linear_indexer_wq_b_decode_m32" in names
@@ -35,6 +35,16 @@ def main() -> int:
     assert "dsa_trtllm_decode_m32" in names
     assert "moe_w13_grouped_decode_m16" in names
     assert "moe_w2_grouped_decode_m32" in names
+    assert "moe_w2_grouped_decode_m16_current_source_m5" in names
+    assert "moe_w2_grouped_decode_m32_current_source_m9" in names
+    assert (
+        "moe_w13_swiglu_w2_region_decode_m16_current_source_m5"
+        in names
+    )
+    assert (
+        "moe_w13_swiglu_w2_region_decode_m32_current_source_m9"
+        in names
+    )
     assert "deepep_normal_dispatch_prefill" in names
     assert "deepep_ll_combine_decode_m16" in names
     assert "deepep_ll_combine_decode_m32" in names
@@ -70,6 +80,10 @@ def main() -> int:
     } == {
         "linear_attn_o_decode_m16",
         "linear_attn_o_decode_m32",
+        "moe_w2_grouped_decode_m16",
+        "moe_w2_grouped_decode_m16_current_source_m5",
+        "moe_w2_grouped_decode_m32",
+        "moe_w2_grouped_decode_m32_current_source_m9",
     }
     assert {
         workload.params["batch"]
@@ -82,11 +96,34 @@ def main() -> int:
         if workload.family in ("deepep_ll_dispatch", "deepep_ll_combine")
     } == decode_ms
     for workload in WORKLOADS.values():
-        if workload.family in ("moe_grouped_masked", "moe_swiglu_quant"):
+        if workload.family in (
+            "moe_grouped_masked",
+            "moe_swiglu_quant",
+            "moe_compute_region",
+        ):
             m = workload.params["decode_m"]
             assert m in decode_ms
-            assert workload.params["expected_m"] == m // 4
+            expected = m // 4
+            if "current_source" in workload.name:
+                expected += 1
+            assert workload.params["expected_m"] == expected
             assert workload.params["valid_assignments"] == m * 8
+    w2_identities = {
+        (workload.params["decode_m"], workload.params["expected_m"]):
+        workload.params["candidate_jit_identity"]
+        for workload in WORKLOADS.values()
+        if workload.name.startswith("moe_w2_grouped_decode_")
+    }
+    assert set(w2_identities) == {(16, 4), (16, 5), (32, 8), (32, 9)}
+    for (_decode_m, expected_m), identity in w2_identities.items():
+        assert identity.endswith(f"glm52_w2_bm16_v2_em{expected_m}")
+    region_identities = {
+        (workload.params["decode_m"], workload.params["expected_m"]):
+        workload.params["candidate_jit_identity"]
+        for workload in WORKLOADS.values()
+        if workload.family == "moe_compute_region"
+    }
+    assert set(region_identities) == {(16, 5), (32, 9)}
 
     paired_sglang = REPO_ROOT.parent / "sglang"
     default_sglang = (

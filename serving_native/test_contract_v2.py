@@ -3,21 +3,47 @@
 from __future__ import annotations
 
 import copy
+import inspect
+import os
 import sys
 import tempfile
 import types
 import unittest
 from pathlib import Path
+from types import SimpleNamespace
+from unittest.mock import Mock, patch
 
-from serving_native.audit_result import audit_document
+from serving_native.audit_result import (
+    W2_BM16_BASE_COMMIT,
+    W2_BM16_CACHE_DIR,
+    W2_BM16_CANDIDATE_EXTENSION_SHA256,
+    W2_BM16_CUTLASS_COMMIT,
+    W2_BM16_FMT_COMMIT,
+    W2_BM16_SOURCE_PATCH_SHA256,
+    W2_BM16_STOCK_EXTENSION_SHA256,
+    audit_document,
+)
 from serving_native.contract_v2 import (
     canonical_sha256,
     file_artifact,
+    graph_forbidden_nodes,
+    graph_kernel_identities,
+    graph_node_type_counts,
     latency_summary,
     module_path_snapshot,
 )
-from serving_native.runner import _load_candidate
-from serving_native.workloads import as_dict, get_workload
+from serving_native.runner import (
+    Runtime,
+    TaskResult,
+    _graph_mutation_target,
+    _load_candidate,
+)
+from serving_native.workloads import (
+    W2_EDGE_MASK_CASES,
+    WORKLOADS,
+    as_dict,
+    get_workload,
+)
 
 HERE = Path(__file__).resolve().parent
 RUN_ID = "fixture-run"
@@ -153,6 +179,22 @@ class ContractV2AuditTest(unittest.TestCase):
             "trusted_config": trusted_config,
         }
 
+    @staticmethod
+    def _refresh_graph_metadata(capture: dict) -> None:
+        nodes = capture["nodes"]
+        capture["node_count"] = len(nodes)
+        capture["node_type_counts"] = graph_node_type_counts(nodes)
+        capture["kernel_identities"] = graph_kernel_identities(nodes)
+        capture["forbidden_nodes"] = graph_forbidden_nodes(nodes)
+
+    @classmethod
+    def _append_graph_kernel(cls, capture: dict, kernel: str) -> None:
+        node = copy.deepcopy(capture["nodes"][0])
+        node["index"] = len(capture["nodes"])
+        node["kernel"] = kernel
+        capture["nodes"].append(node)
+        cls._refresh_graph_metadata(capture)
+
     @classmethod
     def _series(
         cls,
@@ -206,6 +248,7 @@ class ContractV2AuditTest(unittest.TestCase):
     def _phase_counts(
         mode: str,
         *,
+        workload: dict,
         identity_control: bool,
         candidate_api: str,
     ) -> dict[str, dict[str, int]]:
@@ -259,6 +302,39 @@ class ContractV2AuditTest(unittest.TestCase):
         if mode == "eager":
             add("profiler_reference", 1, 0)
             add("profiler_candidate", 0, 1)
+        params = workload.get("params")
+        is_w2_leaf = (
+            workload.get("family") == "moe_grouped_masked"
+            and isinstance(params, dict)
+            and "candidate_jit_identity" in params
+        )
+        if is_w2_leaf:
+            for case_index, (name, _counts) in enumerate(
+                W2_EDGE_MASK_CASES
+            ):
+                add(f"edge:{name}:eager", 1, 1)
+                if mode == "cuda_graph":
+                    for implementation in ("reference", "candidate"):
+                        is_reference = implementation == "reference"
+                        capture_id = (
+                            f"edge:{case_index:02d}:{name}:"
+                            f"{implementation}"
+                        )
+                        add(
+                            f"{capture_id}:warmup",
+                            3 if is_reference else 0,
+                            0 if is_reference else 3,
+                        )
+                        add(
+                            f"{capture_id}:capture",
+                            1 if is_reference else 0,
+                            0 if is_reference else 1,
+                        )
+                    add(
+                        f"edge:{case_index:02d}:{name}:graph_validation",
+                        2,
+                        2,
+                    )
         return phases
 
     @staticmethod
@@ -321,6 +397,7 @@ class ContractV2AuditTest(unittest.TestCase):
         }
         by_phase = self._phase_counts(
             mode,
+            workload=workload,
             identity_control=identity_control,
             candidate_api=candidate_api,
         )
@@ -497,6 +574,295 @@ class ContractV2AuditTest(unittest.TestCase):
             },
         }
 
+    def _valid_w2_candidate_fixture(self, mode: str, task: str) -> dict:
+        result = self._valid_fixture(
+            mode,
+            task=task,
+            identity_control=False,
+            candidate_api=CALLABLE_API,
+        )
+        params = result["workload"]["params"]
+        token = params["candidate_jit_identity"]
+        manifest_sha = "d" * 64
+        cache_key = "a" * 32
+        kernel_dir = (
+            Path(W2_BM16_CACHE_DIR)
+            / "cache"
+            / f"kernel.{token}.{cache_key}"
+        )
+        source_path = kernel_dir / "kernel.cu"
+        cubin_path = kernel_dir / "kernel.cubin"
+        source_sha = "e" * 64
+        cubin_sha = "f" * 64
+        stock_symbol = (
+            "_ZN9deep_gemm28sm100_fp8_fp4_gemm_1d1d_impl"
+            "ELj0ELj6144ELj2048ELj128ELj128ELj128E"
+        )
+        candidate_symbol = (
+            "_ZN9deep_gemm28sm100_fp8_fp4_gemm_1d1d_impl"
+            "ELj0ELj6144ELj2048ELj16ELj128ELj128E"
+        )
+        runtime_contract = {
+            "base_commit": W2_BM16_BASE_COMMIT,
+            "base_version": "0.1.4.post1",
+            "cutlass_commit": W2_BM16_CUTLASS_COMMIT,
+            "fmt_commit": W2_BM16_FMT_COMMIT,
+            "build_id": (
+                "glm52-w2-bm16-v2:sgl-deep-gemm-0.1.4.post1@"
+                f"{W2_BM16_BASE_COMMIT}:sm100:e32:m1024:k2048:n6144:"
+                "bm16:pdl1:sms148:no-recipe:no-overlap"
+            ),
+            "physical_num_sms": 148,
+            "stock_initial_num_sms": 148,
+            "candidate_initial_num_sms": 148,
+            "stock_num_sms": 148,
+            "candidate_num_sms": 148,
+            "stock_initial_tc_util": 87,
+            "candidate_initial_tc_util": 87,
+            "stock_tc_util": 87,
+            "candidate_tc_util": 87,
+            "stock_initial_pdl": False,
+            "candidate_initial_pdl": False,
+            "stock_pdl": True,
+            "candidate_pdl": True,
+            "runtime_modules_distinct": True,
+            "runtime_extension_modules_distinct": True,
+            "independence_probe_num_sms": 146,
+            "independence_probe_tc_util": 88,
+            "compute_capability": [10, 0],
+            "stock_extension_sha256": W2_BM16_STOCK_EXTENSION_SHA256,
+            "candidate_extension_sha256": (
+                W2_BM16_CANDIDATE_EXTENSION_SHA256
+            ),
+            "manifest_sha256": manifest_sha,
+            "dg_jit_cache_dir": W2_BM16_CACHE_DIR,
+            "sglang_dg_cache_dir": W2_BM16_CACHE_DIR,
+            "decode_m": params["decode_m"],
+            "expected_m": params["expected_m"],
+            "candidate_jit_identity": token,
+            "forward_mode": "DECODE",
+            "op_tag": "moe_down_proj",
+            "reference_opt_level_after_prepare": "0",
+            "workload": result["workload"]["name"],
+            "setup_environment_restored": {
+                "SGLANG_GLM52_OPT": True,
+                "SGLANG_GLM52_OPT_PROFILE": True,
+                "SGLANG_GLM52_OPT_OPS": True,
+                "SGLANG_DEEPGEMM_PDL": True,
+            },
+            "jit_cache_kernel_name": token,
+            "jit_cache_kernel_dir": str(kernel_dir),
+            "jit_cache_key": cache_key,
+            "jit_cache_source_path": str(source_path),
+            "jit_cache_source_sha256": source_sha,
+            "jit_cache_cubin_path": str(cubin_path),
+            "jit_cache_cubin_sha256": cubin_sha,
+            "jit_cache_generated_impl": (
+                "sm100_fp8_fp4_gemm_1d1d_impl"
+            ),
+            "jit_cache_generated_block_m": 16,
+            "jit_cache_template_segment": [
+                0,
+                6144,
+                2048,
+                16,
+                128,
+                128,
+            ],
+        }
+        result["implementations"]["candidate"][
+            "runtime_contract"
+        ] = runtime_contract
+        for index, digest in enumerate(
+            (
+                W2_BM16_SOURCE_PATCH_SHA256,
+                W2_BM16_STOCK_EXTENSION_SHA256,
+                W2_BM16_CANDIDATE_EXTENSION_SHA256,
+                manifest_sha,
+                source_sha,
+                cubin_sha,
+            )
+        ):
+            artifact_path = (
+                source_path
+                if digest == source_sha
+                else cubin_path
+                if digest == cubin_sha
+                else self.root / f"artifact-{index}"
+            )
+            result["provenance"]["artifacts"].append(
+                {
+                    "role": f"candidate_artifact_{index:02d}",
+                    "path": str(artifact_path),
+                    "sha256": digest,
+                    "size_bytes": 1,
+                }
+            )
+
+        if mode == "eager":
+            reference_profile = result["execution"]["kernel_profiles"][
+                "reference"
+            ]
+            candidate_profile = result["execution"]["kernel_profiles"][
+                "candidate"
+            ]
+            if result["workload"]["family"] == "moe_compute_region":
+                common_region_kernels = [
+                    "fixture_moe_w13_grouped_kernel",
+                    "fixture_moe_swiglu_quant_kernel",
+                ]
+                reference_names = [
+                    common_region_kernels[0],
+                    common_region_kernels[1],
+                    stock_symbol,
+                ]
+                candidate_names = [
+                    common_region_kernels[0],
+                    common_region_kernels[1],
+                    candidate_symbol,
+                ]
+            else:
+                reference_names = [stock_symbol]
+                candidate_names = [candidate_symbol]
+            for profile, names in (
+                (reference_profile, reference_names),
+                (candidate_profile, candidate_names),
+            ):
+                profile["events"] = [
+                    {
+                        "name": name,
+                        "duration_us": 1.0,
+                        "device_type": "DeviceType.CUDA",
+                    }
+                    for name in names
+                ]
+                profile["kernel_identities"] = sorted(set(names))
+        else:
+            for series in result["series"]:
+                for capture in series["graph"]["captures"]:
+                    symbol = (
+                        candidate_symbol
+                        if capture["implementation"] == "candidate"
+                        else stock_symbol
+                    )
+                    capture["nodes"][0]["kernel"] = symbol
+                    capture["kernel_identities"] = [symbol]
+        edge_cases = []
+        for case_index, (name, counts) in enumerate(W2_EDGE_MASK_CASES):
+            zero_mask = sum(counts) == 0
+            sentinel_elements = (
+                32 * 1024 * 6144
+                if zero_mask
+                else sum(counts) * 6144
+            )
+            graph_record = None
+            if mode == "cuda_graph":
+                captures = result["series"][0]["graph"]["captures"]
+                reference_capture = copy.deepcopy(captures[0])
+                candidate_capture = copy.deepcopy(captures[1])
+                for capture_index, capture in enumerate(
+                    (reference_capture, candidate_capture)
+                ):
+                    capture.update(
+                        {
+                            "capture_id": (
+                                f"edge:{case_index:02d}:{name}:"
+                                f"{capture['implementation']}"
+                            ),
+                            "raw_graph_handle": (
+                                50_000 + case_index * 10 + capture_index
+                            ),
+                            "stream_id": (
+                                60_000 + case_index * 10 + capture_index
+                            ),
+                            "input_mutation_replayed": False,
+                            "fixed_edge_mask_replayed": True,
+                            "zero_full_output_poison_preserved": (
+                                True if zero_mask else None
+                            ),
+                            "sentinel_elements_checked": sentinel_elements,
+                            "non_vacuous_sentinel_coverage": True,
+                        }
+                    )
+                clean_observation = {
+                    "clean": True,
+                    "new_imports": [],
+                    "new_shared_objects": [],
+                    "cache_changes": [],
+                    "candidate_artifact_changes": [],
+                }
+                graph_record = {
+                    "stock_candidate_match": True,
+                    "reference_candidate_captured_independently": True,
+                    "reference": reference_capture,
+                    "candidate": candidate_capture,
+                    "capture_observations": {
+                        "reference": dict(clean_observation),
+                        "candidate": dict(clean_observation),
+                    },
+                }
+            edge_cases.append(
+                {
+                    "name": name,
+                    "masked_m": list(counts),
+                    "active_rows": sum(counts),
+                    "empty_experts": [
+                        index
+                        for index, count in enumerate(counts)
+                        if count == 0
+                    ],
+                    "max_count": max(counts),
+                    "eager": {
+                        "stock_candidate_match": True,
+                        "output_poisoned_before_launch": {
+                            "reference": True,
+                            "candidate": True,
+                        },
+                        "sentinel_scope": (
+                            "entire_output_buffer"
+                            if zero_mask
+                            else "active_rows"
+                        ),
+                        "sentinel_elements_checked": sentinel_elements,
+                        "non_vacuous_sentinel_coverage": True,
+                        "zero_full_output_poison_preserved": (
+                            {
+                                "reference": True,
+                                "candidate": True,
+                            }
+                            if zero_mask
+                            else None
+                        ),
+                        "masked_m_unmodified": {
+                            "reference": True,
+                            "candidate": True,
+                        },
+                        "return_contract": {
+                            "reference": "None",
+                            "candidate": "None",
+                            "enforced_before_TaskResult": True,
+                        },
+                        "stream": {
+                            "default_stream_id": 0,
+                            "before": 0,
+                            "after_reference": 0,
+                            "after_candidate": 0,
+                            "unchanged_default_stream": True,
+                        },
+                    },
+                    "graph": graph_record,
+                }
+            )
+        result["correctness"]["edge_masks"] = {
+            "status": "pass",
+            "scope": "single_B200_leaf_correctness_only",
+            "execution_mode": mode,
+            "cases": edge_cases,
+        }
+        if result["workload"]["family"] == "moe_compute_region":
+            result["correctness"]["edge_masks"] = None
+        return result
+
     @staticmethod
     def _apply_speedup(result: dict, candidate_ms: float = 0.9) -> None:
         all_reference: list[float] = []
@@ -561,6 +927,721 @@ class ContractV2AuditTest(unittest.TestCase):
             verify_files=True,
         )
         self.assertTrue(report["valid"], report)
+
+    def test_four_w2_identities_support_eager_and_cuda_graph(self) -> None:
+        expected = {
+            "moe_w2_grouped_decode_m16": (16, 4),
+            "moe_w2_grouped_decode_m16_current_source_m5": (16, 5),
+            "moe_w2_grouped_decode_m32": (32, 8),
+            "moe_w2_grouped_decode_m32_current_source_m9": (32, 9),
+        }
+        for name, pair in expected.items():
+            with self.subTest(task=name):
+                workload = WORKLOADS[name]
+                self.assertEqual(
+                    (
+                        workload.params["decode_m"],
+                        workload.params["expected_m"],
+                    ),
+                    pair,
+                )
+                self.assertEqual(
+                    workload.execution_modes,
+                    ("eager", "cuda_graph"),
+                )
+                self.assertTrue(
+                    workload.params["candidate_jit_identity"].endswith(
+                        f"glm52_w2_bm16_v2_em{pair[1]}"
+                    )
+                )
+                for mode in workload.execution_modes:
+                    report = audit_document(
+                        self._valid_fixture(mode, task=name),
+                        verify_files=True,
+                    )
+                    self.assertTrue(report["valid"], report)
+
+    def test_w2_leaf_and_graph_identity_evidence_is_audited(self) -> None:
+        tasks = (
+            "moe_w2_grouped_decode_m16",
+            "moe_w2_grouped_decode_m16_current_source_m5",
+            "moe_w2_grouped_decode_m32",
+            "moe_w2_grouped_decode_m32_current_source_m9",
+        )
+        for task in tasks:
+            for mode in ("eager", "cuda_graph"):
+                with self.subTest(task=task, mode=mode):
+                    result = self._valid_w2_candidate_fixture(mode, task)
+                    report = audit_document(result, verify_files=False)
+                    self.assertTrue(report["valid"], report)
+        for task in (
+            "moe_w13_swiglu_w2_region_decode_m16_current_source_m5",
+            "moe_w13_swiglu_w2_region_decode_m32_current_source_m9",
+        ):
+            with self.subTest(task=task, mode="eager"):
+                result = self._valid_w2_candidate_fixture("eager", task)
+                report = audit_document(result, verify_files=False)
+                self.assertTrue(report["valid"], report)
+
+    def test_w2_runtime_and_observed_identity_tampering_is_rejected(
+        self,
+    ) -> None:
+        cases = (
+            (
+                "pdl",
+                "stock_pdl mismatch",
+                lambda value: value["implementations"]["candidate"][
+                    "runtime_contract"
+                ].update(stock_pdl=False),
+            ),
+            (
+                "tc_util",
+                "tc_util state differs",
+                lambda value: value["implementations"]["candidate"][
+                    "runtime_contract"
+                ].update(candidate_tc_util=86),
+            ),
+            (
+                "extension",
+                "candidate_extension_sha256 mismatch",
+                lambda value: value["implementations"]["candidate"][
+                    "runtime_contract"
+                ].update(candidate_extension_sha256="0" * 64),
+            ),
+            (
+                "graph_identity",
+                "candidate graph must contain BM16 and no W2 BM128",
+                lambda value: (
+                    value["series"][0]["graph"]["captures"][1]["nodes"][0].update(
+                        kernel="stock_kernel"
+                    ),
+                    value["series"][0]["graph"]["captures"][1].update(
+                        kernel_identities=["stock_kernel"]
+                    ),
+                ),
+            ),
+        )
+        for name, needle, mutate in cases:
+            with self.subTest(name=name):
+                result = self._valid_w2_candidate_fixture(
+                    "cuda_graph",
+                    "moe_w2_grouped_decode_m16",
+                )
+                mutate(result)
+                report = audit_document(result, verify_files=False)
+                self.assertFalse(report["valid"], report)
+                self.assertTrue(
+                    any(needle in error for error in report["errors"]),
+                    report,
+                )
+
+    def test_w2_candidate_double_launch_symbols_are_rejected(self) -> None:
+        eager = self._valid_w2_candidate_fixture(
+            "eager",
+            "moe_w2_grouped_decode_m16",
+        )
+        eager_profiles = eager["execution"]["kernel_profiles"]
+        stock_symbol = eager_profiles["reference"]["kernel_identities"][0]
+        candidate_profile = eager_profiles["candidate"]
+        candidate_profile["events"].append(
+            {
+                "name": stock_symbol,
+                "duration_us": 1.0,
+                "device_type": "DeviceType.CUDA",
+            }
+        )
+        candidate_profile["kernel_identities"] = sorted(
+            {
+                event["name"]
+                for event in candidate_profile["events"]
+            }
+        )
+        eager_report = audit_document(eager, verify_files=False)
+        self.assertFalse(eager_report["valid"], eager_report)
+        self.assertTrue(
+            any(
+                "leaf candidate eager profile must contain exactly one CUDA event"
+                in error
+                for error in eager_report["errors"]
+            ),
+            eager_report,
+        )
+
+        graph = self._valid_w2_candidate_fixture(
+            "cuda_graph",
+            "moe_w2_grouped_decode_m16",
+        )
+        series_capture = graph["series"][0]["graph"]["captures"][1]
+        stock_symbol = graph["series"][0]["graph"]["captures"][0][
+            "kernel_identities"
+        ][0]
+        self._append_graph_kernel(series_capture, stock_symbol)
+        graph_report = audit_document(graph, verify_files=False)
+        self.assertFalse(graph_report["valid"], graph_report)
+        self.assertTrue(
+            any(
+                "must contain exactly one CUDA KERNEL node"
+                in error
+                for error in graph_report["errors"]
+            ),
+            graph_report,
+        )
+
+        edge_graph = self._valid_w2_candidate_fixture(
+            "cuda_graph",
+            "moe_w2_grouped_decode_m16",
+        )
+        edge_case = edge_graph["correctness"]["edge_masks"]["cases"][0]
+        stock_symbol = edge_case["graph"]["reference"][
+            "kernel_identities"
+        ][0]
+        self._append_graph_kernel(
+            edge_case["graph"]["candidate"],
+            stock_symbol,
+        )
+        edge_report = audit_document(edge_graph, verify_files=False)
+        self.assertFalse(edge_report["valid"], edge_report)
+        self.assertTrue(
+            any(
+                "must contain exactly one CUDA KERNEL node"
+                in error
+                for error in edge_report["errors"]
+            ),
+            edge_report,
+        )
+
+    def test_w2_leaf_unrelated_adapter_kernels_are_rejected(self) -> None:
+        eager = self._valid_w2_candidate_fixture(
+            "eager",
+            "moe_w2_grouped_decode_m16",
+        )
+        candidate_profile = eager["execution"]["kernel_profiles"][
+            "candidate"
+        ]
+        candidate_profile["events"].append(
+            {
+                "name": "fixture_unrelated_adapter_kernel",
+                "duration_us": 1.0,
+                "device_type": "DeviceType.CUDA",
+            }
+        )
+        candidate_profile["kernel_identities"] = sorted(
+            {event["name"] for event in candidate_profile["events"]}
+        )
+        self.assert_invalid(
+            eager,
+            "leaf candidate eager profile must contain exactly one CUDA event",
+        )
+
+        main_graph = self._valid_w2_candidate_fixture(
+            "cuda_graph",
+            "moe_w2_grouped_decode_m16",
+        )
+        main_capture = main_graph["series"][0]["graph"]["captures"][1]
+        self._append_graph_kernel(
+            main_capture,
+            "fixture_unrelated_adapter_kernel",
+        )
+        self.assert_invalid(
+            main_graph,
+            "must contain exactly one CUDA KERNEL node",
+        )
+
+        edge_graph = self._valid_w2_candidate_fixture(
+            "cuda_graph",
+            "moe_w2_grouped_decode_m16",
+        )
+        edge_capture = edge_graph["correctness"]["edge_masks"]["cases"][1][
+            "graph"
+        ]["candidate"]
+        self._append_graph_kernel(
+            edge_capture,
+            "fixture_unrelated_adapter_kernel",
+        )
+        self.assert_invalid(
+            edge_graph,
+            "must contain exactly one CUDA KERNEL node",
+        )
+
+    def test_w2_edge_graph_raw_nodes_and_binding_are_fail_closed(
+        self,
+    ) -> None:
+        def candidate_capture(result: dict) -> dict:
+            return result["correctness"]["edge_masks"]["cases"][0][
+                "graph"
+            ]["candidate"]
+
+        raw_bm128 = self._valid_w2_candidate_fixture(
+            "cuda_graph",
+            "moe_w2_grouped_decode_m16",
+        )
+        stock_symbol = raw_bm128["correctness"]["edge_masks"]["cases"][0][
+            "graph"
+        ]["reference"]["nodes"][0]["kernel"]
+        # Keep the forged BM16 summary while the raw node is actually BM128.
+        candidate_capture(raw_bm128)["nodes"][0]["kernel"] = stock_symbol
+        self.assert_invalid(
+            raw_bm128,
+            "kernel_identities do not match raw nodes",
+        )
+
+        duplicate_bm16 = self._valid_w2_candidate_fixture(
+            "cuda_graph",
+            "moe_w2_grouped_decode_m16",
+        )
+        duplicate_capture = candidate_capture(duplicate_bm16)
+        duplicate_node = copy.deepcopy(duplicate_capture["nodes"][0])
+        duplicate_node["index"] = 1
+        duplicate_capture["nodes"].append(duplicate_node)
+        # Deliberately retain the forged one-node summaries.
+        self.assert_invalid(
+            duplicate_bm16,
+            "must contain exactly one CUDA KERNEL node",
+        )
+
+        forged_metadata = self._valid_w2_candidate_fixture(
+            "cuda_graph",
+            "moe_w2_grouped_decode_m16",
+        )
+        candidate_capture(forged_metadata)["node_type_counts"] = {}
+        self.assert_invalid(
+            forged_metadata,
+            "node_type_counts do not match raw nodes",
+        )
+
+        for field, value, needle in (
+            ("capture_id", "edge:forged:candidate", "capture_id mismatch"),
+            ("raw_graph_handle", 0, "raw_graph_handle invalid"),
+            ("stream_id", 0, "stream IDs invalid"),
+        ):
+            with self.subTest(field=field):
+                tampered = self._valid_w2_candidate_fixture(
+                    "cuda_graph",
+                    "moe_w2_grouped_decode_m16",
+                )
+                candidate_capture(tampered)[field] = value
+                self.assert_invalid(tampered, needle)
+
+    def test_w2_main_and_edge_graph_integer_metadata_rejects_bools(
+        self,
+    ) -> None:
+        def main_capture(result: dict) -> dict:
+            return result["series"][0]["graph"]["captures"][1]
+
+        def edge_capture(result: dict) -> dict:
+            return result["correctness"]["edge_masks"]["cases"][0][
+                "graph"
+            ]["candidate"]
+
+        for scope, get_capture in (
+            ("main", main_capture),
+            ("edge", edge_capture),
+        ):
+            for field, mutate, needle in (
+                (
+                    "node_count",
+                    lambda capture: capture.update(node_count=True),
+                    "node_count is not a strict integer",
+                ),
+                (
+                    "node_index",
+                    lambda capture: capture["nodes"][0].update(index=False),
+                    "index is not a strict integer",
+                ),
+                (
+                    "node_type_count",
+                    lambda capture: capture.update(
+                        node_type_counts={
+                            "CU_GRAPH_NODE_TYPE_KERNEL": True
+                        }
+                    ),
+                    "node_type_counts values are not strict integers",
+                ),
+            ):
+                with self.subTest(scope=scope, field=field):
+                    result = self._valid_w2_candidate_fixture(
+                        "cuda_graph",
+                        "moe_w2_grouped_decode_m16",
+                    )
+                    mutate(get_capture(result))
+                    self.assert_invalid(result, needle)
+
+    def test_w2_edge_eager_stream_ids_reject_bools(self) -> None:
+        result = self._valid_w2_candidate_fixture(
+            "eager",
+            "moe_w2_grouped_decode_m16",
+        )
+        stream = result["correctness"]["edge_masks"]["cases"][0]["eager"][
+            "stream"
+        ]
+        for field in (
+            "default_stream_id",
+            "before",
+            "after_reference",
+            "after_candidate",
+        ):
+            stream[field] = False
+        stream["unchanged_default_stream"] = True
+        self.assert_invalid(result, "eager stream contract mismatch")
+
+    def test_w2_edge_phase_counts_are_leaf_scoped_and_exact(self) -> None:
+        leaf = self._valid_w2_candidate_fixture(
+            "cuda_graph",
+            "moe_w2_grouped_decode_m16",
+        )
+        phases = leaf["implementations"]["candidate"]["by_phase"]
+        self.assertEqual(
+            phases["edge:zero_all_experts:eager"]["reference_calls"],
+            1,
+        )
+        self.assertEqual(
+            phases[
+                "edge:00:zero_all_experts:reference:warmup"
+            ]["reference_calls"],
+            3,
+        )
+        self.assertEqual(
+            phases[
+                "edge:00:zero_all_experts:candidate:capture"
+            ]["candidate_hits"],
+            1,
+        )
+        self.assertEqual(
+            phases[
+                "edge:00:zero_all_experts:graph_validation"
+            ],
+            {
+                "reference_calls": 2,
+                "candidate_hits": 2,
+                "candidate_fallbacks": 0,
+                "candidate_reference_delegations": 0,
+                "candidate_trusted_config_calls": 0,
+            },
+        )
+        self.assertTrue(
+            audit_document(leaf, verify_files=False)["valid"],
+        )
+
+        wrong_count = copy.deepcopy(leaf)
+        wrong_count["implementations"]["candidate"]["by_phase"][
+            "edge:00:zero_all_experts:graph_validation"
+        ]["candidate_hits"] = 3
+        self.assert_invalid(wrong_count, "runner path count")
+
+        missing_phase = copy.deepcopy(leaf)
+        missing_phase["implementations"]["candidate"]["by_phase"].pop(
+            "edge:00:zero_all_experts:reference:warmup"
+        )
+        self.assert_invalid(missing_phase, "phase set does not close")
+
+        region = self._valid_w2_candidate_fixture(
+            "eager",
+            "moe_w13_swiglu_w2_region_decode_m16_current_source_m5",
+        )
+        region_phases = region["implementations"]["candidate"]["by_phase"]
+        self.assertFalse(
+            any(phase.startswith("edge:") for phase in region_phases)
+        )
+        self.assertTrue(
+            audit_document(region, verify_files=False)["valid"],
+        )
+        region_phases["edge:zero_all_experts:eager"] = {
+            field: 0 for field in COUNTER_FIELDS
+        }
+        self.assert_invalid(region, "phase set does not close")
+
+    def test_w2_containing_region_kernel_sequence_is_exact(self) -> None:
+        task = (
+            "moe_w13_swiglu_w2_region_decode_m16_current_source_m5"
+        )
+        baseline = self._valid_w2_candidate_fixture("eager", task)
+        self.assertTrue(
+            audit_document(baseline, verify_files=False)["valid"],
+        )
+
+        extra = copy.deepcopy(baseline)
+        extra_profile = extra["execution"]["kernel_profiles"]["candidate"]
+        extra_profile["events"].append(
+            {
+                "name": "fixture_unrelated_adapter_kernel",
+                "duration_us": 1.0,
+                "device_type": "DeviceType.CUDA",
+            }
+        )
+        extra_profile["kernel_identities"] = sorted(
+            {event["name"] for event in extra_profile["events"]}
+        )
+        self.assert_invalid(extra, "equal non-leaf CUDA event counts")
+
+        reordered = copy.deepcopy(baseline)
+        reordered_events = reordered["execution"]["kernel_profiles"][
+            "candidate"
+        ]["events"]
+        reordered_events[0], reordered_events[1] = (
+            reordered_events[1],
+            reordered_events[0],
+        )
+        self.assert_invalid(reordered, "non-W2 CUDA event order differs")
+
+        substituted = copy.deepcopy(baseline)
+        substituted_profile = substituted["execution"]["kernel_profiles"][
+            "candidate"
+        ]
+        substituted_profile["events"][0]["name"] = (
+            "fixture_different_non_w2_kernel"
+        )
+        substituted_profile["kernel_identities"] = sorted(
+            {event["name"] for event in substituted_profile["events"]}
+        )
+        report = audit_document(substituted, verify_files=False)
+        self.assertFalse(report["valid"], report)
+        self.assertTrue(
+            any(
+                "non-W2 CUDA event order differs" in error
+                or "non-W2 CUDA event multiset differs" in error
+                for error in report["errors"]
+            ),
+            report,
+        )
+
+    def test_w2_exact_cache_and_zero_mask_sentinel_are_fail_closed(
+        self,
+    ) -> None:
+        cache_tamper = self._valid_w2_candidate_fixture(
+            "eager",
+            "moe_w2_grouped_decode_m16",
+        )
+        cache_tamper["implementations"]["candidate"][
+            "runtime_contract"
+        ]["jit_cache_kernel_dir"] = "/tmp/forged"
+        report = audit_document(cache_tamper, verify_files=False)
+        self.assertFalse(report["valid"], report)
+        self.assertTrue(
+            any("emX JIT cache directory" in error for error in report["errors"]),
+            report,
+        )
+
+        block_tamper = self._valid_w2_candidate_fixture(
+            "eager",
+            "moe_w2_grouped_decode_m16",
+        )
+        block_tamper["implementations"]["candidate"][
+            "runtime_contract"
+        ]["jit_cache_generated_block_m"] = 128
+        report = audit_document(block_tamper, verify_files=False)
+        self.assertFalse(report["valid"], report)
+        self.assertTrue(
+            any("BM16 template mapping" in error for error in report["errors"]),
+            report,
+        )
+
+        sentinel_tamper = self._valid_w2_candidate_fixture(
+            "cuda_graph",
+            "moe_w2_grouped_decode_m16",
+        )
+        zero_case = sentinel_tamper["correctness"]["edge_masks"]["cases"][0]
+        zero_case["eager"]["zero_full_output_poison_preserved"][
+            "candidate"
+        ] = False
+        zero_case["graph"]["candidate"][
+            "zero_full_output_poison_preserved"
+        ] = False
+        report = audit_document(sentinel_tamper, verify_files=False)
+        self.assertFalse(report["valid"], report)
+        self.assertTrue(
+            any(
+                "zero-mask full output did not remain poisoned" in error
+                or "sentinel coverage failed" in error
+                for error in report["errors"]
+            ),
+            report,
+        )
+
+    def test_w2_candidate_routes_containing_region_through_bound_w2(
+        self,
+    ) -> None:
+        candidate_path = (
+            HERE / "candidates" / "moe_w2_bm16.py"
+        )
+        module = _load_candidate(str(candidate_path))
+        bound_w2 = object()
+        inputs = {"region": object()}
+        expected = TaskResult(object())
+        runtime = SimpleNamespace(
+            workload=SimpleNamespace(family="moe_compute_region"),
+            run_moe_compute_region=Mock(return_value=expected),
+        )
+        with patch.object(
+            module,
+            "_candidate_callable",
+            return_value=bound_w2,
+        ):
+            observed = module.run(inputs, runtime)
+        self.assertIs(observed, expected)
+        runtime.run_moe_compute_region.assert_called_once_with(
+            inputs,
+            w2_gemm=bound_w2,
+        )
+
+    def test_w2_candidate_binds_exact_em_cache_source_and_cubin(
+        self,
+    ) -> None:
+        candidate_path = HERE / "candidates" / "moe_w2_bm16.py"
+        module = _load_candidate(str(candidate_path))
+        token = (
+            "sm100_m_grouped_fp8_fp4_gemm_masked_1d1d_"
+            "glm52_w2_bm16_v2_em4"
+        )
+        cache_root = self.root / "deepgemm"
+        kernel_dir = (
+            cache_root
+            / "cache"
+            / f"kernel.{token}.{'a' * 32}"
+        )
+        kernel_dir.mkdir(parents=True)
+        source = kernel_dir / "kernel.cu"
+        source.write_text(
+            "sm100_fp8_fp4_gemm_1d1d_impl<"
+            "cute::UMMA::Major::K,cute::UMMA::Major::K,128,128,128,"
+            "0,6144,2048,16,128,128,32>;"
+        )
+        cubin = kernel_dir / "kernel.cubin"
+        cubin.write_bytes(b"fixture-cubin")
+        module._STATE.clear()
+        module._STATE["evidence"] = {
+            "candidate_jit_identity": token,
+            "dg_jit_cache_dir": str(cache_root),
+        }
+        try:
+            with patch.object(module, "_TASK_DG_CACHE", cache_root):
+                runtime_paths = module.runtime_artifact_paths()
+                evidence = module.runtime_evidence()
+        finally:
+            module._STATE.clear()
+        self.assertEqual(runtime_paths, (str(source), str(cubin)))
+        self.assertEqual(evidence["jit_cache_kernel_name"], token)
+        self.assertEqual(evidence["jit_cache_generated_block_m"], 16)
+        self.assertEqual(
+            evidence["jit_cache_template_segment"],
+            [0, 6144, 2048, 16, 128, 128],
+        )
+        self.assertEqual(len(evidence["jit_cache_cubin_sha256"]), 64)
+
+    def test_w2_candidate_restores_every_setup_environment_variable(
+        self,
+    ) -> None:
+        candidate_path = HERE / "candidates" / "moe_w2_bm16.py"
+        module = _load_candidate(str(candidate_path))
+        names = (
+            "SGLANG_GLM52_OPT",
+            "SGLANG_GLM52_OPT_PROFILE",
+            "SGLANG_GLM52_OPT_OPS",
+            "SGLANG_DEEPGEMM_PDL",
+        )
+        setup = {
+            "SGLANG_GLM52_OPT": "1",
+            "SGLANG_GLM52_OPT_PROFILE": "moe_w2_bm16",
+            "SGLANG_GLM52_OPT_OPS": "moe_down_proj",
+            "SGLANG_DEEPGEMM_PDL": "1",
+        }
+        saved_process_environment = dict(os.environ)
+        with patch.dict(os.environ, saved_process_environment, clear=True):
+            os.environ["SGLANG_GLM52_OPT"] = "legacy-opt"
+            for name in names[1:]:
+                os.environ.pop(name, None)
+            before = {name: os.environ.get(name) for name in names}
+            with module._temporary_environment(setup) as observed:
+                self.assertEqual(observed, before)
+                self.assertEqual(
+                    {name: os.environ.get(name) for name in names},
+                    setup,
+                )
+            self.assertEqual(
+                {name: os.environ.get(name) for name in names},
+                before,
+            )
+
+    def test_grouped_reference_uses_precomputed_views_without_mask_host_read(
+        self,
+    ) -> None:
+        source = inspect.getsource(Runtime.reference)
+        self.assertNotIn("masked_m\"].tolist", source)
+        self.assertNotIn(
+            ".tolist",
+            inspect.getsource(Runtime.run_moe_compute_region),
+        )
+
+        called = Mock(return_value=None)
+        modules: dict[str, types.ModuleType] = {}
+        names = (
+            "sglang",
+            "sglang.srt",
+            "sglang.srt.layers",
+            "sglang.srt.layers.deep_gemm_wrapper",
+            "sglang.srt.layers.deep_gemm_wrapper.entrypoint",
+        )
+        for name in names:
+            module = types.ModuleType(name)
+            module.__path__ = []
+            modules[name] = module
+        modules[names[-1]].grouped_gemm_nt_f8f8bf16_masked = called
+
+        masked_m = SimpleNamespace(
+            tolist=Mock(side_effect=AssertionError("host mask read"))
+        )
+        observed = (object(), object())
+        inputs = {
+            "activation_fp8": object(),
+            "activation_scale": object(),
+            "weight_fp8": object(),
+            "weight_scale": object(),
+            "out": object(),
+            "masked_m": masked_m,
+            "expected_m": 4,
+            "observed_out": observed,
+        }
+        runtime = object.__new__(Runtime)
+        runtime._inside_candidate = False
+        runtime.accounting = SimpleNamespace(reference=Mock())
+        runtime.workload = get_workload("moe_w2_grouped_decode_m16")
+        with patch.dict(sys.modules, modules):
+            result = Runtime.reference(runtime, inputs)
+        self.assertIsInstance(result, TaskResult)
+        self.assertIs(result.observed, observed)
+        masked_m.tolist.assert_not_called()
+        called.assert_called_once()
+
+    def test_graph_mutation_target_is_scoped_to_two_families(self) -> None:
+        packed = object()
+        grouped = object()
+        runtime = SimpleNamespace(
+            workload=SimpleNamespace(family="packed_fp8_gemm")
+        )
+        self.assertIs(
+            _graph_mutation_target(runtime, {"x_fp8": packed}),
+            packed,
+        )
+        runtime.workload.family = "moe_grouped_masked"
+        self.assertIs(
+            _graph_mutation_target(
+                runtime, {"activation_fp8": grouped}
+            ),
+            grouped,
+        )
+        for family in ("bf16_linear", "moe_swiglu_quant", "allgather"):
+            with self.subTest(family=family):
+                runtime.workload.family = family
+                with self.assertRaisesRegex(
+                    RuntimeError,
+                    "supports only packed_fp8_gemm and moe_grouped_masked",
+                ):
+                    _graph_mutation_target(
+                        runtime,
+                        {
+                            "x_fp8": packed,
+                            "activation_fp8": grouped,
+                        },
+                    )
 
     def test_runner_owned_config_api_can_carry_a_valid_win(self) -> None:
         result = self._valid_fixture(
@@ -926,6 +2007,32 @@ class ContractV2AuditTest(unittest.TestCase):
             with self.subTest(name=name):
                 result = self._valid_fixture("cuda_graph")
                 mutate(result["series"][0]["graph"]["captures"][0])
+                self.assert_invalid(result, needle)
+
+    def test_generic_graph_integer_metadata_rejects_bools(self) -> None:
+        for field, mutate, needle in (
+            (
+                "node_count",
+                lambda capture: capture.update(node_count=True),
+                "node_count is not a strict integer",
+            ),
+            (
+                "node_index",
+                lambda capture: capture["nodes"][0].update(index=False),
+                "index is not a strict integer",
+            ),
+            (
+                "node_type_count",
+                lambda capture: capture.update(
+                    node_type_counts={"CU_GRAPH_NODE_TYPE_KERNEL": True}
+                ),
+                "node_type_counts values are not strict integers",
+            ),
+        ):
+            with self.subTest(field=field):
+                result = self._valid_fixture("cuda_graph")
+                capture = result["series"][0]["graph"]["captures"][0]
+                mutate(capture)
                 self.assert_invalid(result, needle)
 
     def test_graph_copy_and_adapter_nodes_are_rejected_after_recomputation(self) -> None:

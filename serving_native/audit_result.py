@@ -4,8 +4,10 @@
 from __future__ import annotations
 
 import argparse
+from collections import Counter
 import json
 import math
+import re
 import statistics
 import sys
 from pathlib import Path
@@ -27,10 +29,55 @@ from serving_native.contract_v2 import (
     latency_summary,
     sha256_file,
 )
-from serving_native.workloads import WORKLOADS, as_dict
+from serving_native.workloads import W2_EDGE_MASK_CASES, WORKLOADS, as_dict
 
 CALLABLE_CANDIDATE_API = "callable_v1"
 TRUSTED_CONFIG_CANDIDATE_API = "reference_with_config_v1"
+W2_BM16_BASE_COMMIT = "edcf77b276965de8f03cdc47c23f01b08bf7c7ab"
+W2_BM16_CUTLASS_COMMIT = "f3fde58372d33e9a5650ba7b80fc48b3b49d40c8"
+W2_BM16_FMT_COMMIT = "553ec11ec06fbe0beebfbb45f9dc3c9eabd83d28"
+W2_BM16_STOCK_EXTENSION_SHA256 = (
+    "f3b377630a5016fbd1ea0771cab2a450ff859b815d436b9b50624b5cb438141d"
+)
+W2_BM16_CANDIDATE_EXTENSION_SHA256 = (
+    "e4ba14ea9c97674eacd55d1a59ace8b98e1fa005f69ec0d7b1d675b24f2cffc3"
+)
+W2_BM16_SOURCE_PATCH_SHA256 = (
+    "26bb69cd59f2df5a8a8a12292447d9badf3786e8631b028314f1a811c87d8401"
+)
+W2_BM16_CACHE_DIR = (
+    "/home/qinhaiyan/glm52-v2-goal-runs/cache/"
+    "26-moe_w2_decode_scoped_bm16/deepgemm"
+)
+W2_BM16_IMPL_NAME = "sm100_fp8_fp4_gemm_1d1d_impl"
+
+
+def _w2_template_mapping(kernels: Any, block_m: int) -> bool:
+    if not _list(kernels):
+        return False
+    mangled_segment = (
+        f"ELj0ELj6144ELj2048ELj{block_m}ELj128ELj128"
+    )
+    demangled_segment = f"0,6144,2048,{block_m},128,128"
+    for kernel in kernels:
+        if not isinstance(kernel, str) or W2_BM16_IMPL_NAME not in kernel:
+            continue
+        if mangled_segment in kernel:
+            return True
+        normalized = re.sub(r"\s+", "", kernel)
+        normalized = re.sub(r"(?<=\d)[uUlL]+(?=[,>])", "", normalized)
+        if demangled_segment in normalized:
+            return True
+    return False
+
+
+def _is_w2_leaf_workload(workload: dict[str, Any]) -> bool:
+    params = workload.get("params")
+    return (
+        workload.get("family") == "moe_grouped_masked"
+        and _mapping(params)
+        and "candidate_jit_identity" in params
+    )
 
 
 class Findings:
@@ -55,6 +102,23 @@ def _list(value: Any) -> bool:
 
 def _number(value: Any) -> bool:
     return isinstance(value, (int, float)) and not isinstance(value, bool)
+
+
+def _strict_nonnegative_int(value: Any) -> bool:
+    return (
+        isinstance(value, int)
+        and not isinstance(value, bool)
+        and value >= 0
+    )
+
+
+def _strict_node_type_counts(value: Any) -> bool:
+    return _mapping(value) and all(
+        isinstance(node_type, str)
+        and bool(node_type)
+        and _strict_nonnegative_int(count)
+        for node_type, count in value.items()
+    )
 
 
 def _close(left: Any, right: Any, *, tolerance: float = 1e-9) -> bool:
@@ -111,6 +175,7 @@ def _expected_phase_counts(
     requested_series: int,
     warmup: int,
     repeat: int,
+    workload: dict[str, Any],
 ) -> dict[str, dict[str, int]]:
     phases: dict[str, dict[str, int]] = {}
 
@@ -155,6 +220,30 @@ def _expected_phase_counts(
     if mode == "eager":
         add("profiler_reference", 1, 0)
         add("profiler_candidate", 0, 1)
+    if _is_w2_leaf_workload(workload):
+        for case_index, (name, _counts) in enumerate(W2_EDGE_MASK_CASES):
+            add(f"edge:{name}:eager", 1, 1)
+            if mode == "cuda_graph":
+                for implementation in ("reference", "candidate"):
+                    is_reference = implementation == "reference"
+                    capture_id = (
+                        f"edge:{case_index:02d}:{name}:{implementation}"
+                    )
+                    add(
+                        f"{capture_id}:warmup",
+                        3 if is_reference else 0,
+                        0 if is_reference else 3,
+                    )
+                    add(
+                        f"{capture_id}:capture",
+                        1 if is_reference else 0,
+                        0 if is_reference else 1,
+                    )
+                add(
+                    f"edge:{case_index:02d}:{name}:graph_validation",
+                    2,
+                    2,
+                )
     return phases
 
 
@@ -232,6 +321,7 @@ def _audit_accounting(
         requested_series=requested_series,
         warmup=warmup,
         repeat=repeat,
+        workload=workload,
     )
     by_phase = candidate.get("by_phase")
     if not findings.require(_mapping(by_phase), "candidate by_phase accounting missing"):
@@ -912,9 +1002,11 @@ def _audit_graph_series(
                 node_prefix = f"{capture_prefix}.nodes[{node_index}]"
                 if not findings.require(_mapping(node), f"{node_prefix} must be an object"):
                     continue
+                recorded_index = node.get("index")
                 findings.require(
-                    node.get("index") == node_index,
-                    f"{node_prefix}.index mismatch",
+                    _strict_nonnegative_int(recorded_index)
+                    and recorded_index == node_index,
+                    f"{node_prefix}.index is not a strict integer or mismatches",
                 )
                 node_type = node.get("type")
                 findings.require(
@@ -951,12 +1043,22 @@ def _audit_graph_series(
             node_type_counts = graph_node_type_counts(valid_nodes)
             kernels = graph_kernel_identities(valid_nodes)
             forbidden = graph_forbidden_nodes(valid_nodes)
+            recorded_node_count = capture.get("node_count")
             findings.require(
-                capture.get("node_count") == node_count,
-                f"{capture_prefix}.node_count does not match nodes",
+                _strict_nonnegative_int(recorded_node_count),
+                f"{capture_prefix}.node_count is not a strict integer",
             )
             findings.require(
-                capture.get("node_type_counts") == node_type_counts,
+                recorded_node_count == node_count,
+                f"{capture_prefix}.node_count does not match nodes",
+            )
+            recorded_type_counts = capture.get("node_type_counts")
+            findings.require(
+                _strict_node_type_counts(recorded_type_counts),
+                f"{capture_prefix}.node_type_counts values are not strict integers",
+            )
+            findings.require(
+                recorded_type_counts == node_type_counts,
                 f"{capture_prefix}.node_type_counts do not match nodes",
             )
             findings.require(
@@ -1093,6 +1195,771 @@ def _audit_kernel_profiles(
             identities["reference"] == identities["candidate"],
             "identity A/B eager kernel identities differ",
         )
+
+
+def _audit_exact_single_kernel_graph(
+    findings: Findings,
+    capture: dict[str, Any],
+    *,
+    prefix: str,
+) -> list[str]:
+    """Recompute one-kernel graph identity from raw nodes, never summaries."""
+    nodes = capture.get("nodes")
+    if not findings.require(
+        _list(nodes) and bool(nodes),
+        f"{prefix}.nodes missing",
+    ):
+        return []
+    for node_index, node in enumerate(nodes):
+        node_prefix = f"{prefix}.nodes[{node_index}]"
+        if not findings.require(
+            _mapping(node),
+            f"{node_prefix} must be an object",
+        ):
+            continue
+        recorded_index = node.get("index")
+        findings.require(
+            _strict_nonnegative_int(recorded_index)
+            and recorded_index == node_index,
+            f"{node_prefix}.index is not a strict integer or mismatches",
+        )
+        node_type = node.get("type")
+        findings.require(
+            isinstance(node_type, str) and bool(node_type),
+            f"{node_prefix}.type missing",
+        )
+        if isinstance(node_type, str) and "KERNEL" in node_type:
+            findings.require(
+                isinstance(node.get("kernel"), str)
+                and bool(node["kernel"]),
+                f"{node_prefix}.kernel identity missing",
+            )
+            for dimension in ("grid", "block"):
+                value = node.get(dimension)
+                findings.require(
+                    _list(value)
+                    and len(value) == 3
+                    and all(
+                        isinstance(item, int)
+                        and not isinstance(item, bool)
+                        and item > 0
+                        for item in value
+                    ),
+                    f"{node_prefix}.{dimension} invalid",
+                )
+            findings.require(
+                isinstance(node.get("shared_memory_bytes"), int)
+                and not isinstance(node["shared_memory_bytes"], bool)
+                and node["shared_memory_bytes"] >= 0,
+                f"{node_prefix}.shared_memory_bytes invalid",
+            )
+
+    valid_nodes = [node for node in nodes if _mapping(node)]
+    node_count = len(nodes)
+    type_counts = graph_node_type_counts(valid_nodes)
+    kernels = graph_kernel_identities(valid_nodes)
+    forbidden = graph_forbidden_nodes(valid_nodes)
+    recorded_node_count = capture.get("node_count")
+    findings.require(
+        _strict_nonnegative_int(recorded_node_count),
+        f"{prefix}.node_count is not a strict integer",
+    )
+    findings.require(
+        recorded_node_count == node_count,
+        f"{prefix}.node_count does not match raw nodes",
+    )
+    recorded_type_counts = capture.get("node_type_counts")
+    findings.require(
+        _strict_node_type_counts(recorded_type_counts),
+        f"{prefix}.node_type_counts values are not strict integers",
+    )
+    findings.require(
+        recorded_type_counts == type_counts,
+        f"{prefix}.node_type_counts do not match raw nodes",
+    )
+    findings.require(
+        capture.get("kernel_identities") == kernels,
+        f"{prefix}.kernel_identities do not match raw nodes",
+    )
+    findings.require(
+        capture.get("forbidden_nodes") == forbidden,
+        f"{prefix}.forbidden_nodes do not match raw nodes",
+    )
+    findings.require(
+        not forbidden,
+        f"{prefix} has forbidden graph nodes",
+    )
+    findings.require(
+        node_count == 1
+        and len(valid_nodes) == 1
+        and type_counts == {"CU_GRAPH_NODE_TYPE_KERNEL": 1}
+        and len(kernels) == 1,
+        f"{prefix} must contain exactly one CUDA KERNEL node",
+    )
+    return kernels
+
+
+def _profile_event_names(profile: Any) -> list[str]:
+    if not _mapping(profile) or not _list(profile.get("events")):
+        return []
+    return [
+        event["name"]
+        for event in profile["events"]
+        if _mapping(event)
+        and isinstance(event.get("name"), str)
+        and bool(event["name"])
+    ]
+
+
+def _audit_w2_edge_masks(
+    findings: Findings,
+    result: dict[str, Any],
+    workload: dict[str, Any],
+    *,
+    mode: str,
+) -> None:
+    correctness = result.get("correctness")
+    edge = (
+        correctness.get("edge_masks")
+        if _mapping(correctness)
+        else None
+    )
+    if workload.get("family") == "moe_compute_region":
+        findings.require(
+            edge is None,
+            "W2 containing-region result must not relabel leaf edge evidence",
+        )
+        return
+    if not findings.require(
+        _mapping(edge),
+        "W2/BM16 explicit edge-mask correctness evidence is missing",
+    ):
+        return
+    findings.require(
+        edge.get("status") == "pass"
+        and edge.get("scope") == "single_B200_leaf_correctness_only"
+        and edge.get("execution_mode") == mode,
+        "W2/BM16 edge-mask scope or status mismatch",
+    )
+    cases = edge.get("cases")
+    if not findings.require(
+        _list(cases) and len(cases) == len(W2_EDGE_MASK_CASES),
+        "W2/BM16 edge-mask case count mismatch",
+    ):
+        return
+    expected = dict(W2_EDGE_MASK_CASES)
+    findings.require(
+        [case.get("name") if _mapping(case) else None for case in cases]
+        == [name for name, _counts in W2_EDGE_MASK_CASES],
+        "W2/BM16 edge-mask case order or identity mismatch",
+    )
+    for index, case in enumerate(cases):
+        prefix = f"correctness.edge_masks.cases[{index}]"
+        if not findings.require(_mapping(case), f"{prefix} must be an object"):
+            continue
+        name = case.get("name")
+        counts = expected.get(name)
+        findings.require(
+            counts is not None and case.get("masked_m") == list(counts),
+            f"{prefix}.masked_m is not the canonical explicit edge mask",
+        )
+        if counts is None:
+            continue
+        findings.require(
+            case.get("active_rows") == sum(counts)
+            and case.get("max_count") == max(counts)
+            and case.get("empty_experts")
+            == [
+                expert
+                for expert, count in enumerate(counts)
+                if count == 0
+            ],
+            f"{prefix} mask summary does not close",
+        )
+        eager = case.get("eager")
+        if not findings.require(
+            _mapping(eager), f"{prefix}.eager evidence is missing"
+        ):
+            continue
+        findings.require(
+            eager.get("stock_candidate_match") is True,
+            f"{prefix}.eager stock/candidate correctness failed",
+        )
+        findings.require(
+            eager.get("output_poisoned_before_launch")
+            == {"reference": True, "candidate": True},
+            f"{prefix}.eager output poison proof failed",
+        )
+        zero_mask = sum(counts) == 0
+        expected_sentinel_elements = (
+            32 * 1024 * 6144
+            if zero_mask
+            else sum(counts) * 6144
+        )
+        findings.require(
+            eager.get("sentinel_scope")
+            == (
+                "entire_output_buffer"
+                if zero_mask
+                else "active_rows"
+            )
+            and eager.get("sentinel_elements_checked")
+            == expected_sentinel_elements
+            and eager.get("non_vacuous_sentinel_coverage") is True,
+            f"{prefix}.eager sentinel coverage is vacuous or incomplete",
+        )
+        findings.require(
+            eager.get("zero_full_output_poison_preserved")
+            == (
+                {"reference": True, "candidate": True}
+                if zero_mask
+                else None
+            ),
+            f"{prefix}.zero-mask full output did not remain poisoned",
+        )
+        findings.require(
+            eager.get("masked_m_unmodified")
+            == {"reference": True, "candidate": True},
+            f"{prefix}.masked_m was modified",
+        )
+        findings.require(
+            eager.get("return_contract")
+            == {
+                "reference": "None",
+                "candidate": "None",
+                "enforced_before_TaskResult": True,
+            },
+            f"{prefix}.return contract mismatch",
+        )
+        stream = eager.get("stream")
+        stream_fields = (
+            "default_stream_id",
+            "before",
+            "after_reference",
+            "after_candidate",
+        )
+        valid_stream_fields = _mapping(stream) and all(
+            _strict_nonnegative_int(stream.get(field))
+            for field in stream_fields
+        )
+        findings.require(
+            valid_stream_fields
+            and stream.get("unchanged_default_stream") is True
+            and stream.get("before")
+            == stream.get("after_reference")
+            == stream.get("after_candidate")
+            == stream.get("default_stream_id"),
+            f"{prefix}.eager stream contract mismatch",
+        )
+
+        graph = case.get("graph")
+        if mode == "eager":
+            findings.require(
+                graph is None,
+                f"{prefix} eager result carries graph edge evidence",
+            )
+            continue
+        if not findings.require(
+            _mapping(graph),
+            f"{prefix}.graph edge evidence is missing",
+        ):
+            continue
+        reference_capture = graph.get("reference")
+        candidate_capture = graph.get("candidate")
+        findings.require(
+            graph.get("stock_candidate_match") is True
+            and graph.get("reference_candidate_captured_independently")
+            is True,
+            f"{prefix}.graph stock/candidate correctness failed",
+        )
+        capture_ids: set[str] = set()
+        raw_graph_handles: set[int] = set()
+        stream_ids: set[int] = set()
+        for implementation, capture, block_m in (
+            ("reference", reference_capture, 128),
+            ("candidate", candidate_capture, 16),
+        ):
+            capture_prefix = f"{prefix}.graph.{implementation}"
+            if not findings.require(
+                _mapping(capture),
+                f"{capture_prefix} capture is missing",
+            ):
+                continue
+            expected_capture_id = (
+                f"edge:{index:02d}:{name}:{implementation}"
+            )
+            capture_id = capture.get("capture_id")
+            findings.require(
+                capture_id == expected_capture_id,
+                f"{capture_prefix}.capture_id mismatch",
+            )
+            if isinstance(capture_id, str):
+                findings.require(
+                    capture_id not in capture_ids,
+                    f"{capture_prefix}.capture_id is reused",
+                )
+                capture_ids.add(capture_id)
+
+            raw_graph_handle = capture.get("raw_graph_handle")
+            if findings.require(
+                isinstance(raw_graph_handle, int)
+                and not isinstance(raw_graph_handle, bool)
+                and raw_graph_handle > 0,
+                f"{capture_prefix}.raw_graph_handle invalid",
+            ):
+                findings.require(
+                    raw_graph_handle not in raw_graph_handles,
+                    f"{capture_prefix}.raw_graph_handle is reused",
+                )
+                raw_graph_handles.add(raw_graph_handle)
+            stream_id = capture.get("stream_id")
+            default_stream_id = capture.get("default_stream_id")
+            valid_streams = (
+                isinstance(stream_id, int)
+                and not isinstance(stream_id, bool)
+                and stream_id > 0
+                and isinstance(default_stream_id, int)
+                and not isinstance(default_stream_id, bool)
+                and default_stream_id >= 0
+            )
+            findings.require(
+                valid_streams,
+                f"{capture_prefix} stream IDs invalid",
+            )
+            computed_non_default = (
+                valid_streams and stream_id != default_stream_id
+            )
+            findings.require(
+                capture.get("non_default_stream") is computed_non_default,
+                f"{capture_prefix}.non_default_stream does not match IDs",
+            )
+            findings.require(
+                computed_non_default,
+                f"{capture_prefix} did not use its capture stream",
+            )
+            if isinstance(stream_id, int):
+                findings.require(
+                    stream_id not in stream_ids,
+                    f"{capture_prefix}.stream_id is reused",
+                )
+                stream_ids.add(stream_id)
+
+            kernels = _audit_exact_single_kernel_graph(
+                findings,
+                capture,
+                prefix=capture_prefix,
+            )
+            mapping_ok = _w2_template_mapping(kernels, block_m)
+            if implementation == "candidate":
+                mapping_ok = mapping_ok and not _w2_template_mapping(
+                    kernels, 128
+                )
+            else:
+                mapping_ok = mapping_ok and not _w2_template_mapping(
+                    kernels, 16
+                )
+            findings.require(
+                capture.get("implementation") == implementation
+                and mapping_ok,
+                f"{capture_prefix} W2 template mapping mismatch",
+            )
+            for field in (
+                "stable_input_pointers",
+                "stable_output_pointers",
+                "fixed_edge_mask_replayed",
+                "output_poison_replayed",
+                "deterministic_replay",
+                "approved_tolerance_passed",
+            ):
+                findings.require(
+                    capture.get(field) is True,
+                    f"{capture_prefix}.{field} did not pass",
+                )
+            findings.require(
+                capture.get("input_mutation_replayed") is False,
+                f"{capture_prefix} falsely claims post-capture input "
+                "mutation coverage",
+            )
+            findings.require(
+                capture.get("sentinel_elements_checked")
+                == expected_sentinel_elements
+                and capture.get("non_vacuous_sentinel_coverage") is True
+                and capture.get("zero_full_output_poison_preserved")
+                == (True if zero_mask else None),
+                f"{capture_prefix} zero/active sentinel coverage failed",
+            )
+            findings.require(
+                capture.get("fallback") is False
+                and capture.get("reference_delegated") is False
+                and capture.get("trusted_config") is False,
+                f"{capture_prefix} used a fallback or reference delegation",
+            )
+        independently_bound = (
+            len(capture_ids) == 2
+            and len(raw_graph_handles) == 2
+            and len(stream_ids) == 2
+        )
+        findings.require(
+            graph.get("reference_candidate_captured_independently")
+            is independently_bound,
+            f"{prefix} independent-capture flag does not match raw IDs",
+        )
+        findings.require(
+            independently_bound,
+            f"{prefix} edge graphs or streams are not independent",
+        )
+        observations = graph.get("capture_observations")
+        for implementation in ("reference", "candidate"):
+            observation = (
+                observations.get(implementation)
+                if _mapping(observations)
+                else None
+            )
+            findings.require(
+                _mapping(observation)
+                and observation.get("clean") is True
+                and observation.get("new_imports") == []
+                and observation.get("new_shared_objects") == []
+                and observation.get("cache_changes") == []
+                and observation.get("candidate_artifact_changes") == [],
+                f"{prefix}.graph.{implementation} capture had runtime/JIT "
+                "activity",
+            )
+
+
+def _audit_w2_bm16_candidate(
+    findings: Findings,
+    result: dict[str, Any],
+    workload: dict[str, Any],
+    *,
+    mode: str,
+    identity_control: bool,
+    verify_files: bool,
+) -> None:
+    params = workload.get("params")
+    if (
+        identity_control
+        or not _mapping(params)
+        or "candidate_jit_identity" not in params
+    ):
+        return
+
+    expected_m = params.get("expected_m")
+    decode_m = params.get("decode_m")
+    expected_token = params.get("candidate_jit_identity")
+    findings.require(
+        (decode_m, expected_m) in {(16, 4), (16, 5), (32, 8), (32, 9)},
+        "W2/BM16 workload identity is outside the four accepted buckets",
+    )
+    findings.require(
+        workload.get("family")
+        in {"moe_grouped_masked", "moe_compute_region"},
+        "W2/BM16 candidate is attached to an unsupported workload family",
+    )
+    findings.require(
+        isinstance(expected_token, str)
+        and expected_token.endswith(f"glm52_w2_bm16_v2_em{expected_m}"),
+        "W2/BM16 canonical JIT identity is invalid",
+    )
+    _audit_w2_edge_masks(
+        findings,
+        result,
+        workload,
+        mode=mode,
+    )
+
+    implementations = result.get("implementations")
+    candidate = (
+        implementations.get("candidate")
+        if _mapping(implementations)
+        else None
+    )
+    runtime = (
+        candidate.get("runtime_contract") if _mapping(candidate) else None
+    )
+    if not findings.require(
+        _mapping(runtime),
+        "W2/BM16 candidate runtime contract evidence is missing",
+    ):
+        return
+    expected_build_id = (
+        "glm52-w2-bm16-v2:sgl-deep-gemm-0.1.4.post1@"
+        f"{W2_BM16_BASE_COMMIT}:sm100:e32:m1024:k2048:n6144:"
+        "bm16:pdl1:sms148:no-recipe:no-overlap"
+    )
+    exact_fields = {
+        "base_commit": W2_BM16_BASE_COMMIT,
+        "base_version": "0.1.4.post1",
+        "cutlass_commit": W2_BM16_CUTLASS_COMMIT,
+        "fmt_commit": W2_BM16_FMT_COMMIT,
+        "build_id": expected_build_id,
+        "physical_num_sms": 148,
+        "stock_num_sms": 148,
+        "candidate_num_sms": 148,
+        "stock_pdl": True,
+        "candidate_pdl": True,
+        "runtime_modules_distinct": True,
+        "runtime_extension_modules_distinct": True,
+        "stock_extension_sha256": W2_BM16_STOCK_EXTENSION_SHA256,
+        "candidate_extension_sha256": W2_BM16_CANDIDATE_EXTENSION_SHA256,
+        "dg_jit_cache_dir": W2_BM16_CACHE_DIR,
+        "sglang_dg_cache_dir": W2_BM16_CACHE_DIR,
+        "decode_m": decode_m,
+        "expected_m": expected_m,
+        "candidate_jit_identity": expected_token,
+        "forward_mode": "DECODE",
+        "op_tag": "moe_down_proj",
+        "reference_opt_level_after_prepare": "0",
+        "workload": workload.get("name"),
+        "setup_environment_restored": {
+            "SGLANG_GLM52_OPT": True,
+            "SGLANG_GLM52_OPT_PROFILE": True,
+            "SGLANG_GLM52_OPT_OPS": True,
+            "SGLANG_DEEPGEMM_PDL": True,
+        },
+    }
+    for field, expected in exact_fields.items():
+        findings.require(
+            runtime.get(field) == expected,
+            f"W2/BM16 runtime contract {field} mismatch",
+        )
+    findings.require(
+        runtime.get("stock_tc_util") == runtime.get("candidate_tc_util")
+        and isinstance(runtime.get("stock_tc_util"), int),
+        "W2/BM16 stock/candidate tc_util state differs",
+    )
+    findings.require(
+        runtime.get("compute_capability") in ((10, 0), [10, 0]),
+        "W2/BM16 runtime is not SM100",
+    )
+    findings.require(
+        runtime.get("independence_probe_num_sms") == 146
+        and isinstance(runtime.get("independence_probe_tc_util"), int),
+        "W2/BM16 independent DeviceRuntime probe is missing",
+    )
+
+    artifacts = result.get("provenance", {}).get("artifacts", [])
+    artifact_hashes = {
+        item.get("sha256") for item in artifacts if _mapping(item)
+    }
+    for digest, label in (
+        (W2_BM16_SOURCE_PATCH_SHA256, "source patch"),
+        (W2_BM16_STOCK_EXTENSION_SHA256, "stock _C"),
+        (W2_BM16_CANDIDATE_EXTENSION_SHA256, "candidate _C"),
+        (runtime.get("manifest_sha256"), "overlay manifest"),
+    ):
+        findings.require(
+            isinstance(digest, str) and digest in artifact_hashes,
+            f"W2/BM16 {label} is not bound to a hashed artifact",
+        )
+
+    kernel_root = (Path(W2_BM16_CACHE_DIR) / "cache").resolve()
+    kernel_dir_raw = runtime.get("jit_cache_kernel_dir")
+    source_path_raw = runtime.get("jit_cache_source_path")
+    cubin_path_raw = runtime.get("jit_cache_cubin_path")
+    cache_key = runtime.get("jit_cache_key")
+    kernel_dir = (
+        Path(kernel_dir_raw).resolve()
+        if isinstance(kernel_dir_raw, str)
+        else None
+    )
+    expected_dir_name = (
+        f"kernel.{expected_token}.{cache_key}"
+        if isinstance(cache_key, str)
+        else None
+    )
+    findings.require(
+        runtime.get("jit_cache_kernel_name") == expected_token,
+        "W2/BM16 exact emX JIT cache kernel name mismatch",
+    )
+    findings.require(
+        isinstance(cache_key, str)
+        and re.fullmatch(r"[0-9a-f]{32}", cache_key) is not None,
+        "W2/BM16 JIT cache key is not a 32-character lowercase hex digest",
+    )
+    findings.require(
+        kernel_dir is not None
+        and kernel_dir.parent == kernel_root
+        and kernel_dir.name == expected_dir_name,
+        "W2/BM16 exact emX JIT cache directory is not task-local or canonical",
+    )
+    expected_source = kernel_dir / "kernel.cu" if kernel_dir else None
+    expected_cubin = kernel_dir / "kernel.cubin" if kernel_dir else None
+    findings.require(
+        isinstance(source_path_raw, str)
+        and expected_source is not None
+        and Path(source_path_raw).resolve() == expected_source,
+        "W2/BM16 generated kernel source path is not bound to its emX cache",
+    )
+    findings.require(
+        isinstance(cubin_path_raw, str)
+        and expected_cubin is not None
+        and Path(cubin_path_raw).resolve() == expected_cubin,
+        "W2/BM16 cubin path is not bound to its emX cache",
+    )
+    findings.require(
+        runtime.get("jit_cache_generated_impl") == W2_BM16_IMPL_NAME
+        and runtime.get("jit_cache_generated_block_m") == 16
+        and runtime.get("jit_cache_template_segment")
+        == [0, 6144, 2048, 16, 128, 128],
+        "W2/BM16 generated source does not prove the BM16 template mapping",
+    )
+
+    artifacts_by_path = {
+        str(Path(item["path"]).resolve()): item
+        for item in artifacts
+        if _mapping(item) and isinstance(item.get("path"), str)
+    }
+    for path_raw, digest_field, label in (
+        (
+            source_path_raw,
+            "jit_cache_source_sha256",
+            "generated kernel source",
+        ),
+        (cubin_path_raw, "jit_cache_cubin_sha256", "emX cubin"),
+    ):
+        digest = runtime.get(digest_field)
+        artifact = (
+            artifacts_by_path.get(str(Path(path_raw).resolve()))
+            if isinstance(path_raw, str)
+            else None
+        )
+        findings.require(
+            isinstance(digest, str)
+            and len(digest) == 64
+            and _mapping(artifact)
+            and artifact.get("sha256") == digest,
+            f"W2/BM16 {label} is not bound to its exact hashed artifact",
+        )
+    if (
+        verify_files
+        and expected_source is not None
+        and expected_source.is_file()
+    ):
+        generated_source = expected_source.read_text(errors="replace")
+        normalized_source = re.sub(r"\s+", "", generated_source)
+        findings.require(
+            W2_BM16_IMPL_NAME in generated_source
+            and "0,6144,2048,16,128,128" in normalized_source,
+            "W2/BM16 hashed generated source lacks the positional BM16 "
+            "template segment",
+        )
+
+    if mode == "eager":
+        profiles = result.get("execution", {}).get("kernel_profiles", {})
+        reference_profile = (
+            profiles.get("reference") if _mapping(profiles) else None
+        )
+        candidate_profile = (
+            profiles.get("candidate") if _mapping(profiles) else None
+        )
+        reference_events = _profile_event_names(reference_profile)
+        candidate_events = _profile_event_names(candidate_profile)
+        reference_w2 = [
+            index
+            for index, kernel in enumerate(reference_events)
+            if _w2_template_mapping([kernel], 128)
+        ]
+        candidate_w2 = [
+            index
+            for index, kernel in enumerate(candidate_events)
+            if _w2_template_mapping([kernel], 16)
+        ]
+        if _is_w2_leaf_workload(workload):
+            findings.require(
+                len(reference_events) == 1
+                and reference_w2 == [0]
+                and not _w2_template_mapping(reference_events, 16),
+                "W2/BM16 leaf stock eager profile must contain exactly one "
+                "CUDA event: the W2 BM128 kernel",
+            )
+            findings.require(
+                len(candidate_events) == 1
+                and candidate_w2 == [0]
+                and not _w2_template_mapping(candidate_events, 128),
+                "W2/BM16 leaf candidate eager profile must contain exactly "
+                "one CUDA event: W2 BM16 with no BM128 or adapter kernel",
+            )
+        else:
+            findings.require(
+                len(reference_events) == len(candidate_events)
+                and len(reference_events) > 1,
+                "W2/BM16 containing-region eager profiles must have equal "
+                "non-leaf CUDA event counts",
+            )
+            findings.require(
+                len(reference_w2) == 1
+                and not _w2_template_mapping(reference_events, 16),
+                "W2/BM16 containing-region stock profile must contain "
+                "exactly one W2 BM128 event and no BM16 event",
+            )
+            findings.require(
+                len(candidate_w2) == 1
+                and not _w2_template_mapping(candidate_events, 128),
+                "W2/BM16 containing-region candidate profile must contain "
+                "exactly one W2 BM16 event and no BM128 event",
+            )
+            reference_non_w2 = [
+                kernel
+                for index, kernel in enumerate(reference_events)
+                if index not in reference_w2
+            ]
+            candidate_non_w2 = [
+                kernel
+                for index, kernel in enumerate(candidate_events)
+                if index not in candidate_w2
+            ]
+            findings.require(
+                bool(reference_non_w2)
+                and reference_non_w2 == candidate_non_w2,
+                "W2/BM16 containing-region non-W2 CUDA event order differs",
+            )
+            findings.require(
+                Counter(reference_non_w2) == Counter(candidate_non_w2),
+                "W2/BM16 containing-region non-W2 CUDA event multiset differs",
+            )
+    elif mode == "cuda_graph":
+        for series_index, series in enumerate(result.get("series", [])):
+            captures = (
+                series.get("graph", {}).get("captures", [])
+                if _mapping(series)
+                else []
+            )
+            for capture_index, capture in enumerate(captures):
+                if not _mapping(capture):
+                    continue
+                capture_prefix = (
+                    "W2/BM16 leaf graph "
+                    f"series[{series_index}].captures[{capture_index}]"
+                )
+                kernels = _audit_exact_single_kernel_graph(
+                    findings,
+                    capture,
+                    prefix=capture_prefix,
+                )
+                if capture.get("implementation") == "reference":
+                    findings.require(
+                        _w2_template_mapping(
+                            kernels, 128
+                        )
+                        and not _w2_template_mapping(
+                            kernels, 16
+                        ),
+                        "W2/BM16 stock graph lacks its BM128 template mapping "
+                        f"at series {series_index} capture {capture_index}",
+                    )
+                elif capture.get("implementation") == "candidate":
+                    findings.require(
+                        _w2_template_mapping(
+                            kernels, 16
+                        )
+                        and not _w2_template_mapping(
+                            kernels, 128
+                        ),
+                        "W2/BM16 candidate graph must contain BM16 and no W2 "
+                        "BM128 template mapping at series "
+                        f"{series_index} capture {capture_index}",
+                    )
 
 
 def audit_document(
@@ -1361,6 +2228,15 @@ def audit_document(
                 findings,
                 execution,
                 identity_control=identity_control,
+            )
+        if canonical_workload is not None:
+            _audit_w2_bm16_candidate(
+                findings,
+                result,
+                canonical_workload,
+                mode=mode,
+                identity_control=identity_control,
+                verify_files=verify_files,
             )
 
     if all_reference:

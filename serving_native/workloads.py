@@ -34,6 +34,14 @@ class Workload:
 
 _COMMON = dict(hidden=6144, experts=256, topk=8)
 _DECODE_M_BUCKETS = (16, 32)
+W2_EDGE_MASK_CASES: tuple[tuple[str, tuple[int, ...]], ...] = (
+    ("zero_all_experts", (0,) * 32),
+    ("single_expert_one_row", (1,) + (0,) * 31),
+    (
+        "full_boundary_sweep",
+        (15, 16, 17, 31, 32, 33, 127, 1024) + (0,) * 24,
+    ),
+)
 
 
 WORKLOADS: dict[str, Workload] = {
@@ -191,15 +199,99 @@ def _add_decode_bucket(m: int) -> None:
         (
             "moe_w2_grouped_decode",
             "moe_grouped_masked",
-            dict(**moe, k=2048, n=6144),
+            dict(
+                **moe,
+                k=2048,
+                n=6144,
+                candidate_jit_identity=(
+                    "sm100_m_grouped_fp8_fp4_gemm_masked_1d1d_"
+                    f"glm52_w2_bm16_v2_em{moe['expected_m']}"
+                ),
+            ),
             grouped_symbol,
             "Real W2 grouped GEMM before DeepEP low-latency combine.",
         ),
     ):
         name = f"{base}_{suffix}"
         WORKLOADS[name] = Workload(
-            name, family, "decode", 1, symbol, params, notes
+            name,
+            family,
+            "decode",
+            1,
+            symbol,
+            params,
+            notes,
+            (
+                ("eager", "cuda_graph")
+                if base == "moe_w2_grouped_decode"
+                else ("eager",)
+            ),
         )
+
+    # Goal07 recorded a second host expected_m hint for the same exact decode
+    # masks. Keep it as an independent identity because expected_m participates
+    # in the candidate's generated-code/JIT key.
+    current_expected_m = moe["expected_m"] + 1
+    name = (
+        f"moe_w2_grouped_decode_{suffix}_"
+        f"current_source_m{current_expected_m}"
+    )
+    WORKLOADS[name] = Workload(
+        name,
+        "moe_grouped_masked",
+        "decode",
+        1,
+        grouped_symbol,
+        dict(
+            moe,
+            expected_m=current_expected_m,
+            k=2048,
+            n=6144,
+            candidate_jit_identity=(
+                "sm100_m_grouped_fp8_fp4_gemm_masked_1d1d_"
+                f"glm52_w2_bm16_v2_em{current_expected_m}"
+            ),
+        ),
+        (
+            "Real W2 grouped GEMM with the Goal07 current-source host "
+            "expected_m hint; same deterministic mask as its decode bucket."
+        ),
+        ("eager", "cuda_graph"),
+    )
+
+    region_name = (
+        f"moe_w13_swiglu_w2_region_decode_{suffix}_"
+        f"current_source_m{current_expected_m}"
+    )
+    WORKLOADS[region_name] = Workload(
+        region_name,
+        "moe_compute_region",
+        "decode",
+        1,
+        (
+            "sglang.srt.layers.deep_gemm_wrapper.entrypoint."
+            "grouped_gemm_nt_f8f8bf16_masked + "
+            "sglang.srt.layers.moe.moe_runner.deep_gemm."
+            "_varlen_deep_gemm_silu_mul_quant"
+        ),
+        dict(
+            moe,
+            expected_m=current_expected_m,
+            hidden=6144,
+            gate_up=4096,
+            w2_k=2048,
+            candidate_jit_identity=(
+                "sm100_m_grouped_fp8_fp4_gemm_masked_1d1d_"
+                f"glm52_w2_bm16_v2_em{current_expected_m}"
+            ),
+        ),
+        (
+            "Single-B200 containing compute region: stock W13, fused "
+            "SwiGLU+packed UE8M0 quant, then W2. This is the local "
+            "no-overlap region gate, not DeepEP/TP8 acceptance."
+        ),
+        ("eager",),
+    )
 
     name = f"dsa_trtllm_decode_{suffix}"
     WORKLOADS[name] = Workload(
