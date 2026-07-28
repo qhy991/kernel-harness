@@ -7,7 +7,7 @@
   "family": "moe_fused",
   "model": "GLM-5.2",
   "deployment": "MI300X-DP1-TP1-EP32",
-  "S": 65536,
+  "S": 32768,
   "seed": 0,
   "math": {
     "expression": "SGLang fused MoE total: hidden[M,6144] -> w1[E,4096,6144] -> SiLU*Up -> w2[E,6144,2048] -> out[M,6144], top_k=8",
