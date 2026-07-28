@@ -13,6 +13,7 @@ readonly TASK_SHARED_CACHE_ROOT="/home/qinhaiyan/glm52-v2-goal-runs/cache/26-moe
 readonly TASK_CACHE_ROOT="${TASK_SHARED_CACHE_ROOT}/em8_bm16_stage11_v4"
 readonly VARIANT_NAME="em8_bm16_stage11"
 readonly VARIANT_VERSION="4"
+readonly TIMED_PAIRS_PER_SERIES=50
 readonly MIN_FREE_KIB=$((8 * 1024 * 1024))
 readonly INHERITED_CONTRACT_COMMIT="c1c48c3d1e826c243727ed45d52ef8dbfeb3f701"
 
@@ -527,7 +528,7 @@ record_environment() {
     echo "auditor=${AUDITOR}"
     echo "audit_gate=${AUDIT_GATE}"
     echo "warmup=3"
-    echo "repeat=10"
+    echo "repeat=${TIMED_PAIRS_PER_SERIES}"
     echo "series=3"
     echo "dg_jit_cache_dir=${DG_JIT_CACHE_DIR}"
     echo "sglang_dg_cache_dir=${SGLANG_DG_CACHE_DIR}"
@@ -551,7 +552,7 @@ run_one() {
     --candidate "${CANDIDATE}" \
     --execution-mode "${mode}" \
     --warmup 3 \
-    --repeat 10 \
+    --repeat "${TIMED_PAIRS_PER_SERIES}" \
     --series 3 \
     --output "${run_root}/results/${stem}.json" \
     >"${run_root}/logs/${stem}.log" 2>&1

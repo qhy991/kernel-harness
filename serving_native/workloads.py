@@ -436,6 +436,7 @@ _STAGE11_V4_COMMON = dict(
     candidate_jit_identity=_STAGE11_V4_JIT_IDENTITY,
     readiness_contract="content-addressed-ready-v1",
     build_phase="cpu-only-before-gpu-lease",
+    timed_pairs_per_series=50,
     required_lane_portfolio=(
         "leaf_eager",
         "leaf_cuda_graph",

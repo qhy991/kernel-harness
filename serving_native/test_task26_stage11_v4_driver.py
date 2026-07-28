@@ -76,6 +76,9 @@ with open(os.environ["TASK26_FAKE_EVENT_LOG"], "a") as stream:
         "kind": "runner",
         "task": value("--task"),
         "mode": value("--execution-mode"),
+        "warmup": value("--warmup"),
+        "repeat": value("--repeat"),
+        "series": value("--series"),
     }) + "\\n")
 pathlib.Path(value("--output")).write_text("{}\\n")
 """,
@@ -270,6 +273,15 @@ print(json.dumps({
                 (REGION, "eager"),
                 (REGION, "cuda_graph"),
             ],
+        )
+        self.assertTrue(
+            all(
+                event["warmup"] == "3"
+                and event["repeat"] == "50"
+                and event["series"] == "3"
+                for event in runners
+            ),
+            runners,
         )
         self.assertEqual(len([e for e in events if e["kind"] == "audit"]), 4)
         self.assertTrue((run_root / "TEST_COMPLETE").is_file())

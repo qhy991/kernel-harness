@@ -172,6 +172,7 @@ def main() -> int:
         assert workload.params["build_phase"] == (
             "cpu-only-before-gpu-lease"
         )
+        assert workload.params["timed_pairs_per_series"] == 50
         assert workload.params["required_lane_portfolio"] == (
             "leaf_eager",
             "leaf_cuda_graph",

@@ -127,12 +127,18 @@ class ContractV2AuditTest(unittest.TestCase):
         }
 
     @classmethod
-    def _samples(cls, series_index: int, mode: str) -> list[dict]:
+    def _samples(
+        cls,
+        series_index: int,
+        mode: str,
+        *,
+        repeat: int = REPEAT,
+    ) -> list[dict]:
         start = "AB" if series_index % 2 == 0 else "BA"
         samples: list[dict] = []
         capture_ids = cls._capture_ids(series_index)
         capture_ordinals = {"reference": 0, "candidate": 0}
-        for pair_index in range(REPEAT):
+        for pair_index in range(repeat):
             order = (
                 start
                 if pair_index % 2 == 0
@@ -233,8 +239,9 @@ class ContractV2AuditTest(unittest.TestCase):
         *,
         identity_control: bool,
         candidate_api: str,
+        repeat: int = REPEAT,
     ) -> dict:
-        samples = cls._samples(index, mode)
+        samples = cls._samples(index, mode, repeat=repeat)
         item = {
             "series_index": index,
             "series_id": f"{RUN_ID}:series-{index + 1:02d}",
@@ -242,11 +249,11 @@ class ContractV2AuditTest(unittest.TestCase):
             "execution_mode": mode,
             "start_order": "AB" if index % 2 == 0 else "BA",
             "warmup_pairs": WARMUP,
-            "repeat": REPEAT,
+            "repeat": repeat,
             "raw_ordered_samples": samples,
-            "reference": latency_summary([1.0, 1.0]),
-            "candidate": latency_summary([1.0, 1.0]),
-            "paired_speedups": [1.0, 1.0],
+            "reference": latency_summary([1.0] * repeat),
+            "candidate": latency_summary([1.0] * repeat),
+            "paired_speedups": [1.0] * repeat,
             "median_speedup": 1.0,
             "passes_3pct_gate": False,
         }
@@ -281,6 +288,7 @@ class ContractV2AuditTest(unittest.TestCase):
         workload: dict,
         identity_control: bool,
         candidate_api: str,
+        repeat: int = REPEAT,
     ) -> dict[str, dict[str, int]]:
         phases: dict[str, dict[str, int]] = {}
 
@@ -326,7 +334,7 @@ class ContractV2AuditTest(unittest.TestCase):
                     )
                 add("graph_validation", 8, 6)
             add(f"{series_id}:warmup", WARMUP, WARMUP)
-            add(f"{series_id}:timing", REPEAT, REPEAT)
+            add(f"{series_id}:timing", repeat, repeat)
         add("post_timing_correctness", 1, 1)
         add("fresh_inputs_correctness", 1, 1)
         if mode == "eager":
@@ -403,6 +411,7 @@ class ContractV2AuditTest(unittest.TestCase):
         task: str = "linear_attn_o_decode_m16",
         identity_control: bool = True,
         candidate_api: str = CALLABLE_API,
+        repeat: int = REPEAT,
     ) -> dict:
         workload = as_dict(get_workload(task))
         series = [
@@ -411,6 +420,7 @@ class ContractV2AuditTest(unittest.TestCase):
                 mode,
                 identity_control=identity_control,
                 candidate_api=candidate_api,
+                repeat=repeat,
             )
             for index in range(SERIES)
         ]
@@ -430,6 +440,7 @@ class ContractV2AuditTest(unittest.TestCase):
             workload=workload,
             identity_control=identity_control,
             candidate_api=candidate_api,
+            repeat=repeat,
         )
         totals = {
             field: sum(item[field] for item in by_phase.values())
@@ -487,7 +498,7 @@ class ContractV2AuditTest(unittest.TestCase):
                 "command": ["python", str(self.runner)],
                 "requested_series": SERIES,
                 "warmup": WARMUP,
-                "repeat": REPEAT,
+                "repeat": repeat,
             },
             "workload": workload,
             "execution": {
@@ -636,13 +647,13 @@ class ContractV2AuditTest(unittest.TestCase):
                 },
             },
             "series": series,
-            "reference": latency_summary([1.0] * (SERIES * REPEAT)),
+            "reference": latency_summary([1.0] * (SERIES * repeat)),
             "candidate": {
                 "path": str(self.candidate),
                 "api": candidate_api,
                 "identity_control": identity_control,
                 "series_median_speedups": [1.0] * SERIES,
-                **latency_summary([1.0] * (SERIES * REPEAT)),
+                **latency_summary([1.0] * (SERIES * repeat)),
             },
             "aggregate": {
                 "required_series": 3,
@@ -665,12 +676,19 @@ class ContractV2AuditTest(unittest.TestCase):
             },
         }
 
-    def _valid_w2_candidate_fixture(self, mode: str, task: str) -> dict:
+    def _valid_w2_candidate_fixture(
+        self,
+        mode: str,
+        task: str,
+        *,
+        repeat: int = REPEAT,
+    ) -> dict:
         result = self._valid_fixture(
             mode,
             task=task,
             identity_control=False,
             candidate_api=CALLABLE_API,
+            repeat=repeat,
         )
         params = result["workload"]["params"]
         token = params["candidate_jit_identity"]
@@ -1005,6 +1023,7 @@ class ContractV2AuditTest(unittest.TestCase):
         result = self._valid_w2_candidate_fixture(
             mode,
             task,
+            repeat=50 if version == 4 else REPEAT,
         )
         runtime = result["implementations"]["candidate"]["runtime_contract"]
         token = (
@@ -1894,6 +1913,24 @@ class ContractV2AuditTest(unittest.TestCase):
                     report = audit_document(result, verify_files=False)
                 self.assertTrue(report["valid"], report)
                 self.assertTrue(report["performance_gate_passed"], report)
+
+    def test_stage11_v4_rejects_short_timed_pair_portfolio(self) -> None:
+        result, provenance_path = self._valid_w2_stage11_fixture(
+            version=4,
+        )
+        self._apply_speedup(result)
+        result["run"]["repeat"] = 49
+        with patch.object(
+            audit_result_module,
+            "W2_EM8_BM16_STAGE11_V4_BUILD_PROVENANCE",
+            provenance_path,
+        ):
+            report = audit_document(result, verify_files=False)
+        self.assertFalse(report["valid"], report)
+        self.assertTrue(
+            any("exact workload timed-pair contract" in error for error in report["errors"]),
+            report,
+        )
 
     def test_stage11_v4_region_graph_substitutes_only_w2(self) -> None:
         result, provenance_path = self._valid_w2_stage11_fixture(

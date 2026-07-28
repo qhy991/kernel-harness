@@ -2938,6 +2938,18 @@ def audit_document(
         and canonical_params.get("provenance_snapshot_contract")
         == "before_timed_series_warmup_v1"
     )
+    timed_pairs_per_series = (
+        canonical_params.get("timed_pairs_per_series")
+        if _mapping(canonical_params)
+        else None
+    )
+    if timed_pairs_per_series is not None:
+        findings.require(
+            _strict_nonnegative_int(timed_pairs_per_series)
+            and timed_pairs_per_series > 0
+            and run.get("repeat") == timed_pairs_per_series,
+            "run.repeat does not match the exact workload timed-pair contract",
+        )
     if findings.require(bool(execution), "missing execution contract"):
         mode = execution.get("mode")
         findings.require(mode in ("eager", "cuda_graph"), "execution.mode invalid")

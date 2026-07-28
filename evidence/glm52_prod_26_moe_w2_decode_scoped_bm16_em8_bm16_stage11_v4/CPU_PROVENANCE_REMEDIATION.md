@@ -31,6 +31,10 @@ outside the READY identity.
 - Kernel-Harness requires the two runtime tree identities and independently
   closes the package-tree schema, policies, counts, paths, modes, file hashes,
   and canonical tree digest.
+- The clean-head release audit raised the timed portfolio from 10 to exactly
+  50 paired A/B measurements per series. The canonical workload and auditor
+  enforce this value across three series and all four eager/graph,
+  leaf/containing-region lanes.
 
 On a historical exact-post1 staged package, both independent tree walkers
 produced the same SHA-256:
@@ -45,7 +49,9 @@ tree SHA-256: 2c3126a28901b7c2fa66083378239c3fc971f4f3e84c53251202d586c230492c
 
 ## CPU validation
 
-- Kernel-Harness focused suites: 66 passed, including 93 subtests.
+- Kernel-Harness focused suites: 67 passed, including 93 subtests.
+- The campaign-wide CPU verifier now includes the v4 candidate, driver test,
+  and evidence path; all 96 included unit tests passed.
 - SGLang Task 26 v4 focused suites: 64 passed.
 - Earlier combined SGLang Task 26 contract sweep: 147 passed.
 - Ruff, Python bytecode compilation, shell syntax, and `git diff --check`
