@@ -11,12 +11,19 @@ use packed int32 UE8M0 scales; DSA uses FlashInfer TRT-LLM; the indexer uses
 `wq_b` and fused `wk_weights_proj`; MoE exposes the real fused W13, SwiGLU+quant,
 and W2 stages; and communication includes both DP AllGather and both DeepEP modes.
 
+Schema V2 makes execution mode and promotion evidence explicit. An audited
+candidate comparison always contains at least three independent same-process
+series, each alternating AB/BA after warmup. Every series must reach `1.03x`;
+a favorable aggregate median is insufficient, and the bundled identity control
+is always a non-win.
+
 ## Fixed deployment shapes
 
 | Phase | Fixed local shape | Reason |
 |---|---:|---|
 | decode | `M=16` and `M=32` on every DP rank | observed production CUDA-graph buckets; DP8 does not divide M |
 | prefill | `M=4096` per DP rank | 32768-token balanced chunk split across DP8 |
+| O-projection smoke | decode M16/M32 eager + graph; prefill M4096 eager | exact packed-FP8 compute contract consumed by V2 goals |
 | DeepEP buffer | max dispatch 128 per rank | current SGLang production default |
 | DeepEP-LL MoE | E=32, slab=1024, expected M=4/8 | EP8 packed receive layout at decode M=16/32 |
 | topology | 8 ranks | official single-node B200 TP8/DP8/EP8 lane |
@@ -37,6 +44,13 @@ serving_native/run.sh --describe dp_allgather_decode_m16
 # One-GPU production ABI
 serving_native/run.sh linear_indexer_wq_b_decode_m16 \
   --candidate serving_native/candidates/reference.py
+
+# Exact O-projection V2 controls (three series are the default)
+serving_native/run.sh linear_attn_o_prefill_m4096 \
+  --execution-mode eager --output /tmp/o-prefill-eager.json
+serving_native/run.sh linear_attn_o_decode_m16 \
+  --execution-mode cuda_graph --output /tmp/o-decode-m16-graph.json
+python3 serving_native/audit_result.py /tmp/o-decode-m16-graph.json
 
 # Eight-GPU SGLang GroupCoordinator AllGather
 CUDA_VISIBLE_DEVICES=0,1,2,3,4,5,6,7 \
@@ -63,18 +77,28 @@ CUDA_VISIBLE_DEVICES=0,1,2,3 \
   serving_native/run.sh ep4_deepep_ll_combine_decode_m16
 ```
 
-Candidate comparisons alternate reference/candidate order on every repeat and
-report the median of paired latency ratios. Distributed samples use the maximum
-CUDA-event latency across all ranks. The target environment must provide the
-same `deep_ep` package as the SGLang image; the lightweight Kernel-Harness venv
-may not contain it. Point `KERNEL_HARNESS_PYTHON` at that environment when
-needed.
+Candidate comparisons run three independent series by default. Every series
+alternates reference/candidate order on every pair, with successive series
+starting in AB, BA, AB order. Distributed samples use the maximum CUDA-event
+latency across ranks. Omitting `--candidate` selects the explicit identity
+control. The target environment must provide the same `deep_ep` package as the
+SGLang image; point `KERNEL_HARNESS_PYTHON` at that environment when needed.
 
-The TP4 communication tasks call the production SGLang coordinator but this
-standalone runner measures eager execution. Decode AllReduce backend promotion
-still requires a CUDA-graph SGLang replay and end-to-end confirmation, because
-the coordinator intentionally selects different backends in eager and graph
-modes.
+For the required one-lease smoke matrix:
+
+```bash
+/home/qinhaiyan/glm52-goal-runs/with_flexible_gpu.sh -- \
+  serving_native/run_v2_identity_smoke.sh /tmp/serving-native-v2-smoke
+```
+
+The script keeps all five workload/mode controls and their in-process profiler
+or graph-node captures on one physical B200. An exit status of 75 is scheduler
+back-pressure; retry later without bypassing the wrapper.
+
+Execution modes are workload allowlists, not an unchecked global switch.
+`linear_attn_o_decode_m16/m32` allow eager and `cuda_graph`; the exact
+`linear_attn_o_prefill_m4096` workload is eager-only. Other workloads remain
+eager until their own graph semantics are implemented and tested.
 
 The runner pins the reference process to `SGLANG_GLM52_OPT=0` after consuming
 any worker side-channel env file, so a stale deployment configuration cannot
@@ -89,15 +113,73 @@ def run(inputs, runtime):
     return runtime.reference(inputs)
 ```
 
+Candidate import/JIT setup must finish at import time or during the runner's
+pre-measurement warmup. Optional `ARTIFACT_PATHS` lists compiled shared objects
+whose exact paths and hashes must be bound into the result. Ordinary candidate
+code cannot exempt a call to `runtime.reference`: every such delegation is a
+fallback and cannot claim a win.
+
+DeepEP normal-mode Config tuning uses the runner-owned declarative API instead:
+
+```python
+CANDIDATE_API = "reference_with_config_v1"
+CANDIDATE_CONFIG = {
+    "num_sms": 24,
+    # remaining deep_ep.Config fields...
+}
+```
+
+Such a module must not export `run()`. The runner validates the API/workload
+pair and performs the production call itself; the auditor closes its trusted
+delegation counts separately. The API is accepted only for DeepEP normal
+dispatch/combine workloads.
+
 `runtime.reference(inputs, config=...)` keeps the exact production call while
 allowing a DeepEP `Config` dictionary to be tuned. A replacement collective or
 kernel may instead return its own tensor/tree. Correctness is checked before
-timing. The reference candidate is intentionally neutral and is useful for
-validating a target node.
+and after timing and again on fresh inputs.
 
-Treat wins below 3% as noise unless the target deployment has established a
-tighter paired noise floor. A candidate is not serving-ready until the complete
-SGLang request workload and overlap region also improve.
+## CUDA Graph contract
+
+Reference and candidate graphs are captured independently on non-default
+streams after eager JIT warmup. Every graph series captures both R→C and C→R
+orders and round-robins the two replicas, carrying forward the corrected
+capture-order control from the goal-16 campaign.
+
+Before graph timing, the runner mutates captured input storage in place,
+poisons captured output storage before replay, verifies deterministic repeated
+replay, restores the original inputs, checks approved numeric tolerance, and
+requires stable input/output pointers. CUDA graph nodes are enumerated through
+the driver API; host, memcpy, memset, allocation, and free nodes fail closed.
+
+## Schema-v2 audit
+
+Each result records raw samples in execution order, unique series/capture
+identities, the exact canonical `WORKLOADS` entry and source hashes, candidate artifact hashes,
+actual Python/shared-object import paths, repository SHAs/status, physical GPU
+UUID, clocks, driver/CUDA versions, kernel identities or graph nodes, and
+candidate hit/fallback accounting. Cache/import/artifact snapshots surround
+every capture and timed series; any late activity is treated as JIT during a
+forbidden phase.
+
+Run the standalone auditor with:
+
+```bash
+python3 serving_native/audit_result.py RESULT.json
+```
+
+It recomputes graph node counts, type counts, kernel identities, forbidden
+nodes, and non-default-stream truth from raw nodes and IDs. It also binds every
+timed graph sample to the expected independent round-robin capture and requires
+requested/completed series, repeats, raw samples, call totals, and per-phase
+counts to close exactly. Missing provenance/correctness, wrong hashes, workload
+drift, zero hits, silent fallback, execution-mode drift, late JIT activity, and
+graph semantic violations all fail closed. Structural tests include complete
+valid eager/graph fixtures and adversarial mutations for each rejection class.
+
+Treat wins below 3% in any required series as a failure. A candidate is not
+serving-ready until the complete SGLang request workload and overlap region
+also improve.
 
 Promotion is evaluated independently for each `operator x M` bucket. A win at
 M16 may be deployed only for M16 while M32 keeps the stock SGLang path; both
@@ -119,5 +201,12 @@ buckets do not need to win. Configure that policy in SGLang with, for example,
 Run the GPU-free structural check with:
 
 ```bash
-.venv/bin/python serving_native/selftest.py
+python3 serving_native/selftest.py
+python3 -m unittest serving_native.test_contract_v2
+python3 testbench/bin/verify_harness.py --skip-task-projection
 ```
+
+The omitted generated-task projection needs the configured venv to build its
+GPU-derived tensor tables. The one-lease smoke script runs that exact
+`sync_glm52_tasks.py --check` gate inside the scheduler wrapper; frozen task
+files are never rewritten.

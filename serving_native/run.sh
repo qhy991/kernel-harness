@@ -3,13 +3,18 @@ set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 PY="${KERNEL_HARNESS_PYTHON:-${ROOT}/.venv/bin/python}"
+PAIRED_SGLANG="$(cd "${ROOT}/.." && pwd)/sglang"
 
 if [[ ! -x "${PY}" ]]; then
   echo "Python environment not found: ${PY}" >&2
   exit 3
 fi
 
-export SGLANG_ROOT="${SGLANG_ROOT:-/home/qinhaiyan/sglang}"
+if [[ -d "${PAIRED_SGLANG}/python/sglang" ]]; then
+  export SGLANG_ROOT="${SGLANG_ROOT:-${PAIRED_SGLANG}}"
+else
+  export SGLANG_ROOT="${SGLANG_ROOT:-/home/qinhaiyan/sglang}"
+fi
 export PYTHONPATH="${SGLANG_ROOT}/python:${ROOT}:${PYTHONPATH:-}"
 
 if [[ $# -eq 0 ]]; then

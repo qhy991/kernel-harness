@@ -2,8 +2,9 @@
 """One-command harness verification for review and CI.
 
 Runs the GPU-free consistency checks that prove the generated task mirrors,
-knowledge bank, reviewer audit schema, and touched Python files are coherent. It
-does not run CUDA kernels; use a task's run.sh separately for GPU gate checks.
+knowledge bank, reviewer audit schemas, serving-native contract, and touched
+Python files are coherent. It does not run CUDA kernels; use a task's run.sh
+separately for GPU gate checks.
 """
 from __future__ import annotations
 
@@ -32,6 +33,13 @@ PY_FILES = [
     "testbench/harness/glm52_ops.py",
     "testbench/harness/gpu_lease.py",
     "testbench/harness/result_store.py",
+    "serving_native/audit_result.py",
+    "serving_native/contract_v2.py",
+    "serving_native/launch.py",
+    "serving_native/runner.py",
+    "serving_native/selftest.py",
+    "serving_native/test_contract_v2.py",
+    "serving_native/workloads.py",
 ]
 
 DIFF_CHECK_PATHS = [
@@ -43,6 +51,7 @@ DIFF_CHECK_PATHS = [
     "testbench/harness",
     "testbench/knowledge",
     "testbench/tasks/glm52",
+    "serving_native",
     ":(exclude)testbench/tasks/glm52/*/candidate.py",
 ]
 
@@ -57,6 +66,7 @@ REVIEW_PATHS = [
     "testbench/tasks/glm52/*/README.md",
     "testbench/tasks/glm52/*/problem.json",
     "testbench/tasks/glm52/*/task.json",
+    "serving_native",
 ]
 
 REVIEW_DIFF_PATHS = [
@@ -68,6 +78,7 @@ REVIEW_DIFF_PATHS = [
     "testbench/harness",
     "testbench/knowledge",
     "testbench/tasks/glm52",
+    "serving_native",
     ":(exclude)testbench/tasks/glm52/*/candidate.py",
 ]
 
@@ -75,7 +86,13 @@ REVIEW_DIFF_PATHS = [
 def _run(cmd: list[str], *, capture: bool = False) -> dict:
     if not capture:
         print("$ " + " ".join(cmd), flush=True)
-    r = subprocess.run(cmd, cwd=ROOT, text=True, capture_output=capture)
+    r = subprocess.run(
+        cmd,
+        cwd=ROOT,
+        text=True,
+        capture_output=capture,
+        check=False,
+    )
     return {
         "cmd": cmd,
         "returncode": r.returncode,
@@ -202,6 +219,7 @@ def _audit_sweep(*, quiet: bool = False, strict: bool = False,
             cwd=ROOT,
             capture_output=True,
             text=True,
+            check=False,
         )
         label, verdict, parse_error = _audit_classification(r.stdout)
         if r.returncode or label == "invalid":
@@ -411,6 +429,8 @@ def main() -> int:
                     help="skip historical runs/glm52 audit_result.py sweep")
     ap.add_argument("--skip-pointer-audit", action="store_true",
                     help="skip runs/index.jsonl and latest.json pointer audit")
+    ap.add_argument("--skip-task-projection", action="store_true",
+                    help="skip the device-backed generated-task projection check")
     ap.add_argument("--strict-audit-sweep", action="store_true",
                     help="fail the audit sweep when any historical result is provisional")
     ap.add_argument("--strict-pointer-audit", action="store_true",
@@ -462,12 +482,18 @@ def main() -> int:
     checks = [
         [sys.executable, "-m", "py_compile", *PY_FILES],
         [sys.executable, "testbench/bin/selftest.py"],
+        [sys.executable, "serving_native/selftest.py"],
+        [sys.executable, "-m", "unittest", "serving_native.test_contract_v2"],
         [sys.executable, "testbench/bin/knowledge.py", "lint"],
         [sys.executable, "testbench/bin/knowledge.py", "index", "--check"],
         [sys.executable, "testbench/bin/knowledge.py", "distill", "--check"],
-        [harness_py, "testbench/bin/sync_glm52_tasks.py", "--check"],
         ["git", "diff", "--check", "--", *DIFF_CHECK_PATHS],
     ]
+    if not args.skip_task_projection:
+        checks.insert(
+            -1,
+            [harness_py, "testbench/bin/sync_glm52_tasks.py", "--check"],
+        )
     results = []
     for cmd in checks:
         result = _run(cmd, capture=args.json)
