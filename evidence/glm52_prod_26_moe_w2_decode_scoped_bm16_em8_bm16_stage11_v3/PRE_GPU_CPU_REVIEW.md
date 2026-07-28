@@ -26,6 +26,34 @@ This follow-up did not build the overlay, initialize CUDA, create a v3 run
 root, or claim the persistent one-attempt sentinel. A fresh independent
 source/CPU release is still required.
 
+## Final dispatch and sidecar release follow-up
+
+CPU-only follow-up at `2026-07-28T21:30:17Z`:
+
+- SGLang release head:
+  `fca51ff68ffcf9234ff4fa11e548921eb54fe98c`
+  (`Harden strict stage11 dispatch and sidecar bootstrap`)
+- Kernel-Harness evidence parent:
+  `6db12cf77c654044fc510adb0f1ce3a4af7b2718`
+- Once an exact strict callsite is admitted, a candidate-dispatch decline now
+  raises before the stock callable can run. A pre-admission non-target decline
+  still selects stock before candidate launch.
+- Strict-profile detection now mirrors the production GLM-5.2 sidecar order:
+  explicit `SGLANG_GLM52_ENV_FILE`, the default deployment file, then the
+  repository runtime file. The first existing sidecar wins, its last profile
+  entry wins, and it overrides a directly inherited profile.
+- Explicit stage11 import/evaluation failures therefore propagate for both
+  direct and sidecar-only worker configuration. Resolved ordinary profiles
+  retain the legacy best-effort stock behavior.
+- The combined SGLang W2 launcher passed `83` CPU-only tests. The complete
+  stage11 file passed `45` tests; the focused sidecar/dispatch set passed `5`.
+  Kernel-Harness Task26 contracts/drivers passed `85` tests. Python compile,
+  formatting, repository diff checks, and the independent re-audit passed.
+- The independent re-audit reported no remaining P0/P1 in this release diff.
+
+This follow-up also kept CUDA hidden and created no overlay build, JIT cache,
+run root, profiler artifact, or persistent attempt sentinel.
+
 ## Reviewed source heads
 
 - Kernel-Harness source/driver head:
