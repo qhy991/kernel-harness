@@ -7,7 +7,6 @@ import os
 import sys
 from pathlib import Path
 
-
 HERE = Path(__file__).resolve().parent
 REPO_ROOT = HERE.parent
 if str(REPO_ROOT) not in sys.path:
@@ -21,8 +20,15 @@ def main() -> int:
     assert {workload.world_size for workload in WORKLOADS.values()} == {1, 4, 8}
     assert all(workload.params for workload in WORKLOADS.values())
     assert all(workload.source_symbol for workload in WORKLOADS.values())
+    assert all(workload.execution_modes for workload in WORKLOADS.values())
+    assert all(
+        set(workload.execution_modes).issubset({"eager", "cuda_graph"})
+        for workload in WORKLOADS.values()
+    )
 
     names = set(WORKLOADS)
+    assert len(names) == 40
+    assert "linear_attn_o_prefill_m4096" in names
     assert "linear_indexer_wq_b_decode_m16" in names
     assert "linear_indexer_wq_b_decode_m32" in names
     assert "indexer_wk_weights_decode_m16" in names
@@ -45,8 +51,26 @@ def main() -> int:
     assert {
         workload.params["m"]
         for workload in WORKLOADS.values()
-        if workload.family in ("packed_fp8_gemm", "bf16_linear")
+        if workload.phase == "decode"
+        and workload.family in ("packed_fp8_gemm", "bf16_linear")
     } == decode_ms
+    assert {
+        (
+            workload.params["m"],
+            workload.params["n"],
+            workload.params["k"],
+        )
+        for workload in WORKLOADS.values()
+        if workload.phase == "prefill" and workload.family == "packed_fp8_gemm"
+    } == {(4096, 6144, 16384)}
+    assert {
+        workload.name
+        for workload in WORKLOADS.values()
+        if "cuda_graph" in workload.execution_modes
+    } == {
+        "linear_attn_o_decode_m16",
+        "linear_attn_o_decode_m32",
+    }
     assert {
         workload.params["batch"]
         for workload in WORKLOADS.values()
@@ -64,7 +88,11 @@ def main() -> int:
             assert workload.params["expected_m"] == m // 4
             assert workload.params["valid_assignments"] == m * 8
 
-    sglang_root = Path(os.environ.get("SGLANG_ROOT", "/home/qinhaiyan/sglang"))
+    paired_sglang = REPO_ROOT.parent / "sglang"
+    default_sglang = (
+        paired_sglang if paired_sglang.is_dir() else Path("/home/qinhaiyan/sglang")
+    )
+    sglang_root = Path(os.environ.get("SGLANG_ROOT", default_sglang))
     source_checks = {
         "python/sglang/kernels/ops/quantization/fp8_kernel.py": (
             "def w8a8_block_fp8_matmul_deepgemm",

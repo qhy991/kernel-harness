@@ -6,7 +6,8 @@ unchanged.  Low-latency DeepEP does not consume this normal-mode Config.
 """
 
 
-CONFIG = {
+CANDIDATE_API = "reference_with_config_v1"
+CANDIDATE_CONFIG = {
     "num_sms": 24,
     "num_max_nvl_chunked_send_tokens": 8,
     "num_max_nvl_chunked_recv_tokens": 512,
@@ -14,6 +15,4 @@ CONFIG = {
     "num_max_rdma_chunked_recv_tokens": 128,
 }
 
-
-def run(inputs, runtime):
-    return runtime.reference(inputs, config=CONFIG)
+CANDIDATE_IDENTITY = "DeepEP production call with explicit candidate Config"

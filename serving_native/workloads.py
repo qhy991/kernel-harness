@@ -6,6 +6,10 @@ verified B200 TP8/DP8/DeepEP deployment lane and name the production SGLang
 callable that the reference invokes.
 """
 
+# The registry consistently uses dict(...) for compact keyword-shaped tensor
+# metadata; preserve that established generated-description style.
+# ruff: noqa: C408
+
 from __future__ import annotations
 
 from dataclasses import dataclass, field
@@ -21,6 +25,7 @@ class Workload:
     source_symbol: str
     params: dict[str, Any] = field(default_factory=dict)
     notes: str = ""
+    execution_modes: tuple[str, ...] = ("eager",)
 
     @property
     def distributed(self) -> bool:
@@ -32,6 +37,22 @@ _DECODE_M_BUCKETS = (16, 32)
 
 
 WORKLOADS: dict[str, Workload] = {
+    "linear_attn_o_prefill_m4096": Workload(
+        "linear_attn_o_prefill_m4096",
+        "packed_fp8_gemm",
+        "prefill",
+        1,
+        (
+            "sglang.kernels.ops.quantization.fp8_kernel."
+            "w8a8_block_fp8_matmul_deepgemm"
+        ),
+        dict(m=4096, n=6144, k=16384),
+        (
+            "DP8 attention O projection at the balanced local prefill bucket; "
+            "packed int32 UE8M0 activation and weight scales."
+        ),
+        ("eager",),
+    ),
     "dp_allgather_prefill": Workload(
         "dp_allgather_prefill",
         "allgather",
@@ -114,6 +135,11 @@ def _add_decode_bucket(m: int) -> None:
             packed_symbol,
             dict(m=m, n=n, k=k),
             notes,
+            (
+                ("eager", "cuda_graph")
+                if base == "linear_attn_o_decode"
+                else ("eager",)
+            ),
         )
 
     name = f"indexer_wk_weights_decode_{suffix}"
@@ -381,4 +407,5 @@ def as_dict(workload: Workload) -> dict[str, Any]:
         "source_symbol": workload.source_symbol,
         "params": dict(workload.params),
         "notes": workload.notes,
+        "execution_modes": list(workload.execution_modes),
     }
