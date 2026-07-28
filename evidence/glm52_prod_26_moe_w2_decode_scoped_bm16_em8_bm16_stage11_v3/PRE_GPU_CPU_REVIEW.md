@@ -4,6 +4,28 @@ Status at `2026-07-28T21:10:58Z`: ready for independent source/CPU review.
 No overlay build, DeepGEMM JIT, CUDA command, profiler, run root, or persistent
 one-attempt sentinel has been created for this variant.
 
+## Strict-profile config follow-up
+
+CPU-only follow-up at `2026-07-28T21:17:30Z`:
+
+- SGLang strict config boundary:
+  `887721602bbc0af3b1a80b4097b1b4ac72e9a094`
+  (`Fail closed on stage11 config load errors`)
+- Kernel-Harness review base:
+  `2ef28964318e959e1267b59e59348e7da1a73865`
+- Explicit `moe_w2_em8_bm16_stage11` and canonical
+  `moe_w2_em8_bm16_stage11_v3` config-import failures now propagate before
+  stock fallback. Predicate-evaluation failures do the same for the canonical
+  strict profile. Non-stage11 import/evaluation failures retain best-effort
+  stock behavior.
+- The combined SGLang W2 contract launcher passed `78` tests with
+  `CUDA_VISIBLE_DEVICES=''`. Python compilation and repository diff checks
+  passed.
+
+This follow-up did not build the overlay, initialize CUDA, create a v3 run
+root, or claim the persistent one-attempt sentinel. A fresh independent
+source/CPU release is still required.
+
 ## Reviewed source heads
 
 - Kernel-Harness source/driver head:
