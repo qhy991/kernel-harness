@@ -77,6 +77,63 @@ W2_EM8_BM16_STAGE11_BUILD_PROVENANCE = (
     / "deepgemm_w2_em8_bm16_stage11"
     / "build_provenance.json"
 ).resolve()
+W2_EM8_BM16_STAGE11_V4_JIT_IDENTITY = (
+    "sm100_m_grouped_fp8_fp4_gemm_masked_1d1d_"
+    "glm52_w2_em8_bm16_stage11_v4"
+)
+W2_EM8_BM16_STAGE11_V4_BUILD_ID = (
+    "glm52-task26-em8-bm16-stage11-v4:"
+    "sgl-deep-gemm-0.1.4.post1@"
+    f"{W2_BM16_BASE_COMMIT}:sm100:e32:m1024:k2048:n6144:"
+    "expected-m8:bm16:stages11:pdl1:sms148:packed-ue8m0:"
+    "no-recipe:no-overlap"
+)
+W2_EM8_BM16_STAGE11_V4_SOURCE_PATCH_SHA256 = (
+    "9b227e5cf597c3f620245f82a66c7e22c7c483be91d54c711e68027947a005c8"
+)
+W2_EM8_BM16_STAGE11_V4_CACHE_DIR = (
+    "/home/qinhaiyan/glm52-v2-goal-runs/cache/"
+    "26-moe_w2_decode_scoped_bm16/em8_bm16_stage11_v4/deepgemm"
+)
+W2_EM8_BM16_STAGE11_V4_BUILD_PROVENANCE = (
+    Path(os.environ.get("SGLANG_ROOT", _PAIRED_SGLANG_ROOT))
+    / "third_party"
+    / "deepgemm_w2_em8_bm16_stage11_v4"
+    / "build_provenance.json"
+).resolve()
+W2_EM8_BM16_STAGE11_BUILD_TOOL_SHA256 = (
+    "dc731d5442c0bdf0758b17380e02e67b580cf3aa579f4832a497d1b68e3a85c7"
+)
+
+
+def _stage11_contract(version: int) -> dict[str, Any]:
+    if version == 3:
+        return {
+            "version": 3,
+            "schema_version": 3,
+            "jit_identity": W2_EM8_BM16_STAGE11_JIT_IDENTITY,
+            "build_id": W2_EM8_BM16_STAGE11_BUILD_ID,
+            "source_patch_sha256": W2_EM8_BM16_STAGE11_SOURCE_PATCH_SHA256,
+            "cache_dir": W2_EM8_BM16_STAGE11_CACHE_DIR,
+            "build_provenance": W2_EM8_BM16_STAGE11_BUILD_PROVENANCE,
+            "build_key": "edcf77b27696-26fbaca849ee-dc731d5442c0",
+            "import_name": "deep_gemm_glm52_w2_em8_bm16_stage11_v3",
+        }
+    if version == 4:
+        return {
+            "version": 4,
+            "schema_version": 4,
+            "jit_identity": W2_EM8_BM16_STAGE11_V4_JIT_IDENTITY,
+            "build_id": W2_EM8_BM16_STAGE11_V4_BUILD_ID,
+            "source_patch_sha256": (
+                W2_EM8_BM16_STAGE11_V4_SOURCE_PATCH_SHA256
+            ),
+            "cache_dir": W2_EM8_BM16_STAGE11_V4_CACHE_DIR,
+            "build_provenance": W2_EM8_BM16_STAGE11_V4_BUILD_PROVENANCE,
+            "build_key": "edcf77b27696-9b227e5cf597-dc731d5442c0",
+            "import_name": "deep_gemm_glm52_w2_em8_bm16_stage11_v4",
+        }
+    raise ValueError(f"unsupported stage11 version: {version}")
 
 
 def _w2_template_mapping(kernels: Any, block_m: int) -> bool:
@@ -1433,8 +1490,9 @@ def _audit_exact_single_kernel_graph(
     capture: dict[str, Any],
     *,
     prefix: str,
+    exact_single: bool = True,
 ) -> list[str]:
-    """Recompute one-kernel graph identity from raw nodes, never summaries."""
+    """Recompute graph identity from raw nodes, never recorded summaries."""
     nodes = capture.get("nodes")
     if not findings.require(
         _list(nodes) and bool(nodes),
@@ -1520,13 +1578,23 @@ def _audit_exact_single_kernel_graph(
         not forbidden,
         f"{prefix} has forbidden graph nodes",
     )
-    findings.require(
-        node_count == 1
-        and len(valid_nodes) == 1
-        and type_counts == {"CU_GRAPH_NODE_TYPE_KERNEL": 1}
-        and len(kernels) == 1,
-        f"{prefix} must contain exactly one CUDA KERNEL node",
-    )
+    if exact_single:
+        findings.require(
+            node_count == 1
+            and len(valid_nodes) == 1
+            and type_counts == {"CU_GRAPH_NODE_TYPE_KERNEL": 1}
+            and len(kernels) == 1,
+            f"{prefix} must contain exactly one CUDA KERNEL node",
+        )
+    else:
+        findings.require(
+            node_count > 1
+            and len(valid_nodes) == node_count
+            and type_counts == {"CU_GRAPH_NODE_TYPE_KERNEL": node_count}
+            and len(kernels) == node_count,
+            f"{prefix} must contain a multi-kernel CUDA region and no "
+            "non-kernel node",
+        )
     return kernels
 
 
@@ -1550,10 +1618,10 @@ def _audit_w2_edge_masks(
     mode: str,
 ) -> None:
     params = workload.get("params")
-    stage11_v3 = bool(
+    stage11 = bool(
         _mapping(params)
         and params.get("candidate_variant") == W2_EM8_BM16_STAGE11_VARIANT
-        and params.get("candidate_variant_version") == 3
+        and params.get("candidate_variant_version") in (3, 4)
     )
     correctness = result.get("correctness")
     edge = (
@@ -1792,7 +1860,7 @@ def _audit_w2_edge_masks(
                     block_m,
                     12 if implementation == "reference" else 11,
                 )
-                if stage11_v3
+                if stage11
                 else _w2_template_mapping(kernels, block_m)
             )
             if implementation == "candidate":
@@ -1875,10 +1943,12 @@ def _audit_w2_edge_masks(
 def _stage11_build_provenance(
     findings: Findings,
     *,
+    version: int,
     artifacts: list[Any],
     verify_files: bool,
 ) -> dict[str, Any]:
-    path = W2_EM8_BM16_STAGE11_BUILD_PROVENANCE
+    contract = _stage11_contract(version)
+    path = contract["build_provenance"]
     if not findings.require(
         path.is_file(),
         "stage11 tracked build_provenance.json is missing",
@@ -1891,12 +1961,12 @@ def _stage11_build_provenance(
         return {}
     expected_variant = {
         "name": W2_EM8_BM16_STAGE11_VARIANT,
-        "version": 3,
+        "version": version,
         "predeclared_fallback": "em8_bm16_stage10",
         "fallback_eligible": False,
     }
     findings.require(
-        provenance.get("schema_version") == 3,
+        provenance.get("schema_version") == contract["schema_version"],
         "stage11 build provenance schema mismatch",
     )
     findings.require(
@@ -1904,17 +1974,14 @@ def _stage11_build_provenance(
         "stage11 build provenance variant mismatch",
     )
     findings.require(
-        provenance.get("build_key")
-        == "edcf77b27696-26fbaca849ee-dc731d5442c0",
+        provenance.get("build_key") == contract["build_key"],
         "stage11 build provenance key mismatch",
     )
     findings.require(
         provenance.get("patches")
         == {
-            "source_sha256": W2_EM8_BM16_STAGE11_SOURCE_PATCH_SHA256,
-            "build_tool_sha256": (
-                "dc731d5442c0bdf0758b17380e02e67b580cf3aa579f4832a497d1b68e3a85c7"
-            ),
+            "source_sha256": contract["source_patch_sha256"],
+            "build_tool_sha256": W2_EM8_BM16_STAGE11_BUILD_TOOL_SHA256,
         },
         "stage11 build provenance patch identity mismatch",
     )
@@ -1961,9 +2028,20 @@ def _audit_w2_bm16_candidate(
     expected_token = params.get("candidate_jit_identity")
     candidate_variant = params.get("candidate_variant")
     candidate_variant_version = params.get("candidate_variant_version")
-    stage11 = bool(
-        candidate_variant == W2_EM8_BM16_STAGE11_VARIANT
-        and candidate_variant_version == 3
+    stage11_version = (
+        candidate_variant_version
+        if (
+            candidate_variant == W2_EM8_BM16_STAGE11_VARIANT
+            and candidate_variant_version in (3, 4)
+        )
+        else None
+    )
+    stage11 = stage11_version is not None
+    stage11_v4 = stage11_version == 4
+    stage11_contract = (
+        _stage11_contract(stage11_version)
+        if stage11_version is not None
+        else {}
     )
     findings.require(
         candidate_variant in (None, W2_EM8_BM16_STAGE11_VARIANT),
@@ -1971,8 +2049,8 @@ def _audit_w2_bm16_candidate(
     )
     if candidate_variant == W2_EM8_BM16_STAGE11_VARIANT:
         findings.require(
-            candidate_variant_version == 3,
-            "W2/BM16 stage11 candidate variant version must be v3",
+            candidate_variant_version in (3, 4),
+            "W2/BM16 stage11 candidate variant version must be v3 or v4",
         )
     accepted_buckets = {(32, 8)} if stage11 else {
         (16, 4),
@@ -1990,7 +2068,7 @@ def _audit_w2_bm16_candidate(
         "W2/BM16 candidate is attached to an unsupported workload family",
     )
     expected_identity_valid = (
-        expected_token == W2_EM8_BM16_STAGE11_JIT_IDENTITY
+        expected_token == stage11_contract.get("jit_identity")
         if stage11
         else (
             isinstance(expected_token, str)
@@ -2025,7 +2103,7 @@ def _audit_w2_bm16_candidate(
     ):
         return
     expected_build_id = (
-        W2_EM8_BM16_STAGE11_BUILD_ID
+        stage11_contract["build_id"]
         if stage11
         else (
             "glm52-w2-bm16-v2:sgl-deep-gemm-0.1.4.post1@"
@@ -2037,6 +2115,7 @@ def _audit_w2_bm16_candidate(
     build_provenance = (
         _stage11_build_provenance(
             findings,
+            version=stage11_version,
             artifacts=artifacts if _list(artifacts) else [],
             verify_files=verify_files,
         )
@@ -2054,12 +2133,12 @@ def _audit_w2_bm16_candidate(
         else W2_BM16_CANDIDATE_EXTENSION_SHA256
     )
     cache_dir = (
-        W2_EM8_BM16_STAGE11_CACHE_DIR
+        stage11_contract["cache_dir"]
         if stage11
         else W2_BM16_CACHE_DIR
     )
     source_patch_sha256 = (
-        W2_EM8_BM16_STAGE11_SOURCE_PATCH_SHA256
+        stage11_contract["source_patch_sha256"]
         if stage11
         else W2_BM16_SOURCE_PATCH_SHA256
     )
@@ -2098,7 +2177,7 @@ def _audit_w2_bm16_candidate(
         exact_fields.update(
             {
                 "variant_name": W2_EM8_BM16_STAGE11_VARIANT,
-                "variant_version": 3,
+                "variant_version": stage11_version,
                 "masked_block_m_override": 16,
                 "masked_num_stages_override": 11,
                 "predeclared_fallback": "em8_bm16_stage10",
@@ -2113,6 +2192,14 @@ def _audit_w2_bm16_candidate(
                 "performance_hypothesis": (
                     "reduced-pipeline-pressure-falsifiable"
                 ),
+            }
+        )
+    if stage11_v4:
+        exact_fields.update(
+            {
+                "ready_verified_before_runtime": True,
+                "bundle_contract": "content-addressed-ready-v1",
+                "build_phase": "cpu-only-before-gpu-lease",
             }
         )
     for field, expected in exact_fields.items():
@@ -2133,9 +2220,9 @@ def _audit_w2_bm16_candidate(
         )
         findings.require(
             build_provenance.get("candidate", {}).get("build_id")
-            == W2_EM8_BM16_STAGE11_BUILD_ID
+            == stage11_contract["build_id"]
             and build_provenance.get("candidate", {}).get("import_name")
-            == "deep_gemm_glm52_w2_em8_bm16_stage11_v3",
+            == stage11_contract["import_name"],
             "stage11 build provenance candidate identity mismatch",
         )
         expected_pipeline = {
@@ -2164,6 +2251,67 @@ def _audit_w2_bm16_candidate(
             == runtime.get("manifest_sha256"),
             "stage11 runtime manifest hash differs from tracked build provenance",
         )
+    if stage11_v4:
+        ready_path_raw = runtime.get("ready_path")
+        manifest_path_raw = runtime.get("manifest_path")
+        source_replay_path_raw = runtime.get("source_replay_path")
+        provenance_path_raw = runtime.get("build_provenance_path")
+        ready_path = (
+            Path(ready_path_raw).resolve()
+            if isinstance(ready_path_raw, str)
+            else None
+        )
+        manifest_path = (
+            Path(manifest_path_raw).resolve()
+            if isinstance(manifest_path_raw, str)
+            else None
+        )
+        source_replay_path = (
+            Path(source_replay_path_raw).resolve()
+            if isinstance(source_replay_path_raw, str)
+            else None
+        )
+        provenance_path = (
+            Path(provenance_path_raw).resolve()
+            if isinstance(provenance_path_raw, str)
+            else None
+        )
+        bundle_digest = runtime.get("ready_bundle_digest")
+        findings.require(
+            isinstance(bundle_digest, str)
+            and re.fullmatch(r"[0-9a-f]{64}", bundle_digest) is not None,
+            "stage11-v4 READY bundle digest is invalid",
+        )
+        findings.require(
+            ready_path is not None
+            and ready_path.name == "READY"
+            and manifest_path is not None
+            and manifest_path.name == "manifest.json"
+            and source_replay_path is not None
+            and source_replay_path.name == "source_replay.json"
+            and ready_path.parent == manifest_path.parent
+            == source_replay_path.parent
+            and ready_path.parent.name == bundle_digest,
+            "stage11-v4 READY/manifest/source-replay paths are not bound "
+            "to one content-addressed bundle",
+        )
+        findings.require(
+            provenance_path == stage11_contract["build_provenance"],
+            "stage11-v4 runtime build provenance path is not the tracked "
+            "source identity",
+        )
+        for field in (
+            "ready_sha256",
+            "ready_contract_sha256",
+            "source_replay_sha256",
+            "build_provenance_sha256",
+        ):
+            value = runtime.get(field)
+            findings.require(
+                isinstance(value, str)
+                and re.fullmatch(r"[0-9a-f]{64}", value) is not None,
+                f"stage11-v4 runtime {field} is not a SHA-256 digest",
+            )
     findings.require(
         runtime.get("stock_tc_util") == runtime.get("candidate_tc_util")
         and isinstance(runtime.get("stock_tc_util"), int),
@@ -2277,6 +2425,35 @@ def _audit_w2_bm16_candidate(
         for item in artifacts
         if _mapping(item) and isinstance(item.get("path"), str)
     }
+    if stage11_v4:
+        for path_field, digest_field, label in (
+            ("ready_path", "ready_sha256", "READY record"),
+            ("manifest_path", "manifest_sha256", "overlay manifest"),
+            (
+                "source_replay_path",
+                "source_replay_sha256",
+                "source replay",
+            ),
+            (
+                "build_provenance_path",
+                "build_provenance_sha256",
+                "tracked build provenance",
+            ),
+        ):
+            path_raw = runtime.get(path_field)
+            digest = runtime.get(digest_field)
+            artifact = (
+                artifacts_by_path.get(str(Path(path_raw).resolve()))
+                if isinstance(path_raw, str)
+                else None
+            )
+            findings.require(
+                isinstance(digest, str)
+                and _mapping(artifact)
+                and artifact.get("sha256") == digest,
+                f"stage11-v4 {label} is not bound to its exact hashed "
+                "artifact",
+            )
     for path_raw, digest_field, label in (
         (
             source_path_raw,
@@ -2399,52 +2576,102 @@ def _audit_w2_bm16_candidate(
                 "W2/BM16 containing-region non-W2 CUDA event multiset differs",
             )
     elif mode == "cuda_graph":
+        leaf_graph = _is_w2_leaf_workload(workload)
         for series_index, series in enumerate(result.get("series", [])):
             captures = (
                 series.get("graph", {}).get("captures", [])
                 if _mapping(series)
                 else []
             )
+            region_non_w2: list[list[str]] = []
             for capture_index, capture in enumerate(captures):
                 if not _mapping(capture):
                     continue
                 capture_prefix = (
-                    "W2/BM16 leaf graph "
-                    f"series[{series_index}].captures[{capture_index}]"
+                    (
+                        "W2/BM16 leaf graph "
+                        if leaf_graph
+                        else "W2/BM16 containing-region graph "
+                    )
+                    + f"series[{series_index}].captures[{capture_index}]"
                 )
                 kernels = _audit_exact_single_kernel_graph(
                     findings,
                     capture,
                     prefix=capture_prefix,
+                    exact_single=leaf_graph,
                 )
                 if capture.get("implementation") == "reference":
-                    reference_mapping = (
-                        _w2_stage_template_mapping(kernels, 128, 12)
-                        if stage11
-                        else _w2_template_mapping(kernels, 128)
-                    )
+                    w2_indices = [
+                        index
+                        for index, kernel in enumerate(kernels)
+                        if (
+                            _w2_stage_template_mapping([kernel], 128, 12)
+                            if stage11
+                            else _w2_template_mapping([kernel], 128)
+                        )
+                    ]
                     findings.require(
-                        reference_mapping
-                        and not _w2_template_mapping(
-                            kernels, 16
-                        ),
+                        len(w2_indices) == 1
+                        and not _w2_template_mapping(kernels, 16),
                         "W2/BM16 stock graph lacks its BM128 template mapping "
                         f"at series {series_index} capture {capture_index}",
                     )
                 elif capture.get("implementation") == "candidate":
-                    candidate_mapping = (
-                        _w2_stage_template_mapping(kernels, 16, 11)
-                        if stage11
-                        else _w2_template_mapping(kernels, 16)
-                    )
+                    w2_indices = [
+                        index
+                        for index, kernel in enumerate(kernels)
+                        if (
+                            _w2_stage_template_mapping([kernel], 16, 11)
+                            if stage11
+                            else _w2_template_mapping([kernel], 16)
+                        )
+                    ]
                     findings.require(
-                        candidate_mapping
-                        and not _w2_template_mapping(
-                            kernels, 128
-                        ),
+                        len(w2_indices) == 1
+                        and not _w2_template_mapping(kernels, 128),
                         "W2/BM16 candidate graph must contain BM16 and no W2 "
                         "BM128 template mapping at series "
                         f"{series_index} capture {capture_index}",
+                    )
+                else:
+                    w2_indices = []
+                    findings.require(
+                        False,
+                        f"{capture_prefix}.implementation is invalid",
+                    )
+                if not leaf_graph:
+                    non_w2 = [
+                        kernel
+                        for index, kernel in enumerate(kernels)
+                        if index not in w2_indices
+                    ]
+                    findings.require(
+                        len(w2_indices) == 1 and bool(non_w2),
+                        "W2/BM16 containing-region graph must contain exactly "
+                        "one W2 node plus non-W2 region nodes",
+                    )
+                    region_non_w2.append(non_w2)
+            if not leaf_graph:
+                findings.require(
+                    len(region_non_w2) == 4
+                    and bool(region_non_w2[0])
+                    and all(
+                        kernels == region_non_w2[0]
+                        for kernels in region_non_w2[1:]
+                    ),
+                    "W2/BM16 containing-region graph non-W2 CUDA node "
+                    "order differs after W2 substitution",
+                )
+                if len(region_non_w2) == 4:
+                    canonical_counter = Counter(region_non_w2[0])
+                    findings.require(
+                        all(
+                            Counter(kernels) == canonical_counter
+                            for kernels in region_non_w2[1:]
+                        ),
+                        "W2/BM16 containing-region graph non-W2 CUDA node "
+                        "multiset differs after W2 substitution",
                     )
 
 

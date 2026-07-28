@@ -31,6 +31,10 @@ from serving_native.audit_result import (
     W2_EM8_BM16_STAGE11_CACHE_DIR,
     W2_EM8_BM16_STAGE11_JIT_IDENTITY,
     W2_EM8_BM16_STAGE11_SOURCE_PATCH_SHA256,
+    W2_EM8_BM16_STAGE11_V4_BUILD_ID,
+    W2_EM8_BM16_STAGE11_V4_CACHE_DIR,
+    W2_EM8_BM16_STAGE11_V4_JIT_IDENTITY,
+    W2_EM8_BM16_STAGE11_V4_SOURCE_PATCH_SHA256,
     audit_document,
 )
 from serving_native.contract_v2 import (
@@ -843,8 +847,25 @@ class ContractV2AuditTest(unittest.TestCase):
                         if capture["implementation"] == "candidate"
                         else stock_symbol
                     )
-                    capture["nodes"][0]["kernel"] = symbol
-                    capture["kernel_identities"] = [symbol]
+                    if result["workload"]["family"] == "moe_compute_region":
+                        prototype = copy.deepcopy(capture["nodes"][0])
+                        nodes = []
+                        for index, kernel in enumerate(
+                            (
+                                "fixture_moe_w13_grouped_kernel",
+                                "fixture_moe_swiglu_quant_kernel",
+                                symbol,
+                            )
+                        ):
+                            node = copy.deepcopy(prototype)
+                            node["index"] = index
+                            node["kernel"] = kernel
+                            nodes.append(node)
+                        capture["nodes"] = nodes
+                        self._refresh_graph_metadata(capture)
+                    else:
+                        capture["nodes"][0]["kernel"] = symbol
+                        capture["kernel_identities"] = [symbol]
         edge_cases = []
         for case_index, (name, counts) in enumerate(W2_EDGE_MASK_CASES):
             zero_mask = sum(counts) == 0
@@ -964,13 +985,48 @@ class ContractV2AuditTest(unittest.TestCase):
     def _valid_w2_stage11_fixture(
         self,
         mode: str = "eager",
+        *,
+        version: int = 3,
+        region: bool = False,
     ) -> tuple[dict, Path]:
+        if version not in (3, 4):
+            raise ValueError(version)
+        if region and version != 4:
+            raise ValueError("the v3 region graph lane was never registered")
+        task = (
+            "moe_w13_swiglu_w2_region_decode_m32_em8_bm16_stage11_v4"
+            if region
+            else (
+                "moe_w2_grouped_decode_m32_em8_bm16_stage11_v4"
+                if version == 4
+                else "moe_w2_grouped_decode_m32_em8_bm16_stage11"
+            )
+        )
         result = self._valid_w2_candidate_fixture(
             mode,
-            "moe_w2_grouped_decode_m32_em8_bm16_stage11",
+            task,
         )
         runtime = result["implementations"]["candidate"]["runtime_contract"]
-        token = W2_EM8_BM16_STAGE11_JIT_IDENTITY
+        token = (
+            W2_EM8_BM16_STAGE11_V4_JIT_IDENTITY
+            if version == 4
+            else W2_EM8_BM16_STAGE11_JIT_IDENTITY
+        )
+        build_id = (
+            W2_EM8_BM16_STAGE11_V4_BUILD_ID
+            if version == 4
+            else W2_EM8_BM16_STAGE11_BUILD_ID
+        )
+        cache_dir = (
+            W2_EM8_BM16_STAGE11_V4_CACHE_DIR
+            if version == 4
+            else W2_EM8_BM16_STAGE11_CACHE_DIR
+        )
+        source_patch_sha = (
+            W2_EM8_BM16_STAGE11_V4_SOURCE_PATCH_SHA256
+            if version == 4
+            else W2_EM8_BM16_STAGE11_SOURCE_PATCH_SHA256
+        )
         stock_sha = "1" * 64
         candidate_sha = "2" * 64
         manifest_sha = runtime["manifest_sha256"]
@@ -978,21 +1034,27 @@ class ContractV2AuditTest(unittest.TestCase):
         cubin_sha = "4" * 64
         cache_key = "b" * 32
         kernel_dir = (
-            Path(W2_EM8_BM16_STAGE11_CACHE_DIR)
+            Path(cache_dir)
             / "cache"
             / f"kernel.{token}.{cache_key}"
         )
         source_path = kernel_dir / "kernel.cu"
         cubin_path = kernel_dir / "kernel.cubin"
+        provenance_path = self.root / f"stage11-v{version}-build-provenance.json"
+        bundle_digest = "8" * 64
+        bundle_dir = self.root / bundle_digest
+        manifest_path = bundle_dir / "manifest.json"
+        ready_path = bundle_dir / "READY"
+        source_replay_path = bundle_dir / "source_replay.json"
         runtime.update(
             {
-                "build_id": W2_EM8_BM16_STAGE11_BUILD_ID,
+                "build_id": build_id,
                 "stock_extension_sha256": stock_sha,
                 "candidate_extension_sha256": candidate_sha,
-                "dg_jit_cache_dir": W2_EM8_BM16_STAGE11_CACHE_DIR,
-                "sglang_dg_cache_dir": W2_EM8_BM16_STAGE11_CACHE_DIR,
+                "dg_jit_cache_dir": cache_dir,
+                "sglang_dg_cache_dir": cache_dir,
                 "variant_name": "em8_bm16_stage11",
-                "variant_version": 3,
+                "variant_version": version,
                 "masked_block_m_override": 16,
                 "masked_num_stages_override": 11,
                 "predeclared_fallback": "em8_bm16_stage10",
@@ -1032,11 +1094,27 @@ class ContractV2AuditTest(unittest.TestCase):
                 ],
             }
         )
+        if version == 4:
+            runtime.update(
+                {
+                    "ready_verified_before_runtime": True,
+                    "bundle_contract": "content-addressed-ready-v1",
+                    "build_phase": "cpu-only-before-gpu-lease",
+                    "ready_path": str(ready_path),
+                    "ready_sha256": "5" * 64,
+                    "ready_contract_sha256": "7" * 64,
+                    "ready_bundle_digest": bundle_digest,
+                    "manifest_path": str(manifest_path),
+                    "source_replay_path": str(source_replay_path),
+                    "source_replay_sha256": "6" * 64,
+                    "build_provenance_path": str(provenance_path),
+                }
+            )
         build_provenance = {
-            "schema_version": 3,
+            "schema_version": version,
             "variant": {
                 "name": "em8_bm16_stage11",
-                "version": 3,
+                "version": version,
                 "predeclared_fallback": "em8_bm16_stage10",
                 "fallback_eligible": False,
             },
@@ -1047,11 +1125,13 @@ class ContractV2AuditTest(unittest.TestCase):
                     "third-party/fmt": W2_BM16_FMT_COMMIT,
                 },
             },
-            "build_key": "edcf77b27696-26fbaca849ee-dc731d5442c0",
+            "build_key": (
+                "edcf77b27696-9b227e5cf597-dc731d5442c0"
+                if version == 4
+                else "edcf77b27696-26fbaca849ee-dc731d5442c0"
+            ),
             "patches": {
-                "source_sha256": (
-                    W2_EM8_BM16_STAGE11_SOURCE_PATCH_SHA256
-                ),
+                "source_sha256": source_patch_sha,
                 "build_tool_sha256": (
                     "dc731d5442c0bdf0758b17380e02e67b580cf3aa579f4832a497d1b68e3a85c7"
                 ),
@@ -1059,9 +1139,9 @@ class ContractV2AuditTest(unittest.TestCase):
             "stock": {"extension_sha256": stock_sha},
             "candidate": {
                 "extension_sha256": candidate_sha,
-                "build_id": W2_EM8_BM16_STAGE11_BUILD_ID,
+                "build_id": build_id,
                 "import_name": (
-                    "deep_gemm_glm52_w2_em8_bm16_stage11_v3"
+                    f"deep_gemm_glm52_w2_em8_bm16_stage11_v{version}"
                 ),
             },
             "candidate_api": {
@@ -1090,24 +1170,34 @@ class ContractV2AuditTest(unittest.TestCase):
             },
             "generated_manifest_sha256": manifest_sha,
         }
-        provenance_path = self.root / "stage11-build-provenance.json"
         provenance_path.write_text(
             json.dumps(build_provenance, sort_keys=True) + "\n"
         )
+        provenance_sha = canonical_sha256(build_provenance)
+        if version == 4:
+            runtime["build_provenance_sha256"] = provenance_sha
         for index, (path, digest) in enumerate(
             (
                 (
-                    self.root / "stage11-source.patch",
-                    W2_EM8_BM16_STAGE11_SOURCE_PATCH_SHA256,
+                    self.root / f"stage11-v{version}-source.patch",
+                    source_patch_sha,
                 ),
                 (self.root / "stage11-stock.so", stock_sha),
                 (self.root / "stage11-candidate.so", candidate_sha),
-                (self.root / "stage11-manifest.json", manifest_sha),
+                (manifest_path, manifest_sha),
                 (source_path, source_sha),
                 (cubin_path, cubin_sha),
                 (
                     provenance_path,
-                    canonical_sha256(build_provenance),
+                    provenance_sha,
+                ),
+                *(
+                    (
+                        (ready_path, "5" * 64),
+                        (source_replay_path, "6" * 64),
+                    )
+                    if version == 4
+                    else ()
                 ),
             )
         ):
@@ -1729,6 +1819,99 @@ class ContractV2AuditTest(unittest.TestCase):
                 "ba_median_speedup",
             ):
                 self.assertTrue(math.isfinite(estimates[field]), estimates)
+
+    def test_stage11_v4_four_lane_ready_and_graph_contracts_are_valid(
+        self,
+    ) -> None:
+        lanes = (
+            ("eager", False),
+            ("cuda_graph", False),
+            ("eager", True),
+            ("cuda_graph", True),
+        )
+        for mode, region in lanes:
+            with self.subTest(mode=mode, region=region):
+                result, provenance_path = self._valid_w2_stage11_fixture(
+                    mode,
+                    version=4,
+                    region=region,
+                )
+                self._apply_speedup(result)
+                with patch.object(
+                    audit_result_module,
+                    "W2_EM8_BM16_STAGE11_V4_BUILD_PROVENANCE",
+                    provenance_path,
+                ):
+                    report = audit_document(result, verify_files=False)
+                self.assertTrue(report["valid"], report)
+                self.assertTrue(report["performance_gate_passed"], report)
+
+    def test_stage11_v4_region_graph_substitutes_only_w2(self) -> None:
+        result, provenance_path = self._valid_w2_stage11_fixture(
+            "cuda_graph",
+            version=4,
+            region=True,
+        )
+        self._apply_speedup(result)
+        capture = result["series"][0]["graph"]["captures"][1]
+        capture["nodes"][0]["kernel"] = "fixture_changed_w13_kernel"
+        self._refresh_graph_metadata(capture)
+        with patch.object(
+            audit_result_module,
+            "W2_EM8_BM16_STAGE11_V4_BUILD_PROVENANCE",
+            provenance_path,
+        ):
+            report = audit_document(result, verify_files=False)
+        self.assertFalse(report["valid"], report)
+        self.assertTrue(
+            any(
+                "non-W2 CUDA node order differs" in error
+                or "non-W2 CUDA node multiset differs" in error
+                for error in report["errors"]
+            ),
+            report,
+        )
+
+    def test_stage11_v4_ready_evidence_is_fail_closed(self) -> None:
+        for field, value in (
+            ("ready_verified_before_runtime", False),
+            ("ready_contract_sha256", "not-a-digest"),
+            ("ready_bundle_digest", "0" * 64),
+            ("source_replay_sha256", None),
+        ):
+            with self.subTest(field=field):
+                result, provenance_path = self._valid_w2_stage11_fixture(
+                    version=4,
+                )
+                self._apply_speedup(result)
+                result["implementations"]["candidate"]["runtime_contract"][
+                    field
+                ] = value
+                with patch.object(
+                    audit_result_module,
+                    "W2_EM8_BM16_STAGE11_V4_BUILD_PROVENANCE",
+                    provenance_path,
+                ):
+                    report = audit_document(result, verify_files=False)
+                self.assertFalse(report["valid"], report)
+
+    def test_stage11_v4_strict_estimator_tamper_is_invalid(self) -> None:
+        result, provenance_path = self._valid_w2_stage11_fixture(version=4)
+        self._apply_speedup(result)
+        result["series"][0]["performance_estimates"][
+            "ba_median_speedup"
+        ] = 1.0
+        with patch.object(
+            audit_result_module,
+            "W2_EM8_BM16_STAGE11_V4_BUILD_PROVENANCE",
+            provenance_path,
+        ):
+            report = audit_document(result, verify_files=False)
+        self.assertFalse(report["valid"], report)
+        self.assertTrue(
+            any("ba_median_speedup" in error for error in report["errors"]),
+            report,
+        )
 
     def test_stage11_requires_stock_stage12_and_candidate_stage11_symbols(
         self,

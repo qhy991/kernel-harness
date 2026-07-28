@@ -27,7 +27,7 @@ def main() -> int:
     )
 
     names = set(WORKLOADS)
-    assert len(names) == 46
+    assert len(names) == 48
     assert "linear_attn_o_prefill_m4096" in names
     assert "linear_indexer_wq_b_decode_m16" in names
     assert "linear_indexer_wq_b_decode_m32" in names
@@ -48,6 +48,11 @@ def main() -> int:
     assert "moe_w2_grouped_decode_m32_em8_bm16_stage11" in names
     assert (
         "moe_w13_swiglu_w2_region_decode_m32_em8_bm16_stage11"
+        in names
+    )
+    assert "moe_w2_grouped_decode_m32_em8_bm16_stage11_v4" in names
+    assert (
+        "moe_w13_swiglu_w2_region_decode_m32_em8_bm16_stage11_v4"
         in names
     )
     assert "deepep_normal_dispatch_prefill" in names
@@ -90,6 +95,8 @@ def main() -> int:
         "moe_w2_grouped_decode_m32",
         "moe_w2_grouped_decode_m32_current_source_m9",
         "moe_w2_grouped_decode_m32_em8_bm16_stage11",
+        "moe_w2_grouped_decode_m32_em8_bm16_stage11_v4",
+        "moe_w13_swiglu_w2_region_decode_m32_em8_bm16_stage11_v4",
     }
     assert {
         workload.params["batch"]
@@ -146,6 +153,31 @@ def main() -> int:
     assert stage11.params["stock_pipeline_smem_bytes"] == 230188
     assert stage11.params["candidate_pipeline_smem_bytes"] == 211756
     assert stage11.params["two_ctas_per_sm_enabled"] is False
+    stage11_v4 = WORKLOADS[
+        "moe_w2_grouped_decode_m32_em8_bm16_stage11_v4"
+    ]
+    stage11_v4_region = WORKLOADS[
+        "moe_w13_swiglu_w2_region_decode_m32_em8_bm16_stage11_v4"
+    ]
+    for workload in (stage11_v4, stage11_v4_region):
+        assert workload.params["candidate_variant"] == "em8_bm16_stage11"
+        assert workload.params["candidate_variant_version"] == 4
+        assert workload.params["masked_block_m_override"] == 16
+        assert workload.params["masked_num_stages_override"] == 11
+        assert workload.params["expected_m"] == 8
+        assert workload.params["fallback_eligible"] is False
+        assert workload.params["readiness_contract"] == (
+            "content-addressed-ready-v1"
+        )
+        assert workload.params["build_phase"] == (
+            "cpu-only-before-gpu-lease"
+        )
+        assert workload.params["required_lane_portfolio"] == (
+            "leaf_eager",
+            "leaf_cuda_graph",
+            "containing_region_eager",
+            "containing_region_cuda_graph",
+        )
 
     paired_sglang = REPO_ROOT.parent / "sglang"
     default_sglang = (

@@ -426,6 +426,61 @@ WORKLOADS[
     ("eager",),
 )
 
+_STAGE11_V4_JIT_IDENTITY = (
+    "sm100_m_grouped_fp8_fp4_gemm_masked_1d1d_"
+    "glm52_w2_em8_bm16_stage11_v4"
+)
+_STAGE11_V4_COMMON = dict(
+    _STAGE11_COMMON,
+    candidate_variant_version=4,
+    candidate_jit_identity=_STAGE11_V4_JIT_IDENTITY,
+    readiness_contract="content-addressed-ready-v1",
+    build_phase="cpu-only-before-gpu-lease",
+    required_lane_portfolio=(
+        "leaf_eager",
+        "leaf_cuda_graph",
+        "containing_region_eager",
+        "containing_region_cuda_graph",
+    ),
+)
+WORKLOADS["moe_w2_grouped_decode_m32_em8_bm16_stage11_v4"] = Workload(
+    "moe_w2_grouped_decode_m32_em8_bm16_stage11_v4",
+    "moe_grouped_masked",
+    "decode",
+    1,
+    _STAGE11_GROUPED_SYMBOL,
+    dict(_STAGE11_V4_COMMON, k=2048, n=6144),
+    (
+        "Task26 v4 READY-bound leaf: unchanged exact M32/em8 BM16/stage11 "
+        "kernel semantics with a prebuilt content-addressed bundle."
+    ),
+    ("eager", "cuda_graph"),
+)
+WORKLOADS[
+    "moe_w13_swiglu_w2_region_decode_m32_em8_bm16_stage11_v4"
+] = Workload(
+    "moe_w13_swiglu_w2_region_decode_m32_em8_bm16_stage11_v4",
+    "moe_compute_region",
+    "decode",
+    1,
+    (
+        f"{_STAGE11_GROUPED_SYMBOL} + "
+        "sglang.srt.layers.moe.moe_runner.deep_gemm."
+        "_varlen_deep_gemm_silu_mul_quant"
+    ),
+    dict(
+        _STAGE11_V4_COMMON,
+        hidden=6144,
+        gate_up=4096,
+        w2_k=2048,
+    ),
+    (
+        "Task26 v4 containing W13+SwiGLU/packed-UE8M0+W2 region; eager "
+        "and CUDA Graph lanes must substitute only the W2 node."
+    ),
+    ("eager", "cuda_graph"),
+)
+
 
 def _add_four_gpu_lane() -> None:
     """Add a TP4/DP4/EP4 lane without changing the production TP8 lane."""
