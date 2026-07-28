@@ -373,6 +373,7 @@ class Task26Stage11DriverContractTest(unittest.TestCase):
         self.assertFalse((attempt / "TEST_COMPLETE").exists())
 
     def test_exact_portfolio_mapping_and_guards(self) -> None:
+        self.assertTrue(os.access(DRIVER, os.X_OK))
         completed, run_root, events = self._invoke("success")
         self.assertEqual(completed.returncode, 0, completed.stderr)
         self.assertIn(
