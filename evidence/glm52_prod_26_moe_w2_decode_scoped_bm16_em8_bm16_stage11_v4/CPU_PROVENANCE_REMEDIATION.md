@@ -63,8 +63,15 @@ tree SHA-256: 2c3126a28901b7c2fa66083378239c3fc971f4f3e84c53251202d586c230492c
 
 ## Gate state
 
-The provenance defect is remediated in source, but Task 26 v4 remains
-unreleased. A fresh clean-commit audit is required before the two-phase
-CPU-only build may begin. READY does not exist, and GPU execution remains
-forbidden until the built bundle is inspected, its tracked provenance is
-committed, both repositories are clean, and READY is published.
+The clean-head source release audit passed after closing the 50-pair and
+campaign-verifier coverage findings. It verified the exact M32/expected-M8
+packed-UE8M0 ABI, independent exact-post1 stock/candidate runtimes, stage
+12-versus-11 generated identities, no fallback after candidate admission,
+four required eager/graph and leaf/containing-region lanes, strict four-
+estimator gates, and READY verification before GPU inspection, run-root
+creation, or attempt claim.
+
+The two-phase CPU-only build is released. READY does not yet exist, and GPU
+execution remains forbidden until the built bundle and fresh source replay are
+inspected, generated provenance is committed, both repositories are clean,
+and READY is published and independently verified.
