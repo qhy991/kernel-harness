@@ -182,7 +182,8 @@ required = {
     "ready_path", "ready_sha256", "contract_sha256", "bundle_digest",
     "manifest_path", "manifest_sha256", "source_replay_path",
     "source_replay_sha256", "build_provenance_path",
-    "build_provenance_sha256", "stock_site", "candidate_package",
+    "build_provenance_sha256", "stock_package_tree_sha256",
+    "candidate_package_tree_sha256", "stock_site", "candidate_package",
 }
 if not isinstance(record, dict) or set(record) != required:
     raise SystemExit("READY verifier returned an unexpected evidence contract")

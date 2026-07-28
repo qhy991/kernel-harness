@@ -1029,6 +1029,37 @@ class ContractV2AuditTest(unittest.TestCase):
         )
         stock_sha = "1" * 64
         candidate_sha = "2" * 64
+
+        def package_tree(file_sha: str) -> dict:
+            payload = {
+                "schema_version": 1,
+                "path_encoding": "utf-8-json-posix-relative-v1",
+                "symlink_policy": "forbid",
+                "hardlink_policy": "forbid",
+                "special_file_policy": "forbid",
+                "mode_policy": "bind-posix-permission-bits",
+                "entry_count": 2,
+                "file_count": 1,
+                "directory_count": 1,
+                "total_file_bytes": 1,
+                "entries": [
+                    {"path": ".", "type": "directory", "mode": "0555"},
+                    {
+                        "path": "runtime.py",
+                        "type": "file",
+                        "mode": "0444",
+                        "bytes": 1,
+                        "sha256": file_sha,
+                    },
+                ],
+            }
+            return {
+                **payload,
+                "tree_sha256": canonical_sha256(payload),
+            }
+
+        stock_tree = package_tree(stock_sha)
+        candidate_tree = package_tree(candidate_sha)
         manifest_sha = runtime["manifest_sha256"]
         source_sha = "3" * 64
         cubin_sha = "4" * 64
@@ -1108,10 +1139,16 @@ class ContractV2AuditTest(unittest.TestCase):
                     "source_replay_path": str(source_replay_path),
                     "source_replay_sha256": "6" * 64,
                     "build_provenance_path": str(provenance_path),
+                    "stock_package_tree_sha256": stock_tree[
+                        "tree_sha256"
+                    ],
+                    "candidate_package_tree_sha256": candidate_tree[
+                        "tree_sha256"
+                    ],
                 }
             )
         build_provenance = {
-            "schema_version": version,
+            "schema_version": 5 if version == 4 else version,
             "variant": {
                 "name": "em8_bm16_stage11",
                 "version": version,
@@ -1136,12 +1173,24 @@ class ContractV2AuditTest(unittest.TestCase):
                     "dc731d5442c0bdf0758b17380e02e67b580cf3aa579f4832a497d1b68e3a85c7"
                 ),
             },
-            "stock": {"extension_sha256": stock_sha},
+            "stock": {
+                "extension_sha256": stock_sha,
+                **(
+                    {"package_tree": stock_tree}
+                    if version == 4
+                    else {}
+                ),
+            },
             "candidate": {
                 "extension_sha256": candidate_sha,
                 "build_id": build_id,
                 "import_name": (
                     f"deep_gemm_glm52_w2_em8_bm16_stage11_v{version}"
+                ),
+                **(
+                    {"package_tree": candidate_tree}
+                    if version == 4
+                    else {}
                 ),
             },
             "candidate_api": {
@@ -1878,6 +1927,8 @@ class ContractV2AuditTest(unittest.TestCase):
             ("ready_contract_sha256", "not-a-digest"),
             ("ready_bundle_digest", "0" * 64),
             ("source_replay_sha256", None),
+            ("stock_package_tree_sha256", "not-a-digest"),
+            ("candidate_package_tree_sha256", "0" * 64),
         ):
             with self.subTest(field=field):
                 result, provenance_path = self._valid_w2_stage11_fixture(
@@ -1894,6 +1945,56 @@ class ContractV2AuditTest(unittest.TestCase):
                 ):
                     report = audit_document(result, verify_files=False)
                 self.assertFalse(report["valid"], report)
+
+    def test_stage11_v4_package_tree_provenance_is_fail_closed(self) -> None:
+        mutations = (
+            (
+                "missing_tree",
+                lambda provenance: provenance["candidate"].pop(
+                    "package_tree"
+                ),
+            ),
+            (
+                "unbound_file_hash",
+                lambda provenance: provenance["candidate"]["package_tree"][
+                    "entries"
+                ][1].update(sha256="0" * 64),
+            ),
+            (
+                "symlink_policy",
+                lambda provenance: provenance["candidate"]["package_tree"].update(
+                    symlink_policy="allow"
+                ),
+            ),
+            (
+                "count_drift",
+                lambda provenance: provenance["candidate"]["package_tree"].update(
+                    file_count=2
+                ),
+            ),
+        )
+        for name, mutate in mutations:
+            with self.subTest(name=name):
+                result, provenance_path = self._valid_w2_stage11_fixture(
+                    version=4,
+                )
+                self._apply_speedup(result)
+                provenance = json.loads(provenance_path.read_text())
+                mutate(provenance)
+                provenance_path.write_text(
+                    json.dumps(provenance, sort_keys=True) + "\n"
+                )
+                with patch.object(
+                    audit_result_module,
+                    "W2_EM8_BM16_STAGE11_V4_BUILD_PROVENANCE",
+                    provenance_path,
+                ):
+                    report = audit_document(result, verify_files=False)
+                self.assertFalse(report["valid"], report)
+                self.assertTrue(
+                    any("package-tree" in error for error in report["errors"]),
+                    report,
+                )
 
     def test_stage11_v4_strict_estimator_tamper_is_invalid(self) -> None:
         result, provenance_path = self._valid_w2_stage11_fixture(version=4)

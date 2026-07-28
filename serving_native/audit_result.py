@@ -122,7 +122,7 @@ def _stage11_contract(version: int) -> dict[str, Any]:
     if version == 4:
         return {
             "version": 4,
-            "schema_version": 4,
+            "schema_version": 5,
             "jit_identity": W2_EM8_BM16_STAGE11_V4_JIT_IDENTITY,
             "build_id": W2_EM8_BM16_STAGE11_V4_BUILD_ID,
             "source_patch_sha256": (
@@ -2006,6 +2006,153 @@ def _stage11_build_provenance(
     return provenance
 
 
+def _audit_stage11_package_tree(
+    findings: Findings,
+    tree: Any,
+    *,
+    role: str,
+) -> str | None:
+    if not findings.require(
+        _mapping(tree),
+        f"stage11-v4 {role} package-tree record is missing",
+    ):
+        return None
+    expected_fields = {
+        "schema_version",
+        "path_encoding",
+        "symlink_policy",
+        "hardlink_policy",
+        "special_file_policy",
+        "mode_policy",
+        "entry_count",
+        "file_count",
+        "directory_count",
+        "total_file_bytes",
+        "entries",
+        "tree_sha256",
+    }
+    findings.require(
+        set(tree) == expected_fields,
+        f"stage11-v4 {role} package-tree field set is not exact",
+    )
+    findings.require(
+        tree.get("schema_version") == 1
+        and tree.get("path_encoding") == "utf-8-json-posix-relative-v1"
+        and tree.get("symlink_policy") == "forbid"
+        and tree.get("hardlink_policy") == "forbid"
+        and tree.get("special_file_policy") == "forbid"
+        and tree.get("mode_policy") == "bind-posix-permission-bits",
+        f"stage11-v4 {role} package-tree policy is not fail closed",
+    )
+    entries = tree.get("entries")
+    if not findings.require(
+        _list(entries) and bool(entries),
+        f"stage11-v4 {role} package-tree entries are missing",
+    ):
+        return None
+
+    paths: list[str] = []
+    file_count = 0
+    directory_count = 0
+    total_file_bytes = 0
+    for index, entry in enumerate(entries):
+        prefix = f"stage11-v4 {role} package-tree entry[{index}]"
+        if not findings.require(_mapping(entry), f"{prefix} is not an object"):
+            continue
+        entry_type = entry.get("type")
+        path = entry.get("path")
+        mode = entry.get("mode")
+        valid_path = (
+            isinstance(path, str)
+            and bool(path)
+            and (
+                path == "."
+                or (
+                    not Path(path).is_absolute()
+                    and "." not in Path(path).parts
+                    and ".." not in Path(path).parts
+                )
+            )
+        )
+        findings.require(valid_path, f"{prefix} path is unsafe")
+        findings.require(
+            isinstance(mode, str)
+            and re.fullmatch(r"[0-7]{4}", mode) is not None,
+            f"{prefix} mode is invalid",
+        )
+        if isinstance(path, str):
+            paths.append(path)
+        if entry_type == "directory":
+            directory_count += 1
+            findings.require(
+                set(entry) == {"path", "type", "mode"},
+                f"{prefix} directory field set is not exact",
+            )
+        elif entry_type == "file":
+            file_count += 1
+            size = entry.get("bytes")
+            digest = entry.get("sha256")
+            findings.require(
+                set(entry) == {"path", "type", "mode", "bytes", "sha256"},
+                f"{prefix} file field set is not exact",
+            )
+            findings.require(
+                _strict_nonnegative_int(size),
+                f"{prefix} byte count is invalid",
+            )
+            findings.require(
+                isinstance(digest, str)
+                and re.fullmatch(r"[0-9a-f]{64}", digest) is not None,
+                f"{prefix} digest is invalid",
+            )
+            if _strict_nonnegative_int(size):
+                total_file_bytes += size
+        else:
+            findings.require(False, f"{prefix} type is not file/directory")
+
+    root_entry = entries[0] if _mapping(entries[0]) else {}
+    findings.require(
+        set(root_entry) == {"path", "type", "mode"}
+        and root_entry.get("path") == "."
+        and root_entry.get("type") == "directory",
+        f"stage11-v4 {role} package-tree root entry is invalid",
+    )
+    findings.require(
+        len(paths) == len(set(paths)),
+        f"stage11-v4 {role} package-tree paths are not unique",
+    )
+    findings.require(
+        all(
+            _strict_nonnegative_int(tree.get(field))
+            for field in (
+                "entry_count",
+                "file_count",
+                "directory_count",
+                "total_file_bytes",
+            )
+        )
+        and tree.get("file_count", 0) > 0
+        and tree.get("directory_count", 0) > 0,
+        f"stage11-v4 {role} package-tree summary types are invalid",
+    )
+    findings.require(
+        tree.get("entry_count") == len(entries)
+        and tree.get("file_count") == file_count
+        and tree.get("directory_count") == directory_count
+        and tree.get("total_file_bytes") == total_file_bytes,
+        f"stage11-v4 {role} package-tree counts do not close",
+    )
+    digest = tree.get("tree_sha256")
+    payload = {key: value for key, value in tree.items() if key != "tree_sha256"}
+    findings.require(
+        isinstance(digest, str)
+        and re.fullmatch(r"[0-9a-f]{64}", digest) is not None
+        and digest == canonical_sha256(payload),
+        f"stage11-v4 {role} package-tree digest does not recompute",
+    )
+    return digest if isinstance(digest, str) else None
+
+
 def _audit_w2_bm16_candidate(
     findings: Findings,
     result: dict[str, Any],
@@ -2132,6 +2279,25 @@ def _audit_w2_bm16_candidate(
         if stage11
         else W2_BM16_CANDIDATE_EXTENSION_SHA256
     )
+    stock_package_tree_sha256 = None
+    candidate_package_tree_sha256 = None
+    if stage11_v4:
+        stock_package_tree_sha256 = _audit_stage11_package_tree(
+            findings,
+            build_provenance.get("stock", {}).get("package_tree"),
+            role="stock",
+        )
+        candidate_package_tree_sha256 = _audit_stage11_package_tree(
+            findings,
+            build_provenance.get("candidate", {}).get("package_tree"),
+            role="candidate",
+        )
+        findings.require(
+            stock_package_tree_sha256 is not None
+            and candidate_package_tree_sha256 is not None
+            and stock_package_tree_sha256 != candidate_package_tree_sha256,
+            "stage11-v4 stock/candidate package-tree identities are not distinct",
+        )
     cache_dir = (
         stage11_contract["cache_dir"]
         if stage11
@@ -2200,6 +2366,10 @@ def _audit_w2_bm16_candidate(
                 "ready_verified_before_runtime": True,
                 "bundle_contract": "content-addressed-ready-v1",
                 "build_phase": "cpu-only-before-gpu-lease",
+                "stock_package_tree_sha256": stock_package_tree_sha256,
+                "candidate_package_tree_sha256": (
+                    candidate_package_tree_sha256
+                ),
             }
         )
     for field, expected in exact_fields.items():
@@ -2305,6 +2475,8 @@ def _audit_w2_bm16_candidate(
             "ready_contract_sha256",
             "source_replay_sha256",
             "build_provenance_sha256",
+            "stock_package_tree_sha256",
+            "candidate_package_tree_sha256",
         ):
             value = runtime.get(field)
             findings.require(

@@ -158,6 +158,8 @@ print(json.dumps({
     "source_replay_sha256": digest("replay"),
     "build_provenance_path": str(ready.parent / "build_provenance.json"),
     "build_provenance_sha256": digest("provenance"),
+    "stock_package_tree_sha256": digest("stock-package-tree"),
+    "candidate_package_tree_sha256": digest("candidate-package-tree"),
     "stock_site": str(ready.parent / "stock/site"),
     "candidate_package": str(ready.parent / "candidate/site/deep_gemm"),
 }, sort_keys=True))
