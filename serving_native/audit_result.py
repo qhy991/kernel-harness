@@ -4,12 +4,13 @@
 from __future__ import annotations
 
 import argparse
-from collections import Counter
 import json
 import math
+import os
 import re
 import statistics
 import sys
+from collections import Counter
 from pathlib import Path
 from typing import Any
 
@@ -50,6 +51,32 @@ W2_BM16_CACHE_DIR = (
     "26-moe_w2_decode_scoped_bm16/deepgemm"
 )
 W2_BM16_IMPL_NAME = "sm100_fp8_fp4_gemm_1d1d_impl"
+W2_EM8_BM16_STAGE11_VARIANT = "em8_bm16_stage11"
+W2_EM8_BM16_STAGE11_JIT_IDENTITY = (
+    "sm100_m_grouped_fp8_fp4_gemm_masked_1d1d_"
+    "glm52_w2_em8_bm16_stage11_v3"
+)
+W2_EM8_BM16_STAGE11_BUILD_ID = (
+    "glm52-task26-em8-bm16-stage11-v3:"
+    "sgl-deep-gemm-0.1.4.post1@"
+    f"{W2_BM16_BASE_COMMIT}:sm100:e32:m1024:k2048:n6144:"
+    "expected-m8:bm16:stages11:pdl1:sms148:packed-ue8m0:"
+    "no-recipe:no-overlap"
+)
+W2_EM8_BM16_STAGE11_SOURCE_PATCH_SHA256 = (
+    "26fbaca849eedb1788e3a1bd70e72ea7eb3332936920c9686fc939b39715e01f"
+)
+W2_EM8_BM16_STAGE11_CACHE_DIR = (
+    "/home/qinhaiyan/glm52-v2-goal-runs/cache/"
+    "26-moe_w2_decode_scoped_bm16/em8_bm16_stage11_v3/deepgemm"
+)
+_PAIRED_SGLANG_ROOT = REPO_ROOT.parent / "sglang"
+W2_EM8_BM16_STAGE11_BUILD_PROVENANCE = (
+    Path(os.environ.get("SGLANG_ROOT", _PAIRED_SGLANG_ROOT))
+    / "third_party"
+    / "deepgemm_w2_em8_bm16_stage11"
+    / "build_provenance.json"
+).resolve()
 
 
 def _w2_template_mapping(kernels: Any, block_m: int) -> bool:
@@ -59,6 +86,42 @@ def _w2_template_mapping(kernels: Any, block_m: int) -> bool:
         f"ELj0ELj6144ELj2048ELj{block_m}ELj128ELj128"
     )
     demangled_segment = f"0,6144,2048,{block_m},128,128"
+    for kernel in kernels:
+        if not isinstance(kernel, str) or W2_BM16_IMPL_NAME not in kernel:
+            continue
+        if mangled_segment in kernel:
+            return True
+        normalized = re.sub(r"\s+", "", kernel)
+        normalized = re.sub(r"(?<=\d)[uUlL]+(?=[,>])", "", normalized)
+        if demangled_segment in normalized:
+            return True
+    return False
+
+
+def _w2_stage_template_mapping(
+    kernels: Any,
+    block_m: int,
+    num_stages: int,
+) -> bool:
+    if not _list(kernels):
+        return False
+    numbers = (
+        0,
+        6144,
+        2048,
+        block_m,
+        128,
+        128,
+        32,
+        128,
+        128,
+        128,
+        num_stages,
+        128,
+        128,
+    )
+    mangled_segment = "".join(f"ELj{value}" for value in numbers)
+    demangled_segment = ",".join(str(value) for value in numbers)
     for kernel in kernels:
         if not isinstance(kernel, str) or W2_BM16_IMPL_NAME not in kernel:
             continue
@@ -101,7 +164,11 @@ def _list(value: Any) -> bool:
 
 
 def _number(value: Any) -> bool:
-    return isinstance(value, (int, float)) and not isinstance(value, bool)
+    return (
+        isinstance(value, (int, float))
+        and not isinstance(value, bool)
+        and math.isfinite(float(value))
+    )
 
 
 def _strict_nonnegative_int(value: Any) -> bool:
@@ -651,6 +718,7 @@ def _audit_jit(
     provenance: dict[str, Any],
     *,
     expected_phases: list[str],
+    require_pre_warmup_snapshots: bool,
 ) -> None:
     jit = provenance.get("jit")
     if not findings.require(_mapping(jit), "missing provenance.jit"):
@@ -694,6 +762,26 @@ def _audit_jit(
             )
             if observation.get(field) != []:
                 detected = True
+        phase = observation.get("phase")
+        if (
+            require_pre_warmup_snapshots
+            and isinstance(phase, str)
+            and phase.endswith(":timing")
+        ):
+            findings.require(
+                observation.get("snapshot_before_timed_series_warmup")
+                is True,
+                f"{prefix} was not snapshotted before series warmup",
+            )
+            findings.require(
+                observation.get("snapshot_before_phase")
+                == f"{phase[:-len(':timing')]}:warmup",
+                f"{prefix}.snapshot_before_phase mismatch",
+            )
+            findings.require(
+                observation.get("snapshot_after_phase") == phase,
+                f"{prefix}.snapshot_after_phase mismatch",
+            )
     findings.require(
         jit.get("capture_or_timing_detected") is detected,
         "JIT capture/timing summary does not match observations",
@@ -741,6 +829,124 @@ def _expected_order(start_order: str, pair_index: int) -> str:
     return "BA" if start_order == "AB" else "AB"
 
 
+def _recompute_performance_estimates(
+    raw_samples: list[Any],
+) -> dict[str, Any]:
+    if not raw_samples or len(raw_samples) % 2:
+        raise ValueError("incomplete ordered sample pairs")
+    reference_values: list[float] = []
+    candidate_values: list[float] = []
+    by_order: dict[str, list[float]] = {"AB": [], "BA": []}
+    for offset in range(0, len(raw_samples), 2):
+        pair = raw_samples[offset : offset + 2]
+        if not all(_mapping(sample) for sample in pair):
+            raise ValueError("sample pair is not object-valued")
+        order = pair[0].get("order")
+        if order not in by_order or pair[1].get("order") != order:
+            raise ValueError("sample pair order mismatch")
+        values: dict[str, float] = {}
+        for sample in pair:
+            implementation = sample.get("implementation")
+            latency = sample.get("latency_ms")
+            if (
+                implementation not in ("reference", "candidate")
+                or implementation in values
+                or not _number(latency)
+                or float(latency) <= 0.0
+            ):
+                raise ValueError("sample pair latency/implementation invalid")
+            values[implementation] = float(latency)
+        if set(values) != {"reference", "candidate"}:
+            raise ValueError("sample pair is incomplete")
+        ratio = values["reference"] / values["candidate"]
+        if not math.isfinite(ratio) or ratio <= 0.0:
+            raise ValueError("sample pair ratio is non-finite")
+        reference_values.append(values["reference"])
+        candidate_values.append(values["candidate"])
+        by_order[order].append(ratio)
+    if not by_order["AB"] or not by_order["BA"]:
+        raise ValueError("both AB and BA observations are required")
+    pooled = statistics.median(reference_values) / statistics.median(
+        candidate_values
+    )
+    ab_estimate = statistics.median(by_order["AB"])
+    ba_estimate = statistics.median(by_order["BA"])
+    order_balanced = math.sqrt(ab_estimate * ba_estimate)
+    if not all(
+        math.isfinite(value) and value > 0.0
+        for value in (pooled, order_balanced, ab_estimate, ba_estimate)
+    ):
+        raise ValueError("performance estimate is non-finite")
+    return {
+        "contract": "finite_pooled_order_balanced_ab_ba_v1",
+        "pair_count": len(raw_samples) // 2,
+        "pooled_speedup": pooled,
+        "order_balanced_speedup": order_balanced,
+        "ab_median_speedup": ab_estimate,
+        "ba_median_speedup": ba_estimate,
+        "all_finite": True,
+    }
+
+
+def _four_estimator_gate_passes(estimates: dict[str, Any]) -> bool:
+    return all(
+        _number(estimates.get(field))
+        and float(estimates[field]) >= PERFORMANCE_THRESHOLD
+        for field in (
+            "pooled_speedup",
+            "order_balanced_speedup",
+            "ab_median_speedup",
+            "ba_median_speedup",
+        )
+    )
+
+
+def _audit_performance_estimates(
+    findings: Findings,
+    recorded: Any,
+    raw_samples: list[Any],
+    *,
+    prefix: str,
+    required: bool,
+) -> bool:
+    if not required and recorded is None:
+        return True
+    if not findings.require(
+        _mapping(recorded),
+        f"{prefix} performance estimates are missing",
+    ):
+        return False
+    try:
+        expected = _recompute_performance_estimates(raw_samples)
+    except ValueError as exc:
+        findings.require(False, f"{prefix} estimates cannot be recomputed: {exc}")
+        return False
+    findings.require(
+        set(recorded) == set(expected),
+        f"{prefix} performance-estimate fields do not close",
+    )
+    valid = True
+    for field, expected_value in expected.items():
+        if isinstance(expected_value, float):
+            matches = _close(recorded.get(field), expected_value)
+        else:
+            matches = recorded.get(field) == expected_value
+            if field == "pair_count":
+                matches = bool(
+                    matches
+                    and isinstance(recorded.get(field), int)
+                    and not isinstance(recorded.get(field), bool)
+                )
+            if field == "all_finite":
+                matches = recorded.get(field) is True
+        findings.require(
+            matches,
+            f"{prefix}.performance_estimates.{field} mismatch",
+        )
+        valid = bool(valid and matches)
+    return valid
+
+
 def _audit_one_series(
     findings: Findings,
     series: dict[str, Any],
@@ -751,6 +957,7 @@ def _audit_one_series(
     expected_repeat: int,
     expected_warmup: int,
     capture_pools: dict[str, list[str]] | None,
+    require_estimates: bool,
 ) -> tuple[float | None, bool | None, list[float], list[float]]:
     prefix = f"series[{index}]"
     findings.require(series.get("series_index") == index, f"{prefix}.series_index mismatch")
@@ -884,10 +1091,34 @@ def _audit_one_series(
         _close(series.get("median_speedup"), median_speedup),
         f"{prefix}.median_speedup mismatch",
     )
-    passed = median_speedup >= PERFORMANCE_THRESHOLD
+    uses_strict_estimator_gate = bool(
+        require_estimates or _mapping(series.get("performance_estimates"))
+    )
+    if uses_strict_estimator_gate:
+        try:
+            recomputed_estimates = _recompute_performance_estimates(samples)
+        except ValueError as exc:
+            findings.require(
+                False,
+                f"{prefix} strict estimates cannot be recomputed: {exc}",
+            )
+            passed = False
+        else:
+            passed = _four_estimator_gate_passes(recomputed_estimates)
+    else:
+        # Historical artifacts without the estimator contract retain their
+        # legacy diagnostic interpretation.
+        passed = median_speedup >= PERFORMANCE_THRESHOLD
     findings.require(
         series.get("passes_3pct_gate") is passed,
         f"{prefix}.passes_3pct_gate mismatch",
+    )
+    _audit_performance_estimates(
+        findings,
+        series.get("performance_estimates"),
+        samples,
+        prefix=prefix,
+        required=require_estimates,
     )
     return median_speedup, passed, reference_values, candidate_values
 
@@ -1318,6 +1549,12 @@ def _audit_w2_edge_masks(
     *,
     mode: str,
 ) -> None:
+    params = workload.get("params")
+    stage11_v3 = bool(
+        _mapping(params)
+        and params.get("candidate_variant") == W2_EM8_BM16_STAGE11_VARIANT
+        and params.get("candidate_variant_version") == 3
+    )
     correctness = result.get("correctness")
     edge = (
         correctness.get("edge_masks")
@@ -1549,7 +1786,15 @@ def _audit_w2_edge_masks(
                 capture,
                 prefix=capture_prefix,
             )
-            mapping_ok = _w2_template_mapping(kernels, block_m)
+            mapping_ok = (
+                _w2_stage_template_mapping(
+                    kernels,
+                    block_m,
+                    12 if implementation == "reference" else 11,
+                )
+                if stage11_v3
+                else _w2_template_mapping(kernels, block_m)
+            )
             if implementation == "candidate":
                 mapping_ok = mapping_ok and not _w2_template_mapping(
                     kernels, 128
@@ -1627,6 +1872,73 @@ def _audit_w2_edge_masks(
             )
 
 
+def _stage11_build_provenance(
+    findings: Findings,
+    *,
+    artifacts: list[Any],
+    verify_files: bool,
+) -> dict[str, Any]:
+    path = W2_EM8_BM16_STAGE11_BUILD_PROVENANCE
+    if not findings.require(
+        path.is_file(),
+        "stage11 tracked build_provenance.json is missing",
+    ):
+        return {}
+    try:
+        provenance = json.loads(path.read_text())
+    except (OSError, json.JSONDecodeError) as exc:
+        findings.require(False, f"stage11 build provenance is unreadable: {exc}")
+        return {}
+    expected_variant = {
+        "name": W2_EM8_BM16_STAGE11_VARIANT,
+        "version": 3,
+        "predeclared_fallback": "em8_bm16_stage10",
+        "fallback_eligible": False,
+    }
+    findings.require(
+        provenance.get("schema_version") == 3,
+        "stage11 build provenance schema mismatch",
+    )
+    findings.require(
+        provenance.get("variant") == expected_variant,
+        "stage11 build provenance variant mismatch",
+    )
+    findings.require(
+        provenance.get("build_key")
+        == "edcf77b27696-26fbaca849ee-dc731d5442c0",
+        "stage11 build provenance key mismatch",
+    )
+    findings.require(
+        provenance.get("patches")
+        == {
+            "source_sha256": W2_EM8_BM16_STAGE11_SOURCE_PATCH_SHA256,
+            "build_tool_sha256": (
+                "dc731d5442c0bdf0758b17380e02e67b580cf3aa579f4832a497d1b68e3a85c7"
+            ),
+        },
+        "stage11 build provenance patch identity mismatch",
+    )
+    artifact = next(
+        (
+            item
+            for item in artifacts
+            if _mapping(item)
+            and isinstance(item.get("path"), str)
+            and Path(item["path"]).resolve() == path
+        ),
+        None,
+    )
+    findings.require(
+        _mapping(artifact)
+        and (
+            not verify_files
+            or artifact.get("sha256") == sha256_file(path)
+        ),
+        "stage11 tracked build provenance is not a hashed result artifact",
+    )
+    return provenance
+
+
 def _audit_w2_bm16_candidate(
     findings: Findings,
     result: dict[str, Any],
@@ -1647,18 +1959,48 @@ def _audit_w2_bm16_candidate(
     expected_m = params.get("expected_m")
     decode_m = params.get("decode_m")
     expected_token = params.get("candidate_jit_identity")
+    candidate_variant = params.get("candidate_variant")
+    candidate_variant_version = params.get("candidate_variant_version")
+    stage11 = bool(
+        candidate_variant == W2_EM8_BM16_STAGE11_VARIANT
+        and candidate_variant_version == 3
+    )
     findings.require(
-        (decode_m, expected_m) in {(16, 4), (16, 5), (32, 8), (32, 9)},
-        "W2/BM16 workload identity is outside the four accepted buckets",
+        candidate_variant in (None, W2_EM8_BM16_STAGE11_VARIANT),
+        "W2/BM16 candidate variant is unknown",
+    )
+    if candidate_variant == W2_EM8_BM16_STAGE11_VARIANT:
+        findings.require(
+            candidate_variant_version == 3,
+            "W2/BM16 stage11 candidate variant version must be v3",
+        )
+    accepted_buckets = {(32, 8)} if stage11 else {
+        (16, 4),
+        (16, 5),
+        (32, 8),
+        (32, 9),
+    }
+    findings.require(
+        (decode_m, expected_m) in accepted_buckets,
+        "W2/BM16 workload identity is outside its accepted buckets",
     )
     findings.require(
         workload.get("family")
         in {"moe_grouped_masked", "moe_compute_region"},
         "W2/BM16 candidate is attached to an unsupported workload family",
     )
+    expected_identity_valid = (
+        expected_token == W2_EM8_BM16_STAGE11_JIT_IDENTITY
+        if stage11
+        else (
+            isinstance(expected_token, str)
+            and expected_token.endswith(
+                f"glm52_w2_bm16_v2_em{expected_m}"
+            )
+        )
+    )
     findings.require(
-        isinstance(expected_token, str)
-        and expected_token.endswith(f"glm52_w2_bm16_v2_em{expected_m}"),
+        expected_identity_valid,
         "W2/BM16 canonical JIT identity is invalid",
     )
     _audit_w2_edge_masks(
@@ -1683,9 +2025,43 @@ def _audit_w2_bm16_candidate(
     ):
         return
     expected_build_id = (
-        "glm52-w2-bm16-v2:sgl-deep-gemm-0.1.4.post1@"
-        f"{W2_BM16_BASE_COMMIT}:sm100:e32:m1024:k2048:n6144:"
-        "bm16:pdl1:sms148:no-recipe:no-overlap"
+        W2_EM8_BM16_STAGE11_BUILD_ID
+        if stage11
+        else (
+            "glm52-w2-bm16-v2:sgl-deep-gemm-0.1.4.post1@"
+            f"{W2_BM16_BASE_COMMIT}:sm100:e32:m1024:k2048:n6144:"
+            "bm16:pdl1:sms148:no-recipe:no-overlap"
+        )
+    )
+    artifacts = result.get("provenance", {}).get("artifacts", [])
+    build_provenance = (
+        _stage11_build_provenance(
+            findings,
+            artifacts=artifacts if _list(artifacts) else [],
+            verify_files=verify_files,
+        )
+        if stage11
+        else {}
+    )
+    stock_extension_sha256 = (
+        build_provenance.get("stock", {}).get("extension_sha256")
+        if stage11
+        else W2_BM16_STOCK_EXTENSION_SHA256
+    )
+    candidate_extension_sha256 = (
+        build_provenance.get("candidate", {}).get("extension_sha256")
+        if stage11
+        else W2_BM16_CANDIDATE_EXTENSION_SHA256
+    )
+    cache_dir = (
+        W2_EM8_BM16_STAGE11_CACHE_DIR
+        if stage11
+        else W2_BM16_CACHE_DIR
+    )
+    source_patch_sha256 = (
+        W2_EM8_BM16_STAGE11_SOURCE_PATCH_SHA256
+        if stage11
+        else W2_BM16_SOURCE_PATCH_SHA256
     )
     exact_fields = {
         "base_commit": W2_BM16_BASE_COMMIT,
@@ -1700,10 +2076,10 @@ def _audit_w2_bm16_candidate(
         "candidate_pdl": True,
         "runtime_modules_distinct": True,
         "runtime_extension_modules_distinct": True,
-        "stock_extension_sha256": W2_BM16_STOCK_EXTENSION_SHA256,
-        "candidate_extension_sha256": W2_BM16_CANDIDATE_EXTENSION_SHA256,
-        "dg_jit_cache_dir": W2_BM16_CACHE_DIR,
-        "sglang_dg_cache_dir": W2_BM16_CACHE_DIR,
+        "stock_extension_sha256": stock_extension_sha256,
+        "candidate_extension_sha256": candidate_extension_sha256,
+        "dg_jit_cache_dir": cache_dir,
+        "sglang_dg_cache_dir": cache_dir,
         "decode_m": decode_m,
         "expected_m": expected_m,
         "candidate_jit_identity": expected_token,
@@ -1718,10 +2094,75 @@ def _audit_w2_bm16_candidate(
             "SGLANG_DEEPGEMM_PDL": True,
         },
     }
+    if stage11:
+        exact_fields.update(
+            {
+                "variant_name": W2_EM8_BM16_STAGE11_VARIANT,
+                "variant_version": 3,
+                "masked_block_m_override": 16,
+                "masked_num_stages_override": 11,
+                "predeclared_fallback": "em8_bm16_stage10",
+                "fallback_eligible": False,
+                "pipeline_smem_per_stage_bytes": 18432,
+                "pipeline_fixed_bytes": 9004,
+                "stock_pipeline_num_stages": 12,
+                "stock_pipeline_smem_bytes": 230188,
+                "candidate_pipeline_num_stages": 11,
+                "candidate_pipeline_smem_bytes": 211756,
+                "two_ctas_per_sm_enabled": False,
+                "performance_hypothesis": (
+                    "reduced-pipeline-pressure-falsifiable"
+                ),
+            }
+        )
     for field, expected in exact_fields.items():
         findings.require(
             runtime.get(field) == expected,
             f"W2/BM16 runtime contract {field} mismatch",
+        )
+    if stage11:
+        findings.require(
+            build_provenance.get("base", {}).get("commit")
+            == W2_BM16_BASE_COMMIT
+            and build_provenance.get("base", {}).get("submodules")
+            == {
+                "third-party/cutlass": W2_BM16_CUTLASS_COMMIT,
+                "third-party/fmt": W2_BM16_FMT_COMMIT,
+            },
+            "stage11 build provenance exact base/submodules mismatch",
+        )
+        findings.require(
+            build_provenance.get("candidate", {}).get("build_id")
+            == W2_EM8_BM16_STAGE11_BUILD_ID
+            and build_provenance.get("candidate", {}).get("import_name")
+            == "deep_gemm_glm52_w2_em8_bm16_stage11_v3",
+            "stage11 build provenance candidate identity mismatch",
+        )
+        expected_pipeline = {
+            "smem_per_stage_bytes": 18432,
+            "fixed_smem_bytes": 9004,
+            "stock_num_stages": 12,
+            "stock_smem_bytes": 230188,
+            "candidate_num_stages": 11,
+            "candidate_smem_bytes": 211756,
+            "two_ctas_per_sm_enabled": False,
+            "claim": "reduced-pipeline-pressure-falsifiable",
+        }
+        findings.require(
+            build_provenance.get("candidate_api", {}).get(
+                "pipeline_hypothesis"
+            )
+            == expected_pipeline
+            and build_provenance.get("runtime_contract", {}).get(
+                "pipeline_hypothesis"
+            )
+            == expected_pipeline,
+            "stage11 build provenance pipeline hypothesis mismatch",
+        )
+        findings.require(
+            build_provenance.get("generated_manifest_sha256")
+            == runtime.get("manifest_sha256"),
+            "stage11 runtime manifest hash differs from tracked build provenance",
         )
     findings.require(
         runtime.get("stock_tc_util") == runtime.get("candidate_tc_util")
@@ -1738,14 +2179,13 @@ def _audit_w2_bm16_candidate(
         "W2/BM16 independent DeviceRuntime probe is missing",
     )
 
-    artifacts = result.get("provenance", {}).get("artifacts", [])
     artifact_hashes = {
         item.get("sha256") for item in artifacts if _mapping(item)
     }
     for digest, label in (
-        (W2_BM16_SOURCE_PATCH_SHA256, "source patch"),
-        (W2_BM16_STOCK_EXTENSION_SHA256, "stock _C"),
-        (W2_BM16_CANDIDATE_EXTENSION_SHA256, "candidate _C"),
+        (source_patch_sha256, "source patch"),
+        (stock_extension_sha256, "stock _C"),
+        (candidate_extension_sha256, "candidate _C"),
         (runtime.get("manifest_sha256"), "overlay manifest"),
     ):
         findings.require(
@@ -1753,7 +2193,7 @@ def _audit_w2_bm16_candidate(
             f"W2/BM16 {label} is not bound to a hashed artifact",
         )
 
-    kernel_root = (Path(W2_BM16_CACHE_DIR) / "cache").resolve()
+    kernel_root = (Path(cache_dir) / "cache").resolve()
     kernel_dir_raw = runtime.get("jit_cache_kernel_dir")
     source_path_raw = runtime.get("jit_cache_source_path")
     cubin_path_raw = runtime.get("jit_cache_cubin_path")
@@ -1797,12 +2237,39 @@ def _audit_w2_bm16_candidate(
         and Path(cubin_path_raw).resolve() == expected_cubin,
         "W2/BM16 cubin path is not bound to its emX cache",
     )
-    findings.require(
+    expected_template_segment = (
+        [
+            0,
+            6144,
+            2048,
+            16,
+            128,
+            128,
+            32,
+            128,
+            128,
+            128,
+            11,
+            128,
+            128,
+        ]
+        if stage11
+        else [0, 6144, 2048, 16, 128, 128]
+    )
+    template_matches = (
         runtime.get("jit_cache_generated_impl") == W2_BM16_IMPL_NAME
         and runtime.get("jit_cache_generated_block_m") == 16
         and runtime.get("jit_cache_template_segment")
-        == [0, 6144, 2048, 16, 128, 128],
-        "W2/BM16 generated source does not prove the BM16 template mapping",
+        == expected_template_segment
+    )
+    if stage11:
+        template_matches = bool(
+            template_matches
+            and runtime.get("jit_cache_generated_num_stages") == 11
+        )
+    findings.require(
+        template_matches,
+        "W2/BM16 template mapping is not proven by generated source",
     )
 
     artifacts_by_path = {
@@ -1838,11 +2305,16 @@ def _audit_w2_bm16_candidate(
     ):
         generated_source = expected_source.read_text(errors="replace")
         normalized_source = re.sub(r"\s+", "", generated_source)
+        expected_source_segment = (
+            "0,6144,2048,16,128,128,32,128,128,128,11,128,128"
+            if stage11
+            else "0,6144,2048,16,128,128"
+        )
         findings.require(
             W2_BM16_IMPL_NAME in generated_source
-            and "0,6144,2048,16,128,128" in normalized_source,
-            "W2/BM16 hashed generated source lacks the positional BM16 "
-            "template segment",
+            and expected_source_segment in normalized_source,
+            "W2/BM16 hashed generated source lacks its positional template "
+            "segment",
         )
 
     if mode == "eager":
@@ -1858,12 +2330,20 @@ def _audit_w2_bm16_candidate(
         reference_w2 = [
             index
             for index, kernel in enumerate(reference_events)
-            if _w2_template_mapping([kernel], 128)
+            if (
+                _w2_stage_template_mapping([kernel], 128, 12)
+                if stage11
+                else _w2_template_mapping([kernel], 128)
+            )
         ]
         candidate_w2 = [
             index
             for index, kernel in enumerate(candidate_events)
-            if _w2_template_mapping([kernel], 16)
+            if (
+                _w2_stage_template_mapping([kernel], 16, 11)
+                if stage11
+                else _w2_template_mapping([kernel], 16)
+            )
         ]
         if _is_w2_leaf_workload(workload):
             findings.require(
@@ -1938,10 +2418,13 @@ def _audit_w2_bm16_candidate(
                     prefix=capture_prefix,
                 )
                 if capture.get("implementation") == "reference":
+                    reference_mapping = (
+                        _w2_stage_template_mapping(kernels, 128, 12)
+                        if stage11
+                        else _w2_template_mapping(kernels, 128)
+                    )
                     findings.require(
-                        _w2_template_mapping(
-                            kernels, 128
-                        )
+                        reference_mapping
                         and not _w2_template_mapping(
                             kernels, 16
                         ),
@@ -1949,10 +2432,13 @@ def _audit_w2_bm16_candidate(
                         f"at series {series_index} capture {capture_index}",
                     )
                 elif capture.get("implementation") == "candidate":
+                    candidate_mapping = (
+                        _w2_stage_template_mapping(kernels, 16, 11)
+                        if stage11
+                        else _w2_template_mapping(kernels, 16)
+                    )
                     findings.require(
-                        _w2_template_mapping(
-                            kernels, 16
-                        )
+                        candidate_mapping
                         and not _w2_template_mapping(
                             kernels, 128
                         ),
@@ -2038,6 +2524,21 @@ def audit_document(
     execution_value = result.get("execution")
     execution: dict[str, Any] = execution_value if _mapping(execution_value) else {}
     mode: str | None = None
+    canonical_params = (
+        canonical_workload.get("params", {})
+        if _mapping(canonical_workload)
+        else {}
+    )
+    require_estimates = (
+        _mapping(canonical_params)
+        and canonical_params.get("performance_estimator_contract")
+        == "strict_four_estimator_every_series_1p03_v1"
+    )
+    require_pre_warmup_snapshots = (
+        _mapping(canonical_params)
+        and canonical_params.get("provenance_snapshot_contract")
+        == "before_timed_series_warmup_v1"
+    )
     if findings.require(bool(execution), "missing execution contract"):
         mode = execution.get("mode")
         findings.require(mode in ("eager", "cuda_graph"), "execution.mode invalid")
@@ -2115,10 +2616,27 @@ def audit_document(
         _audit_imports(findings, provenance, by_role, verify_files=verify_files)
         _audit_repositories(findings, provenance)
         _audit_hardware(findings, provenance)
+        if require_pre_warmup_snapshots:
+            findings.require(
+                provenance.get("snapshot_contract")
+                == "before_timed_series_warmup_v1",
+                "stage11 provenance snapshot contract mismatch",
+            )
+            findings.require(
+                provenance.get("captured_before_timed_series_warmup")
+                is True,
+                "stage11 provenance was not frozen before timed-series warmup",
+            )
+            findings.require(
+                isinstance(provenance.get("captured_utc"), str)
+                and bool(provenance["captured_utc"]),
+                "stage11 provenance capture timestamp is missing",
+            )
         _audit_jit(
             findings,
             provenance,
             expected_phases=expected_jit_phases,
+            require_pre_warmup_snapshots=require_pre_warmup_snapshots,
         )
 
     identity_control = False
@@ -2178,6 +2696,7 @@ def audit_document(
     series_medians: list[float] = []
     all_reference: list[float] = []
     all_candidate: list[float] = []
+    all_raw_samples: list[Any] = []
     series_ids: set[str] = set()
     exact_series_count = (
         isinstance(requested_series, int)
@@ -2216,6 +2735,7 @@ def audit_document(
                 expected_repeat=int(run.get("repeat", 0)),
                 expected_warmup=int(run.get("warmup", 0)),
                 capture_pools=capture_pools,
+                require_estimates=require_estimates,
             )
             if passed is not None:
                 series_passes.append(passed)
@@ -2223,6 +2743,9 @@ def audit_document(
                 series_medians.append(median)
             all_reference.extend(reference_values)
             all_candidate.extend(candidate_values)
+            raw_samples = item.get("raw_ordered_samples")
+            if _list(raw_samples):
+                all_raw_samples.extend(raw_samples)
         if mode == "eager" and _mapping(execution):
             _audit_kernel_profiles(
                 findings,
@@ -2303,8 +2826,28 @@ def audit_document(
             aggregate.get("every_series_passes_3pct") is every_passes,
             "aggregate all-series gate mismatch",
         )
+        if require_estimates:
+            findings.require(
+                aggregate.get("series_gate_contract")
+                == "all_four_estimates_each_series_gte_1p03_v1",
+                "aggregate strict four-estimator gate contract mismatch",
+            )
+        estimates_finite = _audit_performance_estimates(
+            findings,
+            aggregate.get("performance_estimates"),
+            all_raw_samples,
+            prefix="aggregate",
+            required=require_estimates,
+        )
+        if require_estimates or "required_estimates_finite" in aggregate:
+            findings.require(
+                aggregate.get("required_estimates_finite")
+                is estimates_finite,
+                "aggregate required-estimates disposition mismatch",
+            )
         expected_gate = (
             every_passes
+            and (estimates_finite if require_estimates else True)
             and not identity_control
             and fallback_count == 0
             and (

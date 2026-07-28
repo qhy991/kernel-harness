@@ -34,12 +34,14 @@ PY_FILES = [
     "testbench/harness/gpu_lease.py",
     "testbench/harness/result_store.py",
     "serving_native/audit_result.py",
+    "serving_native/candidates/moe_w2_em8_bm16_stage11.py",
     "serving_native/contract_v2.py",
     "serving_native/launch.py",
     "serving_native/runner.py",
     "serving_native/selftest.py",
     "serving_native/test_contract_v2.py",
     "serving_native/test_task26_driver.py",
+    "serving_native/test_task26_stage11_driver.py",
     "serving_native/validate_portfolio_audit.py",
     "serving_native/workloads.py",
 ]
@@ -55,6 +57,7 @@ DIFF_CHECK_PATHS = [
     "testbench/tasks/glm52",
     "serving_native",
     "evidence/glm52_prod_26_moe_w2_decode_scoped_bm16",
+    "evidence/glm52_prod_26_moe_w2_decode_scoped_bm16_em8_bm16_stage11_v3",
     ":(exclude)testbench/tasks/glm52/*/candidate.py",
 ]
 
@@ -71,6 +74,7 @@ REVIEW_PATHS = [
     "testbench/tasks/glm52/*/task.json",
     "serving_native",
     "evidence/glm52_prod_26_moe_w2_decode_scoped_bm16",
+    "evidence/glm52_prod_26_moe_w2_decode_scoped_bm16_em8_bm16_stage11_v3",
 ]
 
 REVIEW_DIFF_PATHS = [
@@ -84,6 +88,7 @@ REVIEW_DIFF_PATHS = [
     "testbench/tasks/glm52",
     "serving_native",
     "evidence/glm52_prod_26_moe_w2_decode_scoped_bm16",
+    "evidence/glm52_prod_26_moe_w2_decode_scoped_bm16_em8_bm16_stage11_v3",
     ":(exclude)testbench/tasks/glm52/*/candidate.py",
 ]
 
@@ -494,6 +499,7 @@ def main() -> int:
             "unittest",
             "serving_native.test_contract_v2",
             "serving_native.test_task26_driver",
+            "serving_native.test_task26_stage11_driver",
         ],
         [sys.executable, "testbench/bin/knowledge.py", "lint"],
         [sys.executable, "testbench/bin/knowledge.py", "index", "--check"],

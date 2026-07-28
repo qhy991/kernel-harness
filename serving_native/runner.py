@@ -10,6 +10,7 @@ from __future__ import annotations
 import argparse
 import importlib.util
 import json
+import math
 import os
 import socket
 import statistics
@@ -214,7 +215,12 @@ class CallAccounting:
                 trusted_config=trusted_config,
             )
 
-    def render(self, candidate_module: ModuleType) -> dict[str, Any]:
+    def render(
+        self,
+        candidate_module: ModuleType,
+        *,
+        cached_runtime_evidence: dict[str, Any] | None = None,
+    ) -> dict[str, Any]:
         identity_control = bool(getattr(candidate_module, "IDENTITY_CONTROL", False))
         rendered = {
             "reference": {
@@ -243,7 +249,11 @@ class CallAccounting:
         }
         evidence_hook = getattr(candidate_module, "runtime_evidence", None)
         if evidence_hook is not None:
-            evidence = evidence_hook()
+            evidence = (
+                cached_runtime_evidence
+                if cached_runtime_evidence is not None
+                else evidence_hook()
+            )
             if not isinstance(evidence, dict) or not evidence:
                 raise RuntimeError(
                     "candidate runtime_evidence() must return a non-empty dict"
@@ -1412,7 +1422,10 @@ def _time_one(
         end.synchronize()
         latency = float(start.elapsed_time(end))
         capture_id = None
-    return runtime.rank_max(latency), capture_id
+    latency = runtime.rank_max(latency)
+    if not math.isfinite(latency) or latency <= 0.0:
+        raise RuntimeError(f"CUDA event returned invalid latency: {latency!r}")
+    return latency, capture_id
 
 
 def _graph_runtime_preflight(runtime: Runtime) -> None:
@@ -2001,6 +2014,74 @@ def _series_order(start_order: str, pair_index: int) -> str:
     return "BA" if start_order == "AB" else "AB"
 
 
+def _performance_estimates(
+    raw_samples: list[dict[str, Any]],
+) -> dict[str, Any]:
+    if not raw_samples or len(raw_samples) % 2 != 0:
+        raise RuntimeError("performance estimates require complete ordered pairs")
+    reference_values: list[float] = []
+    candidate_values: list[float] = []
+    by_order: dict[str, list[float]] = {"AB": [], "BA": []}
+    for offset in range(0, len(raw_samples), 2):
+        pair = raw_samples[offset : offset + 2]
+        order = pair[0].get("order")
+        if order not in by_order or pair[1].get("order") != order:
+            raise RuntimeError("performance estimate pair order is malformed")
+        values = {
+            str(sample.get("implementation")): float(sample["latency_ms"])
+            for sample in pair
+        }
+        if set(values) != {"reference", "candidate"}:
+            raise RuntimeError("performance estimate pair is incomplete")
+        reference_ms = values["reference"]
+        candidate_ms = values["candidate"]
+        if not all(
+            math.isfinite(value) and value > 0.0
+            for value in (reference_ms, candidate_ms)
+        ):
+            raise RuntimeError("performance estimate latency is non-finite")
+        ratio = reference_ms / candidate_ms
+        if not math.isfinite(ratio) or ratio <= 0.0:
+            raise RuntimeError("performance estimate ratio is non-finite")
+        reference_values.append(reference_ms)
+        candidate_values.append(candidate_ms)
+        by_order[order].append(ratio)
+    if not by_order["AB"] or not by_order["BA"]:
+        raise RuntimeError("both AB and BA samples are required")
+
+    pooled = statistics.median(reference_values) / statistics.median(
+        candidate_values
+    )
+    ab_estimate = statistics.median(by_order["AB"])
+    ba_estimate = statistics.median(by_order["BA"])
+    order_balanced = math.sqrt(ab_estimate * ba_estimate)
+    estimates = (pooled, order_balanced, ab_estimate, ba_estimate)
+    if not all(math.isfinite(value) and value > 0.0 for value in estimates):
+        raise RuntimeError("required performance estimate is non-finite")
+    return {
+        "contract": "finite_pooled_order_balanced_ab_ba_v1",
+        "pair_count": len(raw_samples) // 2,
+        "pooled_speedup": pooled,
+        "order_balanced_speedup": order_balanced,
+        "ab_median_speedup": ab_estimate,
+        "ba_median_speedup": ba_estimate,
+        "all_finite": True,
+    }
+
+
+def _four_estimator_gate_passes(estimates: dict[str, Any]) -> bool:
+    return all(
+        math.isfinite(float(estimates[field]))
+        and float(estimates[field]) >= PERFORMANCE_THRESHOLD
+        for field in (
+            "pooled_speedup",
+            "order_balanced_speedup",
+            "ab_median_speedup",
+            "ba_median_speedup",
+        )
+    )
+
+
 def _measure_series(
     runtime: Runtime,
     reference_pool: ExecutionPool,
@@ -2019,6 +2100,9 @@ def _measure_series(
         "candidate": candidate_pool,
     }
     start_order = "AB" if series_index % 2 == 0 else "BA"
+    # Hash/cache state before the series warmup so warmup absorbs all CPU-side
+    # provenance perturbation before CUDA-event samples begin.
+    before = runtime_state_snapshot(candidate_artifacts)
     runtime.accounting.phase = f"{series_id}:warmup"
     for pair_index in range(warmup):
         order = _series_order(start_order, pair_index)
@@ -2032,7 +2116,6 @@ def _measure_series(
     reference_pool.reset()
     candidate_pool.reset()
 
-    before = runtime_state_snapshot(candidate_artifacts)
     runtime.accounting.phase = f"{series_id}:timing"
     raw_samples: list[dict[str, Any]] = []
     reference_values: list[float] = []
@@ -2071,6 +2154,9 @@ def _measure_series(
         after,
         phase=f"{series_id}:timing",
     )
+    observation["snapshot_before_phase"] = f"{series_id}:warmup"
+    observation["snapshot_after_phase"] = f"{series_id}:timing"
+    observation["snapshot_before_timed_series_warmup"] = True
     paired_speedups = [
         reference_ms / candidate_ms
         for reference_ms, candidate_ms in zip(
@@ -2079,6 +2165,8 @@ def _measure_series(
         )
     ]
     median_speedup = statistics.median(paired_speedups)
+    performance_estimates = _performance_estimates(raw_samples)
+    strict_estimator_pass = _four_estimator_gate_passes(performance_estimates)
     series = {
         "series_index": series_index,
         "series_id": series_id,
@@ -2092,7 +2180,10 @@ def _measure_series(
         "candidate": latency_summary(candidate_values),
         "paired_speedups": paired_speedups,
         "median_speedup": median_speedup,
-        "passes_3pct_gate": median_speedup >= PERFORMANCE_THRESHOLD,
+        "performance_estimates": performance_estimates,
+        # The paired median is diagnostic only. Promotion requires every
+        # independently recomputable estimator, including both order strata.
+        "passes_3pct_gate": strict_estimator_pass,
     }
     if graph_record is not None:
         series["graph"] = graph_record
@@ -2279,6 +2370,44 @@ def run_task(args: argparse.Namespace) -> int:
             candidate_artifacts=artifacts_for_snapshot,
         )
 
+        # Freeze every file/import/repository/cache/runtime provenance view
+        # before the first timed-series warmup. No cache walk, artifact hash, or
+        # runtime-evidence refresh is allowed between that warmup and timing.
+        cached_runtime_evidence = None
+        runtime_evidence_hook = getattr(
+            candidate_module, "runtime_evidence", None
+        )
+        if runtime_evidence_hook is not None:
+            cached_runtime_evidence = runtime_evidence_hook()
+            if (
+                not isinstance(cached_runtime_evidence, dict)
+                or not cached_runtime_evidence
+            ):
+                raise RuntimeError(
+                    "candidate runtime_evidence() must return a non-empty dict"
+                )
+        frozen_provenance = {
+            "snapshot_contract": "before_timed_series_warmup_v1",
+            "captured_before_timed_series_warmup": True,
+            "captured_utc": utc_now(),
+            "workload_sha256": canonical_sha256(as_dict(workload)),
+            "artifacts": _render_artifacts(candidate_module),
+            "imports": collect_import_provenance(candidate_module.__name__),
+            "repositories": {
+                "kernel_harness": git_repository(REPO_ROOT),
+                "sglang": git_repository(SGLANG_ROOT),
+            },
+            "cache_paths": {
+                name: os.environ.get(name)
+                for name in (
+                    "DG_JIT_CACHE_DIR",
+                    "SGLANG_DG_CACHE_DIR",
+                    "TRITON_CACHE_DIR",
+                    "TORCH_EXTENSIONS_DIR",
+                )
+            },
+        }
+
         series_results: list[dict[str, Any]] = []
         jit_observations: list[dict[str, Any]] = []
         for series_index in range(args.series):
@@ -2379,25 +2508,39 @@ def run_task(args: argparse.Namespace) -> int:
 
         clock_samples.append(clock_sample())
         workload_record = as_dict(workload)
-        all_reference = [
-            float(sample["latency_ms"])
+        all_raw_samples = [
+            sample
             for series in series_results
             for sample in series["raw_ordered_samples"]
+        ]
+        all_reference = [
+            float(sample["latency_ms"])
+            for sample in all_raw_samples
             if sample["implementation"] == "reference"
         ]
         all_candidate = [
             float(sample["latency_ms"])
-            for series in series_results
-            for sample in series["raw_ordered_samples"]
+            for sample in all_raw_samples
             if sample["implementation"] == "candidate"
         ]
+        aggregate_estimates = _performance_estimates(all_raw_samples)
+        required_estimates_finite = bool(
+            aggregate_estimates["all_finite"]
+            and all(
+                series["performance_estimates"]["all_finite"]
+                for series in series_results
+            )
+        )
         every_series_passes = all(
             series["passes_3pct_gate"] for series in series_results
         )
         identity_control = bool(
             getattr(candidate_module, "IDENTITY_CONTROL", False)
         )
-        implementation_record = runtime.accounting.render(candidate_module)
+        implementation_record = runtime.accounting.render(
+            candidate_module,
+            cached_runtime_evidence=cached_runtime_evidence,
+        )
         fallback_count = implementation_record["candidate"]["fallback_count"]
         reference_delegations = implementation_record["candidate"][
             "reference_delegations"
@@ -2405,6 +2548,7 @@ def run_task(args: argparse.Namespace) -> int:
         candidate_api = implementation_record["candidate"]["api"]
         performance_gate_passed = (
             every_series_passes
+            and required_estimates_finite
             and not identity_control
             and fallback_count == 0
             and (
@@ -2472,15 +2616,7 @@ def run_task(args: argparse.Namespace) -> int:
                 },
             },
             "provenance": {
-                "workload_sha256": canonical_sha256(workload_record),
-                "artifacts": _render_artifacts(candidate_module),
-                "imports": collect_import_provenance(
-                    candidate_module.__name__,
-                ),
-                "repositories": {
-                    "kernel_harness": git_repository(REPO_ROOT),
-                    "sglang": git_repository(SGLANG_ROOT),
-                },
+                **frozen_provenance,
                 "hardware": hardware,
                 "jit": {
                     "warmup_completed": True,
@@ -2490,15 +2626,6 @@ def run_task(args: argparse.Namespace) -> int:
                         for observation in jit_observations
                     ),
                     "observations": jit_observations,
-                },
-                "cache_paths": {
-                    name: os.environ.get(name)
-                    for name in (
-                        "DG_JIT_CACHE_DIR",
-                        "SGLANG_DG_CACHE_DIR",
-                        "TRITON_CACHE_DIR",
-                        "TORCH_EXTENSIONS_DIR",
-                    )
                 },
             },
             "implementations": implementation_record,
@@ -2518,6 +2645,11 @@ def run_task(args: argparse.Namespace) -> int:
                 "completed_series": len(series_results),
                 "threshold": PERFORMANCE_THRESHOLD,
                 "every_series_passes_3pct": every_series_passes,
+                "series_gate_contract": (
+                    "all_four_estimates_each_series_gte_1p03_v1"
+                ),
+                "required_estimates_finite": required_estimates_finite,
+                "performance_estimates": aggregate_estimates,
                 "performance_gate_passed": performance_gate_passed,
                 "identity_control_forced_non_win": identity_control,
             },

@@ -353,6 +353,80 @@ for _decode_m in _DECODE_M_BUCKETS:
     _add_decode_bucket(_decode_m)
 
 
+_STAGE11_JIT_IDENTITY = (
+    "sm100_m_grouped_fp8_fp4_gemm_masked_1d1d_"
+    "glm52_w2_em8_bm16_stage11_v3"
+)
+_STAGE11_COMMON = dict(
+    decode_m=32,
+    experts_per_rank=32,
+    expert_slab=1024,
+    expected_m=8,
+    valid_assignments=32 * _COMMON["topk"],
+    group_size=128,
+    topk=_COMMON["topk"],
+    candidate_variant="em8_bm16_stage11",
+    candidate_variant_version=3,
+    candidate_jit_identity=_STAGE11_JIT_IDENTITY,
+    masked_block_m_override=16,
+    masked_num_stages_override=11,
+    scale_abi="packed-int32-ue8m0",
+    provenance_snapshot_contract="before_timed_series_warmup_v1",
+    performance_estimator_contract="strict_four_estimator_every_series_1p03_v1",
+    predeclared_fallback="em8_bm16_stage10",
+    fallback_eligible=False,
+    pipeline_smem_per_stage_bytes=18432,
+    pipeline_fixed_bytes=9004,
+    stock_pipeline_num_stages=12,
+    stock_pipeline_smem_bytes=230188,
+    candidate_pipeline_num_stages=11,
+    candidate_pipeline_smem_bytes=211756,
+    two_ctas_per_sm_enabled=False,
+    performance_hypothesis="reduced-pipeline-pressure-falsifiable",
+)
+_STAGE11_GROUPED_SYMBOL = (
+    "sglang.srt.layers.deep_gemm_wrapper.entrypoint."
+    "grouped_gemm_nt_f8f8bf16_masked"
+)
+WORKLOADS["moe_w2_grouped_decode_m32_em8_bm16_stage11"] = Workload(
+    "moe_w2_grouped_decode_m32_em8_bm16_stage11",
+    "moe_grouped_masked",
+    "decode",
+    1,
+    _STAGE11_GROUPED_SYMBOL,
+    dict(_STAGE11_COMMON, k=2048, n=6144),
+    (
+        "Separately versioned Task26 stage11 leaf: exact M32/em8, BM16, "
+        "packed-int32 UE8M0, PDL, and no overlap."
+    ),
+    ("eager", "cuda_graph"),
+)
+WORKLOADS[
+    "moe_w13_swiglu_w2_region_decode_m32_em8_bm16_stage11"
+] = Workload(
+    "moe_w13_swiglu_w2_region_decode_m32_em8_bm16_stage11",
+    "moe_compute_region",
+    "decode",
+    1,
+    (
+        f"{_STAGE11_GROUPED_SYMBOL} + "
+        "sglang.srt.layers.moe.moe_runner.deep_gemm."
+        "_varlen_deep_gemm_silu_mul_quant"
+    ),
+    dict(
+        _STAGE11_COMMON,
+        hidden=6144,
+        gate_up=4096,
+        w2_k=2048,
+    ),
+    (
+        "Containing W13+SwiGLU/packed-UE8M0+W2 region for the exact "
+        "em8/BM16/stage11 candidate; local no-overlap evidence only."
+    ),
+    ("eager",),
+)
+
+
 def _add_four_gpu_lane() -> None:
     """Add a TP4/DP4/EP4 lane without changing the production TP8 lane."""
     world_size = 4

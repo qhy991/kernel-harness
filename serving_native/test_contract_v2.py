@@ -3,8 +3,12 @@
 from __future__ import annotations
 
 import copy
+import importlib.util
 import inspect
+import json
+import math
 import os
+import statistics
 import sys
 import tempfile
 import types
@@ -13,6 +17,8 @@ from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import Mock, patch
 
+import serving_native.audit_result as audit_result_module
+import serving_native.runner as runner_module
 from serving_native.audit_result import (
     W2_BM16_BASE_COMMIT,
     W2_BM16_CACHE_DIR,
@@ -21,6 +27,10 @@ from serving_native.audit_result import (
     W2_BM16_FMT_COMMIT,
     W2_BM16_SOURCE_PATCH_SHA256,
     W2_BM16_STOCK_EXTENSION_SHA256,
+    W2_EM8_BM16_STAGE11_BUILD_ID,
+    W2_EM8_BM16_STAGE11_CACHE_DIR,
+    W2_EM8_BM16_STAGE11_JIT_IDENTITY,
+    W2_EM8_BM16_STAGE11_SOURCE_PATCH_SHA256,
     audit_document,
 )
 from serving_native.contract_v2 import (
@@ -35,8 +45,11 @@ from serving_native.contract_v2 import (
 from serving_native.runner import (
     Runtime,
     TaskResult,
+    _four_estimator_gate_passes,
     _graph_mutation_target,
     _load_candidate,
+    _measure_series,
+    _performance_estimates,
 )
 from serving_native.workloads import (
     W2_EDGE_MASK_CASES,
@@ -59,6 +72,19 @@ COUNTER_FIELDS = (
     "candidate_reference_delegations",
     "candidate_trusted_config_calls",
 )
+
+
+def _load_unbuilt_stage11_candidate():
+    path = HERE / "candidates" / "moe_w2_em8_bm16_stage11.py"
+    spec = importlib.util.spec_from_file_location(
+        "serving_native_stage11_candidate_unit",
+        path,
+    )
+    if spec is None or spec.loader is None:
+        raise RuntimeError(f"cannot load stage11 candidate source: {path}")
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
 
 
 class ContractV2AuditTest(unittest.TestCase):
@@ -405,6 +431,48 @@ class ContractV2AuditTest(unittest.TestCase):
             field: sum(item[field] for item in by_phase.values())
             for field in COUNTER_FIELDS
         }
+        params = workload.get("params", {})
+        requires_estimates = (
+            params.get("performance_estimator_contract")
+            == "strict_four_estimator_every_series_1p03_v1"
+        )
+        requires_pre_warmup_snapshots = (
+            params.get("provenance_snapshot_contract")
+            == "before_timed_series_warmup_v1"
+        )
+        if requires_estimates:
+            for item in series:
+                item["performance_estimates"] = _performance_estimates(
+                    item["raw_ordered_samples"]
+                )
+        jit_observations = [
+            self._clean_observation(phase)
+            for phase in self._jit_phases(mode)
+        ]
+        if requires_pre_warmup_snapshots:
+            for observation in jit_observations:
+                phase = observation["phase"]
+                if phase.endswith(":timing"):
+                    observation.update(
+                        {
+                            "snapshot_before_timed_series_warmup": True,
+                            "snapshot_before_phase": (
+                                f"{phase[:-len(':timing')]}:warmup"
+                            ),
+                            "snapshot_after_phase": phase,
+                        }
+                    )
+        aggregate_estimates = (
+            _performance_estimates(
+                [
+                    sample
+                    for item in series
+                    for sample in item["raw_ordered_samples"]
+                ]
+            )
+            if requires_estimates
+            else None
+        )
         return {
             "schema_version": 2,
             "result_kind": "serving_native_v2",
@@ -458,6 +526,17 @@ class ContractV2AuditTest(unittest.TestCase):
                 },
             },
             "provenance": {
+                **(
+                    {
+                        "snapshot_contract": (
+                            "before_timed_series_warmup_v1"
+                        ),
+                        "captured_before_timed_series_warmup": True,
+                        "captured_utc": "2026-07-28T00:00:30Z",
+                    }
+                    if requires_pre_warmup_snapshots
+                    else {}
+                ),
                 "workload_sha256": canonical_sha256(workload),
                 "artifacts": [
                     file_artifact("runner", self.runner),
@@ -528,10 +607,7 @@ class ContractV2AuditTest(unittest.TestCase):
                     "warmup_completed": True,
                     "warmup_activity": self._clean_observation("jit_warmup"),
                     "capture_or_timing_detected": False,
-                    "observations": [
-                        self._clean_observation(phase)
-                        for phase in self._jit_phases(mode)
-                    ],
+                    "observations": jit_observations,
                 },
             },
             "implementations": {
@@ -569,6 +645,17 @@ class ContractV2AuditTest(unittest.TestCase):
                 "completed_series": SERIES,
                 "threshold": 1.03,
                 "every_series_passes_3pct": False,
+                **(
+                    {
+                        "required_estimates_finite": True,
+                        "series_gate_contract": (
+                            "all_four_estimates_each_series_gte_1p03_v1"
+                        ),
+                        "performance_estimates": aggregate_estimates,
+                    }
+                    if requires_estimates
+                    else {}
+                ),
                 "performance_gate_passed": False,
                 "identity_control_forced_non_win": identity_control,
             },
@@ -602,6 +689,17 @@ class ContractV2AuditTest(unittest.TestCase):
             "_ZN9deep_gemm28sm100_fp8_fp4_gemm_1d1d_impl"
             "ELj0ELj6144ELj2048ELj16ELj128ELj128E"
         )
+        if params.get("candidate_variant") == "em8_bm16_stage11":
+            stock_symbol = (
+                "_ZN9deep_gemm28sm100_fp8_fp4_gemm_1d1d_impl"
+                "ELj0ELj6144ELj2048ELj128ELj128ELj128"
+                "ELj32ELj128ELj128ELj128ELj12ELj128ELj128E"
+            )
+            candidate_symbol = (
+                "_ZN9deep_gemm28sm100_fp8_fp4_gemm_1d1d_impl"
+                "ELj0ELj6144ELj2048ELj16ELj128ELj128"
+                "ELj32ELj128ELj128ELj128ELj11ELj128ELj128E"
+            )
         runtime_contract = {
             "base_commit": W2_BM16_BASE_COMMIT,
             "base_version": "0.1.4.post1",
@@ -863,6 +961,166 @@ class ContractV2AuditTest(unittest.TestCase):
             result["correctness"]["edge_masks"] = None
         return result
 
+    def _valid_w2_stage11_fixture(
+        self,
+        mode: str = "eager",
+    ) -> tuple[dict, Path]:
+        result = self._valid_w2_candidate_fixture(
+            mode,
+            "moe_w2_grouped_decode_m32_em8_bm16_stage11",
+        )
+        runtime = result["implementations"]["candidate"]["runtime_contract"]
+        token = W2_EM8_BM16_STAGE11_JIT_IDENTITY
+        stock_sha = "1" * 64
+        candidate_sha = "2" * 64
+        manifest_sha = runtime["manifest_sha256"]
+        source_sha = "3" * 64
+        cubin_sha = "4" * 64
+        cache_key = "b" * 32
+        kernel_dir = (
+            Path(W2_EM8_BM16_STAGE11_CACHE_DIR)
+            / "cache"
+            / f"kernel.{token}.{cache_key}"
+        )
+        source_path = kernel_dir / "kernel.cu"
+        cubin_path = kernel_dir / "kernel.cubin"
+        runtime.update(
+            {
+                "build_id": W2_EM8_BM16_STAGE11_BUILD_ID,
+                "stock_extension_sha256": stock_sha,
+                "candidate_extension_sha256": candidate_sha,
+                "dg_jit_cache_dir": W2_EM8_BM16_STAGE11_CACHE_DIR,
+                "sglang_dg_cache_dir": W2_EM8_BM16_STAGE11_CACHE_DIR,
+                "variant_name": "em8_bm16_stage11",
+                "variant_version": 3,
+                "masked_block_m_override": 16,
+                "masked_num_stages_override": 11,
+                "predeclared_fallback": "em8_bm16_stage10",
+                "fallback_eligible": False,
+                "pipeline_smem_per_stage_bytes": 18432,
+                "pipeline_fixed_bytes": 9004,
+                "stock_pipeline_num_stages": 12,
+                "stock_pipeline_smem_bytes": 230188,
+                "candidate_pipeline_num_stages": 11,
+                "candidate_pipeline_smem_bytes": 211756,
+                "two_ctas_per_sm_enabled": False,
+                "performance_hypothesis": (
+                    "reduced-pipeline-pressure-falsifiable"
+                ),
+                "jit_cache_kernel_name": token,
+                "jit_cache_kernel_dir": str(kernel_dir),
+                "jit_cache_key": cache_key,
+                "jit_cache_source_path": str(source_path),
+                "jit_cache_source_sha256": source_sha,
+                "jit_cache_cubin_path": str(cubin_path),
+                "jit_cache_cubin_sha256": cubin_sha,
+                "jit_cache_generated_num_stages": 11,
+                "jit_cache_template_segment": [
+                    0,
+                    6144,
+                    2048,
+                    16,
+                    128,
+                    128,
+                    32,
+                    128,
+                    128,
+                    128,
+                    11,
+                    128,
+                    128,
+                ],
+            }
+        )
+        build_provenance = {
+            "schema_version": 3,
+            "variant": {
+                "name": "em8_bm16_stage11",
+                "version": 3,
+                "predeclared_fallback": "em8_bm16_stage10",
+                "fallback_eligible": False,
+            },
+            "base": {
+                "commit": W2_BM16_BASE_COMMIT,
+                "submodules": {
+                    "third-party/cutlass": W2_BM16_CUTLASS_COMMIT,
+                    "third-party/fmt": W2_BM16_FMT_COMMIT,
+                },
+            },
+            "build_key": "edcf77b27696-26fbaca849ee-dc731d5442c0",
+            "patches": {
+                "source_sha256": (
+                    W2_EM8_BM16_STAGE11_SOURCE_PATCH_SHA256
+                ),
+                "build_tool_sha256": (
+                    "dc731d5442c0bdf0758b17380e02e67b580cf3aa579f4832a497d1b68e3a85c7"
+                ),
+            },
+            "stock": {"extension_sha256": stock_sha},
+            "candidate": {
+                "extension_sha256": candidate_sha,
+                "build_id": W2_EM8_BM16_STAGE11_BUILD_ID,
+                "import_name": (
+                    "deep_gemm_glm52_w2_em8_bm16_stage11_v3"
+                ),
+            },
+            "candidate_api": {
+                "pipeline_hypothesis": {
+                    "smem_per_stage_bytes": 18432,
+                    "fixed_smem_bytes": 9004,
+                    "stock_num_stages": 12,
+                    "stock_smem_bytes": 230188,
+                    "candidate_num_stages": 11,
+                    "candidate_smem_bytes": 211756,
+                    "two_ctas_per_sm_enabled": False,
+                    "claim": "reduced-pipeline-pressure-falsifiable",
+                }
+            },
+            "runtime_contract": {
+                "pipeline_hypothesis": {
+                    "smem_per_stage_bytes": 18432,
+                    "fixed_smem_bytes": 9004,
+                    "stock_num_stages": 12,
+                    "stock_smem_bytes": 230188,
+                    "candidate_num_stages": 11,
+                    "candidate_smem_bytes": 211756,
+                    "two_ctas_per_sm_enabled": False,
+                    "claim": "reduced-pipeline-pressure-falsifiable",
+                }
+            },
+            "generated_manifest_sha256": manifest_sha,
+        }
+        provenance_path = self.root / "stage11-build-provenance.json"
+        provenance_path.write_text(
+            json.dumps(build_provenance, sort_keys=True) + "\n"
+        )
+        for index, (path, digest) in enumerate(
+            (
+                (
+                    self.root / "stage11-source.patch",
+                    W2_EM8_BM16_STAGE11_SOURCE_PATCH_SHA256,
+                ),
+                (self.root / "stage11-stock.so", stock_sha),
+                (self.root / "stage11-candidate.so", candidate_sha),
+                (self.root / "stage11-manifest.json", manifest_sha),
+                (source_path, source_sha),
+                (cubin_path, cubin_sha),
+                (
+                    provenance_path,
+                    canonical_sha256(build_provenance),
+                ),
+            )
+        ):
+            result["provenance"]["artifacts"].append(
+                {
+                    "role": f"stage11_artifact_{index:02d}",
+                    "path": str(path),
+                    "sha256": digest,
+                    "size_bytes": 1,
+                }
+            )
+        return result, provenance_path
+
     @staticmethod
     def _apply_speedup(result: dict, candidate_ms: float = 0.9) -> None:
         all_reference: list[float] = []
@@ -890,7 +1148,15 @@ class ContractV2AuditTest(unittest.TestCase):
             series["candidate"] = latency_summary(candidate_values)
             series["paired_speedups"] = ratios
             series["median_speedup"] = median
-            series["passes_3pct_gate"] = median >= 1.03
+            if "performance_estimates" in series:
+                series["performance_estimates"] = _performance_estimates(
+                    series["raw_ordered_samples"]
+                )
+                series["passes_3pct_gate"] = _four_estimator_gate_passes(
+                    series["performance_estimates"]
+                )
+            else:
+                series["passes_3pct_gate"] = median >= 1.03
             medians.append(median)
             all_reference.extend(reference_values)
             all_candidate.extend(candidate_values)
@@ -899,6 +1165,16 @@ class ContractV2AuditTest(unittest.TestCase):
         result["candidate"]["series_median_speedups"] = medians
         every = all(item["passes_3pct_gate"] for item in result["series"])
         result["aggregate"]["every_series_passes_3pct"] = every
+        if "performance_estimates" in result["aggregate"]:
+            raw_samples = [
+                sample
+                for series in result["series"]
+                for sample in series["raw_ordered_samples"]
+            ]
+            result["aggregate"][
+                "performance_estimates"
+            ] = _performance_estimates(raw_samples)
+            result["aggregate"]["required_estimates_finite"] = True
         candidate = result["implementations"]["candidate"]
         trusted = candidate["api"] == TRUSTED_CONFIG_API
         result["aggregate"]["performance_gate_passed"] = (
@@ -1421,6 +1697,378 @@ class ContractV2AuditTest(unittest.TestCase):
             report,
         )
 
+    def test_stage11_exact_artifact_and_all_estimators_audit_valid(
+        self,
+    ) -> None:
+        result, provenance_path = self._valid_w2_stage11_fixture()
+        self._apply_speedup(result)
+        with patch.object(
+            audit_result_module,
+            "W2_EM8_BM16_STAGE11_BUILD_PROVENANCE",
+            provenance_path,
+        ):
+            report = audit_document(result, verify_files=False)
+        self.assertTrue(report["valid"], report)
+        self.assertTrue(report["performance_gate_passed"], report)
+        for estimates in [
+            result["aggregate"]["performance_estimates"],
+            *[
+                series["performance_estimates"]
+                for series in result["series"]
+            ],
+        ]:
+            self.assertEqual(
+                estimates["contract"],
+                "finite_pooled_order_balanced_ab_ba_v1",
+            )
+            self.assertIs(estimates["all_finite"], True)
+            for field in (
+                "pooled_speedup",
+                "order_balanced_speedup",
+                "ab_median_speedup",
+                "ba_median_speedup",
+            ):
+                self.assertTrue(math.isfinite(estimates[field]), estimates)
+
+    def test_stage11_requires_stock_stage12_and_candidate_stage11_symbols(
+        self,
+    ) -> None:
+        for mode, implementation, source_stage, wrong_stage in (
+            ("eager", "reference", 12, 11),
+            ("eager", "candidate", 11, 12),
+            ("cuda_graph", "reference", 12, 11),
+            ("cuda_graph", "candidate", 11, 12),
+        ):
+            with self.subTest(mode=mode, implementation=implementation):
+                audit_implementation = (
+                    "stock" if implementation == "reference" else implementation
+                )
+                result, provenance_path = self._valid_w2_stage11_fixture(
+                    mode
+                )
+                self._apply_speedup(result)
+                source_segment = (
+                    "ELj32ELj128ELj128ELj128"
+                    f"ELj{source_stage}ELj128ELj128"
+                )
+                wrong_segment = (
+                    "ELj32ELj128ELj128ELj128"
+                    f"ELj{wrong_stage}ELj128ELj128"
+                )
+                if mode == "eager":
+                    profile = result["execution"]["kernel_profiles"][
+                        implementation
+                    ]
+                    profile["events"][0]["name"] = profile["events"][0][
+                        "name"
+                    ].replace(source_segment, wrong_segment)
+                    profile["kernel_identities"] = [
+                        profile["events"][0]["name"]
+                    ]
+                else:
+                    capture = next(
+                        capture
+                        for capture in result["series"][0]["graph"][
+                            "captures"
+                        ]
+                        if capture["implementation"] == implementation
+                    )
+                    wrong_symbol = capture["nodes"][0]["kernel"].replace(
+                        source_segment,
+                        wrong_segment,
+                    )
+                    capture["nodes"][0]["kernel"] = wrong_symbol
+                    capture["kernel_identities"] = [wrong_symbol]
+                with patch.object(
+                    audit_result_module,
+                    "W2_EM8_BM16_STAGE11_BUILD_PROVENANCE",
+                    provenance_path,
+                ):
+                    report = audit_document(result, verify_files=False)
+                self.assertFalse(report["valid"], report)
+                self.assertTrue(
+                    any(
+                        "template mapping" in error
+                        or "stage" in error.lower()
+                        or (
+                            "W2/BM16" in error
+                            and audit_implementation in error
+                        )
+                        for error in report["errors"]
+                    ),
+                    report,
+                )
+
+    def test_stage11_estimator_nonfinite_or_tamper_is_fail_closed(
+        self,
+    ) -> None:
+        for field, value in (
+            ("pooled_speedup", float("nan")),
+            ("order_balanced_speedup", float("inf")),
+            ("ab_median_speedup", 9.0),
+            ("ba_median_speedup", -1.0),
+        ):
+            with self.subTest(field=field):
+                result, provenance_path = self._valid_w2_stage11_fixture()
+                self._apply_speedup(result)
+                result["aggregate"]["performance_estimates"][field] = value
+                with patch.object(
+                    audit_result_module,
+                    "W2_EM8_BM16_STAGE11_BUILD_PROVENANCE",
+                    provenance_path,
+                ):
+                    report = audit_document(result, verify_files=False)
+                self.assertFalse(report["valid"], report)
+                self.assertFalse(report["performance_gate_passed"], report)
+                self.assertTrue(
+                    any(field in error for error in report["errors"]),
+                    report,
+                )
+
+    def test_stage11_order_stratum_below_threshold_is_strict_nonwin(
+        self,
+    ) -> None:
+        result, provenance_path = self._valid_w2_stage11_fixture()
+        all_reference: list[float] = []
+        all_candidate: list[float] = []
+        medians: list[float] = []
+        for series in result["series"]:
+            reference_values: list[float] = []
+            candidate_values: list[float] = []
+            ratios: list[float] = []
+            for sample in series["raw_ordered_samples"]:
+                if sample["implementation"] == "reference":
+                    sample["latency_ms"] = 1.0
+                    reference_values.append(1.0)
+                else:
+                    ratio = 1.10 if sample["order"] == "AB" else 1.00
+                    sample["latency_ms"] = 1.0 / ratio
+                    candidate_values.append(1.0 / ratio)
+                    ratios.append(ratio)
+            median = statistics.median(ratios)
+            estimates = _performance_estimates(
+                series["raw_ordered_samples"]
+            )
+            self.assertGreaterEqual(median, 1.03)
+            self.assertGreaterEqual(estimates["pooled_speedup"], 1.03)
+            self.assertGreaterEqual(
+                estimates["order_balanced_speedup"],
+                1.03,
+            )
+            self.assertGreaterEqual(estimates["ab_median_speedup"], 1.03)
+            self.assertLess(estimates["ba_median_speedup"], 1.03)
+            series["reference"] = latency_summary(reference_values)
+            series["candidate"] = latency_summary(candidate_values)
+            series["paired_speedups"] = ratios
+            series["median_speedup"] = median
+            series["performance_estimates"] = estimates
+            series["passes_3pct_gate"] = False
+            medians.append(median)
+            all_reference.extend(reference_values)
+            all_candidate.extend(candidate_values)
+
+        result["reference"] = latency_summary(all_reference)
+        result["candidate"].update(latency_summary(all_candidate))
+        result["candidate"]["series_median_speedups"] = medians
+        all_raw = [
+            sample
+            for series in result["series"]
+            for sample in series["raw_ordered_samples"]
+        ]
+        result["aggregate"]["performance_estimates"] = (
+            _performance_estimates(all_raw)
+        )
+        result["aggregate"]["required_estimates_finite"] = True
+        result["aggregate"]["every_series_passes_3pct"] = False
+        result["aggregate"]["performance_gate_passed"] = False
+        with patch.object(
+            audit_result_module,
+            "W2_EM8_BM16_STAGE11_BUILD_PROVENANCE",
+            provenance_path,
+        ):
+            report = audit_document(result, verify_files=False)
+        self.assertTrue(report["valid"], report)
+        self.assertFalse(report["performance_gate_passed"], report)
+
+        tampered = copy.deepcopy(result)
+        for series in tampered["series"]:
+            series["passes_3pct_gate"] = True
+        tampered["aggregate"]["every_series_passes_3pct"] = True
+        tampered["aggregate"]["performance_gate_passed"] = True
+        with patch.object(
+            audit_result_module,
+            "W2_EM8_BM16_STAGE11_BUILD_PROVENANCE",
+            provenance_path,
+        ):
+            tampered_report = audit_document(tampered, verify_files=False)
+        self.assertFalse(tampered_report["valid"], tampered_report)
+        self.assertFalse(
+            tampered_report["performance_gate_passed"],
+            tampered_report,
+        )
+        self.assertTrue(
+            any(
+                "passes_3pct_gate mismatch" in error
+                for error in tampered_report["errors"]
+            ),
+            tampered_report,
+        )
+
+    def test_stage11_snapshot_and_pipeline_identity_are_fail_closed(
+        self,
+    ) -> None:
+        for mutation, needle in (
+            (
+                lambda result: result["provenance"].__setitem__(
+                    "captured_before_timed_series_warmup",
+                    False,
+                ),
+                "before timed-series warmup",
+            ),
+            (
+                lambda result: result["provenance"]["jit"][
+                    "observations"
+                ][0].__setitem__(
+                    "snapshot_before_timed_series_warmup",
+                    False,
+                ),
+                "before series warmup",
+            ),
+            (
+                lambda result: result["implementations"]["candidate"][
+                    "runtime_contract"
+                ].__setitem__("jit_cache_generated_num_stages", 12),
+                "template mapping",
+            ),
+            (
+                lambda result: result["implementations"]["candidate"][
+                    "runtime_contract"
+                ].__setitem__("fallback_eligible", True),
+                "fallback_eligible mismatch",
+            ),
+        ):
+            with self.subTest(needle=needle):
+                result, provenance_path = self._valid_w2_stage11_fixture()
+                self._apply_speedup(result)
+                mutation(result)
+                with patch.object(
+                    audit_result_module,
+                    "W2_EM8_BM16_STAGE11_BUILD_PROVENANCE",
+                    provenance_path,
+                ):
+                    report = audit_document(result, verify_files=False)
+                self.assertFalse(report["valid"], report)
+                self.assertTrue(
+                    any(needle in error for error in report["errors"]),
+                    report,
+                )
+
+    def test_series_snapshot_occurs_before_warmup_behaviorally(self) -> None:
+        events: list[tuple[str, str]] = []
+        runtime = SimpleNamespace(
+            accounting=SimpleNamespace(phase="uninitialized")
+        )
+        reference_pool = SimpleNamespace(
+            reset=lambda: events.append(
+                ("reset-reference", runtime.accounting.phase)
+            )
+        )
+        candidate_pool = SimpleNamespace(
+            reset=lambda: events.append(
+                ("reset-candidate", runtime.accounting.phase)
+            )
+        )
+
+        def snapshot(_artifacts):
+            events.append(("snapshot", runtime.accounting.phase))
+            return {}
+
+        def invoke(_runtime, pool):
+            implementation = (
+                "reference" if pool is reference_pool else "candidate"
+            )
+            events.append(
+                (f"warmup-{implementation}", runtime.accounting.phase)
+            )
+
+        def time_one(_runtime, pool):
+            implementation = (
+                "reference" if pool is reference_pool else "candidate"
+            )
+            events.append(
+                (f"timing-{implementation}", runtime.accounting.phase)
+            )
+            return (1.0 if pool is reference_pool else 0.9), None
+
+        with (
+            patch.object(
+                runner_module,
+                "runtime_state_snapshot",
+                side_effect=snapshot,
+            ),
+            patch.object(
+                runner_module,
+                "_invoke_sync",
+                side_effect=invoke,
+            ),
+            patch.object(
+                runner_module,
+                "_time_one",
+                side_effect=time_one,
+            ),
+            patch.object(
+                runner_module,
+                "runtime_state_delta",
+                return_value={
+                    "phase": "fixture:timing",
+                    "clean": True,
+                    "new_imports": [],
+                    "new_shared_objects": [],
+                    "cache_changes": [],
+                    "candidate_artifact_changes": [],
+                },
+            ),
+        ):
+            series, observation = _measure_series(
+                runtime,
+                reference_pool,
+                candidate_pool,
+                series_index=0,
+                series_id="fixture",
+                execution_mode="eager",
+                warmup=3,
+                repeat=2,
+                candidate_artifacts=[],
+                graph_record=None,
+            )
+        first_snapshot = next(
+            index
+            for index, event in enumerate(events)
+            if event[0] == "snapshot"
+        )
+        first_warmup = next(
+            index
+            for index, event in enumerate(events)
+            if event[0].startswith("warmup-")
+        )
+        self.assertLess(first_snapshot, first_warmup, events)
+        self.assertEqual(
+            events[first_snapshot],
+            ("snapshot", "uninitialized"),
+        )
+        self.assertIs(
+            observation["snapshot_before_timed_series_warmup"],
+            True,
+        )
+        self.assertEqual(
+            observation["snapshot_before_phase"],
+            "fixture:warmup",
+        )
+        self.assertTrue(
+            series["performance_estimates"]["all_finite"],
+            series,
+        )
+
         block_tamper = self._valid_w2_candidate_fixture(
             "eager",
             "moe_w2_grouped_decode_m16",
@@ -1526,6 +2174,121 @@ class ContractV2AuditTest(unittest.TestCase):
             [0, 6144, 2048, 16, 128, 128],
         )
         self.assertEqual(len(evidence["jit_cache_cubin_sha256"]), 64)
+
+    def test_stage11_candidate_routes_containing_region_through_bound_w2(
+        self,
+    ) -> None:
+        module = _load_unbuilt_stage11_candidate()
+        bound_w2 = object()
+        inputs = {"region": object()}
+        expected = TaskResult(object())
+        runtime = SimpleNamespace(
+            workload=SimpleNamespace(family="moe_compute_region"),
+            run_moe_compute_region=Mock(return_value=expected),
+        )
+        with patch.object(
+            module,
+            "_candidate_callable",
+            return_value=bound_w2,
+        ):
+            observed = module.run(inputs, runtime)
+        self.assertIs(observed, expected)
+        runtime.run_moe_compute_region.assert_called_once_with(
+            inputs,
+            w2_gemm=bound_w2,
+        )
+
+    def test_stage11_candidate_binds_exact_cache_source_and_cubin(
+        self,
+    ) -> None:
+        module = _load_unbuilt_stage11_candidate()
+        token = W2_EM8_BM16_STAGE11_JIT_IDENTITY
+        cache_root = self.root / "stage11-deepgemm"
+        kernel_dir = (
+            cache_root
+            / "cache"
+            / f"kernel.{token}.{'b' * 32}"
+        )
+        kernel_dir.mkdir(parents=True)
+        source = kernel_dir / "kernel.cu"
+        source.write_text(
+            "sm100_fp8_fp4_gemm_1d1d_impl<"
+            "cute::UMMA::Major::K,cute::UMMA::Major::K,128,128,128,"
+            "0,6144,2048,16,128,128,32,128,128,128,11,128,128>;"
+        )
+        cubin = kernel_dir / "kernel.cubin"
+        cubin.write_bytes(b"stage11-fixture-cubin")
+        module._STATE.clear()
+        module._STATE["evidence"] = {
+            "candidate_jit_identity": token,
+            "dg_jit_cache_dir": str(cache_root),
+        }
+        try:
+            with patch.object(module, "_TASK_DG_CACHE", cache_root):
+                runtime_paths = module.runtime_artifact_paths()
+                evidence = module.runtime_evidence()
+        finally:
+            module._STATE.clear()
+        self.assertEqual(runtime_paths, (str(source), str(cubin)))
+        self.assertEqual(evidence["jit_cache_kernel_name"], token)
+        self.assertEqual(evidence["jit_cache_generated_block_m"], 16)
+        self.assertEqual(
+            evidence["jit_cache_generated_num_stages"],
+            11,
+        )
+        self.assertEqual(
+            evidence["jit_cache_template_segment"],
+            [
+                0,
+                6144,
+                2048,
+                16,
+                128,
+                128,
+                32,
+                128,
+                128,
+                128,
+                11,
+                128,
+                128,
+            ],
+        )
+        self.assertEqual(len(evidence["jit_cache_cubin_sha256"]), 64)
+        source.write_text(
+            "sm100_fp8_fp4_gemm_1d1d_impl<"
+            "cute::UMMA::Major::K,cute::UMMA::Major::K,128,128,128,"
+            "0,6144,2048,16,128,128,32,128,128,128,12,128,128>;"
+        )
+        module._STATE["evidence"] = {
+            "candidate_jit_identity": token,
+            "dg_jit_cache_dir": str(cache_root),
+        }
+        try:
+            with (
+                patch.object(module, "_TASK_DG_CACHE", cache_root),
+                self.assertRaisesRegex(RuntimeError, "num_stages=11"),
+            ):
+                module.runtime_evidence()
+        finally:
+            module._STATE.clear()
+
+    def test_stage11_candidate_rejects_old_stage12_workload_before_setup(
+        self,
+    ) -> None:
+        module = _load_unbuilt_stage11_candidate()
+        runtime = SimpleNamespace(
+            workload=get_workload("moe_w2_grouped_decode_m32")
+        )
+        module._STATE.clear()
+        try:
+            with self.assertRaisesRegex(
+                RuntimeError,
+                "does not support",
+            ):
+                module.prepare_runtime(runtime)
+        finally:
+            module._STATE.clear()
 
     def test_w2_candidate_restores_every_setup_environment_variable(
         self,
