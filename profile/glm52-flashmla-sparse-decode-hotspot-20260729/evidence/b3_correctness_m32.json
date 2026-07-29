@@ -1,0 +1,429 @@
+{
+  "contracts": {
+    "candidate_lse": {
+      "data_ptr": 124363827147776,
+      "device": "cuda:0",
+      "dtype": "torch.float32",
+      "is_contiguous": true,
+      "shape": [
+        32,
+        64,
+        1
+      ],
+      "storage_offset": 0,
+      "stride": [
+        64,
+        1,
+        64
+      ]
+    },
+    "candidate_output": {
+      "data_ptr": 124364485820416,
+      "device": "cuda:0",
+      "dtype": "torch.bfloat16",
+      "is_contiguous": true,
+      "shape": [
+        32,
+        1,
+        64,
+        512
+      ],
+      "storage_offset": 0,
+      "stride": [
+        32768,
+        32768,
+        512,
+        1
+      ]
+    },
+    "exact_pages": 4097,
+    "inputs_immutable": true,
+    "num_splits": [
+      0,
+      4,
+      8,
+      12,
+      16,
+      20,
+      24,
+      28,
+      32,
+      36,
+      40,
+      44,
+      48,
+      52,
+      56,
+      60,
+      64,
+      68,
+      72,
+      76,
+      80,
+      84,
+      88,
+      92,
+      96,
+      100,
+      104,
+      108,
+      112,
+      116,
+      120,
+      124,
+      128
+    ],
+    "output_lse_alias": false,
+    "poison_overwritten": true,
+    "stock_lse": {
+      "data_ptr": 124363827202048,
+      "device": "cuda:0",
+      "dtype": "torch.float32",
+      "is_contiguous": true,
+      "shape": [
+        32,
+        64,
+        1
+      ],
+      "storage_offset": 0,
+      "stride": [
+        64,
+        1,
+        64
+      ]
+    },
+    "stock_output": {
+      "data_ptr": 124364492898304,
+      "device": "cuda:0",
+      "dtype": "torch.bfloat16",
+      "is_contiguous": true,
+      "shape": [
+        32,
+        1,
+        64,
+        512
+      ],
+      "storage_offset": 0,
+      "stride": [
+        32768,
+        32768,
+        512,
+        1
+      ]
+    }
+  },
+  "correctness": {
+    "containing_eager": {
+      "anomaly_positions_match": true,
+      "atol": 0.02,
+      "exact": true,
+      "max_abs": 0.0,
+      "rtol": 0.02
+    },
+    "containing_graph": {
+      "anomaly_positions_match": true,
+      "atol": 0.02,
+      "exact": true,
+      "max_abs": 0.0,
+      "rtol": 0.02
+    },
+    "eager_lse": {
+      "anomaly_positions_match": true,
+      "atol": 0.02,
+      "exact": true,
+      "max_abs": 0.0,
+      "rtol": 0.02
+    },
+    "eager_output": {
+      "anomaly_positions_match": true,
+      "atol": 0.02,
+      "exact": true,
+      "max_abs": 0.0,
+      "rtol": 0.02
+    },
+    "graph_lse": {
+      "anomaly_positions_match": true,
+      "atol": 0.02,
+      "exact": true,
+      "max_abs": 0.0,
+      "rtol": 0.02
+    },
+    "graph_mutated_lse": {
+      "anomaly_positions_match": true,
+      "atol": 0.02,
+      "exact": true,
+      "max_abs": 0.0,
+      "rtol": 0.02
+    },
+    "graph_mutated_output": {
+      "anomaly_positions_match": true,
+      "atol": 0.02,
+      "exact": true,
+      "max_abs": 0.0,
+      "rtol": 0.02
+    },
+    "graph_mutation_change_max_abs": 0.00231170654296875,
+    "graph_output": {
+      "anomaly_positions_match": true,
+      "atol": 0.02,
+      "exact": true,
+      "max_abs": 0.0,
+      "rtol": 0.02
+    },
+    "graph_replay_deterministic_exact": true,
+    "nondefault_stream_lse": {
+      "anomaly_positions_match": true,
+      "atol": 0.02,
+      "exact": true,
+      "max_abs": 0.0,
+      "rtol": 0.02
+    },
+    "nondefault_stream_output": {
+      "anomaly_positions_match": true,
+      "atol": 0.02,
+      "exact": true,
+      "max_abs": 0.0,
+      "rtol": 0.02
+    }
+  },
+  "dispatch": {
+    "hits": {
+      "hotspot_plugin/flashmla_sparse_decode:dsa_decode_attn:decode:m32": 3
+    },
+    "misses": {
+      "flashmla_abi:dsa_decode_attn:decode:m32": 1
+    },
+    "no_fallback_after_selection": true,
+    "selected_launch_delta": 1,
+    "wrong_page_launch_delta": 0
+  },
+  "extension": {
+    "path": "/home/qinhaiyan/glm52-hotspot-goal-runs/cache/flashmla_sparse_decode/torch_extensions/infini_kernel_glm52_flashmla_sparse_decode_b3_native_fp8_bf16_307e9552b3146fd7/infini_kernel_glm52_flashmla_sparse_decode_b3_native_fp8_bf16_307e9552b3146fd7.so",
+    "sha256": "73a4d75b6c81ce2603374f99418be2744fa6de32edca1b7cbc3684df6e037eb1",
+    "size_bytes": 1190792
+  },
+  "gpu": {
+    "compute_capability": [
+      10,
+      0
+    ],
+    "logical_index": 0,
+    "name": "NVIDIA B200",
+    "physical_index": 0,
+    "uuid": "GPU-30b619de-87f2-1862-0d07-a595da8fe417"
+  },
+  "m": 32,
+  "provider": {
+    "build_id": "307e9552b3146fd7d601f8a56f7206f62a4d8ab07283c6c4675662678cb1c9fd",
+    "combine_source": "/home/qinhaiyan/glm52-hotspot-goal-runs/worktrees/flashmla-sparse-decode/flashmla/csrc/smxx/decode/combine/combine.cu",
+    "extension_file": "/home/qinhaiyan/glm52-hotspot-goal-runs/cache/flashmla_sparse_decode/torch_extensions/infini_kernel_glm52_flashmla_sparse_decode_b3_native_fp8_bf16_307e9552b3146fd7/infini_kernel_glm52_flashmla_sparse_decode_b3_native_fp8_bf16_307e9552b3146fd7.so",
+    "git_commit": "0657fffdfd1c981517647e043e4ef30ffdc1480f-dirty",
+    "launch_count": 10,
+    "main_symbol_prefix": "infini_kernel_glm52_flashmla_sparse_decode",
+    "module_name": "infini_kernel_glm52_flashmla_sparse_decode_b3_native_fp8_bf16_307e9552b3146fd7",
+    "name": "glm52_flashmla_sparse_decode_b3_native_fp8_bf16",
+    "source_sha256": {
+      "csrc/glm52_hotspot/api.cpp": "6c5ef0d7a92d18873b245dfe0175c353b232388bccf68733998a64c64a339610",
+      "csrc/glm52_hotspot/v32_b3_native_fp8_bf16.cu": "82dd6d44f8396dcd4bcc092144b70f9ab416e1bea44cda5d3b35bd7e1b650e67",
+      "csrc/kerutils/include/kerutils/device/sm100/intrinsics.cuh": "032f5cbeb060a37f95316a4efca1ea80a0890daf00db148b7ddad09cd9a0c738",
+      "csrc/params.h": "a4cc4ccf965ee012ec619401eb8ec0aaa182f2625888b6b1326e345ede218f1b",
+      "csrc/sm100/decode/head64/config.h": "694d5e6d9a88ff4f0aaddfb2abbbfeff76d900b48337adf0b0742f87d59ab3a5",
+      "csrc/sm100/decode/head64/kernel.cuh": "cf350b606fe8f50ac95568e3d10b5cae639f63258c9ce43c971331f0560e41f3",
+      "csrc/sm100/decode/head64/kernel.h": "953548cea84d9c7190a6f41dc6ba127281783208dedb7cded12bdeac8bdc422d",
+      "csrc/sm100/helpers.h": "7e3c6e42ef778f7120c90f607082cf6dc3817540b5c24442e52e91fd15c7e791",
+      "csrc/smxx/decode/combine/combine.cu": "1c86f47a8b8bd0adc52123f0a3e51dced9641a00200e93091725d3114eb1fa37",
+      "csrc/smxx/decode/combine/combine.h": "90f38d69986474005f74b911e701a4cce1d069de9cdabf7ba55ec1d3a8e83fd9"
+    },
+    "variant": "b3_native_fp8_bf16",
+    "workspace_pointers": {
+      "16": {
+        "lse_accum": 124363827105792,
+        "lse_base": 124363827101696,
+        "lse_stride": [
+          64,
+          1,
+          64
+        ],
+        "lse_view": 124363827101696,
+        "o_accum": 124363693138944,
+        "out": 124363826053120
+      },
+      "32": {
+        "lse_accum": 124363827155968,
+        "lse_base": 124363827147776,
+        "lse_stride": [
+          64,
+          1,
+          64
+        ],
+        "lse_view": 124363827147776,
+        "o_accum": 124363714634752,
+        "out": 124364485820416
+      }
+    }
+  },
+  "runtime": {
+    "cache_seqlens": [
+      2048,
+      2048,
+      2048,
+      2048,
+      2048,
+      2048,
+      2048,
+      2048,
+      2048,
+      2048,
+      2048,
+      2048,
+      2048,
+      2048,
+      2048,
+      2048,
+      2048,
+      2048,
+      2048,
+      2048,
+      2048,
+      2048,
+      2048,
+      2048,
+      2048,
+      2048,
+      2048,
+      2048,
+      2048,
+      2048,
+      2048,
+      2048
+    ],
+    "combine_kernel_pattern": "flash_fwd_mla_combine_kernel*",
+    "indices": {
+      "dtype": "torch.int32",
+      "shape": [
+        32,
+        1,
+        2048
+      ],
+      "stride": [
+        2048,
+        2048,
+        1
+      ]
+    },
+    "kv_cache": {
+      "bytes_per_token": 656,
+      "dtype": "torch.float8_e4m3fn",
+      "shape": [
+        4097,
+        64,
+        1,
+        656
+      ],
+      "stride": [
+        41984,
+        656,
+        656,
+        1
+      ]
+    },
+    "main_kernel_pattern": "flash_fwd_splitkv_mla_fp8_sparse_kernel*",
+    "num_splits_prefix": [
+      0,
+      4,
+      8,
+      12,
+      16,
+      20,
+      24,
+      28,
+      32,
+      36,
+      40,
+      44,
+      48,
+      52,
+      56,
+      60,
+      64,
+      68,
+      72,
+      76,
+      80,
+      84,
+      88,
+      92,
+      96,
+      100,
+      104,
+      108,
+      112,
+      116,
+      120,
+      124,
+      128
+    ],
+    "python_symbol": "sgl_kernel.flash_mla.flash_mla_with_kvcache",
+    "q": {
+      "dtype": "torch.bfloat16",
+      "shape": [
+        32,
+        1,
+        64,
+        576
+      ],
+      "stride": [
+        36864,
+        36864,
+        576,
+        1
+      ]
+    },
+    "selected_backend": "flashmla_kv",
+    "sm100_instantiation": "csrc/sm100/decode/head64/instantiations/v32.cu",
+    "softmax_scale": 0.0625,
+    "splits_per_request": [
+      4,
+      4,
+      4,
+      4,
+      4,
+      4,
+      4,
+      4,
+      4,
+      4,
+      4,
+      4,
+      4,
+      4,
+      4,
+      4,
+      4,
+      4,
+      4,
+      4,
+      4,
+      4,
+      4,
+      4,
+      4,
+      4,
+      4,
+      4,
+      4,
+      4,
+      4,
+      4
+    ],
+    "stream": "torch current CUDA stream",
+    "tile_scheduler_metadata_shape": [
+      148,
+      8
+    ],
+    "torch_op": "sgl_kernel::fwd_kvcache_mla"
+  },
+  "schema_version": 1,
+  "stage": "correctness_b3_native_fp8_bf16",
+  "task": "dsa_flashmla_kv_decode_m32"
+}

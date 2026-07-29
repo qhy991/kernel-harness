@@ -1,0 +1,164 @@
+{
+  "schema_version": 1,
+  "task": "exact GLM-5.2 flashmla_kv sparse-index FP8 decode M16/M32",
+  "material_candidate_budget": {
+    "allowed": 8,
+    "used": 7,
+    "control_excluded": "A0 identity is a rebuild/control, never a candidate"
+  },
+  "control": {
+    "id": "A0",
+    "variant": "identity",
+    "hypothesis": "Prove the source overlay, provider ABI, independent graph capture, and fair-measurement harness without claiming stock as a candidate.",
+    "outcome": "control-only",
+    "reason": "The prefixed main is source-identical to stock; its measurements expose capture/order and provider-integration effects and are not eligible for promotion.",
+    "evidence": [
+      "a0_m16.json",
+      "a0_m32.json",
+      "a0_stock_stock_m16_v2.json",
+      "a0_stock_identity_m16.json"
+    ]
+  },
+  "attempts": [
+    {
+      "id": "B1",
+      "variant": "b1_coord_ready",
+      "hypothesis": "Let raw and RoPE gather warps consume TMA coordinates before the index warp finishes scale/valid-mask publication, increasing producer overlap without changing bytes.",
+      "exact_delta": "Added a coordinate-ready mbarrier handoff ahead of the existing scale/valid barrier.",
+      "generated_binary": "168 registers, 16 allocated barriers, zero spills, 4128 static main instructions; unchanged combine SASS.",
+      "correctness": "Exact at leaf eager, non-default stream, leaf graph with mutation, containing eager, and containing graph for M16/M32.",
+      "outcome": "rejected",
+      "why": "Mandatory graph estimators remained below 1.03 at both buckets; the extra handoff did not expose useful overlap.",
+      "evidence": [
+        "b1_correctness_m16.json",
+        "b1_correctness_m32.json",
+        "b1_paired_m16.json",
+        "b1_paired_m32.json"
+      ]
+    },
+    {
+      "id": "B2",
+      "variant": "b2_stagger_nope",
+      "hypothesis": "Stagger odd eight-lane NoPE groups across adjacent columns to reduce simultaneous shared-memory bank pressure.",
+      "exact_delta": "Changed only the NoPE shared-load visit order; TMA footprint and mathematical layout stayed fixed.",
+      "generated_binary": "168 registers, 16 allocated barriers, zero spills, 4160 static main instructions, 32 more than control; unchanged combine SASS.",
+      "correctness": "Exact at every required leaf/containing eager/graph boundary for M16/M32.",
+      "outcome": "rejected",
+      "why": "The added address instructions outweighed any bank benefit and graph estimators regressed below 1.03 in both buckets.",
+      "evidence": [
+        "b2_correctness_m16.json",
+        "b2_correctness_m32.json",
+        "b2_paired_m16.json",
+        "b2_paired_m32.json"
+      ]
+    },
+    {
+      "id": "B3",
+      "variant": "b3_native_fp8_bf16",
+      "hypothesis": "PTX ISA 9.2 direct packed E4M3x2-to-BF16x2 conversion can remove the float unpack/repack sequence while preserving BF16 scaling.",
+      "exact_delta": "Used cvt.rn.bf16x2.e4m3x2 behind a goal-local instantiation macro.",
+      "generated_binary": "168 registers, 16 allocated barriers, zero spills, 3744 static main instructions versus 4128 control; F2FP count fell from 400 to 272; unchanged combine SASS.",
+      "correctness": "Bitwise exact on the required M16/M32 leaf and containing eager/graph checks.",
+      "outcome": "rejected",
+      "why": "The concrete SASS reduction did not clear 1.03 in leaf graph or containing lanes in every series.",
+      "evidence": [
+        "b3_correctness_m16.json",
+        "b3_correctness_m32.json",
+        "b3_paired_m16.json",
+        "b3_paired_m32.json"
+      ]
+    },
+    {
+      "id": "B4a",
+      "variant": "b4_evict_first",
+      "hypothesis": "One-pass sparse KV gathers should use EVICT_FIRST instead of EVICT_LAST to avoid retaining lines with little temporal reuse.",
+      "exact_delta": "Changed both raw and RoPE TMA gather cache hints only.",
+      "generated_binary": "168 registers, 16 allocated barriers, zero spills, 4128 static main instructions; unchanged combine SASS.",
+      "correctness": "Exact at every required M16/M32 boundary.",
+      "outcome": "rejected",
+      "why": "Cache-hint code generation was visible, but graph measurements were flat or regressive and failed the per-estimator gate.",
+      "evidence": [
+        "b4a_correctness_m16.json",
+        "b4a_correctness_m32.json",
+        "b4a_paired_m16.json",
+        "b4a_paired_m32.json"
+      ]
+    },
+    {
+      "id": "B4b",
+      "variant": "b4_rope_early_warp",
+      "hypothesis": "Assign the shorter RoPE producer to the earlier warp slot and raw NoPE to the later slot to improve producer timing.",
+      "exact_delta": "Swapped only raw/NoPE and RoPE producer warp assignments.",
+      "generated_binary": "168 registers, 16 allocated barriers, zero spills, 4128 static main instructions; unchanged combine SASS.",
+      "correctness": "Exact at every required M16/M32 boundary.",
+      "outcome": "rejected",
+      "why": "Both buckets regressed in graph estimators, closing the plan's bounded second cache/producer variant.",
+      "evidence": [
+        "b4b_correctness_m16.json",
+        "b4b_correctness_m32.json",
+        "b4b_paired_m16.json",
+        "b4b_paired_m32.json"
+      ]
+    },
+    {
+      "id": "B5",
+      "variant": "b5_exact_no_extra",
+      "hypothesis": "Specializing the exact V32/top-k-2048/page-64/no-extra/no-sink ABI can remove generic branches, pointer loads, divisions, and extra-KV paths.",
+      "exact_delta": "Fixed the exact contract at compile time while retaining -1 handling, scheduler splits, and the one-SM pipeline.",
+      "build_negative": "The first build key 29b0cd458e4d4ae7 failed before producing a shared object because a constexpr infinity and a templated extra-index reference were invalid; both were corrected without changing the hypothesis.",
+      "generated_binary": "168 registers, 16 allocated barriers, zero spills, 3712 static main instructions; LDG fell from 28 to 12; unchanged combine SASS.",
+      "correctness": "Bitwise exact at every required M16/M32 boundary.",
+      "outcome": "rejected",
+      "why": "Despite removing 416 static instructions, leaf and containing graph estimators remained near neutral and below 1.03.",
+      "evidence": [
+        "b5_correctness_m16.json",
+        "b5_correctness_m32.json",
+        "b5_paired_m16.json",
+        "b5_paired_m32.json"
+      ]
+    },
+    {
+      "id": "B3+B5",
+      "variant": "b3_b5_native_exact",
+      "hypothesis": "The conversion and exact-contract specializations remove disjoint instruction classes and may combine into a stable graph win.",
+      "exact_delta": "Enabled both B3 and B5 macros in one prefixed V32 instantiation; main-plus-stock-combine topology stayed fixed.",
+      "generated_binary": "168 registers, 16 allocated barriers, zero spills, 3336 static main instructions, 792 fewer than control; unchanged combine SASS.",
+      "correctness": "Bitwise exact at all required leaf/containing eager/graph boundaries and passed 17 adversarial value/index/scheduler cases at each bucket.",
+      "outcome": "rejected",
+      "why": "M16 leaf graph ranged from 1.0056 to 1.0633 and M32 from 1.0082 to 1.0578 across required estimators, so multiple series missed 1.03; containing graph also missed, and containing eager regressed.",
+      "evidence": [
+        "b3_b5_correctness_m16.json",
+        "b3_b5_correctness_m32.json",
+        "b3_b5_matrix_m16.json",
+        "b3_b5_matrix_m32.json",
+        "b3_b5_paired_m16.json",
+        "b3_b5_paired_m32.json",
+        "b3_b5_chain_m16_summary.json",
+        "b3_b5_chain_m32_summary.json"
+      ]
+    }
+  ],
+  "evidence_gated_non_attempts": [
+    {
+      "id": "B6",
+      "technique": "two-SM cooperative prototype",
+      "decision": "not built",
+      "why": "Prior NCU showed a one-CTA-per-SM 148-partition wave already filling the B200; no static traffic model predicted a gain without duplicating sparse gathers, so the plan's prerequisite was not met."
+    },
+    {
+      "id": "B7",
+      "technique": "additional handwritten PTX/SASS scheduling",
+      "decision": "not built",
+      "why": "B3 was the only concrete compiler-lowering defect identified in final disassembly, and its direct instruction sequence failed fair graph/region timing; no second specific missing transaction or schedule was proven."
+    },
+    {
+      "id": "NCU",
+      "technique": "new Nsight Compute capture",
+      "decision": "not invoked",
+      "why": "No candidate survived the fair timing gate and therefore no concrete survivor mechanism question existed; the plan explicitly restricted NCU to such a question."
+    }
+  ],
+  "terminal_disposition": "no-replacement",
+  "production_default": "off",
+  "stock_fallback": "active for every bucket"
+}

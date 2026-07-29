@@ -1,0 +1,16 @@
+
+Fatbin elf code:
+================
+arch = sm_100f
+code version = [1,8]
+host = linux
+compile_size = 64bit
+identifier = /home/qinhaiyan/glm52-hotspot-goal-runs/worktrees/flashmla-sparse-decode/flashmla/csrc/glm52_hotspot/v32_b3_b5_native_exact.cu
+
+Fatbin elf code:
+================
+arch = sm_100f
+code version = [1,8]
+host = linux
+compile_size = 64bit
+identifier = /home/qinhaiyan/glm52-hotspot-goal-runs/worktrees/flashmla-sparse-decode/flashmla/csrc/smxx/decode/combine/combine.cu

@@ -1,0 +1,25 @@
+{
+  "candidate_main": {
+    "bytes": 941923,
+    "path": "/home/qinhaiyan/glm52-hotspot-goal-runs/worktrees/flashmla-sparse-decode/kernel-harness/profile/glm52-flashmla-sparse-decode-hotspot-20260729/evidence/disassembly/b3_b5_native_exact_main.sass",
+    "sha256": "0e239e618d855b6e87bf1f11f7212642c8a1a3660b21974374f36711a796badd"
+  },
+  "identity_main": {
+    "bytes": 1165257,
+    "path": "/home/qinhaiyan/glm52-hotspot-goal-runs/worktrees/flashmla-sparse-decode/kernel-harness/profile/glm52-flashmla-sparse-decode-hotspot-20260729/evidence/disassembly/identity_main.sass",
+    "sha256": "37148f6bd207c4c5562f00bf8c524264799c599a051d6abeba11a626c2b83b24"
+  },
+  "ptx_inventory": {
+    "embedded_ptx_entry_count": 0,
+    "path": "/home/qinhaiyan/glm52-hotspot-goal-runs/worktrees/flashmla-sparse-decode/kernel-harness/profile/glm52-flashmla-sparse-decode-hotspot-20260729/evidence/disassembly/b3_b5_native_exact_ptx_inventory.txt",
+    "reason": "the fair-measurement build targets code=sm_100f and retains native cubins, not a compute_100f PTX fallback",
+    "sha256": "d36f0e6fb822d12a70beaf9f806c9853dd67cdae5629118e4ce3f992e0a720ef"
+  },
+  "schema_version": 1,
+  "source_inline_ptx": {
+    "evidence": "candidate_main SASS and csrc/sm100/helpers.h",
+    "final_sass_opcode": "F2FP.BF16.E4M3",
+    "instruction": "cvt.rn.bf16x2.e4m3x2"
+  },
+  "tool": "cuobjdump: NVIDIA (R) fat binary listing tool\nCopyright (c) 2005-2026 NVIDIA Corporation\nBuilt on Thu_Mar_19_11:12:51_PM_PDT_2026\nCuda compilation tools, release 13.2, V13.2.78\nBuild cuda_13.2.r13.2/compiler.37668154_0"
+}
