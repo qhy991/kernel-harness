@@ -1,0 +1,326 @@
+{
+  "arms": {
+    "candidate": {
+      "activation_quant_device": {
+        "max_us": 6.784,
+        "min_us": 6.464,
+        "p10_us": 6.4864,
+        "p50_us": 6.528,
+        "p90_us": 6.6975999999999996
+      },
+      "activation_to_w2_gap": {
+        "max_us": -0.16,
+        "min_us": -0.192,
+        "p10_us": -0.192,
+        "p50_us": -0.192,
+        "p90_us": -0.16
+      },
+      "api_start_to_device_end": {
+        "max_us": 363.33,
+        "min_us": 229.475,
+        "p10_us": 231.41,
+        "p50_us": 330.71500000000003,
+        "p90_us": 354.5549
+      },
+      "device_critical_span": {
+        "max_us": 221.472,
+        "min_us": 204.031,
+        "p10_us": 205.5254,
+        "p50_us": 218.816,
+        "p90_us": 220.2845
+      },
+      "graph_ids": [
+        10,
+        12,
+        22,
+        24,
+        34,
+        36
+      ],
+      "graph_launches": 58,
+      "launch_api": {
+        "max_us": 45.297,
+        "min_us": 5.662,
+        "p10_us": 6.2142,
+        "p50_us": 10.2315,
+        "p90_us": 32.958800000000004
+      },
+      "queue_after_api": {
+        "max_us": 137.251,
+        "min_us": 0.782,
+        "p10_us": 1.8571,
+        "p50_us": 100.8425,
+        "p90_us": 128.1341
+      },
+      "stream_ids": [
+        143,
+        144,
+        147,
+        148,
+        151,
+        152
+      ],
+      "sum_kernel_time": {
+        "max_us": 221.92,
+        "min_us": 204.479,
+        "p10_us": 206.0054,
+        "p50_us": 219.248,
+        "p90_us": 220.7549
+      },
+      "w13_device": {
+        "max_us": 142.016,
+        "min_us": 124.671,
+        "p10_us": 125.5257,
+        "p50_us": 139.16750000000002,
+        "p90_us": 140.71359999999999
+      },
+      "w13_geometry": [
+        [
+          [
+            "blockX",
+            256
+          ],
+          [
+            "blockY",
+            1
+          ],
+          [
+            "blockZ",
+            1
+          ],
+          [
+            "dynamicSharedMemory",
+            230188
+          ],
+          [
+            "gridX",
+            148
+          ],
+          [
+            "gridY",
+            1
+          ],
+          [
+            "gridZ",
+            1
+          ],
+          [
+            "registersPerThread",
+            35
+          ]
+        ]
+      ],
+      "w13_to_activation_gap": {
+        "max_us": -0.256,
+        "min_us": -0.288,
+        "p10_us": -0.288,
+        "p50_us": -0.288,
+        "p90_us": -0.256
+      },
+      "w2_device": {
+        "max_us": 75.136,
+        "min_us": 71.872,
+        "p10_us": 72.544,
+        "p50_us": 73.424,
+        "p90_us": 74.18879999999999
+      }
+    },
+    "stock": {
+      "activation_quant_device": {
+        "max_us": 7.296,
+        "min_us": 6.688,
+        "p10_us": 6.8064,
+        "p50_us": 6.88,
+        "p90_us": 7.104000000000001
+      },
+      "activation_to_w2_gap": {
+        "max_us": -0.16,
+        "min_us": -0.192,
+        "p10_us": -0.192,
+        "p50_us": -0.192,
+        "p90_us": -0.16
+      },
+      "api_start_to_device_end": {
+        "max_us": 364.761,
+        "min_us": 237.497,
+        "p10_us": 241.9296,
+        "p50_us": 344.7065,
+        "p90_us": 361.90229999999997
+      },
+      "device_critical_span": {
+        "max_us": 228.991,
+        "min_us": 213.12,
+        "p10_us": 214.1721,
+        "p50_us": 226.176,
+        "p90_us": 227.5168
+      },
+      "graph_ids": [
+        8,
+        14,
+        20,
+        26,
+        32,
+        38
+      ],
+      "graph_launches": 58,
+      "launch_api": {
+        "max_us": 48.684,
+        "min_us": 5.527,
+        "p10_us": 6.1453999999999995,
+        "p50_us": 9.870999999999999,
+        "p90_us": 34.2916
+      },
+      "queue_after_api": {
+        "max_us": 131.517,
+        "min_us": 0.617,
+        "p10_us": 1.6387,
+        "p50_us": 110.14,
+        "p90_us": 127.7623
+      },
+      "stream_ids": [
+        142,
+        145,
+        146,
+        149,
+        150,
+        153
+      ],
+      "sum_kernel_time": {
+        "max_us": 229.439,
+        "min_us": 213.568,
+        "p10_us": 214.62010000000004,
+        "p50_us": 226.64,
+        "p90_us": 227.9968
+      },
+      "w13_device": {
+        "max_us": 147.007,
+        "min_us": 132.864,
+        "p10_us": 133.3024,
+        "p50_us": 145.744,
+        "p90_us": 146.5689
+      },
+      "w13_geometry": [
+        [
+          [
+            "blockX",
+            256
+          ],
+          [
+            "blockY",
+            1
+          ],
+          [
+            "blockZ",
+            1
+          ],
+          [
+            "dynamicSharedMemory",
+            213804
+          ],
+          [
+            "gridX",
+            148
+          ],
+          [
+            "gridY",
+            1
+          ],
+          [
+            "gridZ",
+            1
+          ],
+          [
+            "registersPerThread",
+            36
+          ]
+        ]
+      ],
+      "w13_to_activation_gap": {
+        "max_us": -0.256,
+        "min_us": -0.32,
+        "p10_us": -0.288,
+        "p50_us": -0.288,
+        "p90_us": -0.256
+      },
+      "w2_device": {
+        "max_us": 75.936,
+        "min_us": 73.216,
+        "p10_us": 73.5264,
+        "p50_us": 74.272,
+        "p90_us": 75.26400000000001
+      }
+    }
+  },
+  "artifacts": {
+    "archived_report": {
+      "path": "/home/qinhaiyan/glm52-hotspot-goal-runs/worktrees/moe-w13-decode/kernel-harness/serving_native/evidence/hotspot_moe_w13_decode/nsys_bm16_2sm_region_graph_em4.nsys-rep.gz",
+      "sha256": "4e86cff87696bc7ac2f21db57543ad64fc366d860b2c8466e8b8f7ca5b1bd324",
+      "size_bytes": 2089706
+    },
+    "report": {
+      "path": "/home/qinhaiyan/glm52-hotspot-goal-runs/cache/moe_w13_decode/nsys/bm16_2sm_region_graph_em4.nsys-rep",
+      "sha256": "abab35c45bc03fc78c22b018382d498151ef2905c11eb9dc909a39fbf73bd4f6",
+      "size_bytes": 4025655
+    },
+    "result": {
+      "path": "/home/qinhaiyan/glm52-hotspot-goal-runs/worktrees/moe-w13-decode/kernel-harness/serving_native/evidence/hotspot_moe_w13_decode/nsys_profiled_region_graph_em4.json",
+      "sha256": "1f0b8304ab6ee5d57f262d2abb8de4e28d75aeb60d86e6b91eb0a0552b89cb92",
+      "size_bytes": 553267
+    },
+    "sqlite": {
+      "path": "/home/qinhaiyan/glm52-hotspot-goal-runs/cache/moe_w13_decode/nsys/bm16_2sm_region_graph_em4.sqlite",
+      "sha256": "0b8e05f040b0f535636d77873fec6bf836df1353bf95fbfa7d3cc5854e791a7f",
+      "size_bytes": 10420224
+    }
+  },
+  "comparison": {
+    "critical_path_interpretation": "The three graph nodes execute in dependency order. Negative inter-node gaps are sub-microsecond boundary overlap; W13 dominates the measured stock-to-candidate span reduction.",
+    "device_critical_span_reduction_us": 7.359999999999985,
+    "device_critical_span_speedup": 1.0336355659549574,
+    "downstream_activation_quant_delta_us": -0.3520000000000003,
+    "downstream_w2_delta_us": -0.847999999999999,
+    "launch_api_delta_us": 0.3605000000000018,
+    "w13_device_reduction_us": 6.576499999999982,
+    "w13_device_speedup": 1.047256004455063
+  },
+  "graph_collection": {
+    "arm_counts": {
+      "candidate": 58,
+      "stock": 58
+    },
+    "candidate_symbol": "infini_kernel_glm52_moe_w13_decode_em4_bm16_2sm",
+    "classification": {
+      "activation_quant": "silu_mul_quant_varlen_kernel",
+      "candidate_w13_symbol": "infini_kernel_glm52_moe_w13_decode_em4_bm16_2sm",
+      "stock_w13_shape": "(unsigned int)4096, (unsigned int)6144",
+      "w2_shape": "(unsigned int)6144, (unsigned int)2048"
+    },
+    "complete_graph_launches": 116
+  },
+  "profiled_result": {
+    "candidate": "/home/qinhaiyan/glm52-hotspot-goal-runs/worktrees/moe-w13-decode/kernel-harness/serving_native/candidates/w13_bm16_2sm.py",
+    "candidate_variant": "bm16_2sm",
+    "execution_mode": "cuda_graph",
+    "manifest_sha256": "3c9be1ede19cee1243c9d6ea46682a77d675d48c1f4b9d6738c9c446c1e48b63",
+    "note": "Profiler-instrumented 3x10 result is attribution-only; unprofiled 3x50 artifacts are the performance authority.",
+    "performance_authority": false,
+    "performance_gate_passed": false,
+    "physical_gpu_uuid": "GPU-30b619de-87f2-1862-0d07-a595da8fe417",
+    "self_audit_valid": true,
+    "workload": "moe_w13_region_decode_m16_em4"
+  },
+  "schema_version": 1,
+  "tool": {
+    "collection": {
+      "cpuctxsw": "none",
+      "cuda_graph_trace": "node",
+      "sample": "none",
+      "trace": [
+        "cuda",
+        "nvtx"
+      ]
+    },
+    "name": "NVIDIA Nsight Systems",
+    "version": "NVIDIA Nsight Systems version 2025.6.3.541-256337736014v0"
+  }
+}

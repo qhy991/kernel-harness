@@ -307,11 +307,15 @@ class ContractV2AuditTest(unittest.TestCase):
 
     def _w13_runtime_identity(self) -> dict:
         source = {
-            "commit": "731e7c7a97d269e4b9f482ea18d0e709a948f293",
+            "base_commit": "731e7c7a97d269e4b9f482ea18d0e709a948f293",
+            "candidate_commit": "87e0359edbb461181d3bba218442132007b9a738",
             "cutlass_commit": "f3fde58372d33e9a5650ba7b80fc48b3b49d40c8",
             "fmt_commit": "553ec11ec06fbe0beebfbb45f9dc3c9eabd83d28",
-            "candidate_patch_sha256": (
-                "997348b6498aa18a7d70a5b1d36249b356b508cdc71e2f514a979818c48490a5"
+            "candidate_diff_sha256": (
+                "465c8373c0a37970225a0e93267b6c399431b23e22cf35b4511db2308df98092"
+            ),
+            "candidate_diff_file_sha256": (
+                "465c8373c0a37970225a0e93267b6c399431b23e22cf35b4511db2308df98092"
             ),
             "base_blob_sha256": {
                 "csrc/apis/gemm.hpp": (
@@ -326,6 +330,9 @@ class ContractV2AuditTest(unittest.TestCase):
                 "csrc/tvm_ffi_api.cpp": (
                     "d1e5dbd833f257d2c4be516772404c02f1747247eef5075315ff2d1220a64c1f"
                 ),
+                "deep_gemm/include/deep_gemm/impls/sm100_fp8_fp4_gemm_1d1d.cuh": (
+                    "9c1e70677ede6ba09ab98e629482da7874182f8227907382efe0a81658da5a37"
+                ),
                 "sgl_deep_gemm/__init__.py": (
                     "243eeaa71fa65cecaddd7298245438cb371ca765d7bf914a9427e132be8d5f26"
                 ),
@@ -334,10 +341,7 @@ class ContractV2AuditTest(unittest.TestCase):
                 "917592ab68ea0608c9be33208c2c609bc7f20bd9b1603f32743dd0d1ae03d0ed"
             ),
             "candidate_source_tree_sha256": (
-                "d38d8bf9a2118a2506be0fd71827568e70a20839505238a36a9c0325415332ef"
-            ),
-            "complete_source_diff_sha256": (
-                "997348b6498aa18a7d70a5b1d36249b356b508cdc71e2f514a979818c48490a5"
+                "d682daa65b8ba0ac3846d766910b8c751e0568fe62087084271bb354e46c49e4"
             ),
         }
         manifest = self.root / "w13-manifest.json"
@@ -371,8 +375,12 @@ class ContractV2AuditTest(unittest.TestCase):
         variants = {
             name: {key: value for key, value in item.items() if key != "jit_artifacts"}
             | {
+                "commit": (
+                    source["base_commit"]
+                    if name == "stock"
+                    else source["candidate_commit"]
+                ),
                 "source_tree_sha256": source[f"{name}_source_tree_sha256"],
-                "patched": name == "candidate",
                 "build_ninja": str(build_plans[name]),
                 "build_ninja_sha256": sha256_file(build_plans[name]),
                 "normalized_build_plan_sha256": (normalized_build_plan_sha256),
@@ -386,24 +394,22 @@ class ContractV2AuditTest(unittest.TestCase):
         manifest.write_text(
             __import__("json").dumps(
                 {
-                    "schema_version": 2,
+                    "schema_version": 3,
                     "source": source,
                     "build": {
                         "cuda_arch": "10.0a",
                         "stock_candidate_command_identical": True,
-                        "submodule_update": False,
                         "compile_api": "tvm_ffi.cpp.build",
                         "force_clean_build_directories": True,
                         "jit_compiler": "nvcc",
-                        "max_jobs": "1",
+                        "max_jobs": "4",
+                        "elf_symbol_binding": "Bsymbolic",
+                        "elf_symbol_visibility": "hidden",
                         "normalized_build_plan_sha256": (normalized_build_plan_sha256),
                         "cxx_path": str(cxx),
                         "cxx_sha256": sha256_file(cxx),
                         "nvcc_path": str(nvcc),
                         "nvcc_sha256": sha256_file(nvcc),
-                        "cpp_files_template": ["<SOURCE>/csrc/tvm_ffi_api.cpp"],
-                        "build_directory_template": "<OUTPUT>/compile/<VARIANT>",
-                        "jit_cache_template": "<OUTPUT>/jit/<VARIANT>",
                     },
                     "variants": variants,
                 },
@@ -427,11 +433,47 @@ class ContractV2AuditTest(unittest.TestCase):
             }
             for field, mutation in mutations.items()
         }
+        variant = "bm16_1sm"
+        config = [16, 128, 128, 11, 1]
+        provider_path = self.root / "provider_bm16_1sm.py"
+        provider_path.write_text("fixture API-v1 provider\n")
+        provider_name = "infini_kernel_glm52_moe_w13_decode_bm16_1sm"
+        manifest_sha256 = sha256_file(manifest)
         return {
             "manifest": str(manifest),
-            "manifest_sha256": sha256_file(manifest),
-            "variant": "bm32_1sm",
-            "config": [32, 128, 128, 10, 1],
+            "manifest_sha256": manifest_sha256,
+            "manifest_schema": 3,
+            "variant": variant,
+            "config": config,
+            "provider": {
+                "path": str(provider_path),
+                "sha256": sha256_file(provider_path),
+                "state": {
+                    "gpu_id": 0,
+                    "module_name": "fixture_w13_provider",
+                    "module_ref": str(provider_path),
+                    "provider_info": {
+                        "name": provider_name,
+                        "build_id": "bm16-1sm-stage11-api-v1",
+                        "git_commit": source["candidate_commit"],
+                    },
+                    "ready": True,
+                    "reason": "ready",
+                    "selected_ops": ["moe_gate_proj"],
+                },
+                "identity": {
+                    "name": variant,
+                    "config": config,
+                    "manifest": str(manifest),
+                    "manifest_sha256": manifest_sha256,
+                    "shared_object": modules["candidate"]["shared_object"],
+                    "shared_object_sha256": modules["candidate"][
+                        "shared_object_sha256"
+                    ],
+                    "jit_cache": modules["candidate"]["jit_cache"],
+                    "jit_artifacts": modules["candidate"]["jit_artifacts"],
+                },
+            },
             "runtime_state": {
                 "installed_downstream": required,
                 "stock": required,
@@ -441,6 +483,10 @@ class ContractV2AuditTest(unittest.TestCase):
             "modules": modules,
             "broad_precompile_enabled": False,
             "jit_use_nvrtc": False,
+            "candidate_call_path": (
+                "sglang.glm52_opt.hotspot_provider.run_moe_masked"
+                " -> API-v1 provider moe_w13 -> exact DeepGEMM symbol"
+            ),
         }
 
     def _valid_fixture(
@@ -653,6 +699,16 @@ class ContractV2AuditTest(unittest.TestCase):
         }
         if task.startswith("moe_w13_"):
             result["provenance"]["w13_runtime"] = self._w13_runtime_identity()
+            if mode == "cuda_graph":
+                for item in result["series"]:
+                    for capture in item["graph"]["captures"]:
+                        if (
+                            capture["implementation"] == "candidate"
+                            and capture["reference_delegated"] is False
+                        ):
+                            capture["masked_store_observation"]["out"][
+                                "store_block_m"
+                            ] = 16
         return result
 
     @staticmethod
@@ -1300,7 +1356,7 @@ class ContractV2AuditTest(unittest.TestCase):
         with self.subTest("build contract"):
             mutate_and_audit(
                 lambda manifest: manifest["build"].__setitem__(
-                    "submodule_update", True
+                    "elf_symbol_visibility", "default"
                 ),
                 "manifest build contract mismatch",
             )

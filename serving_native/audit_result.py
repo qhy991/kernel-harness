@@ -32,14 +32,15 @@ from serving_native.workloads import WORKLOADS, as_dict
 CALLABLE_CANDIDATE_API = "callable_v1"
 TRUSTED_CONFIG_CANDIDATE_API = "reference_with_config_v1"
 W13_BASE_COMMIT = "731e7c7a97d269e4b9f482ea18d0e709a948f293"
+W13_CANDIDATE_COMMIT = "87e0359edbb461181d3bba218442132007b9a738"
 W13_CUTLASS_COMMIT = "f3fde58372d33e9a5650ba7b80fc48b3b49d40c8"
 W13_FMT_COMMIT = "553ec11ec06fbe0beebfbb45f9dc3c9eabd83d28"
-W13_PATCH_SHA256 = "997348b6498aa18a7d70a5b1d36249b356b508cdc71e2f514a979818c48490a5"
+W13_DIFF_SHA256 = "465c8373c0a37970225a0e93267b6c399431b23e22cf35b4511db2308df98092"
 W13_STOCK_TREE_SHA256 = (
     "917592ab68ea0608c9be33208c2c609bc7f20bd9b1603f32743dd0d1ae03d0ed"
 )
 W13_CANDIDATE_TREE_SHA256 = (
-    "d38d8bf9a2118a2506be0fd71827568e70a20839505238a36a9c0325415332ef"
+    "d682daa65b8ba0ac3846d766910b8c751e0568fe62087084271bb354e46c49e4"
 )
 W13_BASE_BLOB_SHA256 = {
     "csrc/apis/gemm.hpp": "0840d64249e2a5a4a994d495e8320a0fff26bad9ca107426a1a1226e7d621186",
@@ -51,6 +52,9 @@ W13_BASE_BLOB_SHA256 = {
     ),
     "csrc/tvm_ffi_api.cpp": (
         "d1e5dbd833f257d2c4be516772404c02f1747247eef5075315ff2d1220a64c1f"
+    ),
+    "deep_gemm/include/deep_gemm/impls/sm100_fp8_fp4_gemm_1d1d.cuh": (
+        "9c1e70677ede6ba09ab98e629482da7874182f8227907382efe0a81658da5a37"
     ),
     "sgl_deep_gemm/__init__.py": (
         "243eeaa71fa65cecaddd7298245438cb371ca765d7bf914a9427e132be8d5f26"
@@ -708,18 +712,19 @@ def _audit_w13_runtime(
         else:
             source = manifest.get("source", {})
             findings.require(
-                manifest.get("schema_version") == 2,
+                manifest.get("schema_version") == 3,
                 f"{prefix}.manifest schema mismatch",
             )
             expected_source = {
-                "commit": W13_BASE_COMMIT,
+                "base_commit": W13_BASE_COMMIT,
+                "candidate_commit": W13_CANDIDATE_COMMIT,
                 "cutlass_commit": W13_CUTLASS_COMMIT,
                 "fmt_commit": W13_FMT_COMMIT,
-                "candidate_patch_sha256": W13_PATCH_SHA256,
+                "candidate_diff_sha256": W13_DIFF_SHA256,
+                "candidate_diff_file_sha256": W13_DIFF_SHA256,
                 "base_blob_sha256": W13_BASE_BLOB_SHA256,
                 "stock_source_tree_sha256": W13_STOCK_TREE_SHA256,
                 "candidate_source_tree_sha256": W13_CANDIDATE_TREE_SHA256,
-                "complete_source_diff_sha256": W13_PATCH_SHA256,
             }
             findings.require(
                 {key: source.get(key) for key in expected_source} == expected_source,
@@ -729,14 +734,12 @@ def _audit_w13_runtime(
             required_build = {
                 "cuda_arch": "10.0a",
                 "stock_candidate_command_identical": True,
-                "submodule_update": False,
                 "compile_api": "tvm_ffi.cpp.build",
                 "force_clean_build_directories": True,
                 "jit_compiler": "nvcc",
-                "max_jobs": "1",
-                "cpp_files_template": ["<SOURCE>/csrc/tvm_ffi_api.cpp"],
-                "build_directory_template": "<OUTPUT>/compile/<VARIANT>",
-                "jit_cache_template": "<OUTPUT>/jit/<VARIANT>",
+                "max_jobs": "4",
+                "elf_symbol_binding": "Bsymbolic",
+                "elf_symbol_visibility": "hidden",
             }
             findings.require(
                 {key: build.get(key) for key in required_build} == required_build,
@@ -759,9 +762,13 @@ def _audit_w13_runtime(
 
     variant = runtime.get("variant")
     configs = {
-        "bm32_2sm": [32, 128, 128, 11, 2],
-        "bm32_1sm": [32, 128, 128, 10, 1],
+        "bm16_2sm": [16, 128, 128, 12, 2],
+        "bm16_1sm": [16, 128, 128, 11, 1],
     }
+    findings.require(
+        runtime.get("manifest_schema") == 3,
+        f"{prefix}.manifest_schema mismatch",
+    )
     findings.require(variant in configs, f"{prefix}.variant invalid")
     if variant in configs:
         findings.require(
@@ -776,6 +783,100 @@ def _audit_w13_runtime(
         runtime.get("jit_use_nvrtc") is False,
         f"{prefix} did not freeze the NVCC JIT backend",
     )
+    findings.require(
+        runtime.get("candidate_call_path")
+        == (
+            "sglang.glm52_opt.hotspot_provider.run_moe_masked"
+            " -> API-v1 provider moe_w13 -> exact DeepGEMM symbol"
+        ),
+        f"{prefix}.candidate_call_path mismatch",
+    )
+
+    provider_identity: Any = None
+    provider = runtime.get("provider")
+    if findings.require(_mapping(provider), f"{prefix}.provider missing"):
+        provider_path_text = provider.get("path")
+        provider_path = (
+            Path(provider_path_text).resolve()
+            if isinstance(provider_path_text, str) and provider_path_text
+            else None
+        )
+        expected_provider_name = {
+            "bm16_2sm": "provider_bm16_2sm.py",
+            "bm16_1sm": "provider_bm16_1sm.py",
+        }.get(variant)
+        findings.require(
+            provider_path is not None
+            and provider_path.name == expected_provider_name,
+            f"{prefix}.provider path does not match variant",
+        )
+        findings.require(
+            isinstance(provider.get("sha256"), str)
+            and len(provider["sha256"]) == 64,
+            f"{prefix}.provider.sha256 invalid",
+        )
+        if verify_files and provider_path is not None:
+            findings.require(
+                provider_path.is_file()
+                and sha256_file(provider_path) == provider.get("sha256"),
+                f"{prefix}.provider file identity mismatch",
+            )
+        state = provider.get("state")
+        if findings.require(_mapping(state), f"{prefix}.provider.state missing"):
+            provider_info = state.get("provider_info")
+            expected_provider_identity = {
+                "bm16_2sm": (
+                    "infini_kernel_glm52_moe_w13_decode_bm16_2sm",
+                    "bm16-2sm-stage12-api-v1",
+                ),
+                "bm16_1sm": (
+                    "infini_kernel_glm52_moe_w13_decode_bm16_1sm",
+                    "bm16-1sm-stage11-api-v1",
+                ),
+            }.get(variant)
+            findings.require(
+                state.get("ready") is True
+                and state.get("reason") == "ready"
+                and state.get("selected_ops") == ["moe_gate_proj"],
+                f"{prefix}.provider state is not the selected ready W13 provider",
+            )
+            if findings.require(
+                _mapping(provider_info),
+                f"{prefix}.provider.state.provider_info missing",
+            ) and expected_provider_identity is not None:
+                findings.require(
+                    provider_info.get("name") == expected_provider_identity[0]
+                    and provider_info.get("build_id") == expected_provider_identity[1]
+                    and provider_info.get("git_commit") == W13_CANDIDATE_COMMIT,
+                    f"{prefix}.provider API-v1 identity mismatch",
+                )
+            if provider_path is not None:
+                findings.require(
+                    isinstance(state.get("module_ref"), str)
+                    and Path(state["module_ref"]).resolve() == provider_path,
+                    f"{prefix}.provider module_ref mismatch",
+                )
+        provider_identity = provider.get("identity")
+        if findings.require(
+            _mapping(provider_identity),
+            f"{prefix}.provider.identity missing",
+        ):
+            findings.require(
+                variant in configs
+                and provider_identity.get("name") == variant
+                and provider_identity.get("config") == configs.get(variant),
+                f"{prefix}.provider runtime identity mismatch",
+            )
+            findings.require(
+                provider_identity.get("manifest_sha256") == manifest_sha,
+                f"{prefix}.provider manifest identity mismatch",
+            )
+            findings.require(
+                manifest_path is not None
+                and isinstance(provider_identity.get("manifest"), str)
+                and Path(provider_identity["manifest"]).resolve() == manifest_path,
+                f"{prefix}.provider manifest path mismatch",
+            )
 
     required_state = {"pdl": True, "num_sms": 148, "tc_util": 100}
     states = runtime.get("runtime_state")
@@ -891,8 +992,12 @@ def _audit_w13_runtime(
                     "shared_object": item.get("shared_object"),
                     "shared_object_sha256": item.get("shared_object_sha256"),
                     "jit_cache": item.get("jit_cache"),
+                    "commit": (
+                        W13_BASE_COMMIT
+                        if name == "stock"
+                        else W13_CANDIDATE_COMMIT
+                    ),
                     "source_tree_sha256": expected_tree,
-                    "patched": name == "candidate",
                     "normalized_build_plan_sha256": manifest.get("build", {}).get(
                         "normalized_build_plan_sha256"
                     ),
@@ -921,6 +1026,22 @@ def _audit_w13_runtime(
                 findings.require(
                     resolved["stock"][field] != resolved["candidate"][field],
                     f"{prefix} stock/candidate {field} paths alias",
+                )
+    if _mapping(provider_identity) and _mapping(modules):
+        candidate_module = modules.get("candidate")
+        if findings.require(
+            _mapping(candidate_module),
+            f"{prefix}.provider has no candidate module binding",
+        ):
+            for field in (
+                "shared_object",
+                "shared_object_sha256",
+                "jit_cache",
+                "jit_artifacts",
+            ):
+                findings.require(
+                    provider_identity.get(field) == candidate_module.get(field),
+                    f"{prefix}.provider {field} does not match candidate module",
                 )
 
 
@@ -1259,6 +1380,7 @@ def _audit_graph_series(
     identity_control: bool,
     candidate_api: str | None,
     workload_family: str,
+    candidate_store_block_m: int,
 ) -> dict[str, list[str]] | None:
     prefix = f"series[{index}].graph"
     graph = series.get("graph")
@@ -1403,7 +1525,7 @@ def _audit_graph_series(
                         and capture.get("implementation") == "candidate"
                         and capture.get("reference_delegated") is False
                     ):
-                        expected_block_m = 32
+                        expected_block_m = candidate_store_block_m
                     findings.require(
                         output.get("store_block_m") == expected_block_m,
                         f"{output_prefix}.store_block_m mismatch",
@@ -1850,6 +1972,21 @@ def audit_document(
     all_reference: list[float] = []
     all_candidate: list[float] = []
     series_ids: set[str] = set()
+    candidate_store_block_m = 32
+    if canonical_workload is not None and str(
+        canonical_workload.get("name", "")
+    ).startswith("moe_w13_"):
+        w13_runtime = provenance.get("w13_runtime")
+        w13_config = (
+            w13_runtime.get("config") if _mapping(w13_runtime) else None
+        )
+        if (
+            _list(w13_config)
+            and len(w13_config) == 5
+            and isinstance(w13_config[0], int)
+            and not isinstance(w13_config[0], bool)
+        ):
+            candidate_store_block_m = w13_config[0]
     exact_series_count = (
         isinstance(requested_series, int)
         and not isinstance(requested_series, bool)
@@ -1883,6 +2020,7 @@ def audit_document(
                     identity_control=identity_control,
                     candidate_api=candidate_api,
                     workload_family=str(canonical_workload.get("family", "")),
+                    candidate_store_block_m=candidate_store_block_m,
                 )
             else:
                 findings.require(

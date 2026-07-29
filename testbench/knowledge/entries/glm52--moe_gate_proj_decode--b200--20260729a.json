@@ -1,0 +1,84 @@
+{
+  "schema_version": 1,
+  "id": "glm52--moe_gate_proj_decode--b200--20260729a",
+  "date": "2026-07-29",
+  "model": "glm52",
+  "task": "glm52/moe_gate_proj_decode",
+  "op": "moe_gate",
+  "family": "moe",
+  "phase": "decode",
+  "shapes": {
+    "regime": "production fused W13 decode",
+    "E": 32,
+    "expert_slab": 1024,
+    "K": 6144,
+    "N": 4096,
+    "token_buckets": [
+      16,
+      32
+    ],
+    "expected_m": [
+      4,
+      5,
+      8,
+      9
+    ],
+    "scale_dtype": "packed int32 UE8M0"
+  },
+  "hardware": {
+    "gpu": "NVIDIA B200",
+    "sm": "sm_100"
+  },
+  "stack": {
+    "sglang_commit": "5af212d00",
+    "torch": "2.11.0+cu130",
+    "cuda": "13.0"
+  },
+  "baseline_kernel": "same-source DeepGEMM fp8_m_grouped_gemm_nt_masked BM128 with packed int32 UE8M0 scales, PDL enabled, and fixed SM/TC-util state",
+  "bottleneck": {
+    "kind": "other",
+    "evidence": "Exact generated SASS showed stock BM128 drained 32 LDTM fragments while BM16 drained 4; balanced Nsys graph launches then measured W13 p50 145.744 to 139.168 us and full device span 226.176 to 218.816 us."
+  },
+  "approaches": [
+    {
+      "technique": "same-source-hidden-bsymbolic-build-isolation",
+      "summary": "Built clean stock and candidate DSOs with identical commands, hidden C++ visibility, Bsymbolic, private cache roots, and frozen runtime state.",
+      "outcome": "abandoned",
+      "geomean_speedup": null,
+      "why": "It closed JIT context interposition and denominator fairness but is a reproducibility prerequisite rather than the optimization itself."
+    },
+    {
+      "technique": "bm16-one-sm-tcgen05",
+      "summary": "Instantiated genuine one-CTA group-1 UMMA at config (16,128,128,11,1) for every expected-M key.",
+      "outcome": "abandoned",
+      "geomean_speedup": null,
+      "why": "Despite exact correctness and removing cooperative barriers, every expected-M probe had at least one required estimator below 1.03."
+    },
+    {
+      "technique": "bm16-two-sm-tcgen05",
+      "summary": "Retained cooperative group-2 UMMA while reducing masked-M MMA, TMEM drain, and store granularity with config (16,128,128,12,2).",
+      "outcome": "partial",
+      "geomean_speedup": 1.0415661350133845,
+      "why": "All 16 local leaf/region eager/graph lanes passed, but checkpoint-backed TP8/DP8/EP8 full-server acceptance remains unrun, so production enablement is intentionally withheld."
+    }
+  ],
+  "result": {
+    "status": "no-win",
+    "geomean_speedup": null,
+    "min_speedup_conservative": null,
+    "repeat": null,
+    "integrate": "no-recipe"
+  },
+  "lesson": "For tiny active-M SM100 masked grouped GEMMs, preserve the mature cooperative pipeline and first reduce the padded accumulator/drain surface; removing two-SM cooperation can lose more than it saves. Side-by-side JIT fairness also requires ELF-level static isolation, not merely separate package and cache names.",
+  "transfers_to": [
+    "packed-UE8M0 grouped MoE decode kernels on sm_100",
+    "small-active-M tcgen05 kernels with large caller-owned output slabs",
+    "same-process stock/candidate JIT libraries with process-global C++ statics"
+  ],
+  "caveats": [
+    "The recorded 1.041566 geomean is the geometric mean of the 16 serving-native pooled lane estimates, each from its persisted result JSON; it is not a frozen synthetic-task score.",
+    "The local results were source-hash bound but recorded dirty kernel-harness and SGLang git status; the exact measured sources were committed afterward.",
+    "TP8 checkpoint accuracy, full dispatch/combine overlap, TTFT, TPOT, throughput, and maximum-rank latency were not run, so the production default remains stock."
+  ],
+  "agent": "Codex GPT-5"
+}

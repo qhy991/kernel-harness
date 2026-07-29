@@ -24,8 +24,12 @@ from serving_native.runner import (
 from serving_native.workloads import get_workload
 
 VARIANT_CANDIDATES = {
-    "bm32_2sm": HERE / "candidates" / "w13_bm32_2sm.py",
-    "bm32_1sm": HERE / "candidates" / "w13_bm32_1sm.py",
+    "bm16_2sm": HERE / "candidates" / "w13_bm16_2sm.py",
+    "bm16_1sm": HERE / "candidates" / "w13_bm16_1sm.py",
+}
+VARIANT_PROVIDERS = {
+    "bm16_2sm": "provider_bm16_2sm.py",
+    "bm16_1sm": "provider_bm16_1sm.py",
 }
 EXPECTED_TENSOR_CONTRACT = {
     "activation_fp8": {
@@ -109,10 +113,11 @@ def _production_counts(torch, assignments: int, seed: int) -> tuple[int, ...]:
 
 def _cases(torch) -> list[dict[str, Any]]:
     zero = (0,) * 32
+    empty_and_nonempty = (0, 1, 2, 3) + (0,) * 28
     minimum = (1,) + (0,) * 31
     maximum = (1024,) + (0,) * 31
     skewed = (256,) + (0,) * 31
-    boundaries = (31, 32, 33) + (0,) * 29
+    boundaries = (15, 16, 17, 31, 32, 33) + (0,) * 26
     return [
         {
             "name": "production_m16_em4_random",
@@ -145,6 +150,12 @@ def _cases(torch) -> list[dict[str, Any]]:
             "data": "poison_invalid",
         },
         {
+            "name": "empty_and_nonempty_experts",
+            "expected_m": 5,
+            "counts": empty_and_nonempty,
+            "data": "constant",
+        },
+        {
             "name": "minimum_count",
             "expected_m": 4,
             "counts": minimum,
@@ -163,10 +174,22 @@ def _cases(torch) -> list[dict[str, Any]]:
             "data": "constant",
         },
         {
-            "name": "bm32_boundaries_31_32_33",
+            "name": "bm16_and_bm32_boundaries_15_16_17_31_32_33",
             "expected_m": 5,
             "counts": boundaries,
             "data": "poison_invalid",
+        },
+        {
+            "name": "packed_ue8m0_exponent_boundaries",
+            "expected_m": 8,
+            "counts": _production_counts(torch, 256, 2026072918),
+            "data": "exponent_boundary",
+        },
+        {
+            "name": "changed_expert_counts_after_prior_calls",
+            "expected_m": 9,
+            "counts": _production_counts(torch, 256, 2026072919),
+            "data": "changed",
         },
     ]
 
@@ -194,9 +217,16 @@ def _set_data_pattern(torch, inputs: dict[str, Any], case: dict[str, Any]) -> No
         activation.fill_(448.0)
         weight.fill_(1.0)
         return
-    if pattern == "constant":
+    if pattern in ("constant", "exponent_boundary"):
         activation.fill_(1.0)
         weight.fill_(1.0)
+        if pattern == "exponent_boundary":
+            # Four packed UE8M0 exponent bytes: 0, 1, 126, 127.  The word
+            # remains a positive int32 and crosses the finite exponent edges
+            # without changing the production packed layout.
+            packed_word = 0x7F7E0100
+            inputs["activation_scale"].fill_(packed_word)
+            inputs["weight_scale"].fill_(packed_word)
         return
     if pattern == "poison_invalid":
         activation.fill_(float("nan"))
@@ -306,10 +336,17 @@ def _compare_valid(
     }
 
 
-def _validate_variant(manifest: Path, variant: str) -> dict[str, Any]:
+def _validate_variant(
+    manifest: Path,
+    variant: str,
+    provider_root: Path,
+) -> dict[str, Any]:
     import torch
 
     os.environ["SGLANG_GLM52_W13_DECODE_MANIFEST"] = str(manifest)
+    os.environ["SGLANG_GLM52_HOTSPOT_MODULE"] = str(
+        (provider_root / VARIANT_PROVIDERS[variant]).resolve()
+    )
     candidate = _load_candidate(str(VARIANT_CANDIDATES[variant]))
     assert candidate is not None
     runtime = Runtime(
@@ -319,8 +356,8 @@ def _validate_variant(manifest: Path, variant: str) -> dict[str, Any]:
     try:
         inputs = runtime.build_inputs()
         tensor_contract = _assert_tensor_contract(inputs)
-        scale_hashes_before = {
-            name: _tensor_bytes_sha256(inputs[name])
+        scale_baseline = {
+            name: inputs[name].clone()
             for name in ("activation_scale", "weight_scale")
         }
         reference_out = inputs["out"]
@@ -336,25 +373,42 @@ def _validate_variant(manifest: Path, variant: str) -> dict[str, Any]:
             device=reference_out.device,
             dtype=reference_out.dtype,
         )
+        candidate_repeat = torch.empty_strided(
+            reference_out.shape,
+            reference_out.stride(),
+            device=reference_out.device,
+            dtype=reference_out.dtype,
+        )
         output_pointers = {
             int(reference_out.data_ptr()),
             int(candidate_out.data_ptr()),
             int(reference_guard.data_ptr()),
+            int(candidate_repeat.data_ptr()),
         }
-        if len(output_pointers) != 3:
-            raise AssertionError("stock, candidate, and guard outputs alias")
+        if len(output_pointers) != 4:
+            raise AssertionError("stock, candidate, repeat, and guard outputs alias")
         stream = torch.cuda.Stream(device=runtime.device)
+        start_event = torch.cuda.Event(enable_timing=True)
+        end_event = torch.cuda.Event(enable_timing=True)
         cases = []
         for case in _cases(torch):
             counts = case["counts"]
+            for name, baseline in scale_baseline.items():
+                inputs[name].copy_(baseline)
             inputs["masked_m"].copy_(
                 torch.tensor(counts, device=runtime.device, dtype=torch.int32)
             )
             _set_data_pattern(torch, inputs, case)
+            scale_hashes_before = {
+                name: _tensor_bytes_sha256(inputs[name])
+                for name in ("activation_scale", "weight_scale")
+            }
             reference_out.fill_(MOE_OUTPUT_POISON)
             candidate_out.fill_(MOE_OUTPUT_POISON)
+            candidate_repeat.fill_(MOE_OUTPUT_POISON)
             stream.wait_stream(torch.cuda.current_stream(runtime.device))
             with torch.cuda.stream(stream):
+                start_event.record(stream)
                 stock_return = runtime.w13_runtime.stock_launcher(
                     (inputs["activation_fp8"], inputs["activation_scale"]),
                     (inputs["weight_fp8"], inputs["weight_scale"]),
@@ -370,8 +424,23 @@ def _validate_variant(manifest: Path, variant: str) -> dict[str, Any]:
                     inputs["masked_m"],
                     case["expected_m"],
                 )
+                repeat_return = runtime.w13_runtime.candidate_launcher(
+                    (inputs["activation_fp8"], inputs["activation_scale"]),
+                    (inputs["weight_fp8"], inputs["weight_scale"]),
+                    candidate_repeat,
+                    inputs["masked_m"],
+                    case["expected_m"],
+                )
+                end_event.record(stream)
             stream.synchronize()
-            if stock_return is not None or candidate_return is not None:
+            elapsed_ms = float(start_event.elapsed_time(end_event))
+            if not (elapsed_ms > 0.0):
+                raise AssertionError("W13 non-default-stream events did not advance")
+            if (
+                stock_return is not None
+                or candidate_return is not None
+                or repeat_return is not None
+            ):
                 raise AssertionError(
                     "no-overlap W13 launch did not preserve exact None return"
                 )
@@ -397,7 +466,7 @@ def _validate_variant(manifest: Path, variant: str) -> dict[str, Any]:
             candidate_untouched = _assert_untouched(
                 candidate_out,
                 counts,
-                block_m=32,
+                block_m=16,
             )
             try:
                 comparison = _compare_valid(
@@ -408,6 +477,31 @@ def _validate_variant(manifest: Path, variant: str) -> dict[str, Any]:
                 )
             except AssertionError as exc:
                 raise AssertionError(f"{variant}/{case['name']}: {exc}") from exc
+            repeat_comparison = _compare_valid(
+                torch,
+                candidate_out,
+                candidate_repeat,
+                counts,
+            )
+            if any(
+                not torch.equal(
+                    candidate_out[expert, :count].view(torch.int16),
+                    candidate_repeat[expert, :count].view(torch.int16),
+                )
+                for expert, count in enumerate(counts)
+                if count
+            ):
+                raise AssertionError(
+                    f"{variant}/{case['name']}: repeated eager result is not exact"
+                )
+            scale_hashes_after = {
+                name: _tensor_bytes_sha256(inputs[name])
+                for name in ("activation_scale", "weight_scale")
+            }
+            if scale_hashes_after != scale_hashes_before:
+                raise AssertionError(
+                    f"{variant}/{case['name']}: packed int32 scale bytes changed"
+                )
             cases.append(
                 {
                     "name": case["name"],
@@ -416,6 +510,9 @@ def _validate_variant(manifest: Path, variant: str) -> dict[str, Any]:
                     "data_pattern": case["data"],
                     "stock_return": None,
                     "candidate_return": None,
+                    "candidate_repeat_return": None,
+                    "candidate_repeat_exact": True,
+                    "nondefault_stream_elapsed_ms": elapsed_ms,
                     "stock_output_preserved_after_candidate": True,
                     "masked_store_contract": (
                         "rows outside ceil(masked_m/store_block_m) store tiles "
@@ -426,22 +523,20 @@ def _validate_variant(manifest: Path, variant: str) -> dict[str, Any]:
                         "candidate": candidate_untouched,
                     },
                     "comparison": comparison,
+                    "repeat_comparison": repeat_comparison,
+                    "packed_scale_sha256_before": scale_hashes_before,
+                    "packed_scale_sha256_after": scale_hashes_after,
                 }
             )
-        scale_hashes_after = {
-            name: _tensor_bytes_sha256(inputs[name])
-            for name in ("activation_scale", "weight_scale")
-        }
-        if scale_hashes_after != scale_hashes_before:
-            raise AssertionError("packed int32 scale bytes changed during W13 calls")
         return {
             "variant": variant,
             "status": "pass",
             "tensor_contract": tensor_contract,
             "output_ownership_distinct": True,
             "nondefault_stream": int(stream.cuda_stream),
-            "packed_scale_sha256_before": scale_hashes_before,
-            "packed_scale_sha256_after": scale_hashes_after,
+            "packed_scale_bytes_preserved_every_case": True,
+            "repeated_eager_exact_every_case": True,
+            "nondefault_stream_event_behavior": "positive elapsed CUDA event time",
             "runtime_identity": runtime.w13_runtime.identity,
             "cases": cases,
         }
@@ -460,6 +555,11 @@ def main() -> int:
         default="both",
     )
     parser.add_argument("--output", type=Path, required=True)
+    parser.add_argument(
+        "--provider-root",
+        type=Path,
+        default=REPO_ROOT.parent / "sglang" / "third_party" / "deepgemm_w13",
+    )
     args = parser.parse_args()
     manifest = args.manifest.expanduser().resolve()
     variants = tuple(VARIANT_CANDIDATES) if args.variant == "both" else (args.variant,)
@@ -468,7 +568,14 @@ def main() -> int:
         "kind": "glm52_w13_same_source_correctness",
         "manifest": str(manifest),
         "manifest_sha256": hashlib.sha256(manifest.read_bytes()).hexdigest(),
-        "variants": [_validate_variant(manifest, variant) for variant in variants],
+        "variants": [
+            _validate_variant(
+                manifest,
+                variant,
+                args.provider_root.expanduser().resolve(),
+            )
+            for variant in variants
+        ],
     }
     args.output.parent.mkdir(parents=True, exist_ok=True)
     temporary = args.output.with_suffix(args.output.suffix + ".tmp")

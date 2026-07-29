@@ -1,5 +1,5 @@
 {
-  "generated_from_entries": 13,
+  "generated_from_entries": 14,
   "mistakes": [
     {
       "class": "launch-overhead::integration-empty-expert-diagnosis",
@@ -176,6 +176,25 @@
       "recurring": false
     },
     {
+      "class": "other::same-source-hidden-bsymbolic-build-isolation",
+      "bottleneck": "other",
+      "technique": "same-source-hidden-bsymbolic-build-isolation",
+      "count": 1,
+      "distinct_entries": 1,
+      "ops": [
+        "moe_gate"
+      ],
+      "outcomes": [
+        "abandoned"
+      ],
+      "whys": [
+        "It closed JIT context interposition and denominator fairness but is a reproducibility prerequisite rather than the optimization itself."
+      ],
+      "suggested_owner": "doc|reviewer",
+      "promoted": false,
+      "recurring": false
+    },
+    {
       "class": "other::fixed-sequence-flag",
       "bottleneck": "other",
       "technique": "fixed-sequence-flag",
@@ -246,6 +265,25 @@
       ],
       "whys": [
         "The direct grid removed prefix-scan work but scalar conversion and store code measured 47.2 us on M=16, still slower than SGLang's vectorized production kernel."
+      ],
+      "suggested_owner": "doc|reviewer",
+      "promoted": false,
+      "recurring": false
+    },
+    {
+      "class": "other::bm16-one-sm-tcgen05",
+      "bottleneck": "other",
+      "technique": "bm16-one-sm-tcgen05",
+      "count": 1,
+      "distinct_entries": 1,
+      "ops": [
+        "moe_gate"
+      ],
+      "outcomes": [
+        "abandoned"
+      ],
+      "whys": [
+        "Despite exact correctness and removing cooperative barriers, every expected-M probe had at least one required estimator below 1.03."
       ],
       "suggested_owner": "doc|reviewer",
       "promoted": false,
@@ -475,6 +513,16 @@
         "Sparse MLA Decode"
       ],
       "median_geomean": 1.0611
+    },
+    {
+      "class": "other::bm16-two-sm-tcgen05",
+      "bottleneck": "other",
+      "technique": "bm16-two-sm-tcgen05",
+      "count": 1,
+      "ops": [
+        "moe_gate"
+      ],
+      "median_geomean": 1.0416
     },
     {
       "class": "launch-overhead::harness-integrate-active-rows-fix",

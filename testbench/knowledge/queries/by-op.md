@@ -31,4 +31,5 @@
 
 ## moe_gate
 
+- `glm52--moe_gate_proj_decode--b200--20260729a` [no-win] moe_gate/decode — For tiny active-M SM100 masked grouped GEMMs, preserve the mature cooperative pipeline and first reduce the padded accumulator/drain surface; removing two-SM cooperation can lose more than it saves. Side-by-side JIT fairness also requires ELF-level static isolation, not merely separate package and cache names.
 - `glm52--moe_gate_proj_decode--b200--20260728a` [no-win] moe_gate/decode — For small-active-M SM100 masked grouped GEMMs, leaf speedups are insufficient evidence. First close same-source runtime/cache fairness, then require every alternating-order estimator to pass in a production-shaped graph-containing region before enabling a dispatch.

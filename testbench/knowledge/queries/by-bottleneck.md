@@ -21,6 +21,7 @@
 
 ## other
 
+- `glm52--moe_gate_proj_decode--b200--20260729a` [no-win] moe_gate/decode — For tiny active-M SM100 masked grouped GEMMs, preserve the mature cooperative pipeline and first reduce the padded accumulator/drain surface; removing two-SM cooperation can lose more than it saves. Side-by-side JIT fairness also requires ELF-level static isolation, not merely separate package and cache names.
 - `glm52--sparse_mla_decode--b200--20260714a` [win] Sparse MLA Decode/decode — For FlashInfer TRT-LLM FP8 sparse MLA decode on Blackwell, preserve device tensor scale inputs when the wrapper supports them; converting scalar scale tensors to Python floats can silently select a slower static-scale path. Do not shrink sparse_mla_top_k unless the block-table shape and production semantics also change.
 - `glm52--routed_swiglu_decode--b200--20260714a` [no-win] Routed Expert SwiGLU+FP8 Quant/decode — For GLM-5.2 masked routed SwiGLU decode on B200, the production SGLang C++ kernel is already close to the small-shape floor despite sparse active rows. Removing the CTA prefix mapping is not enough; a replacement must match the production vectorized bf16x2/fp8x2 instruction quality and beat run-to-run noise on M=16.
 

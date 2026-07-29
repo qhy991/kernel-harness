@@ -1,0 +1,740 @@
+{
+  "audit": "cpu_only_generated_source_ptx_sass_elf_resources",
+  "candidate": [
+    {
+      "artifacts": {
+        "cu": {
+          "path": "/home/qinhaiyan/glm52-hotspot-goal-runs/cache/moe_w13_decode/deepgemm/w13_variants/jit/candidate/cache/kernel.infini_kernel_glm52_moe_w13_decode_em4_bm16_1sm.6db0b4782df993b1d9d8a054a70b6aff/kernel.cu",
+          "sha256": "3be07db8acaaf358450eed80194483cd03558eae01fefbc0bf3b2595f88fec3b",
+          "size_bytes": 1253
+        },
+        "cubin": {
+          "path": "/home/qinhaiyan/glm52-hotspot-goal-runs/cache/moe_w13_decode/deepgemm/w13_variants/jit/candidate/cache/kernel.infini_kernel_glm52_moe_w13_decode_em4_bm16_1sm.6db0b4782df993b1d9d8a054a70b6aff/kernel.cubin",
+          "sha256": "73a1e07f94e0eccb34025d68649bfa9834c3d271962b28b4d7629f80c5be5d03",
+          "size_bytes": 36784
+        },
+        "ptx": {
+          "path": "/home/qinhaiyan/glm52-hotspot-goal-runs/cache/moe_w13_decode/deepgemm/w13_variants/jit/candidate/cache/kernel.infini_kernel_glm52_moe_w13_decode_em4_bm16_1sm.6db0b4782df993b1d9d8a054a70b6aff/kernel.ptx",
+          "sha256": "9f81f27447e747fd865a17aa1e9b952785e22537351ad857725edef046aaca98",
+          "size_bytes": 41452
+        },
+        "sass": {
+          "path": "/home/qinhaiyan/glm52-hotspot-goal-runs/cache/moe_w13_decode/deepgemm/w13_variants/jit/candidate/cache/kernel.infini_kernel_glm52_moe_w13_decode_em4_bm16_1sm.6db0b4782df993b1d9d8a054a70b6aff/kernel.sass",
+          "sha256": "52c95e1b3f4cd0b7a0284a9c6c8b54d969b157323d9c0952d622e0ce8e38eb0a",
+          "size_bytes": 290576
+        }
+      },
+      "config": [
+        16,
+        128,
+        128,
+        11,
+        1
+      ],
+      "expected_m": 4,
+      "intended_launch": {
+        "block_threads": 256,
+        "cluster_size": 1,
+        "dynamic_shared_bytes": 223020,
+        "grid_ctas": 148
+      },
+      "ptx_counts": {
+        "cluster_multicast": 0,
+        "tcgen05_alloc_group": 1,
+        "tcgen05_commit_group": 5,
+        "tcgen05_cp_group": 2,
+        "tcgen05_dealloc_group": 1,
+        "tcgen05_mma_group": 16,
+        "tcgen05_other_group": 0
+      },
+      "resources": {
+        "local_bytes": 0,
+        "registers": 31,
+        "stack_bytes": 0,
+        "static_shared_bytes": 1024
+      },
+      "sass_counts": {
+        "ldl": 0,
+        "ldtm": 4,
+        "stl": 0,
+        "ucgabar_arrive": 0,
+        "ucgabar_wait": 0,
+        "utcqmma": 16,
+        "utcqmma_2cta": 0,
+        "utmaldg_2d": 10
+      },
+      "symbol": "infini_kernel_glm52_moe_w13_decode_em4_bm16_1sm",
+      "topology": "1sm"
+    },
+    {
+      "artifacts": {
+        "cu": {
+          "path": "/home/qinhaiyan/glm52-hotspot-goal-runs/cache/moe_w13_decode/deepgemm/w13_variants/jit/candidate/cache/kernel.infini_kernel_glm52_moe_w13_decode_em4_bm16_2sm.ab548ccd2add6341e1ff7ba9f5351097/kernel.cu",
+          "sha256": "10100668cae5ab59981005b1f1e2bff6434eae64de21b3096819a19939142c7b",
+          "size_bytes": 1252
+        },
+        "cubin": {
+          "path": "/home/qinhaiyan/glm52-hotspot-goal-runs/cache/moe_w13_decode/deepgemm/w13_variants/jit/candidate/cache/kernel.infini_kernel_glm52_moe_w13_decode_em4_bm16_2sm.ab548ccd2add6341e1ff7ba9f5351097/kernel.cubin",
+          "sha256": "1d9fe435ebfc6bbf95795e31eb772308aa5d6169351bd8fe63edf2bf28c86cba",
+          "size_bytes": 39776
+        },
+        "ptx": {
+          "path": "/home/qinhaiyan/glm52-hotspot-goal-runs/cache/moe_w13_decode/deepgemm/w13_variants/jit/candidate/cache/kernel.infini_kernel_glm52_moe_w13_decode_em4_bm16_2sm.ab548ccd2add6341e1ff7ba9f5351097/kernel.ptx",
+          "sha256": "5ab0befa1c2b6f8795f3f8a6745d55623038864d5f99526fad509b0e742ce917",
+          "size_bytes": 43504
+        },
+        "sass": {
+          "path": "/home/qinhaiyan/glm52-hotspot-goal-runs/cache/moe_w13_decode/deepgemm/w13_variants/jit/candidate/cache/kernel.infini_kernel_glm52_moe_w13_decode_em4_bm16_2sm.ab548ccd2add6341e1ff7ba9f5351097/kernel.sass",
+          "sha256": "4b5275310bf5c96a050f8c0e868afc25a154c5f650a30f53af660aef984d1607",
+          "size_bytes": 347376
+        }
+      },
+      "config": [
+        16,
+        128,
+        128,
+        12,
+        2
+      ],
+      "expected_m": 4,
+      "intended_launch": {
+        "block_threads": 256,
+        "cluster_size": 2,
+        "dynamic_shared_bytes": 230188,
+        "grid_ctas": 148
+      },
+      "ptx_counts": {
+        "cluster_multicast": 5,
+        "tcgen05_alloc_group": 1,
+        "tcgen05_commit_group": 5,
+        "tcgen05_cp_group": 2,
+        "tcgen05_dealloc_group": 1,
+        "tcgen05_mma_group": 16,
+        "tcgen05_other_group": 0
+      },
+      "resources": {
+        "local_bytes": 0,
+        "registers": 35,
+        "stack_bytes": 0,
+        "static_shared_bytes": 1024
+      },
+      "sass_counts": {
+        "ldl": 0,
+        "ldtm": 4,
+        "stl": 0,
+        "ucgabar_arrive": 3,
+        "ucgabar_wait": 3,
+        "utcqmma": 16,
+        "utcqmma_2cta": 16,
+        "utmaldg_2d": 10
+      },
+      "symbol": "infini_kernel_glm52_moe_w13_decode_em4_bm16_2sm",
+      "topology": "2sm"
+    },
+    {
+      "artifacts": {
+        "cu": {
+          "path": "/home/qinhaiyan/glm52-hotspot-goal-runs/cache/moe_w13_decode/deepgemm/w13_variants/jit/candidate/cache/kernel.infini_kernel_glm52_moe_w13_decode_em5_bm16_1sm.563e5af104ca18f604bfd64f6272c612/kernel.cu",
+          "sha256": "cfcd0a4fc8c5d7c524f4588dd0c3c84769bebdf02c50082c4744a52c002f103f",
+          "size_bytes": 1253
+        },
+        "cubin": {
+          "path": "/home/qinhaiyan/glm52-hotspot-goal-runs/cache/moe_w13_decode/deepgemm/w13_variants/jit/candidate/cache/kernel.infini_kernel_glm52_moe_w13_decode_em5_bm16_1sm.563e5af104ca18f604bfd64f6272c612/kernel.cubin",
+          "sha256": "769b5a1f79690f560af30141cda6a5c42117300b29eb138e4efd0d5c20fead55",
+          "size_bytes": 36784
+        },
+        "ptx": {
+          "path": "/home/qinhaiyan/glm52-hotspot-goal-runs/cache/moe_w13_decode/deepgemm/w13_variants/jit/candidate/cache/kernel.infini_kernel_glm52_moe_w13_decode_em5_bm16_1sm.563e5af104ca18f604bfd64f6272c612/kernel.ptx",
+          "sha256": "a4f4282f499c2a1ca5a6abd07a80d9793875fadff55ed0e7df2766c3a62298b8",
+          "size_bytes": 41452
+        },
+        "sass": {
+          "path": "/home/qinhaiyan/glm52-hotspot-goal-runs/cache/moe_w13_decode/deepgemm/w13_variants/jit/candidate/cache/kernel.infini_kernel_glm52_moe_w13_decode_em5_bm16_1sm.563e5af104ca18f604bfd64f6272c612/kernel.sass",
+          "sha256": "f96ecde83b8950600aca027fd1cb812db71c1b3ba49ab104fb6fef2e2ee205d3",
+          "size_bytes": 290576
+        }
+      },
+      "config": [
+        16,
+        128,
+        128,
+        11,
+        1
+      ],
+      "expected_m": 5,
+      "intended_launch": {
+        "block_threads": 256,
+        "cluster_size": 1,
+        "dynamic_shared_bytes": 223020,
+        "grid_ctas": 148
+      },
+      "ptx_counts": {
+        "cluster_multicast": 0,
+        "tcgen05_alloc_group": 1,
+        "tcgen05_commit_group": 5,
+        "tcgen05_cp_group": 2,
+        "tcgen05_dealloc_group": 1,
+        "tcgen05_mma_group": 16,
+        "tcgen05_other_group": 0
+      },
+      "resources": {
+        "local_bytes": 0,
+        "registers": 31,
+        "stack_bytes": 0,
+        "static_shared_bytes": 1024
+      },
+      "sass_counts": {
+        "ldl": 0,
+        "ldtm": 4,
+        "stl": 0,
+        "ucgabar_arrive": 0,
+        "ucgabar_wait": 0,
+        "utcqmma": 16,
+        "utcqmma_2cta": 0,
+        "utmaldg_2d": 10
+      },
+      "symbol": "infini_kernel_glm52_moe_w13_decode_em5_bm16_1sm",
+      "topology": "1sm"
+    },
+    {
+      "artifacts": {
+        "cu": {
+          "path": "/home/qinhaiyan/glm52-hotspot-goal-runs/cache/moe_w13_decode/deepgemm/w13_variants/jit/candidate/cache/kernel.infini_kernel_glm52_moe_w13_decode_em5_bm16_2sm.d8580e69f67648c2a47968e8c0f7004b/kernel.cu",
+          "sha256": "2053b4fad301104f8afaf245f65916f5b9180d5998f4fff776501ef525f61097",
+          "size_bytes": 1252
+        },
+        "cubin": {
+          "path": "/home/qinhaiyan/glm52-hotspot-goal-runs/cache/moe_w13_decode/deepgemm/w13_variants/jit/candidate/cache/kernel.infini_kernel_glm52_moe_w13_decode_em5_bm16_2sm.d8580e69f67648c2a47968e8c0f7004b/kernel.cubin",
+          "sha256": "0066de2f0562ab6093495f6e140d253fcc6fd325afafa7ee70fbec43601deb86",
+          "size_bytes": 39776
+        },
+        "ptx": {
+          "path": "/home/qinhaiyan/glm52-hotspot-goal-runs/cache/moe_w13_decode/deepgemm/w13_variants/jit/candidate/cache/kernel.infini_kernel_glm52_moe_w13_decode_em5_bm16_2sm.d8580e69f67648c2a47968e8c0f7004b/kernel.ptx",
+          "sha256": "3260c80a1203a812948e772fa7a8d97b31183886bb952ff3bd362ef9c0f63e7f",
+          "size_bytes": 43504
+        },
+        "sass": {
+          "path": "/home/qinhaiyan/glm52-hotspot-goal-runs/cache/moe_w13_decode/deepgemm/w13_variants/jit/candidate/cache/kernel.infini_kernel_glm52_moe_w13_decode_em5_bm16_2sm.d8580e69f67648c2a47968e8c0f7004b/kernel.sass",
+          "sha256": "8928b03fb72679113ebf1a9fae93478875bdb89ca762f884d44e6b026eff9748",
+          "size_bytes": 347376
+        }
+      },
+      "config": [
+        16,
+        128,
+        128,
+        12,
+        2
+      ],
+      "expected_m": 5,
+      "intended_launch": {
+        "block_threads": 256,
+        "cluster_size": 2,
+        "dynamic_shared_bytes": 230188,
+        "grid_ctas": 148
+      },
+      "ptx_counts": {
+        "cluster_multicast": 5,
+        "tcgen05_alloc_group": 1,
+        "tcgen05_commit_group": 5,
+        "tcgen05_cp_group": 2,
+        "tcgen05_dealloc_group": 1,
+        "tcgen05_mma_group": 16,
+        "tcgen05_other_group": 0
+      },
+      "resources": {
+        "local_bytes": 0,
+        "registers": 35,
+        "stack_bytes": 0,
+        "static_shared_bytes": 1024
+      },
+      "sass_counts": {
+        "ldl": 0,
+        "ldtm": 4,
+        "stl": 0,
+        "ucgabar_arrive": 3,
+        "ucgabar_wait": 3,
+        "utcqmma": 16,
+        "utcqmma_2cta": 16,
+        "utmaldg_2d": 10
+      },
+      "symbol": "infini_kernel_glm52_moe_w13_decode_em5_bm16_2sm",
+      "topology": "2sm"
+    },
+    {
+      "artifacts": {
+        "cu": {
+          "path": "/home/qinhaiyan/glm52-hotspot-goal-runs/cache/moe_w13_decode/deepgemm/w13_variants/jit/candidate/cache/kernel.infini_kernel_glm52_moe_w13_decode_em8_bm16_1sm.991380755881f32d531d2cfa4eb51a7a/kernel.cu",
+          "sha256": "abecf3490cd1cdae68b579deddcc3a179c9a98459822e51b506f4e71612a6c78",
+          "size_bytes": 1253
+        },
+        "cubin": {
+          "path": "/home/qinhaiyan/glm52-hotspot-goal-runs/cache/moe_w13_decode/deepgemm/w13_variants/jit/candidate/cache/kernel.infini_kernel_glm52_moe_w13_decode_em8_bm16_1sm.991380755881f32d531d2cfa4eb51a7a/kernel.cubin",
+          "sha256": "5b11207621b71b66421fcc7e3326a2d6d504a108c45889f0bba38232427a5258",
+          "size_bytes": 36784
+        },
+        "ptx": {
+          "path": "/home/qinhaiyan/glm52-hotspot-goal-runs/cache/moe_w13_decode/deepgemm/w13_variants/jit/candidate/cache/kernel.infini_kernel_glm52_moe_w13_decode_em8_bm16_1sm.991380755881f32d531d2cfa4eb51a7a/kernel.ptx",
+          "sha256": "ad6ac678573ccca91fe6e6262656eb529bf98a1746d6ab8ba45d2fad1df71205",
+          "size_bytes": 41452
+        },
+        "sass": {
+          "path": "/home/qinhaiyan/glm52-hotspot-goal-runs/cache/moe_w13_decode/deepgemm/w13_variants/jit/candidate/cache/kernel.infini_kernel_glm52_moe_w13_decode_em8_bm16_1sm.991380755881f32d531d2cfa4eb51a7a/kernel.sass",
+          "sha256": "e2c89ba0fdf6f9e5deb31a8da2d150e10440b8cfa50788d8998a3761cbcf0989",
+          "size_bytes": 290576
+        }
+      },
+      "config": [
+        16,
+        128,
+        128,
+        11,
+        1
+      ],
+      "expected_m": 8,
+      "intended_launch": {
+        "block_threads": 256,
+        "cluster_size": 1,
+        "dynamic_shared_bytes": 223020,
+        "grid_ctas": 148
+      },
+      "ptx_counts": {
+        "cluster_multicast": 0,
+        "tcgen05_alloc_group": 1,
+        "tcgen05_commit_group": 5,
+        "tcgen05_cp_group": 2,
+        "tcgen05_dealloc_group": 1,
+        "tcgen05_mma_group": 16,
+        "tcgen05_other_group": 0
+      },
+      "resources": {
+        "local_bytes": 0,
+        "registers": 31,
+        "stack_bytes": 0,
+        "static_shared_bytes": 1024
+      },
+      "sass_counts": {
+        "ldl": 0,
+        "ldtm": 4,
+        "stl": 0,
+        "ucgabar_arrive": 0,
+        "ucgabar_wait": 0,
+        "utcqmma": 16,
+        "utcqmma_2cta": 0,
+        "utmaldg_2d": 10
+      },
+      "symbol": "infini_kernel_glm52_moe_w13_decode_em8_bm16_1sm",
+      "topology": "1sm"
+    },
+    {
+      "artifacts": {
+        "cu": {
+          "path": "/home/qinhaiyan/glm52-hotspot-goal-runs/cache/moe_w13_decode/deepgemm/w13_variants/jit/candidate/cache/kernel.infini_kernel_glm52_moe_w13_decode_em8_bm16_2sm.2a62bfc4a7de65acc2ce1b98fe7d083a/kernel.cu",
+          "sha256": "cc4bac3472a49b74765e9319f9bf98b8fbc6ace746f115e1edbdf4e7ea240799",
+          "size_bytes": 1252
+        },
+        "cubin": {
+          "path": "/home/qinhaiyan/glm52-hotspot-goal-runs/cache/moe_w13_decode/deepgemm/w13_variants/jit/candidate/cache/kernel.infini_kernel_glm52_moe_w13_decode_em8_bm16_2sm.2a62bfc4a7de65acc2ce1b98fe7d083a/kernel.cubin",
+          "sha256": "7df692351fe9cbf4ce3358d8767df366ac2fa9ab6ef0a48d57ad7e82f66f5e0f",
+          "size_bytes": 39776
+        },
+        "ptx": {
+          "path": "/home/qinhaiyan/glm52-hotspot-goal-runs/cache/moe_w13_decode/deepgemm/w13_variants/jit/candidate/cache/kernel.infini_kernel_glm52_moe_w13_decode_em8_bm16_2sm.2a62bfc4a7de65acc2ce1b98fe7d083a/kernel.ptx",
+          "sha256": "afaed39fc04bfa40fc989e6a707a8fb8b6a17dd72016cc719ffc4b1e5e0dba51",
+          "size_bytes": 43504
+        },
+        "sass": {
+          "path": "/home/qinhaiyan/glm52-hotspot-goal-runs/cache/moe_w13_decode/deepgemm/w13_variants/jit/candidate/cache/kernel.infini_kernel_glm52_moe_w13_decode_em8_bm16_2sm.2a62bfc4a7de65acc2ce1b98fe7d083a/kernel.sass",
+          "sha256": "e8a43f6762644b066af92aec1dbafc8504dcc8d3130ee1ab456337913e6d349b",
+          "size_bytes": 347376
+        }
+      },
+      "config": [
+        16,
+        128,
+        128,
+        12,
+        2
+      ],
+      "expected_m": 8,
+      "intended_launch": {
+        "block_threads": 256,
+        "cluster_size": 2,
+        "dynamic_shared_bytes": 230188,
+        "grid_ctas": 148
+      },
+      "ptx_counts": {
+        "cluster_multicast": 5,
+        "tcgen05_alloc_group": 1,
+        "tcgen05_commit_group": 5,
+        "tcgen05_cp_group": 2,
+        "tcgen05_dealloc_group": 1,
+        "tcgen05_mma_group": 16,
+        "tcgen05_other_group": 0
+      },
+      "resources": {
+        "local_bytes": 0,
+        "registers": 35,
+        "stack_bytes": 0,
+        "static_shared_bytes": 1024
+      },
+      "sass_counts": {
+        "ldl": 0,
+        "ldtm": 4,
+        "stl": 0,
+        "ucgabar_arrive": 3,
+        "ucgabar_wait": 3,
+        "utcqmma": 16,
+        "utcqmma_2cta": 16,
+        "utmaldg_2d": 10
+      },
+      "symbol": "infini_kernel_glm52_moe_w13_decode_em8_bm16_2sm",
+      "topology": "2sm"
+    },
+    {
+      "artifacts": {
+        "cu": {
+          "path": "/home/qinhaiyan/glm52-hotspot-goal-runs/cache/moe_w13_decode/deepgemm/w13_variants/jit/candidate/cache/kernel.infini_kernel_glm52_moe_w13_decode_em9_bm16_1sm.b46a5f1b2c57c2c5a7ce1dd4cff88a29/kernel.cu",
+          "sha256": "374a11d5f82c5b510c199c11a4ca9177ba4c1891a3f968dddff4fd4bf45fbc60",
+          "size_bytes": 1253
+        },
+        "cubin": {
+          "path": "/home/qinhaiyan/glm52-hotspot-goal-runs/cache/moe_w13_decode/deepgemm/w13_variants/jit/candidate/cache/kernel.infini_kernel_glm52_moe_w13_decode_em9_bm16_1sm.b46a5f1b2c57c2c5a7ce1dd4cff88a29/kernel.cubin",
+          "sha256": "2e338fe109f912491b2f28df50172debbff1e447b1758240e6f54989fbcc24d5",
+          "size_bytes": 36784
+        },
+        "ptx": {
+          "path": "/home/qinhaiyan/glm52-hotspot-goal-runs/cache/moe_w13_decode/deepgemm/w13_variants/jit/candidate/cache/kernel.infini_kernel_glm52_moe_w13_decode_em9_bm16_1sm.b46a5f1b2c57c2c5a7ce1dd4cff88a29/kernel.ptx",
+          "sha256": "f6ad4b6b9e0758826c8e3dfe8c857e32fc3bdc5d760f3c3c9fc128663fdfb91b",
+          "size_bytes": 41452
+        },
+        "sass": {
+          "path": "/home/qinhaiyan/glm52-hotspot-goal-runs/cache/moe_w13_decode/deepgemm/w13_variants/jit/candidate/cache/kernel.infini_kernel_glm52_moe_w13_decode_em9_bm16_1sm.b46a5f1b2c57c2c5a7ce1dd4cff88a29/kernel.sass",
+          "sha256": "b18c3076c561078554727d86d6f918d2fd14a60c42a43dd4afcd9f0f874ffc5b",
+          "size_bytes": 290576
+        }
+      },
+      "config": [
+        16,
+        128,
+        128,
+        11,
+        1
+      ],
+      "expected_m": 9,
+      "intended_launch": {
+        "block_threads": 256,
+        "cluster_size": 1,
+        "dynamic_shared_bytes": 223020,
+        "grid_ctas": 148
+      },
+      "ptx_counts": {
+        "cluster_multicast": 0,
+        "tcgen05_alloc_group": 1,
+        "tcgen05_commit_group": 5,
+        "tcgen05_cp_group": 2,
+        "tcgen05_dealloc_group": 1,
+        "tcgen05_mma_group": 16,
+        "tcgen05_other_group": 0
+      },
+      "resources": {
+        "local_bytes": 0,
+        "registers": 31,
+        "stack_bytes": 0,
+        "static_shared_bytes": 1024
+      },
+      "sass_counts": {
+        "ldl": 0,
+        "ldtm": 4,
+        "stl": 0,
+        "ucgabar_arrive": 0,
+        "ucgabar_wait": 0,
+        "utcqmma": 16,
+        "utcqmma_2cta": 0,
+        "utmaldg_2d": 10
+      },
+      "symbol": "infini_kernel_glm52_moe_w13_decode_em9_bm16_1sm",
+      "topology": "1sm"
+    },
+    {
+      "artifacts": {
+        "cu": {
+          "path": "/home/qinhaiyan/glm52-hotspot-goal-runs/cache/moe_w13_decode/deepgemm/w13_variants/jit/candidate/cache/kernel.infini_kernel_glm52_moe_w13_decode_em9_bm16_2sm.8c6df3b134a70253bf1d2b2012b5ddcf/kernel.cu",
+          "sha256": "54a4d94c1b226006afdc7909f759d6083287920c071646d52f5179a58aa27ec6",
+          "size_bytes": 1252
+        },
+        "cubin": {
+          "path": "/home/qinhaiyan/glm52-hotspot-goal-runs/cache/moe_w13_decode/deepgemm/w13_variants/jit/candidate/cache/kernel.infini_kernel_glm52_moe_w13_decode_em9_bm16_2sm.8c6df3b134a70253bf1d2b2012b5ddcf/kernel.cubin",
+          "sha256": "28785c21b831115eeebf9fe35cd230679d00f5808950d7092b917db5dfa4a985",
+          "size_bytes": 39776
+        },
+        "ptx": {
+          "path": "/home/qinhaiyan/glm52-hotspot-goal-runs/cache/moe_w13_decode/deepgemm/w13_variants/jit/candidate/cache/kernel.infini_kernel_glm52_moe_w13_decode_em9_bm16_2sm.8c6df3b134a70253bf1d2b2012b5ddcf/kernel.ptx",
+          "sha256": "1660d7e47943eceee62faabdf9e2d07bf23efc17ac330d18e62c2664b9f06eb0",
+          "size_bytes": 43504
+        },
+        "sass": {
+          "path": "/home/qinhaiyan/glm52-hotspot-goal-runs/cache/moe_w13_decode/deepgemm/w13_variants/jit/candidate/cache/kernel.infini_kernel_glm52_moe_w13_decode_em9_bm16_2sm.8c6df3b134a70253bf1d2b2012b5ddcf/kernel.sass",
+          "sha256": "0f09825d7f3e039d3ddf2c6ee8198d2e65f68801a011ba15db155bcad531f341",
+          "size_bytes": 347376
+        }
+      },
+      "config": [
+        16,
+        128,
+        128,
+        12,
+        2
+      ],
+      "expected_m": 9,
+      "intended_launch": {
+        "block_threads": 256,
+        "cluster_size": 2,
+        "dynamic_shared_bytes": 230188,
+        "grid_ctas": 148
+      },
+      "ptx_counts": {
+        "cluster_multicast": 5,
+        "tcgen05_alloc_group": 1,
+        "tcgen05_commit_group": 5,
+        "tcgen05_cp_group": 2,
+        "tcgen05_dealloc_group": 1,
+        "tcgen05_mma_group": 16,
+        "tcgen05_other_group": 0
+      },
+      "resources": {
+        "local_bytes": 0,
+        "registers": 35,
+        "stack_bytes": 0,
+        "static_shared_bytes": 1024
+      },
+      "sass_counts": {
+        "ldl": 0,
+        "ldtm": 4,
+        "stl": 0,
+        "ucgabar_arrive": 3,
+        "ucgabar_wait": 3,
+        "utcqmma": 16,
+        "utcqmma_2cta": 16,
+        "utmaldg_2d": 10
+      },
+      "symbol": "infini_kernel_glm52_moe_w13_decode_em9_bm16_2sm",
+      "topology": "2sm"
+    }
+  ],
+  "candidate_context_duplicates": [
+    {
+      "alternatives": [
+        {
+          "cubin_sha256": "e913883219bad8d28c6b668f8b5f8965e7ca2cf1780ccbb2bd3008dc75e86ff2",
+          "directory": "/home/qinhaiyan/glm52-hotspot-goal-runs/cache/moe_w13_decode/deepgemm/w13_variants/jit/candidate/cache/kernel.infini_kernel_glm52_moe_w13_decode_em4_bm16_1sm.00a16d6f34c57353cd9d05bee8edf532",
+          "include_hash_line": "// Includes' hash value: 980b09c58ffef0ce0c1ce1ff668b209d",
+          "ptx_sha256": "c9ff01cf6c5e995913c98aedaa3f789b86174cab8eb91bb95877ddb053fea868",
+          "sass_identical": true,
+          "sass_sha256": "52c95e1b3f4cd0b7a0284a9c6c8b54d969b157323d9c0952d622e0ce8e38eb0a",
+          "source_body_identical_after_hash_comment": true
+        }
+      ],
+      "canonical_include_hash": "d72839997b6ce1f022ac1c19647aee29",
+      "canonical_production_directory": "/home/qinhaiyan/glm52-hotspot-goal-runs/cache/moe_w13_decode/deepgemm/w13_variants/jit/candidate/cache/kernel.infini_kernel_glm52_moe_w13_decode_em4_bm16_1sm.6db0b4782df993b1d9d8a054a70b6aff",
+      "canonical_sass_sha256": "52c95e1b3f4cd0b7a0284a9c6c8b54d969b157323d9c0952d622e0ce8e38eb0a",
+      "reason": "provider-only startup hashed the candidate include tree; current SGLang production startup loads stock DeepGEMM first and hashes that include tree before compiling the same named wrapper",
+      "symbol": "infini_kernel_glm52_moe_w13_decode_em4_bm16_1sm"
+    },
+    {
+      "alternatives": [
+        {
+          "cubin_sha256": "654339f6822ae2f811ec09ba36aa1a41e0577b74c71585d9a78db9a0bd237748",
+          "directory": "/home/qinhaiyan/glm52-hotspot-goal-runs/cache/moe_w13_decode/deepgemm/w13_variants/jit/candidate/cache/kernel.infini_kernel_glm52_moe_w13_decode_em4_bm16_2sm.dc2869d0a73269661a563d66eb0e5b09",
+          "include_hash_line": "// Includes' hash value: 980b09c58ffef0ce0c1ce1ff668b209d",
+          "ptx_sha256": "a229c84b0af8ab3b70b50d88aacf16477ea1c3eba3bfab5eb74897f247167e28",
+          "sass_identical": true,
+          "sass_sha256": "4b5275310bf5c96a050f8c0e868afc25a154c5f650a30f53af660aef984d1607",
+          "source_body_identical_after_hash_comment": true
+        }
+      ],
+      "canonical_include_hash": "d72839997b6ce1f022ac1c19647aee29",
+      "canonical_production_directory": "/home/qinhaiyan/glm52-hotspot-goal-runs/cache/moe_w13_decode/deepgemm/w13_variants/jit/candidate/cache/kernel.infini_kernel_glm52_moe_w13_decode_em4_bm16_2sm.ab548ccd2add6341e1ff7ba9f5351097",
+      "canonical_sass_sha256": "4b5275310bf5c96a050f8c0e868afc25a154c5f650a30f53af660aef984d1607",
+      "reason": "provider-only startup hashed the candidate include tree; current SGLang production startup loads stock DeepGEMM first and hashes that include tree before compiling the same named wrapper",
+      "symbol": "infini_kernel_glm52_moe_w13_decode_em4_bm16_2sm"
+    },
+    {
+      "alternatives": [
+        {
+          "cubin_sha256": "80b499eda0bf5b182d6b67da6a2be7252d402b1e6cdbe98a3430ce587abbe0dd",
+          "directory": "/home/qinhaiyan/glm52-hotspot-goal-runs/cache/moe_w13_decode/deepgemm/w13_variants/jit/candidate/cache/kernel.infini_kernel_glm52_moe_w13_decode_em5_bm16_1sm.9cae83689847a9cd729ff98787b47cff",
+          "include_hash_line": "// Includes' hash value: 980b09c58ffef0ce0c1ce1ff668b209d",
+          "ptx_sha256": "044ff2b80ce587c86e2a25c194bbbcc24baa485007c26797ddcb0bbb21650bf4",
+          "sass_identical": true,
+          "sass_sha256": "f96ecde83b8950600aca027fd1cb812db71c1b3ba49ab104fb6fef2e2ee205d3",
+          "source_body_identical_after_hash_comment": true
+        }
+      ],
+      "canonical_include_hash": "d72839997b6ce1f022ac1c19647aee29",
+      "canonical_production_directory": "/home/qinhaiyan/glm52-hotspot-goal-runs/cache/moe_w13_decode/deepgemm/w13_variants/jit/candidate/cache/kernel.infini_kernel_glm52_moe_w13_decode_em5_bm16_1sm.563e5af104ca18f604bfd64f6272c612",
+      "canonical_sass_sha256": "f96ecde83b8950600aca027fd1cb812db71c1b3ba49ab104fb6fef2e2ee205d3",
+      "reason": "provider-only startup hashed the candidate include tree; current SGLang production startup loads stock DeepGEMM first and hashes that include tree before compiling the same named wrapper",
+      "symbol": "infini_kernel_glm52_moe_w13_decode_em5_bm16_1sm"
+    },
+    {
+      "alternatives": [
+        {
+          "cubin_sha256": "9cdc4f0ebdfedd2a334bbd93e1adf380b6fd70b71b10cf93076f33d9f44a4070",
+          "directory": "/home/qinhaiyan/glm52-hotspot-goal-runs/cache/moe_w13_decode/deepgemm/w13_variants/jit/candidate/cache/kernel.infini_kernel_glm52_moe_w13_decode_em5_bm16_2sm.39d94f73b0446ee171172478be0b5aa8",
+          "include_hash_line": "// Includes' hash value: 980b09c58ffef0ce0c1ce1ff668b209d",
+          "ptx_sha256": "0e56da397e9c1612ca42c69e7c152896e646d33116c8a3fe8b6e80bc796abd29",
+          "sass_identical": true,
+          "sass_sha256": "8928b03fb72679113ebf1a9fae93478875bdb89ca762f884d44e6b026eff9748",
+          "source_body_identical_after_hash_comment": true
+        }
+      ],
+      "canonical_include_hash": "d72839997b6ce1f022ac1c19647aee29",
+      "canonical_production_directory": "/home/qinhaiyan/glm52-hotspot-goal-runs/cache/moe_w13_decode/deepgemm/w13_variants/jit/candidate/cache/kernel.infini_kernel_glm52_moe_w13_decode_em5_bm16_2sm.d8580e69f67648c2a47968e8c0f7004b",
+      "canonical_sass_sha256": "8928b03fb72679113ebf1a9fae93478875bdb89ca762f884d44e6b026eff9748",
+      "reason": "provider-only startup hashed the candidate include tree; current SGLang production startup loads stock DeepGEMM first and hashes that include tree before compiling the same named wrapper",
+      "symbol": "infini_kernel_glm52_moe_w13_decode_em5_bm16_2sm"
+    },
+    {
+      "alternatives": [
+        {
+          "cubin_sha256": "1ed34d7958ed673e201486adb4af632b96788f7734ef2540d59d4a487266047a",
+          "directory": "/home/qinhaiyan/glm52-hotspot-goal-runs/cache/moe_w13_decode/deepgemm/w13_variants/jit/candidate/cache/kernel.infini_kernel_glm52_moe_w13_decode_em8_bm16_1sm.01ea55d2f011dc50947aacfbde0a245d",
+          "include_hash_line": "// Includes' hash value: 980b09c58ffef0ce0c1ce1ff668b209d",
+          "ptx_sha256": "f07baf6a0479f1505db78332001f08bd503f88eec744fc968213c3cad8069d43",
+          "sass_identical": true,
+          "sass_sha256": "e2c89ba0fdf6f9e5deb31a8da2d150e10440b8cfa50788d8998a3761cbcf0989",
+          "source_body_identical_after_hash_comment": true
+        }
+      ],
+      "canonical_include_hash": "d72839997b6ce1f022ac1c19647aee29",
+      "canonical_production_directory": "/home/qinhaiyan/glm52-hotspot-goal-runs/cache/moe_w13_decode/deepgemm/w13_variants/jit/candidate/cache/kernel.infini_kernel_glm52_moe_w13_decode_em8_bm16_1sm.991380755881f32d531d2cfa4eb51a7a",
+      "canonical_sass_sha256": "e2c89ba0fdf6f9e5deb31a8da2d150e10440b8cfa50788d8998a3761cbcf0989",
+      "reason": "provider-only startup hashed the candidate include tree; current SGLang production startup loads stock DeepGEMM first and hashes that include tree before compiling the same named wrapper",
+      "symbol": "infini_kernel_glm52_moe_w13_decode_em8_bm16_1sm"
+    },
+    {
+      "alternatives": [
+        {
+          "cubin_sha256": "e7b5d497bc06256f0c6459e2ecdc1dcf5c53a5747cdb67b18c85f43142ff3465",
+          "directory": "/home/qinhaiyan/glm52-hotspot-goal-runs/cache/moe_w13_decode/deepgemm/w13_variants/jit/candidate/cache/kernel.infini_kernel_glm52_moe_w13_decode_em8_bm16_2sm.489d6011dcfa259043052039fe1538f9",
+          "include_hash_line": "// Includes' hash value: 980b09c58ffef0ce0c1ce1ff668b209d",
+          "ptx_sha256": "96a5da9df37fc3359bdf4d7b2c214139e6c0ef2183e2592d09b65ccd0316959e",
+          "sass_identical": true,
+          "sass_sha256": "e8a43f6762644b066af92aec1dbafc8504dcc8d3130ee1ab456337913e6d349b",
+          "source_body_identical_after_hash_comment": true
+        }
+      ],
+      "canonical_include_hash": "d72839997b6ce1f022ac1c19647aee29",
+      "canonical_production_directory": "/home/qinhaiyan/glm52-hotspot-goal-runs/cache/moe_w13_decode/deepgemm/w13_variants/jit/candidate/cache/kernel.infini_kernel_glm52_moe_w13_decode_em8_bm16_2sm.2a62bfc4a7de65acc2ce1b98fe7d083a",
+      "canonical_sass_sha256": "e8a43f6762644b066af92aec1dbafc8504dcc8d3130ee1ab456337913e6d349b",
+      "reason": "provider-only startup hashed the candidate include tree; current SGLang production startup loads stock DeepGEMM first and hashes that include tree before compiling the same named wrapper",
+      "symbol": "infini_kernel_glm52_moe_w13_decode_em8_bm16_2sm"
+    },
+    {
+      "alternatives": [
+        {
+          "cubin_sha256": "2108571db53232193268417794178d5e014917642235586c10bb733a69b55823",
+          "directory": "/home/qinhaiyan/glm52-hotspot-goal-runs/cache/moe_w13_decode/deepgemm/w13_variants/jit/candidate/cache/kernel.infini_kernel_glm52_moe_w13_decode_em9_bm16_1sm.5a53a3a2d1bed560c06f0324e0dea57c",
+          "include_hash_line": "// Includes' hash value: 980b09c58ffef0ce0c1ce1ff668b209d",
+          "ptx_sha256": "3be7bf63aeed870ef961e285c9afed3145624bc2174309ce785064b49334d9d2",
+          "sass_identical": true,
+          "sass_sha256": "b18c3076c561078554727d86d6f918d2fd14a60c42a43dd4afcd9f0f874ffc5b",
+          "source_body_identical_after_hash_comment": true
+        }
+      ],
+      "canonical_include_hash": "d72839997b6ce1f022ac1c19647aee29",
+      "canonical_production_directory": "/home/qinhaiyan/glm52-hotspot-goal-runs/cache/moe_w13_decode/deepgemm/w13_variants/jit/candidate/cache/kernel.infini_kernel_glm52_moe_w13_decode_em9_bm16_1sm.b46a5f1b2c57c2c5a7ce1dd4cff88a29",
+      "canonical_sass_sha256": "b18c3076c561078554727d86d6f918d2fd14a60c42a43dd4afcd9f0f874ffc5b",
+      "reason": "provider-only startup hashed the candidate include tree; current SGLang production startup loads stock DeepGEMM first and hashes that include tree before compiling the same named wrapper",
+      "symbol": "infini_kernel_glm52_moe_w13_decode_em9_bm16_1sm"
+    },
+    {
+      "alternatives": [
+        {
+          "cubin_sha256": "78988b6497297d8c3f6c6188f8c4a5a1e096bd2e289999b4fa5e92e99626bd9c",
+          "directory": "/home/qinhaiyan/glm52-hotspot-goal-runs/cache/moe_w13_decode/deepgemm/w13_variants/jit/candidate/cache/kernel.infini_kernel_glm52_moe_w13_decode_em9_bm16_2sm.76c7370eee408a8e124b018ab535b35d",
+          "include_hash_line": "// Includes' hash value: 980b09c58ffef0ce0c1ce1ff668b209d",
+          "ptx_sha256": "391423dbf21733c5e6c392207d626f00b90cb992e0ec9a63f4354d3f754f502f",
+          "sass_identical": true,
+          "sass_sha256": "0f09825d7f3e039d3ddf2c6ee8198d2e65f68801a011ba15db155bcad531f341",
+          "source_body_identical_after_hash_comment": true
+        }
+      ],
+      "canonical_include_hash": "d72839997b6ce1f022ac1c19647aee29",
+      "canonical_production_directory": "/home/qinhaiyan/glm52-hotspot-goal-runs/cache/moe_w13_decode/deepgemm/w13_variants/jit/candidate/cache/kernel.infini_kernel_glm52_moe_w13_decode_em9_bm16_2sm.8c6df3b134a70253bf1d2b2012b5ddcf",
+      "canonical_sass_sha256": "0f09825d7f3e039d3ddf2c6ee8198d2e65f68801a011ba15db155bcad531f341",
+      "reason": "provider-only startup hashed the candidate include tree; current SGLang production startup loads stock DeepGEMM first and hashes that include tree before compiling the same named wrapper",
+      "symbol": "infini_kernel_glm52_moe_w13_decode_em9_bm16_2sm"
+    }
+  ],
+  "manifest": "/home/qinhaiyan/glm52-hotspot-goal-runs/cache/moe_w13_decode/deepgemm/w13_variants/manifest.json",
+  "manifest_sha256": "d13544ee15d1bb6ea37eff593e029aacf7d0856a68d55d411c706c5afc17b7e2",
+  "schema_version": 1,
+  "status": "PASS",
+  "stock": [
+    {
+      "artifacts": {
+        "cu": {
+          "path": "/home/qinhaiyan/glm52-hotspot-goal-runs/cache/moe_w13_decode/deepgemm/w13_variants/jit/stock/cache/kernel.sm100_m_grouped_fp8_fp4_gemm_masked_1d1d.b8e12b7800e35806733ec4fecba3b606/kernel.cu",
+          "sha256": "a768d3cbee53eafa04c944012b716af0cef56dd6f4c1db4ec834c5b662a5bffe",
+          "size_bytes": 663
+        },
+        "cubin": {
+          "path": "/home/qinhaiyan/glm52-hotspot-goal-runs/cache/moe_w13_decode/deepgemm/w13_variants/jit/stock/cache/kernel.sm100_m_grouped_fp8_fp4_gemm_masked_1d1d.b8e12b7800e35806733ec4fecba3b606/kernel.cubin",
+          "sha256": "66c88e5626bb688ebb3ad037c9e36bd8bf41a8c1319269c887c3814e17f82778",
+          "size_bytes": 61720
+        },
+        "ptx": {
+          "path": "/home/qinhaiyan/glm52-hotspot-goal-runs/cache/moe_w13_decode/deepgemm/w13_variants/jit/stock/cache/kernel.sm100_m_grouped_fp8_fp4_gemm_masked_1d1d.b8e12b7800e35806733ec4fecba3b606/kernel.ptx",
+          "sha256": "90a85c15c420f4db010f61cb7345bbcafe67ac7cb8e895bfdd0ccb748fd8d346",
+          "size_bytes": 66926
+        },
+        "sass": {
+          "path": "/home/qinhaiyan/glm52-hotspot-goal-runs/cache/moe_w13_decode/deepgemm/w13_variants/jit/stock/cache/kernel.sm100_m_grouped_fp8_fp4_gemm_masked_1d1d.b8e12b7800e35806733ec4fecba3b606/kernel.sass",
+          "sha256": "cfc90c36c64491ed50bd4a4ca7e4d26df1702cf33e48d513ae343b7bbc6b643e",
+          "size_bytes": 439416
+        }
+      },
+      "config": [
+        128,
+        128,
+        128,
+        8,
+        2
+      ],
+      "expected_m_values_sharing_identity": [
+        4,
+        5,
+        8,
+        9
+      ],
+      "intended_launch": {
+        "block_threads": 256,
+        "cluster_size": 2,
+        "grid_ctas": 148
+      },
+      "ptx_counts": {
+        "cluster_multicast": 5,
+        "tcgen05_mma_group2": 16,
+        "tcgen05_other_group": 0
+      },
+      "resources": {
+        "local_bytes": 0,
+        "registers": 36,
+        "stack_bytes": 0,
+        "static_shared_bytes": 1024
+      },
+      "sass_counts": {
+        "ldl": 0,
+        "ldtm": 32,
+        "stl": 0,
+        "ucgabar_arrive": 3,
+        "ucgabar_wait": 3,
+        "utcqmma_2cta": 16,
+        "utmaldg_2d": 10
+      },
+      "symbol": "_ZN9deep_gemm28sm100_fp8_fp4_gemm_1d1d_implILN4cute4UMMA5MajorE0ELS3_0ELj128ELj128ELj128ELj0ELj4096ELj6144ELj128ELj128ELj128ELj32ELj128ELj128ELj128ELj8ELj128ELj128ELj2ELb1ELj148ELb1ELb1ELNS_8GemmTypeE2ELb0EN7cutlass12float_e4m3_tES6_NS5_10bfloat16_tENS_8epilogue9transform16EpilogueIdentityEEEvPijjj14CUtensorMap_stSC_SC_SC_SC_"
+    }
+  ]
+}

@@ -1606,8 +1606,9 @@ def _masked_store_blocks(
     reference_delegated: bool,
 ) -> dict[str, int]:
     # The pinned same-source stock W13 and installed W2 heuristics select
-    # store_block_m=128 for these exact shapes. The tracked candidates select
-    # BM32. MGroupedMasked predicates CTA scheduling, then stores whole tiles.
+    # store_block_m=128 for these exact shapes. The tracked candidate runtime
+    # supplies its exact BM. MGroupedMasked predicates CTA scheduling, then
+    # stores whole tiles.
     w13_block_m = 128
     if implementation == "candidate" and not reference_delegated:
         if runtime.w13_runtime is None:

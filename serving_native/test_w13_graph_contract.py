@@ -3,13 +3,7 @@
 from __future__ import annotations
 
 import inspect
-import os
-import sys
-import tempfile
 import unittest
-from pathlib import Path
-from types import SimpleNamespace
-from unittest.mock import patch
 
 try:
     import torch
@@ -23,7 +17,11 @@ from serving_native.runner import (
     _assert_untouched_masked_regions,
     _compare_masked,
 )
-from serving_native.w13_runtime import W13Runtime
+from serving_native.w13_runtime import (
+    VARIANT_CONFIGS,
+    W13Runtime,
+    _prove_runtime_state_independence,
+)
 from serving_native.workloads import WORKLOADS, get_workload
 
 
@@ -165,183 +163,38 @@ class W13GraphContractTest(unittest.TestCase):
         self.assertTrue(bool(inputs["out"].eq(MOE_OUTPUT_POISON).all().item()))
         self.assertTrue(bool(inputs["down_out"].eq(MOE_OUTPUT_POISON).all().item()))
 
-    def test_harness_runtime_binds_stock_then_candidate_and_restores_env(self) -> None:
-        from sglang.srt.layers.glm52_opt import w13_decode
-
+    def test_harness_runtime_uses_exact_api_v1_provider_and_independent_state(
+        self,
+    ) -> None:
+        self.assertEqual(
+            VARIANT_CONFIGS,
+            {
+                "bm16_2sm": (16, 128, 128, 12, 2),
+                "bm16_1sm": (16, 128, 128, 11, 1),
+            },
+        )
         stock = _FakeDeepGemm("stock")
         candidate = _FakeDeepGemm("candidate")
-        installed = _FakeDeepGemm("installed")
-        events = []
-        compile_utils = SimpleNamespace(_ENABLE_JIT_DEEPGEMM_PRECOMPILE=True)
-        fake_cuda = SimpleNamespace(
-            current_device=lambda: 0,
-            get_device_capability=lambda _gpu: (10, 0),
-            synchronize=lambda _device: events.append(("synchronize",)),
-            empty_cache=lambda: events.append(("empty_cache",)),
+        for module in (stock, candidate):
+            module.set_pdl(True)
+            module.set_num_sms(148)
+            module.set_tc_util(100)
+        proof = _prove_runtime_state_independence(stock, candidate)
+        self.assertEqual(set(proof), {"pdl", "num_sms", "tc_util"})
+        self.assertEqual(stock.get_num_sms(), 148)
+        self.assertEqual(candidate.get_num_sms(), 148)
+
+        initializer = inspect.getsource(W13Runtime.__init__)
+        self.assertLess(
+            initializer.index("self.stock = _load_package"),
+            initializer.index("initialize_hotspot_provider"),
         )
-        fake_torch = SimpleNamespace(cuda=fake_cuda)
-        device = SimpleNamespace(index=0)
-
-        with tempfile.TemporaryDirectory() as tmp:
-            root = Path(tmp)
-            manifest = root / "manifest.json"
-            manifest.write_text("{}")
-            records = {}
-            snapshots = {}
-            for name in ("stock", "candidate"):
-                package = root / name / "package"
-                cache = root / name / "jit"
-                package.mkdir(parents=True)
-                cache.mkdir(parents=True)
-                records[name] = {
-                    "package": str(package),
-                    "package_init_sha256": f"{name}-init",
-                    "shared_object": str(package / "_C.so"),
-                    "shared_object_sha256": f"{name}-dso",
-                    "jit_cache": str(cache),
-                }
-                snapshots[str(cache.resolve())] = {f"{name}.cubin": f"{name}-jit"}
-
-            def load_variant(_manifest, name, **_kwargs):
-                events.append(("load", name, os.environ["DG_JIT_CACHE_DIR"]))
-                return (
-                    stock if name == "stock" else candidate,
-                    records[name],
-                    {},
-                )
-
-            def set_state(module, label):
-                events.append(("set_state", module.name, label))
-                module.set_pdl(True)
-                module.set_num_sms(148)
-                module.set_tc_util(100)
-                return {"pdl": True, "num_sms": 148, "tc_util": 100}
-
-            def launch(module, _tensors, expected_m, config):
-                events.append(
-                    (
-                        "launch",
-                        module.name,
-                        expected_m,
-                        config,
-                        os.environ["DG_JIT_CACHE_DIR"],
-                    )
-                )
-
-            saved_dg = os.environ.get("DG_JIT_CACHE_DIR")
-            saved_sglang = os.environ.get("SGLANG_DG_CACHE_DIR")
-            with (
-                patch.dict(
-                    os.environ,
-                    {
-                        "DG_JIT_CACHE_DIR": "before-dg",
-                        "SGLANG_DG_CACHE_DIR": "before-sglang",
-                    },
-                    clear=False,
-                ),
-                patch.dict(sys.modules, {"deep_gemm": installed}),
-                patch.object(
-                    w13_decode,
-                    "_variant_record",
-                    side_effect=lambda _path, name: (records[name], {}),
-                ),
-                patch.object(w13_decode, "load_variant", side_effect=load_variant),
-                patch.object(
-                    w13_decode,
-                    "_set_required_runtime_state",
-                    side_effect=set_state,
-                ),
-                patch.object(w13_decode, "_allocate_warm_inputs", return_value={}),
-                patch.object(
-                    w13_decode,
-                    "_launch_named_config",
-                    side_effect=launch,
-                ),
-                patch.object(
-                    w13_decode,
-                    "_cache_snapshot",
-                    side_effect=lambda path: snapshots[str(path.resolve())],
-                ),
-                patch.object(
-                    w13_decode,
-                    "_prove_runtime_state_independence",
-                    return_value={"proof": True},
-                ),
-                patch.object(
-                    w13_decode,
-                    "_sha256",
-                    return_value="manifest-hash",
-                ),
-                patch(
-                    "serving_native.w13_runtime.importlib.import_module",
-                    side_effect=lambda _name: (
-                        events.append(
-                            ("compile_utils_import", os.environ["DG_JIT_CACHE_DIR"])
-                        )
-                        or compile_utils
-                    ),
-                ),
-            ):
-                runtime = W13Runtime(
-                    fake_torch,
-                    device,
-                    manifest_path=manifest,
-                    variant="bm32_1sm",
-                )
-                self.assertEqual(os.environ["DG_JIT_CACHE_DIR"], "before-dg")
-                self.assertEqual(
-                    os.environ["SGLANG_DG_CACHE_DIR"],
-                    "before-sglang",
-                )
-
-            stock_load = next(
-                index
-                for index, event in enumerate(events)
-                if event[:2] == ("load", "stock")
-            )
-            compile_import = next(
-                index
-                for index, event in enumerate(events)
-                if event[0] == "compile_utils_import"
-            )
-            candidate_load = next(
-                index
-                for index, event in enumerate(events)
-                if event[:2] == ("load", "candidate")
-            )
-            self.assertLess(stock_load, compile_import)
-            self.assertLess(compile_import, candidate_load)
-            self.assertEqual(
-                events[stock_load][2],
-                records["stock"]["jit_cache"],
-            )
-            self.assertEqual(
-                events[candidate_load][2],
-                records["candidate"]["jit_cache"],
-            )
-            self.assertFalse(compile_utils._ENABLE_JIT_DEEPGEMM_PRECOMPILE)
-            self.assertFalse(runtime.identity["jit_use_nvrtc"])
-            self.assertEqual(
-                runtime.identity["runtime_state"],
-                {
-                    "installed_downstream": {
-                        "pdl": True,
-                        "num_sms": 148,
-                        "tc_util": 100,
-                    },
-                    "stock": {"pdl": True, "num_sms": 148, "tc_util": 100},
-                    "candidate": {"pdl": True, "num_sms": 148, "tc_util": 100},
-                },
-            )
-
-            if saved_dg is None:
-                os.environ.pop("DG_JIT_CACHE_DIR", None)
-            else:
-                os.environ["DG_JIT_CACHE_DIR"] = saved_dg
-            if saved_sglang is None:
-                os.environ.pop("SGLANG_DG_CACHE_DIR", None)
-            else:
-                os.environ["SGLANG_DG_CACHE_DIR"] = saved_sglang
+        self.assertIn("provider_bm16_2sm.py", initializer)
+        self.assertIn("provider_bm16_1sm.py", initializer)
+        launcher = inspect.getsource(W13Runtime.candidate_launcher)
+        self.assertIn("self._provider_callback", launcher)
+        self.assertNotIn("self.stock", launcher)
+        self.assertNotIn("except", launcher)
 
 
 if __name__ == "__main__":
