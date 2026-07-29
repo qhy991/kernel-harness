@@ -1,0 +1,1594 @@
+{
+  "kind": "glm52_w13_same_source_correctness",
+  "manifest": "/home/qinhaiyan/glm52-v2-goal-runs/cache/24-moe_w13_decode/deepgemm/w13_variants/manifest.json",
+  "manifest_sha256": "afa7063a860cd045138e51abcb5b8b44c226db13c08e212ae30da077f5655621",
+  "schema_version": 1,
+  "variants": [
+    {
+      "cases": [
+        {
+          "candidate_return": null,
+          "comparison": {
+            "anomaly_mismatches": 0,
+            "atol": 0.02,
+            "candidate_nonfinite": 0,
+            "compared_elements": 524288,
+            "failing_elements": 0,
+            "max_abs_error": 0.0,
+            "max_rel_error": 0.0,
+            "reference_nonfinite": 0,
+            "rtol": 0.02
+          },
+          "counts": [
+            6,
+            2,
+            4,
+            3,
+            4,
+            2,
+            7,
+            2,
+            3,
+            4,
+            4,
+            4,
+            4,
+            3,
+            6,
+            6,
+            5,
+            3,
+            6,
+            6,
+            4,
+            3,
+            5,
+            2,
+            3,
+            6,
+            6,
+            2,
+            3,
+            5,
+            3,
+            2
+          ],
+          "data_pattern": "random",
+          "expected_m": 4,
+          "masked_store_contract": "rows outside ceil(masked_m/store_block_m) store tiles remain pre-poisoned",
+          "name": "production_m16_em4_random",
+          "stock_output_preserved_after_candidate": true,
+          "stock_return": null,
+          "untouched_masked_regions": {
+            "candidate": {
+              "padding_rows_written": 896,
+              "store_block_m": 32,
+              "untouched_rows_checked": 31744
+            },
+            "stock": {
+              "padding_rows_written": 3968,
+              "store_block_m": 128,
+              "untouched_rows_checked": 28672
+            }
+          }
+        },
+        {
+          "candidate_return": null,
+          "comparison": {
+            "anomaly_mismatches": 0,
+            "atol": 0.02,
+            "candidate_nonfinite": 0,
+            "compared_elements": 524288,
+            "failing_elements": 0,
+            "max_abs_error": 0.0,
+            "max_rel_error": 0.0,
+            "reference_nonfinite": 0,
+            "rtol": 0.02
+          },
+          "counts": [
+            5,
+            4,
+            1,
+            5,
+            8,
+            2,
+            5,
+            3,
+            3,
+            3,
+            5,
+            3,
+            7,
+            6,
+            4,
+            4,
+            2,
+            4,
+            1,
+            3,
+            2,
+            5,
+            4,
+            7,
+            7,
+            8,
+            5,
+            4,
+            2,
+            2,
+            1,
+            3
+          ],
+          "data_pattern": "ramp",
+          "expected_m": 5,
+          "masked_store_contract": "rows outside ceil(masked_m/store_block_m) store tiles remain pre-poisoned",
+          "name": "production_m16_em5_ramp",
+          "stock_output_preserved_after_candidate": true,
+          "stock_return": null,
+          "untouched_masked_regions": {
+            "candidate": {
+              "padding_rows_written": 896,
+              "store_block_m": 32,
+              "untouched_rows_checked": 31744
+            },
+            "stock": {
+              "padding_rows_written": 3968,
+              "store_block_m": 128,
+              "untouched_rows_checked": 28672
+            }
+          }
+        },
+        {
+          "candidate_return": null,
+          "comparison": {
+            "anomaly_mismatches": 0,
+            "atol": 0.02,
+            "candidate_nonfinite": 0,
+            "compared_elements": 1048576,
+            "failing_elements": 0,
+            "max_abs_error": 0.0,
+            "max_rel_error": 0.0,
+            "reference_nonfinite": 0,
+            "rtol": 0.02
+          },
+          "counts": [
+            6,
+            11,
+            10,
+            9,
+            6,
+            5,
+            10,
+            8,
+            7,
+            12,
+            11,
+            9,
+            6,
+            3,
+            6,
+            8,
+            10,
+            9,
+            5,
+            13,
+            8,
+            8,
+            10,
+            9,
+            7,
+            9,
+            7,
+            3,
+            6,
+            6,
+            2,
+            17
+          ],
+          "data_pattern": "extreme_finite",
+          "expected_m": 8,
+          "masked_store_contract": "rows outside ceil(masked_m/store_block_m) store tiles remain pre-poisoned",
+          "name": "production_m32_em8_extreme_finite",
+          "stock_output_preserved_after_candidate": true,
+          "stock_return": null,
+          "untouched_masked_regions": {
+            "candidate": {
+              "padding_rows_written": 768,
+              "store_block_m": 32,
+              "untouched_rows_checked": 31744
+            },
+            "stock": {
+              "padding_rows_written": 3840,
+              "store_block_m": 128,
+              "untouched_rows_checked": 28672
+            }
+          }
+        },
+        {
+          "candidate_return": null,
+          "comparison": {
+            "anomaly_mismatches": 0,
+            "atol": 0.02,
+            "candidate_nonfinite": 0,
+            "compared_elements": 1048576,
+            "failing_elements": 0,
+            "max_abs_error": 0.0,
+            "max_rel_error": 0.0,
+            "reference_nonfinite": 0,
+            "rtol": 0.02
+          },
+          "counts": [
+            9,
+            4,
+            8,
+            9,
+            6,
+            8,
+            8,
+            8,
+            6,
+            9,
+            9,
+            8,
+            7,
+            5,
+            11,
+            10,
+            2,
+            11,
+            9,
+            6,
+            7,
+            9,
+            10,
+            11,
+            7,
+            11,
+            10,
+            6,
+            6,
+            5,
+            9,
+            12
+          ],
+          "data_pattern": "changed",
+          "expected_m": 9,
+          "masked_store_contract": "rows outside ceil(masked_m/store_block_m) store tiles remain pre-poisoned",
+          "name": "production_m32_em9_changed",
+          "stock_output_preserved_after_candidate": true,
+          "stock_return": null,
+          "untouched_masked_regions": {
+            "candidate": {
+              "padding_rows_written": 768,
+              "store_block_m": 32,
+              "untouched_rows_checked": 31744
+            },
+            "stock": {
+              "padding_rows_written": 3840,
+              "store_block_m": 128,
+              "untouched_rows_checked": 28672
+            }
+          }
+        },
+        {
+          "candidate_return": null,
+          "comparison": {
+            "anomaly_mismatches": 0,
+            "atol": 0.02,
+            "candidate_nonfinite": 0,
+            "compared_elements": 0,
+            "failing_elements": 0,
+            "max_abs_error": 0.0,
+            "max_rel_error": 0.0,
+            "reference_nonfinite": 0,
+            "rtol": 0.02
+          },
+          "counts": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "data_pattern": "poison_invalid",
+          "expected_m": 4,
+          "masked_store_contract": "rows outside ceil(masked_m/store_block_m) store tiles remain pre-poisoned",
+          "name": "zero_counts_poisoned_invalid_rows",
+          "stock_output_preserved_after_candidate": true,
+          "stock_return": null,
+          "untouched_masked_regions": {
+            "candidate": {
+              "padding_rows_written": 0,
+              "store_block_m": 32,
+              "untouched_rows_checked": 32768
+            },
+            "stock": {
+              "padding_rows_written": 0,
+              "store_block_m": 128,
+              "untouched_rows_checked": 32768
+            }
+          }
+        },
+        {
+          "candidate_return": null,
+          "comparison": {
+            "anomaly_mismatches": 0,
+            "atol": 0.02,
+            "candidate_nonfinite": 0,
+            "compared_elements": 4096,
+            "failing_elements": 0,
+            "max_abs_error": 0.0,
+            "max_rel_error": 0.0,
+            "reference_nonfinite": 0,
+            "rtol": 0.02
+          },
+          "counts": [
+            1,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "data_pattern": "constant",
+          "expected_m": 4,
+          "masked_store_contract": "rows outside ceil(masked_m/store_block_m) store tiles remain pre-poisoned",
+          "name": "minimum_count",
+          "stock_output_preserved_after_candidate": true,
+          "stock_return": null,
+          "untouched_masked_regions": {
+            "candidate": {
+              "padding_rows_written": 31,
+              "store_block_m": 32,
+              "untouched_rows_checked": 32736
+            },
+            "stock": {
+              "padding_rows_written": 127,
+              "store_block_m": 128,
+              "untouched_rows_checked": 32640
+            }
+          }
+        },
+        {
+          "candidate_return": null,
+          "comparison": {
+            "anomaly_mismatches": 0,
+            "atol": 0.02,
+            "candidate_nonfinite": 0,
+            "compared_elements": 4194304,
+            "failing_elements": 0,
+            "max_abs_error": 0.0,
+            "max_rel_error": 0.0,
+            "reference_nonfinite": 0,
+            "rtol": 0.02
+          },
+          "counts": [
+            1024,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "data_pattern": "constant",
+          "expected_m": 4,
+          "masked_store_contract": "rows outside ceil(masked_m/store_block_m) store tiles remain pre-poisoned",
+          "name": "maximum_count",
+          "stock_output_preserved_after_candidate": true,
+          "stock_return": null,
+          "untouched_masked_regions": {
+            "candidate": {
+              "padding_rows_written": 0,
+              "store_block_m": 32,
+              "untouched_rows_checked": 31744
+            },
+            "stock": {
+              "padding_rows_written": 0,
+              "store_block_m": 128,
+              "untouched_rows_checked": 31744
+            }
+          }
+        },
+        {
+          "candidate_return": null,
+          "comparison": {
+            "anomaly_mismatches": 0,
+            "atol": 0.02,
+            "candidate_nonfinite": 0,
+            "compared_elements": 1048576,
+            "failing_elements": 0,
+            "max_abs_error": 0.0,
+            "max_rel_error": 0.0,
+            "reference_nonfinite": 0,
+            "rtol": 0.02
+          },
+          "counts": [
+            256,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "data_pattern": "constant",
+          "expected_m": 9,
+          "masked_store_contract": "rows outside ceil(masked_m/store_block_m) store tiles remain pre-poisoned",
+          "name": "highly_skewed",
+          "stock_output_preserved_after_candidate": true,
+          "stock_return": null,
+          "untouched_masked_regions": {
+            "candidate": {
+              "padding_rows_written": 0,
+              "store_block_m": 32,
+              "untouched_rows_checked": 32512
+            },
+            "stock": {
+              "padding_rows_written": 0,
+              "store_block_m": 128,
+              "untouched_rows_checked": 32512
+            }
+          }
+        },
+        {
+          "candidate_return": null,
+          "comparison": {
+            "anomaly_mismatches": 0,
+            "atol": 0.02,
+            "candidate_nonfinite": 0,
+            "compared_elements": 393216,
+            "failing_elements": 0,
+            "max_abs_error": 0.0,
+            "max_rel_error": 0.0,
+            "reference_nonfinite": 0,
+            "rtol": 0.02
+          },
+          "counts": [
+            31,
+            32,
+            33,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "data_pattern": "poison_invalid",
+          "expected_m": 5,
+          "masked_store_contract": "rows outside ceil(masked_m/store_block_m) store tiles remain pre-poisoned",
+          "name": "bm32_boundaries_31_32_33",
+          "stock_output_preserved_after_candidate": true,
+          "stock_return": null,
+          "untouched_masked_regions": {
+            "candidate": {
+              "padding_rows_written": 32,
+              "store_block_m": 32,
+              "untouched_rows_checked": 32640
+            },
+            "stock": {
+              "padding_rows_written": 288,
+              "store_block_m": 128,
+              "untouched_rows_checked": 32384
+            }
+          }
+        }
+      ],
+      "nondefault_stream": 107263553569472,
+      "output_ownership_distinct": true,
+      "packed_scale_sha256_after": {
+        "activation_scale": "dc2a2e51125a27fa011f2642214c0b386c3a6144f35dadffb72950b59ffabae3",
+        "weight_scale": "a45ab52f44ab6966e4b6d8fa07cf44169492bdc5b15354a50bd6dcab28e002ec"
+      },
+      "packed_scale_sha256_before": {
+        "activation_scale": "dc2a2e51125a27fa011f2642214c0b386c3a6144f35dadffb72950b59ffabae3",
+        "weight_scale": "a45ab52f44ab6966e4b6d8fa07cf44169492bdc5b15354a50bd6dcab28e002ec"
+      },
+      "runtime_identity": {
+        "broad_precompile_enabled": false,
+        "config": [
+          32,
+          128,
+          128,
+          11,
+          2
+        ],
+        "jit_use_nvrtc": false,
+        "manifest": "/home/qinhaiyan/glm52-v2-goal-runs/cache/24-moe_w13_decode/deepgemm/w13_variants/manifest.json",
+        "manifest_sha256": "afa7063a860cd045138e51abcb5b8b44c226db13c08e212ae30da077f5655621",
+        "modules": {
+          "candidate": {
+            "jit_artifacts": {
+              "cache/kernel.sm100_m_grouped_fp8_fp4_gemm_masked_1d1d.51dabe4dc4117fcdce86e78f87f10636/kernel.cu": "daa9dd98317b6d2d1a83c288965223427edd21e56f5c8368c5e32d566d7402ac",
+              "cache/kernel.sm100_m_grouped_fp8_fp4_gemm_masked_1d1d.51dabe4dc4117fcdce86e78f87f10636/kernel.cubin": "11a3daf1a42d2f6dd8c36db1b335483fa68c7edf0c4751d3eefd4abeb9f2178e",
+              "cache/kernel.sm100_m_grouped_fp8_fp4_gemm_masked_1d1d.8e4280b1570bdb24108477c0207e76bb/kernel.cu": "da27f3dd2dcd3f3c71042f6c323f955ad46a8d5347777a0c3607d94578ed8f46",
+              "cache/kernel.sm100_m_grouped_fp8_fp4_gemm_masked_1d1d.8e4280b1570bdb24108477c0207e76bb/kernel.cubin": "c9556f1194e15c2539185d1d0e0f05f63c08225d4b0af9be8b61b894812d0ea1"
+            },
+            "jit_cache": "/home/qinhaiyan/glm52-v2-goal-runs/cache/24-moe_w13_decode/deepgemm/w13_variants/jit/candidate",
+            "package": "/home/qinhaiyan/glm52-v2-goal-runs/cache/24-moe_w13_decode/deepgemm/w13_variants/artifacts/candidate/site/deep_gemm_w13_candidate",
+            "package_init_sha256": "4db10ad437f64434cf78f139e114e02bbae8fa31bfdef07943641e659826a876",
+            "shared_object": "/home/qinhaiyan/glm52-v2-goal-runs/cache/24-moe_w13_decode/deepgemm/w13_variants/artifacts/candidate/site/deep_gemm_w13_candidate/_C.so",
+            "shared_object_sha256": "d2bf446348ea1c4e285b3862240990d5369c7c13d7aea4a5d75673a98a75efd7"
+          },
+          "stock": {
+            "jit_artifacts": {
+              "cache/kernel.sm100_m_grouped_fp8_fp4_gemm_masked_1d1d.fd165cc8140afb4214951eb474041a15/kernel.cu": "a768d3cbee53eafa04c944012b716af0cef56dd6f4c1db4ec834c5b662a5bffe",
+              "cache/kernel.sm100_m_grouped_fp8_fp4_gemm_masked_1d1d.fd165cc8140afb4214951eb474041a15/kernel.cubin": "92d200dfaf0d9a25c651905be06ae991bbd88a3b8c6f18b0aa8594064a5432b7"
+            },
+            "jit_cache": "/home/qinhaiyan/glm52-v2-goal-runs/cache/24-moe_w13_decode/deepgemm/w13_variants/jit/stock",
+            "package": "/home/qinhaiyan/glm52-v2-goal-runs/cache/24-moe_w13_decode/deepgemm/w13_variants/artifacts/stock/site/deep_gemm_w13_stock",
+            "package_init_sha256": "243eeaa71fa65cecaddd7298245438cb371ca765d7bf914a9427e132be8d5f26",
+            "shared_object": "/home/qinhaiyan/glm52-v2-goal-runs/cache/24-moe_w13_decode/deepgemm/w13_variants/artifacts/stock/site/deep_gemm_w13_stock/_C.so",
+            "shared_object_sha256": "085ded6f88cb6f1f0cf7542d1362d9a732772052996aca5e849d732be1ef45d8"
+          }
+        },
+        "runtime_state": {
+          "candidate": {
+            "num_sms": 148,
+            "pdl": true,
+            "tc_util": 100
+          },
+          "installed_downstream": {
+            "num_sms": 148,
+            "pdl": true,
+            "tc_util": 100
+          },
+          "stock": {
+            "num_sms": 148,
+            "pdl": true,
+            "tc_util": 100
+          }
+        },
+        "state_independence": {
+          "num_sms": {
+            "mutate_candidate": {
+              "mutated_value": 147,
+              "restored": 148,
+              "stock_unchanged": 148
+            },
+            "mutate_stock": {
+              "candidate_unchanged": 148,
+              "mutated_value": 147,
+              "restored": 148
+            }
+          },
+          "pdl": {
+            "mutate_candidate": {
+              "mutated_value": false,
+              "restored": true,
+              "stock_unchanged": true
+            },
+            "mutate_stock": {
+              "candidate_unchanged": true,
+              "mutated_value": false,
+              "restored": true
+            }
+          },
+          "tc_util": {
+            "mutate_candidate": {
+              "mutated_value": 99,
+              "restored": 100,
+              "stock_unchanged": 100
+            },
+            "mutate_stock": {
+              "candidate_unchanged": 100,
+              "mutated_value": 99,
+              "restored": 100
+            }
+          }
+        },
+        "variant": "bm32_2sm"
+      },
+      "status": "pass",
+      "tensor_contract": {
+        "activation_fp8": {
+          "device": "cuda:0",
+          "dtype": "torch.float8_e4m3fn",
+          "shape": [
+            32,
+            1024,
+            6144
+          ],
+          "storage_offset": 0,
+          "stride": [
+            6291456,
+            6144,
+            1
+          ]
+        },
+        "activation_scale": {
+          "device": "cuda:0",
+          "dtype": "torch.int32",
+          "shape": [
+            32,
+            1024,
+            12
+          ],
+          "storage_offset": 0,
+          "stride": [
+            12288,
+            1,
+            1024
+          ]
+        },
+        "masked_m": {
+          "device": "cuda:0",
+          "dtype": "torch.int32",
+          "shape": [
+            32
+          ],
+          "storage_offset": 0,
+          "stride": [
+            1
+          ]
+        },
+        "out": {
+          "device": "cuda:0",
+          "dtype": "torch.bfloat16",
+          "shape": [
+            32,
+            1024,
+            4096
+          ],
+          "storage_offset": 0,
+          "stride": [
+            4194304,
+            4096,
+            1
+          ]
+        },
+        "weight_fp8": {
+          "device": "cuda:0",
+          "dtype": "torch.float8_e4m3fn",
+          "shape": [
+            32,
+            4096,
+            6144
+          ],
+          "storage_offset": 0,
+          "stride": [
+            25165824,
+            6144,
+            1
+          ]
+        },
+        "weight_scale": {
+          "device": "cuda:0",
+          "dtype": "torch.int32",
+          "shape": [
+            32,
+            4096,
+            12
+          ],
+          "storage_offset": 0,
+          "stride": [
+            49152,
+            1,
+            4096
+          ]
+        }
+      },
+      "variant": "bm32_2sm"
+    },
+    {
+      "cases": [
+        {
+          "candidate_return": null,
+          "comparison": {
+            "anomaly_mismatches": 0,
+            "atol": 0.02,
+            "candidate_nonfinite": 0,
+            "compared_elements": 524288,
+            "failing_elements": 0,
+            "max_abs_error": 0.0,
+            "max_rel_error": 0.0,
+            "reference_nonfinite": 0,
+            "rtol": 0.02
+          },
+          "counts": [
+            6,
+            2,
+            4,
+            3,
+            4,
+            2,
+            7,
+            2,
+            3,
+            4,
+            4,
+            4,
+            4,
+            3,
+            6,
+            6,
+            5,
+            3,
+            6,
+            6,
+            4,
+            3,
+            5,
+            2,
+            3,
+            6,
+            6,
+            2,
+            3,
+            5,
+            3,
+            2
+          ],
+          "data_pattern": "random",
+          "expected_m": 4,
+          "masked_store_contract": "rows outside ceil(masked_m/store_block_m) store tiles remain pre-poisoned",
+          "name": "production_m16_em4_random",
+          "stock_output_preserved_after_candidate": true,
+          "stock_return": null,
+          "untouched_masked_regions": {
+            "candidate": {
+              "padding_rows_written": 896,
+              "store_block_m": 32,
+              "untouched_rows_checked": 31744
+            },
+            "stock": {
+              "padding_rows_written": 3968,
+              "store_block_m": 128,
+              "untouched_rows_checked": 28672
+            }
+          }
+        },
+        {
+          "candidate_return": null,
+          "comparison": {
+            "anomaly_mismatches": 0,
+            "atol": 0.02,
+            "candidate_nonfinite": 0,
+            "compared_elements": 524288,
+            "failing_elements": 0,
+            "max_abs_error": 0.0,
+            "max_rel_error": 0.0,
+            "reference_nonfinite": 0,
+            "rtol": 0.02
+          },
+          "counts": [
+            5,
+            4,
+            1,
+            5,
+            8,
+            2,
+            5,
+            3,
+            3,
+            3,
+            5,
+            3,
+            7,
+            6,
+            4,
+            4,
+            2,
+            4,
+            1,
+            3,
+            2,
+            5,
+            4,
+            7,
+            7,
+            8,
+            5,
+            4,
+            2,
+            2,
+            1,
+            3
+          ],
+          "data_pattern": "ramp",
+          "expected_m": 5,
+          "masked_store_contract": "rows outside ceil(masked_m/store_block_m) store tiles remain pre-poisoned",
+          "name": "production_m16_em5_ramp",
+          "stock_output_preserved_after_candidate": true,
+          "stock_return": null,
+          "untouched_masked_regions": {
+            "candidate": {
+              "padding_rows_written": 896,
+              "store_block_m": 32,
+              "untouched_rows_checked": 31744
+            },
+            "stock": {
+              "padding_rows_written": 3968,
+              "store_block_m": 128,
+              "untouched_rows_checked": 28672
+            }
+          }
+        },
+        {
+          "candidate_return": null,
+          "comparison": {
+            "anomaly_mismatches": 0,
+            "atol": 0.02,
+            "candidate_nonfinite": 0,
+            "compared_elements": 1048576,
+            "failing_elements": 0,
+            "max_abs_error": 0.0,
+            "max_rel_error": 0.0,
+            "reference_nonfinite": 0,
+            "rtol": 0.02
+          },
+          "counts": [
+            6,
+            11,
+            10,
+            9,
+            6,
+            5,
+            10,
+            8,
+            7,
+            12,
+            11,
+            9,
+            6,
+            3,
+            6,
+            8,
+            10,
+            9,
+            5,
+            13,
+            8,
+            8,
+            10,
+            9,
+            7,
+            9,
+            7,
+            3,
+            6,
+            6,
+            2,
+            17
+          ],
+          "data_pattern": "extreme_finite",
+          "expected_m": 8,
+          "masked_store_contract": "rows outside ceil(masked_m/store_block_m) store tiles remain pre-poisoned",
+          "name": "production_m32_em8_extreme_finite",
+          "stock_output_preserved_after_candidate": true,
+          "stock_return": null,
+          "untouched_masked_regions": {
+            "candidate": {
+              "padding_rows_written": 768,
+              "store_block_m": 32,
+              "untouched_rows_checked": 31744
+            },
+            "stock": {
+              "padding_rows_written": 3840,
+              "store_block_m": 128,
+              "untouched_rows_checked": 28672
+            }
+          }
+        },
+        {
+          "candidate_return": null,
+          "comparison": {
+            "anomaly_mismatches": 0,
+            "atol": 0.02,
+            "candidate_nonfinite": 0,
+            "compared_elements": 1048576,
+            "failing_elements": 0,
+            "max_abs_error": 0.0,
+            "max_rel_error": 0.0,
+            "reference_nonfinite": 0,
+            "rtol": 0.02
+          },
+          "counts": [
+            9,
+            4,
+            8,
+            9,
+            6,
+            8,
+            8,
+            8,
+            6,
+            9,
+            9,
+            8,
+            7,
+            5,
+            11,
+            10,
+            2,
+            11,
+            9,
+            6,
+            7,
+            9,
+            10,
+            11,
+            7,
+            11,
+            10,
+            6,
+            6,
+            5,
+            9,
+            12
+          ],
+          "data_pattern": "changed",
+          "expected_m": 9,
+          "masked_store_contract": "rows outside ceil(masked_m/store_block_m) store tiles remain pre-poisoned",
+          "name": "production_m32_em9_changed",
+          "stock_output_preserved_after_candidate": true,
+          "stock_return": null,
+          "untouched_masked_regions": {
+            "candidate": {
+              "padding_rows_written": 768,
+              "store_block_m": 32,
+              "untouched_rows_checked": 31744
+            },
+            "stock": {
+              "padding_rows_written": 3840,
+              "store_block_m": 128,
+              "untouched_rows_checked": 28672
+            }
+          }
+        },
+        {
+          "candidate_return": null,
+          "comparison": {
+            "anomaly_mismatches": 0,
+            "atol": 0.02,
+            "candidate_nonfinite": 0,
+            "compared_elements": 0,
+            "failing_elements": 0,
+            "max_abs_error": 0.0,
+            "max_rel_error": 0.0,
+            "reference_nonfinite": 0,
+            "rtol": 0.02
+          },
+          "counts": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "data_pattern": "poison_invalid",
+          "expected_m": 4,
+          "masked_store_contract": "rows outside ceil(masked_m/store_block_m) store tiles remain pre-poisoned",
+          "name": "zero_counts_poisoned_invalid_rows",
+          "stock_output_preserved_after_candidate": true,
+          "stock_return": null,
+          "untouched_masked_regions": {
+            "candidate": {
+              "padding_rows_written": 0,
+              "store_block_m": 32,
+              "untouched_rows_checked": 32768
+            },
+            "stock": {
+              "padding_rows_written": 0,
+              "store_block_m": 128,
+              "untouched_rows_checked": 32768
+            }
+          }
+        },
+        {
+          "candidate_return": null,
+          "comparison": {
+            "anomaly_mismatches": 0,
+            "atol": 0.02,
+            "candidate_nonfinite": 0,
+            "compared_elements": 4096,
+            "failing_elements": 0,
+            "max_abs_error": 0.0,
+            "max_rel_error": 0.0,
+            "reference_nonfinite": 0,
+            "rtol": 0.02
+          },
+          "counts": [
+            1,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "data_pattern": "constant",
+          "expected_m": 4,
+          "masked_store_contract": "rows outside ceil(masked_m/store_block_m) store tiles remain pre-poisoned",
+          "name": "minimum_count",
+          "stock_output_preserved_after_candidate": true,
+          "stock_return": null,
+          "untouched_masked_regions": {
+            "candidate": {
+              "padding_rows_written": 31,
+              "store_block_m": 32,
+              "untouched_rows_checked": 32736
+            },
+            "stock": {
+              "padding_rows_written": 127,
+              "store_block_m": 128,
+              "untouched_rows_checked": 32640
+            }
+          }
+        },
+        {
+          "candidate_return": null,
+          "comparison": {
+            "anomaly_mismatches": 0,
+            "atol": 0.02,
+            "candidate_nonfinite": 0,
+            "compared_elements": 4194304,
+            "failing_elements": 0,
+            "max_abs_error": 0.0,
+            "max_rel_error": 0.0,
+            "reference_nonfinite": 0,
+            "rtol": 0.02
+          },
+          "counts": [
+            1024,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "data_pattern": "constant",
+          "expected_m": 4,
+          "masked_store_contract": "rows outside ceil(masked_m/store_block_m) store tiles remain pre-poisoned",
+          "name": "maximum_count",
+          "stock_output_preserved_after_candidate": true,
+          "stock_return": null,
+          "untouched_masked_regions": {
+            "candidate": {
+              "padding_rows_written": 0,
+              "store_block_m": 32,
+              "untouched_rows_checked": 31744
+            },
+            "stock": {
+              "padding_rows_written": 0,
+              "store_block_m": 128,
+              "untouched_rows_checked": 31744
+            }
+          }
+        },
+        {
+          "candidate_return": null,
+          "comparison": {
+            "anomaly_mismatches": 0,
+            "atol": 0.02,
+            "candidate_nonfinite": 0,
+            "compared_elements": 1048576,
+            "failing_elements": 0,
+            "max_abs_error": 0.0,
+            "max_rel_error": 0.0,
+            "reference_nonfinite": 0,
+            "rtol": 0.02
+          },
+          "counts": [
+            256,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "data_pattern": "constant",
+          "expected_m": 9,
+          "masked_store_contract": "rows outside ceil(masked_m/store_block_m) store tiles remain pre-poisoned",
+          "name": "highly_skewed",
+          "stock_output_preserved_after_candidate": true,
+          "stock_return": null,
+          "untouched_masked_regions": {
+            "candidate": {
+              "padding_rows_written": 0,
+              "store_block_m": 32,
+              "untouched_rows_checked": 32512
+            },
+            "stock": {
+              "padding_rows_written": 0,
+              "store_block_m": 128,
+              "untouched_rows_checked": 32512
+            }
+          }
+        },
+        {
+          "candidate_return": null,
+          "comparison": {
+            "anomaly_mismatches": 0,
+            "atol": 0.02,
+            "candidate_nonfinite": 0,
+            "compared_elements": 393216,
+            "failing_elements": 0,
+            "max_abs_error": 0.0,
+            "max_rel_error": 0.0,
+            "reference_nonfinite": 0,
+            "rtol": 0.02
+          },
+          "counts": [
+            31,
+            32,
+            33,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "data_pattern": "poison_invalid",
+          "expected_m": 5,
+          "masked_store_contract": "rows outside ceil(masked_m/store_block_m) store tiles remain pre-poisoned",
+          "name": "bm32_boundaries_31_32_33",
+          "stock_output_preserved_after_candidate": true,
+          "stock_return": null,
+          "untouched_masked_regions": {
+            "candidate": {
+              "padding_rows_written": 32,
+              "store_block_m": 32,
+              "untouched_rows_checked": 32640
+            },
+            "stock": {
+              "padding_rows_written": 288,
+              "store_block_m": 128,
+              "untouched_rows_checked": 32384
+            }
+          }
+        }
+      ],
+      "nondefault_stream": 107263553647856,
+      "output_ownership_distinct": true,
+      "packed_scale_sha256_after": {
+        "activation_scale": "dc2a2e51125a27fa011f2642214c0b386c3a6144f35dadffb72950b59ffabae3",
+        "weight_scale": "a45ab52f44ab6966e4b6d8fa07cf44169492bdc5b15354a50bd6dcab28e002ec"
+      },
+      "packed_scale_sha256_before": {
+        "activation_scale": "dc2a2e51125a27fa011f2642214c0b386c3a6144f35dadffb72950b59ffabae3",
+        "weight_scale": "a45ab52f44ab6966e4b6d8fa07cf44169492bdc5b15354a50bd6dcab28e002ec"
+      },
+      "runtime_identity": {
+        "broad_precompile_enabled": false,
+        "config": [
+          32,
+          128,
+          128,
+          10,
+          1
+        ],
+        "jit_use_nvrtc": false,
+        "manifest": "/home/qinhaiyan/glm52-v2-goal-runs/cache/24-moe_w13_decode/deepgemm/w13_variants/manifest.json",
+        "manifest_sha256": "afa7063a860cd045138e51abcb5b8b44c226db13c08e212ae30da077f5655621",
+        "modules": {
+          "candidate": {
+            "jit_artifacts": {
+              "cache/kernel.sm100_m_grouped_fp8_fp4_gemm_masked_1d1d.51dabe4dc4117fcdce86e78f87f10636/kernel.cu": "daa9dd98317b6d2d1a83c288965223427edd21e56f5c8368c5e32d566d7402ac",
+              "cache/kernel.sm100_m_grouped_fp8_fp4_gemm_masked_1d1d.51dabe4dc4117fcdce86e78f87f10636/kernel.cubin": "11a3daf1a42d2f6dd8c36db1b335483fa68c7edf0c4751d3eefd4abeb9f2178e",
+              "cache/kernel.sm100_m_grouped_fp8_fp4_gemm_masked_1d1d.8e4280b1570bdb24108477c0207e76bb/kernel.cu": "da27f3dd2dcd3f3c71042f6c323f955ad46a8d5347777a0c3607d94578ed8f46",
+              "cache/kernel.sm100_m_grouped_fp8_fp4_gemm_masked_1d1d.8e4280b1570bdb24108477c0207e76bb/kernel.cubin": "c9556f1194e15c2539185d1d0e0f05f63c08225d4b0af9be8b61b894812d0ea1"
+            },
+            "jit_cache": "/home/qinhaiyan/glm52-v2-goal-runs/cache/24-moe_w13_decode/deepgemm/w13_variants/jit/candidate",
+            "package": "/home/qinhaiyan/glm52-v2-goal-runs/cache/24-moe_w13_decode/deepgemm/w13_variants/artifacts/candidate/site/deep_gemm_w13_candidate",
+            "package_init_sha256": "4db10ad437f64434cf78f139e114e02bbae8fa31bfdef07943641e659826a876",
+            "shared_object": "/home/qinhaiyan/glm52-v2-goal-runs/cache/24-moe_w13_decode/deepgemm/w13_variants/artifacts/candidate/site/deep_gemm_w13_candidate/_C.so",
+            "shared_object_sha256": "d2bf446348ea1c4e285b3862240990d5369c7c13d7aea4a5d75673a98a75efd7"
+          },
+          "stock": {
+            "jit_artifacts": {
+              "cache/kernel.sm100_m_grouped_fp8_fp4_gemm_masked_1d1d.fd165cc8140afb4214951eb474041a15/kernel.cu": "a768d3cbee53eafa04c944012b716af0cef56dd6f4c1db4ec834c5b662a5bffe",
+              "cache/kernel.sm100_m_grouped_fp8_fp4_gemm_masked_1d1d.fd165cc8140afb4214951eb474041a15/kernel.cubin": "92d200dfaf0d9a25c651905be06ae991bbd88a3b8c6f18b0aa8594064a5432b7"
+            },
+            "jit_cache": "/home/qinhaiyan/glm52-v2-goal-runs/cache/24-moe_w13_decode/deepgemm/w13_variants/jit/stock",
+            "package": "/home/qinhaiyan/glm52-v2-goal-runs/cache/24-moe_w13_decode/deepgemm/w13_variants/artifacts/stock/site/deep_gemm_w13_stock",
+            "package_init_sha256": "243eeaa71fa65cecaddd7298245438cb371ca765d7bf914a9427e132be8d5f26",
+            "shared_object": "/home/qinhaiyan/glm52-v2-goal-runs/cache/24-moe_w13_decode/deepgemm/w13_variants/artifacts/stock/site/deep_gemm_w13_stock/_C.so",
+            "shared_object_sha256": "085ded6f88cb6f1f0cf7542d1362d9a732772052996aca5e849d732be1ef45d8"
+          }
+        },
+        "runtime_state": {
+          "candidate": {
+            "num_sms": 148,
+            "pdl": true,
+            "tc_util": 100
+          },
+          "installed_downstream": {
+            "num_sms": 148,
+            "pdl": true,
+            "tc_util": 100
+          },
+          "stock": {
+            "num_sms": 148,
+            "pdl": true,
+            "tc_util": 100
+          }
+        },
+        "state_independence": {
+          "num_sms": {
+            "mutate_candidate": {
+              "mutated_value": 147,
+              "restored": 148,
+              "stock_unchanged": 148
+            },
+            "mutate_stock": {
+              "candidate_unchanged": 148,
+              "mutated_value": 147,
+              "restored": 148
+            }
+          },
+          "pdl": {
+            "mutate_candidate": {
+              "mutated_value": false,
+              "restored": true,
+              "stock_unchanged": true
+            },
+            "mutate_stock": {
+              "candidate_unchanged": true,
+              "mutated_value": false,
+              "restored": true
+            }
+          },
+          "tc_util": {
+            "mutate_candidate": {
+              "mutated_value": 99,
+              "restored": 100,
+              "stock_unchanged": 100
+            },
+            "mutate_stock": {
+              "candidate_unchanged": 100,
+              "mutated_value": 99,
+              "restored": 100
+            }
+          }
+        },
+        "variant": "bm32_1sm"
+      },
+      "status": "pass",
+      "tensor_contract": {
+        "activation_fp8": {
+          "device": "cuda:0",
+          "dtype": "torch.float8_e4m3fn",
+          "shape": [
+            32,
+            1024,
+            6144
+          ],
+          "storage_offset": 0,
+          "stride": [
+            6291456,
+            6144,
+            1
+          ]
+        },
+        "activation_scale": {
+          "device": "cuda:0",
+          "dtype": "torch.int32",
+          "shape": [
+            32,
+            1024,
+            12
+          ],
+          "storage_offset": 0,
+          "stride": [
+            12288,
+            1,
+            1024
+          ]
+        },
+        "masked_m": {
+          "device": "cuda:0",
+          "dtype": "torch.int32",
+          "shape": [
+            32
+          ],
+          "storage_offset": 0,
+          "stride": [
+            1
+          ]
+        },
+        "out": {
+          "device": "cuda:0",
+          "dtype": "torch.bfloat16",
+          "shape": [
+            32,
+            1024,
+            4096
+          ],
+          "storage_offset": 0,
+          "stride": [
+            4194304,
+            4096,
+            1
+          ]
+        },
+        "weight_fp8": {
+          "device": "cuda:0",
+          "dtype": "torch.float8_e4m3fn",
+          "shape": [
+            32,
+            4096,
+            6144
+          ],
+          "storage_offset": 0,
+          "stride": [
+            25165824,
+            6144,
+            1
+          ]
+        },
+        "weight_scale": {
+          "device": "cuda:0",
+          "dtype": "torch.int32",
+          "shape": [
+            32,
+            4096,
+            12
+          ],
+          "storage_offset": 0,
+          "stride": [
+            49152,
+            1,
+            4096
+          ]
+        }
+      },
+      "variant": "bm32_1sm"
+    }
+  ]
+}

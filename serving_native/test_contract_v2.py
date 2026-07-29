@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import copy
+import json
+import statistics
 import sys
 import tempfile
 import types
@@ -15,8 +17,9 @@ from serving_native.contract_v2 import (
     file_artifact,
     latency_summary,
     module_path_snapshot,
+    sha256_file,
 )
-from serving_native.runner import _load_candidate
+from serving_native.runner import _load_candidate, _performance_estimates
 from serving_native.workloads import as_dict, get_workload
 
 HERE = Path(__file__).resolve().parent
@@ -41,7 +44,9 @@ class ContractV2AuditTest(unittest.TestCase):
         self.root = Path(self.temporary.name)
         self.runner = HERE / "runner.py"
         self.workloads = HERE / "workloads.py"
-        self.candidate = self._file("candidate.py", "def run(inputs, runtime):\n    pass\n")
+        self.candidate = self._file(
+            "candidate.py", "def run(inputs, runtime):\n    pass\n"
+        )
         self.torch = self._file("torch.py", "torch\n")
         self.sglang = self._file("sglang.py", "sglang\n")
         self.deep_gemm = self._file("deep_gemm.py", "deep_gemm\n")
@@ -77,11 +82,7 @@ class ContractV2AuditTest(unittest.TestCase):
         capture_ids = cls._capture_ids(series_index)
         capture_ordinals = {"reference": 0, "candidate": 0}
         for pair_index in range(REPEAT):
-            order = (
-                start
-                if pair_index % 2 == 0
-                else ("BA" if start == "AB" else "AB")
-            )
+            order = start if pair_index % 2 == 0 else ("BA" if start == "AB" else "AB")
             implementations = (
                 ("reference", "candidate")
                 if order == "AB"
@@ -122,6 +123,7 @@ class ContractV2AuditTest(unittest.TestCase):
             identity_control or candidate_api == TRUSTED_CONFIG_API
         )
         trusted_config = is_candidate and candidate_api == TRUSTED_CONFIG_API
+        store_block_m = 32 if is_candidate and not reference_delegated else 128
         node = {
             "index": 0,
             "type": "CU_GRAPH_NODE_TYPE_KERNEL",
@@ -145,7 +147,19 @@ class ContractV2AuditTest(unittest.TestCase):
             "stable_input_pointers": True,
             "stable_output_pointers": True,
             "input_mutation_replayed": True,
+            "masked_m_mutation_replayed": True,
             "output_poison_replayed": True,
+            "untouched_masked_regions_preserved": True,
+            "masked_store_contract": (
+                "poison preserved outside scheduled full store_block_m tiles"
+            ),
+            "masked_store_observation": {
+                "out": {
+                    "store_block_m": store_block_m,
+                    "padding_rows_written": 1,
+                    "untouched_rows_checked": 1,
+                }
+            },
             "deterministic_replay": True,
             "approved_tolerance_passed": True,
             "fallback": False,
@@ -176,6 +190,7 @@ class ContractV2AuditTest(unittest.TestCase):
             "candidate": latency_summary([1.0, 1.0]),
             "paired_speedups": [1.0, 1.0],
             "median_speedup": 1.0,
+            "performance_estimates": _performance_estimates(samples),
             "passes_3pct_gate": False,
         }
         if mode == "cuda_graph":
@@ -290,6 +305,144 @@ class ContractV2AuditTest(unittest.TestCase):
             "candidate_artifact_changes": [],
         }
 
+    def _w13_runtime_identity(self) -> dict:
+        source = {
+            "commit": "731e7c7a97d269e4b9f482ea18d0e709a948f293",
+            "cutlass_commit": "f3fde58372d33e9a5650ba7b80fc48b3b49d40c8",
+            "fmt_commit": "553ec11ec06fbe0beebfbb45f9dc3c9eabd83d28",
+            "candidate_patch_sha256": (
+                "997348b6498aa18a7d70a5b1d36249b356b508cdc71e2f514a979818c48490a5"
+            ),
+            "base_blob_sha256": {
+                "csrc/apis/gemm.hpp": (
+                    "0840d64249e2a5a4a994d495e8320a0fff26bad9ca107426a1a1226e7d621186"
+                ),
+                "csrc/jit_kernels/heuristics/sm100.hpp": (
+                    "487cac2ff19027c781b08e9a0391836e77c03cdffcb7ceb3346d8633c8eb0884"
+                ),
+                "csrc/jit_kernels/impls/sm100_fp8_fp4_gemm_1d1d.hpp": (
+                    "cca1ddb5b5787942c31b39a9d5618929ee609c6c3b57b877fe636df39540366b"
+                ),
+                "csrc/tvm_ffi_api.cpp": (
+                    "d1e5dbd833f257d2c4be516772404c02f1747247eef5075315ff2d1220a64c1f"
+                ),
+                "sgl_deep_gemm/__init__.py": (
+                    "243eeaa71fa65cecaddd7298245438cb371ca765d7bf914a9427e132be8d5f26"
+                ),
+            },
+            "stock_source_tree_sha256": (
+                "917592ab68ea0608c9be33208c2c609bc7f20bd9b1603f32743dd0d1ae03d0ed"
+            ),
+            "candidate_source_tree_sha256": (
+                "d38d8bf9a2118a2506be0fd71827568e70a20839505238a36a9c0325415332ef"
+            ),
+            "complete_source_diff_sha256": (
+                "997348b6498aa18a7d70a5b1d36249b356b508cdc71e2f514a979818c48490a5"
+            ),
+        }
+        manifest = self.root / "w13-manifest.json"
+        modules = {}
+        build_plans = {}
+        for name in ("stock", "candidate"):
+            package = self.root / f"w13-{name}" / "package"
+            cache = self.root / f"w13-{name}" / "jit"
+            build_directory = self.root / f"w13-{name}" / "build"
+            package.mkdir(parents=True, exist_ok=True)
+            cache.mkdir(parents=True, exist_ok=True)
+            build_directory.mkdir(parents=True, exist_ok=True)
+            init_py = package / "__init__.py"
+            shared_object = package / "_C.so"
+            jit_artifact = cache / "kernel.cubin"
+            build_ninja = build_directory / "build.ninja"
+            init_py.write_text(f"{name} package\n")
+            shared_object.write_text(f"{name} dso\n")
+            jit_artifact.write_text(f"{name} jit\n")
+            build_ninja.write_text("command = c++ <SOURCE> -o <BUILD>\n")
+            build_plans[name] = build_ninja
+            modules[name] = {
+                "package": str(package),
+                "package_init_sha256": sha256_file(init_py),
+                "shared_object": str(shared_object),
+                "shared_object_sha256": sha256_file(shared_object),
+                "jit_cache": str(cache),
+                "jit_artifacts": {"kernel.cubin": sha256_file(jit_artifact)},
+            }
+        normalized_build_plan_sha256 = sha256_file(build_plans["stock"])
+        variants = {
+            name: {key: value for key, value in item.items() if key != "jit_artifacts"}
+            | {
+                "source_tree_sha256": source[f"{name}_source_tree_sha256"],
+                "patched": name == "candidate",
+                "build_ninja": str(build_plans[name]),
+                "build_ninja_sha256": sha256_file(build_plans[name]),
+                "normalized_build_plan_sha256": (normalized_build_plan_sha256),
+            }
+            for name, item in modules.items()
+        }
+        cxx = self.root / "fixture-cxx"
+        nvcc = self.root / "fixture-nvcc"
+        cxx.write_text("fixture cxx\n")
+        nvcc.write_text("fixture nvcc\n")
+        manifest.write_text(
+            __import__("json").dumps(
+                {
+                    "schema_version": 2,
+                    "source": source,
+                    "build": {
+                        "cuda_arch": "10.0a",
+                        "stock_candidate_command_identical": True,
+                        "submodule_update": False,
+                        "compile_api": "tvm_ffi.cpp.build",
+                        "force_clean_build_directories": True,
+                        "jit_compiler": "nvcc",
+                        "max_jobs": "1",
+                        "normalized_build_plan_sha256": (normalized_build_plan_sha256),
+                        "cxx_path": str(cxx),
+                        "cxx_sha256": sha256_file(cxx),
+                        "nvcc_path": str(nvcc),
+                        "nvcc_sha256": sha256_file(nvcc),
+                        "cpp_files_template": ["<SOURCE>/csrc/tvm_ffi_api.cpp"],
+                        "build_directory_template": "<OUTPUT>/compile/<VARIANT>",
+                        "jit_cache_template": "<OUTPUT>/jit/<VARIANT>",
+                    },
+                    "variants": variants,
+                },
+                sort_keys=True,
+            )
+        )
+        required = {"pdl": True, "num_sms": 148, "tc_util": 100}
+        mutations = {"pdl": False, "num_sms": 147, "tc_util": 99}
+        independence = {
+            field: {
+                "mutate_stock": {
+                    "mutated_value": mutation,
+                    "candidate_unchanged": required[field],
+                    "restored": required[field],
+                },
+                "mutate_candidate": {
+                    "mutated_value": mutation,
+                    "stock_unchanged": required[field],
+                    "restored": required[field],
+                },
+            }
+            for field, mutation in mutations.items()
+        }
+        return {
+            "manifest": str(manifest),
+            "manifest_sha256": sha256_file(manifest),
+            "variant": "bm32_1sm",
+            "config": [32, 128, 128, 10, 1],
+            "runtime_state": {
+                "installed_downstream": required,
+                "stock": required,
+                "candidate": required,
+            },
+            "state_independence": independence,
+            "modules": modules,
+            "broad_precompile_enabled": False,
+            "jit_use_nvrtc": False,
+        }
+
     def _valid_fixture(
         self,
         mode: str,
@@ -307,6 +460,9 @@ class ContractV2AuditTest(unittest.TestCase):
                 candidate_api=candidate_api,
             )
             for index in range(SERIES)
+        ]
+        all_raw_samples = [
+            sample for item in series for sample in item["raw_ordered_samples"]
         ]
         kernel_profile = {
             "captured": True,
@@ -328,7 +484,7 @@ class ContractV2AuditTest(unittest.TestCase):
             field: sum(item[field] for item in by_phase.values())
             for field in COUNTER_FIELDS
         }
-        return {
+        result = {
             "schema_version": 2,
             "result_kind": "serving_native_v2",
             "run": {
@@ -346,9 +502,7 @@ class ContractV2AuditTest(unittest.TestCase):
                 "timer": "CUDA events",
                 "reference_candidate_captured_separately": mode == "cuda_graph",
                 "capture_stream": (
-                    "independent non-default streams"
-                    if mode == "cuda_graph"
-                    else None
+                    "independent non-default streams" if mode == "cuda_graph" else None
                 ),
                 "graph_capture_policy": (
                     "bidirectional_R-C_then_C-R_round_robin"
@@ -469,9 +623,7 @@ class ContractV2AuditTest(unittest.TestCase):
                     "declared_fallback": False,
                     "hit_count": totals["candidate_hits"],
                     "fallback_count": totals["candidate_fallbacks"],
-                    "reference_delegations": totals[
-                        "candidate_reference_delegations"
-                    ],
+                    "reference_delegations": totals["candidate_reference_delegations"],
                     "trusted_config_call_count": totals[
                         "candidate_trusted_config_calls"
                     ],
@@ -492,10 +644,16 @@ class ContractV2AuditTest(unittest.TestCase):
                 "completed_series": SERIES,
                 "threshold": 1.03,
                 "every_series_passes_3pct": False,
+                "series_gate_contract": ("all_four_estimates_each_series_gte_1p03_v1"),
+                "required_estimates_finite": True,
+                "performance_estimates": _performance_estimates(all_raw_samples),
                 "performance_gate_passed": False,
                 "identity_control_forced_non_win": identity_control,
             },
         }
+        if task.startswith("moe_w13_"):
+            result["provenance"]["w13_runtime"] = self._w13_runtime_identity()
+        return result
 
     @staticmethod
     def _apply_speedup(result: dict, candidate_ms: float = 0.9) -> None:
@@ -524,7 +682,17 @@ class ContractV2AuditTest(unittest.TestCase):
             series["candidate"] = latency_summary(candidate_values)
             series["paired_speedups"] = ratios
             series["median_speedup"] = median
-            series["passes_3pct_gate"] = median >= 1.03
+            estimates = _performance_estimates(series["raw_ordered_samples"])
+            series["performance_estimates"] = estimates
+            series["passes_3pct_gate"] = all(
+                estimates[field] >= 1.03
+                for field in (
+                    "pooled_speedup",
+                    "order_balanced_speedup",
+                    "ab_median_speedup",
+                    "ba_median_speedup",
+                )
+            )
             medians.append(median)
             all_reference.extend(reference_values)
             all_candidate.extend(candidate_values)
@@ -532,7 +700,16 @@ class ContractV2AuditTest(unittest.TestCase):
         result["candidate"].update(latency_summary(all_candidate))
         result["candidate"]["series_median_speedups"] = medians
         every = all(item["passes_3pct_gate"] for item in result["series"])
+        all_raw_samples = [
+            sample
+            for series in result["series"]
+            for sample in series["raw_ordered_samples"]
+        ]
         result["aggregate"]["every_series_passes_3pct"] = every
+        result["aggregate"]["required_estimates_finite"] = True
+        result["aggregate"]["performance_estimates"] = _performance_estimates(
+            all_raw_samples
+        )
         candidate = result["implementations"]["candidate"]
         trusted = candidate["api"] == TRUSTED_CONFIG_API
         result["aggregate"]["performance_gate_passed"] = (
@@ -602,9 +779,7 @@ class ContractV2AuditTest(unittest.TestCase):
         module = _load_candidate(str(path))
         try:
             self.assertEqual(module.__candidate_api__, CALLABLE_API)
-            self.assertFalse(
-                hasattr(module, "__trusted_reference_delegation__")
-            )
+            self.assertFalse(hasattr(module, "__trusted_reference_delegation__"))
         finally:
             sys.modules.pop("serving_native_candidate", None)
 
@@ -635,17 +810,13 @@ class ContractV2AuditTest(unittest.TestCase):
     def test_self_consistent_but_noncanonical_workload_is_rejected(self) -> None:
         result = copy.deepcopy(self.valid_eager)
         result["workload"]["params"]["m"] = 17
-        result["provenance"]["workload_sha256"] = canonical_sha256(
-            result["workload"]
-        )
+        result["provenance"]["workload_sha256"] = canonical_sha256(result["workload"])
         self.assert_invalid(result, "canonical WORKLOADS registry")
 
     def test_unknown_workload_is_rejected(self) -> None:
         result = copy.deepcopy(self.valid_eager)
         result["workload"]["name"] = "forged_workload"
-        result["provenance"]["workload_sha256"] = canonical_sha256(
-            result["workload"]
-        )
+        result["provenance"]["workload_sha256"] = canonical_sha256(result["workload"])
         self.assert_invalid(result, "absent from the canonical WORKLOADS")
 
     def test_candidate_hit_zero_is_rejected(self) -> None:
@@ -709,11 +880,31 @@ class ContractV2AuditTest(unittest.TestCase):
 
     def test_series_and_repeat_counts_close_exactly(self) -> None:
         cases = (
-            ("requested", "requested/raw series counts", lambda value: value["run"].update(requested_series=4)),
-            ("completed", "requested/completed/raw", lambda value: value["aggregate"].update(completed_series=2)),
-            ("repeat", "repeat does not close", lambda value: value["series"][0].update(repeat=3)),
-            ("warmup", "warmup_pairs does not close", lambda value: value["series"][0].update(warmup_pairs=4)),
-            ("raw", "raw ordered samples incomplete", lambda value: value["series"][0]["raw_ordered_samples"].pop()),
+            (
+                "requested",
+                "requested/raw series counts",
+                lambda value: value["run"].update(requested_series=4),
+            ),
+            (
+                "completed",
+                "requested/completed/raw",
+                lambda value: value["aggregate"].update(completed_series=2),
+            ),
+            (
+                "repeat",
+                "repeat does not close",
+                lambda value: value["series"][0].update(repeat=3),
+            ),
+            (
+                "warmup",
+                "warmup_pairs does not close",
+                lambda value: value["series"][0].update(warmup_pairs=4),
+            ),
+            (
+                "raw",
+                "raw ordered samples incomplete",
+                lambda value: value["series"][0]["raw_ordered_samples"].pop(),
+            ),
         )
         for name, needle, mutate in cases:
             with self.subTest(name=name):
@@ -814,6 +1005,77 @@ class ContractV2AuditTest(unittest.TestCase):
                 mutate(result)
                 self.assert_invalid(result, needle)
 
+    def test_four_estimator_records_are_recomputed_fail_closed(self) -> None:
+        for scope, field, value in (
+            ("series", "ba_median_speedup", 9.0),
+            ("aggregate", "pooled_speedup", float("nan")),
+        ):
+            with self.subTest(scope=scope, field=field):
+                result = copy.deepcopy(self.valid_eager)
+                estimates = (
+                    result["series"][0]["performance_estimates"]
+                    if scope == "series"
+                    else result["aggregate"]["performance_estimates"]
+                )
+                estimates[field] = value
+                self.assert_invalid(result, field)
+
+    def test_paired_median_cannot_hide_failing_ba_stratum(self) -> None:
+        result = self._valid_fixture("eager", identity_control=False)
+        all_reference: list[float] = []
+        all_candidate: list[float] = []
+        all_samples: list[dict] = []
+        medians: list[float] = []
+        for series in result["series"]:
+            reference_values: list[float] = []
+            candidate_values: list[float] = []
+            ratios: list[float] = []
+            for sample in series["raw_ordered_samples"]:
+                if sample["implementation"] == "reference":
+                    sample["latency_ms"] = 1.0
+                    reference_values.append(1.0)
+                else:
+                    ratio = 1.10 if sample["order"] == "AB" else 1.00
+                    sample["latency_ms"] = 1.0 / ratio
+                    candidate_values.append(sample["latency_ms"])
+            for offset in range(0, len(series["raw_ordered_samples"]), 2):
+                pair = series["raw_ordered_samples"][offset : offset + 2]
+                values = {
+                    sample["implementation"]: sample["latency_ms"] for sample in pair
+                }
+                ratios.append(values["reference"] / values["candidate"])
+            estimates = _performance_estimates(series["raw_ordered_samples"])
+            self.assertGreaterEqual(statistics.median(ratios), 1.03)
+            self.assertGreaterEqual(estimates["pooled_speedup"], 1.03)
+            self.assertGreaterEqual(
+                estimates["order_balanced_speedup"],
+                1.03,
+            )
+            self.assertGreaterEqual(estimates["ab_median_speedup"], 1.03)
+            self.assertLess(estimates["ba_median_speedup"], 1.03)
+            series["reference"] = latency_summary(reference_values)
+            series["candidate"] = latency_summary(candidate_values)
+            series["paired_speedups"] = ratios
+            series["median_speedup"] = statistics.median(ratios)
+            series["performance_estimates"] = estimates
+            series["passes_3pct_gate"] = False
+            medians.append(series["median_speedup"])
+            all_reference.extend(reference_values)
+            all_candidate.extend(candidate_values)
+            all_samples.extend(series["raw_ordered_samples"])
+        result["reference"] = latency_summary(all_reference)
+        result["candidate"].update(latency_summary(all_candidate))
+        result["candidate"]["series_median_speedups"] = medians
+        result["aggregate"]["every_series_passes_3pct"] = False
+        result["aggregate"]["required_estimates_finite"] = True
+        result["aggregate"]["performance_estimates"] = _performance_estimates(
+            all_samples
+        )
+        result["aggregate"]["performance_gate_passed"] = False
+        report = audit_document(result, verify_files=True)
+        self.assertTrue(report["valid"], report)
+        self.assertFalse(report["performance_gate_passed"], report)
+
     def test_workload_hash_is_fail_closed(self) -> None:
         result = copy.deepcopy(self.valid_eager)
         result["provenance"]["workload_sha256"] = "f" * 64
@@ -834,7 +1096,9 @@ class ContractV2AuditTest(unittest.TestCase):
                 result["series"][0]["graph"]["captures"][0][field] = False
                 self.assert_invalid(result, needle)
 
-    def test_graph_capture_ids_are_bound_to_independent_round_robin_captures(self) -> None:
+    def test_graph_capture_ids_are_bound_to_independent_round_robin_captures(
+        self,
+    ) -> None:
         mutations = (
             (
                 "missing_sample_id",
@@ -870,9 +1134,7 @@ class ContractV2AuditTest(unittest.TestCase):
                 "duplicate_stream",
                 "reuses a capture stream",
                 lambda value: value["series"][0]["graph"]["captures"][1].update(
-                    stream_id=value["series"][0]["graph"]["captures"][0][
-                        "stream_id"
-                    ]
+                    stream_id=value["series"][0]["graph"]["captures"][0]["stream_id"]
                 ),
             ),
             (
@@ -928,7 +1190,9 @@ class ContractV2AuditTest(unittest.TestCase):
                 mutate(result["series"][0]["graph"]["captures"][0])
                 self.assert_invalid(result, needle)
 
-    def test_graph_copy_and_adapter_nodes_are_rejected_after_recomputation(self) -> None:
+    def test_graph_copy_and_adapter_nodes_are_rejected_after_recomputation(
+        self,
+    ) -> None:
         for name, node in (
             (
                 "copy_node",
@@ -960,18 +1224,99 @@ class ContractV2AuditTest(unittest.TestCase):
                     else {"CU_GRAPH_NODE_TYPE_KERNEL": 2}
                 )
                 capture["kernel_identities"] = [
-                    item["kernel"]
-                    for item in capture["nodes"]
-                    if "kernel" in item
+                    item["kernel"] for item in capture["nodes"] if "kernel" in item
                 ]
                 capture["forbidden_nodes"] = []
                 self.assert_invalid(result, "has forbidden graph nodes")
 
+    def test_w13_graph_requires_mask_mutation_and_untouched_region_proofs(self) -> None:
+        task = "moe_w13_grouped_decode_m16_em4"
+        result = self._valid_fixture(
+            "cuda_graph",
+            task=task,
+            identity_control=False,
+        )
+        self.assertTrue(audit_document(result, verify_files=True)["valid"])
+        for field in (
+            "masked_m_mutation_replayed",
+            "untouched_masked_regions_preserved",
+        ):
+            with self.subTest(field=field):
+                broken = self._valid_fixture(
+                    "cuda_graph",
+                    task=task,
+                    identity_control=False,
+                )
+                broken["series"][0]["graph"]["captures"][0][field] = False
+                self.assert_invalid(broken, f"{field} did not pass")
+        broken = self._valid_fixture(
+            "cuda_graph",
+            task=task,
+            identity_control=False,
+        )
+        broken["series"][0]["graph"]["captures"][0]["masked_store_contract"] = (
+            "valid rows only"
+        )
+        self.assert_invalid(broken, "masked_store_contract invalid")
+        broken = self._valid_fixture(
+            "cuda_graph",
+            task=task,
+            identity_control=False,
+        )
+        broken["series"][0]["graph"]["captures"][1]["masked_store_observation"]["out"][
+            "store_block_m"
+        ] = 128
+        self.assert_invalid(broken, "store_block_m mismatch")
+        broken = self._valid_fixture(
+            "cuda_graph",
+            task=task,
+            identity_control=False,
+        )
+        broken["series"][0]["graph"]["captures"][0]["masked_store_observation"]["out"][
+            "untouched_rows_checked"
+        ] = 0
+        self.assert_invalid(broken, "did not check any untouched rows")
+
+    def test_w13_manifest_build_source_and_runtime_binding_fail_closed(self) -> None:
+        task = "moe_w13_grouped_decode_m16_em4"
+
+        def mutate_and_audit(mutator, expected: str) -> None:
+            result = self._valid_fixture("eager", task=task)
+            runtime = result["provenance"]["w13_runtime"]
+            manifest_path = Path(runtime["manifest"])
+            manifest = json.loads(manifest_path.read_text())
+            mutator(manifest)
+            manifest_path.write_text(json.dumps(manifest, sort_keys=True))
+            runtime["manifest_sha256"] = sha256_file(manifest_path)
+            self.assert_invalid(result, expected)
+
+        with self.subTest("base blob"):
+            mutate_and_audit(
+                lambda manifest: manifest["source"]["base_blob_sha256"].__setitem__(
+                    "csrc/apis/gemm.hpp", "0" * 64
+                ),
+                "manifest source identity mismatch",
+            )
+        with self.subTest("build contract"):
+            mutate_and_audit(
+                lambda manifest: manifest["build"].__setitem__(
+                    "submodule_update", True
+                ),
+                "manifest build contract mismatch",
+            )
+        with self.subTest("runtime binding"):
+            mutate_and_audit(
+                lambda manifest: manifest["variants"]["stock"].__setitem__(
+                    "jit_cache", "/wrong/cache"
+                ),
+                "does not match manifest variant",
+            )
+
     def test_eager_kernel_identities_are_recomputed_from_events(self) -> None:
         result = copy.deepcopy(self.valid_eager)
-        result["execution"]["kernel_profiles"]["candidate"][
-            "kernel_identities"
-        ] = ["forged"]
+        result["execution"]["kernel_profiles"]["candidate"]["kernel_identities"] = [
+            "forged"
+        ]
         self.assert_invalid(result, "do not match profiler events")
 
     def test_candidate_result_path_must_match_hashed_artifact(self) -> None:

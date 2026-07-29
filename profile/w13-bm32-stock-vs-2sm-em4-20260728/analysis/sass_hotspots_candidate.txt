@@ -1,0 +1,44 @@
+SASS stall hotspots: candidate
+kernel: sm100_fp8_fp4_gemm_1d1d_impl
+
+rank total address stalls SASS
+01   2911 0x100055eb2e0 long_scoreboard=2908,selected=2,wait=1 @!P0  NANOSLEEP.SYNCS 0x989680
+02   1544 0x100055eabf0 barrier=1544 UCGABAR_WAIT
+03    695 0x100055e7ae0 long_scoreboard=693,selected=2 @!P1  BRA 0x100055eaf10
+04    542 0x100055ea430 long_scoreboard=542 @!P0  BRA 0x100055eb2d0
+05    433 0x100055eaba0 sleeping=430,branch_resolving=3 WARPSYNC.ALL
+06    216 0x100055e9220 long_scoreboard=215,selected=1 @!P0  BRA 0x100055eb150
+07    147 0x100055e7cd0 long_scoreboard=145,wait=1,selected=1 @!P0  BRA 0x100055eaf60
+08    144 0x100055e97d0 long_scoreboard=144 @!P0  BRA 0x100055eb210
+09     62 0x100055eabb0 branch_resolving=55,wait=5,sleeping=1,selected=1 UCGABAR_ARV
+10     52 0x100055eb0c0 sleeping=37,branch_resolving=10,wait=4,selected=1 @!P0  SYNCS.PHASECHK.TRANS64 P0, [R0+URZ+0x36458], R5
+11     37 0x100055e9a40 long_scoreboard=37 @!P0  BRA 0x100055eb270
+12     34 0x100055eb0d0 long_scoreboard=32,selected=2 @!P0  BRA 0x100055eb0a0
+13     29 0x100055eb0b0 long_scoreboard=29 @!P0  NANOSLEEP.SYNCS 0x989680
+14     26 0x100055eb030 long_scoreboard=25,wait=1 @!P0  BRA 0x100055eb000
+15     25 0x100055e8b20 long_scoreboard=25 @!P0  BRA 0x100055eb0a0
+16     24 0x100055e8310 branch_resolving=19,selected=3,wait=2 SHF.L.U32 R8, R8, 0x1f, RZ
+17     23 0x100055ea0a0 long_scoreboard=22,wait=1 VIADD R3, R3, 0x1f
+18     18 0x100055eb300 long_scoreboard=18 @!P0  BRA 0x100055eb2d0
+19     16 0x100055eb010 long_scoreboard=16 @!P0  NANOSLEEP.SYNCS 0x989680
+20     16 0x100055ea6c0 long_scoreboard=15,wait=1 BAR.SYNC.DEFER_BLOCKING 0x8, 0x80
+21     16 0x100055e8940 long_scoreboard=16 @!P1  BRA 0x100055eb050
+22     16 0x100055e8710 long_scoreboard=16 @!P1  BRA 0x100055eb000
+23     15 0x100055eb2f0 branch_resolving=12,wait=3 @!P0  SYNCS.PHASECHK.TRANS64 P0, [R28+URZ+0x36508], R3
+24     15 0x100055e9560 long_scoreboard=15 @!P0  BRA 0x100055eb1b0
+25     15 0x100055e7ef0 long_scoreboard=15 VIADD R8, R8, 0x1f
+26     14 0x100055e8350 long_scoreboard=14 @!P0  BRA 0x100055eafb0
+27     12 0x100055e77e0 barrier=12 UCGABAR_WAIT
+28     10 0x100055eb020 sleeping=6,wait=2,branch_resolving=2 @!P0  SYNCS.PHASECHK.TRANS64 P0, [R0+URZ+0x36458], R7
+29     10 0x100055ea080 short_scoreboard=6,selected=3,wait=1 IMAD.WIDE.U32 R6, R22, 0x4, R6
+30     10 0x100055e7990 long_scoreboard=10 VIADD R2, R2, 0x1f
+31      9 0x100055e7cb0 long_scoreboard=7,branch_resolving=2 SYNCS.ARRIVE.TRANS64.RED.A1T0 RZ, [R15+URZ], RZ
+32      9 0x100055e7970 short_scoreboard=9 IMAD.WIDE.U32 R4, R18, 0x4, R2
+33      8 0x100055e8f40 long_scoreboard=7,wait=1 VIADD R0, R0, 0x1f
+34      8 0x100055e7b70 short_scoreboard=6,wait=1,selected=1 LEA R5, R4, R5, 0x18
+35      8 0x100055e7ad0 short_scoreboard=8 LEA R3, R3, R4, 0x18
+36      7 0x100055eb060 long_scoreboard=6,selected=1 @!P0  NANOSLEEP.SYNCS 0x989680
+37      7 0x100055ea880 barrier=7 LDTM.16dp256bit R16, tmem[UR7+0x10]
+38      7 0x100055e8cb0 wait=6,selected=1 UTMALDG.2D desc[UR18], [UR4], [UR16]
+39      7 0x100055e7c70 long_scoreboard=6,selected=1 NOP
+40      7 0x100055e7c20 long_scoreboard=5,wait=2 FENCE.VIEW.ASYNC.S

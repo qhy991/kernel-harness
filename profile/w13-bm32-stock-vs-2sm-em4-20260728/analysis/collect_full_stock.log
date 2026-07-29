@@ -1,0 +1,7 @@
+==PROF== Connected to process 2250657 (/mnt/OS-oKqEXySb/home/qinhaiyan/miniconda3/envs/sglang/bin/python3.12)
+==WARNING== Unable to access the following 6 metrics: ctc__rx_bytes_data_user.sum, ctc__rx_bytes_data_user.sum.pct_of_peak_sustained_elapsed, ctc__rx_bytes_data_user.sum.per_second, ctc__tx_bytes_data_user.sum, ctc__tx_bytes_data_user.sum.pct_of_peak_sustained_elapsed, ctc__tx_bytes_data_user.sum.per_second.
+
+
+==PROF== Profiling "void deep_gemm::sm100_fp8_fp4_gemm_1d1d_impl<(cute::UMMA::Major)0, (cute::UMMA::Major)0, (unsigned int)128, (unsigned int)128, (unsigned int)128, (unsigned int)0, (unsigned int)4096, (unsigned int)6144, (unsigned int)128, (unsigned int)128, (unsigned int)128, (unsigned int)32, (unsigned int)128, (unsigned int)128, (unsigned int)128, (unsigned int)8, (unsigned int)128, (unsigned int)128, (unsigned int)2, (bool)1, (unsigned int)148, (bool)1, (bool)1, (deep_gemm::GemmType)2, (bool)0, cutlass::float_e4m3_t, cutlass::float_e4m3_t, cutlass::bfloat16_t, deep_gemm::epilogue::transform::EpilogueIdentity>(int *, unsigned int, unsigned int, unsigned int, CUtensorMap_st, CUtensorMap_st, CUtensorMap_st, CUtensorMap_st, CUtensorMap_st)": 0%....50%....100% - 47 passes
+==PROF== Disconnected from process 2250657
+==PROF== Report: /home/qinhaiyan/glm52-v2-goal-runs/worktrees/24-moe-w13-decode/kernel-harness/profile/w13-bm32-stock-vs-2sm-em4-20260728/reports/full_stock.ncu-rep

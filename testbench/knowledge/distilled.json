@@ -1,5 +1,5 @@
 {
-  "generated_from_entries": 12,
+  "generated_from_entries": 13,
   "mistakes": [
     {
       "class": "launch-overhead::integration-empty-expert-diagnosis",
@@ -62,6 +62,25 @@
       "recurring": true
     },
     {
+      "class": "synchronization::same-source-pdl-fairness-rebuild",
+      "bottleneck": "synchronization",
+      "technique": "same-source-pdl-fairness-rebuild",
+      "count": 1,
+      "distinct_entries": 1,
+      "ops": [
+        "moe_gate"
+      ],
+      "outcomes": [
+        "abandoned"
+      ],
+      "whys": [
+        "It repaired the inadmissible historical denominator but is a reproducibility prerequisite rather than an independently deployable optimization."
+      ],
+      "suggested_owner": "doc|reviewer",
+      "promoted": false,
+      "recurring": false
+    },
+    {
       "class": "synchronization::routing-method-topk-type-1",
       "bottleneck": "synchronization",
       "technique": "routing-method-topk-type-1",
@@ -75,6 +94,63 @@
       ],
       "whys": [
         "Correctness passed, but repeat-3 regressed/noised out: geomean speedup 1.002 and conservative min speedup 0.8679. Keep routing_method_type=2 for this task."
+      ],
+      "suggested_owner": "doc|reviewer",
+      "promoted": false,
+      "recurring": false
+    },
+    {
+      "class": "synchronization::clc-persistent-scheduler-rewrite",
+      "bottleneck": "synchronization",
+      "technique": "clc-persistent-scheduler-rewrite",
+      "count": 1,
+      "distinct_entries": 1,
+      "ops": [
+        "moe_gate"
+      ],
+      "outcomes": [
+        "abandoned"
+      ],
+      "whys": [
+        "The exact launch already filled one complete wave, so the profile supplied no tail-underfill evidence for a CLC rewrite."
+      ],
+      "suggested_owner": "doc|reviewer",
+      "promoted": false,
+      "recurring": false
+    },
+    {
+      "class": "synchronization::bm32-two-sm-tcgen05",
+      "bottleneck": "synchronization",
+      "technique": "bm32-two-sm-tcgen05",
+      "count": 1,
+      "distinct_entries": 1,
+      "ops": [
+        "moe_gate"
+      ],
+      "outcomes": [
+        "abandoned"
+      ],
+      "whys": [
+        "A required order estimator in the graph-containing region missed the promotion threshold, making the candidate terminally ineligible despite positive pooled diagnostics."
+      ],
+      "suggested_owner": "doc|reviewer",
+      "promoted": false,
+      "recurring": false
+    },
+    {
+      "class": "synchronization::bm32-genuine-one-sm-tcgen05",
+      "bottleneck": "synchronization",
+      "technique": "bm32-genuine-one-sm-tcgen05",
+      "count": 1,
+      "distinct_entries": 1,
+      "ops": [
+        "moe_gate"
+      ],
+      "outcomes": [
+        "abandoned"
+      ],
+      "whys": [
+        "The first fair eager-leaf lane missed the required threshold in an independent series and therefore could not promote to graph or region validation."
       ],
       "suggested_owner": "doc|reviewer",
       "promoted": false,

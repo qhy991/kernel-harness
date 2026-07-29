@@ -31,6 +31,31 @@ from serving_native.workloads import WORKLOADS, as_dict
 
 CALLABLE_CANDIDATE_API = "callable_v1"
 TRUSTED_CONFIG_CANDIDATE_API = "reference_with_config_v1"
+W13_BASE_COMMIT = "731e7c7a97d269e4b9f482ea18d0e709a948f293"
+W13_CUTLASS_COMMIT = "f3fde58372d33e9a5650ba7b80fc48b3b49d40c8"
+W13_FMT_COMMIT = "553ec11ec06fbe0beebfbb45f9dc3c9eabd83d28"
+W13_PATCH_SHA256 = "997348b6498aa18a7d70a5b1d36249b356b508cdc71e2f514a979818c48490a5"
+W13_STOCK_TREE_SHA256 = (
+    "917592ab68ea0608c9be33208c2c609bc7f20bd9b1603f32743dd0d1ae03d0ed"
+)
+W13_CANDIDATE_TREE_SHA256 = (
+    "d38d8bf9a2118a2506be0fd71827568e70a20839505238a36a9c0325415332ef"
+)
+W13_BASE_BLOB_SHA256 = {
+    "csrc/apis/gemm.hpp": "0840d64249e2a5a4a994d495e8320a0fff26bad9ca107426a1a1226e7d621186",
+    "csrc/jit_kernels/heuristics/sm100.hpp": (
+        "487cac2ff19027c781b08e9a0391836e77c03cdffcb7ceb3346d8633c8eb0884"
+    ),
+    "csrc/jit_kernels/impls/sm100_fp8_fp4_gemm_1d1d.hpp": (
+        "cca1ddb5b5787942c31b39a9d5618929ee609c6c3b57b877fe636df39540366b"
+    ),
+    "csrc/tvm_ffi_api.cpp": (
+        "d1e5dbd833f257d2c4be516772404c02f1747247eef5075315ff2d1220a64c1f"
+    ),
+    "sgl_deep_gemm/__init__.py": (
+        "243eeaa71fa65cecaddd7298245438cb371ca765d7bf914a9427e132be8d5f26"
+    ),
+}
 
 
 class Findings:
@@ -58,8 +83,12 @@ def _number(value: Any) -> bool:
 
 
 def _close(left: Any, right: Any, *, tolerance: float = 1e-9) -> bool:
-    return _number(left) and _number(right) and math.isclose(
-        float(left), float(right), rel_tol=tolerance, abs_tol=tolerance
+    return (
+        _number(left)
+        and _number(right)
+        and math.isclose(
+            float(left), float(right), rel_tol=tolerance, abs_tol=tolerance
+        )
     )
 
 
@@ -167,13 +196,19 @@ def _audit_accounting(
     run: dict[str, Any],
 ) -> tuple[bool, int, int, str | None]:
     implementations = result.get("implementations")
-    if not findings.require(_mapping(implementations), "missing implementation accounting"):
+    if not findings.require(
+        _mapping(implementations), "missing implementation accounting"
+    ):
         return False, 0, 0, None
     reference = implementations.get("reference")
     candidate = implementations.get("candidate")
-    if not findings.require(_mapping(reference), "missing reference implementation accounting"):
+    if not findings.require(
+        _mapping(reference), "missing reference implementation accounting"
+    ):
         reference = {}
-    if not findings.require(_mapping(candidate), "missing candidate implementation accounting"):
+    if not findings.require(
+        _mapping(candidate), "missing candidate implementation accounting"
+    ):
         return False, 0, 0, None
 
     findings.require(
@@ -224,7 +259,9 @@ def _audit_accounting(
         and isinstance(warmup, int)
         and isinstance(repeat, int)
     ):
-        findings.errors.append("cannot close implementation counts from invalid run metadata")
+        findings.errors.append(
+            "cannot close implementation counts from invalid run metadata"
+        )
         return identity_control, 0, 0, candidate_api
     expected = _expected_phase_counts(
         run_id=run_id,
@@ -234,7 +271,9 @@ def _audit_accounting(
         repeat=repeat,
     )
     by_phase = candidate.get("by_phase")
-    if not findings.require(_mapping(by_phase), "candidate by_phase accounting missing"):
+    if not findings.require(
+        _mapping(by_phase), "candidate by_phase accounting missing"
+    ):
         return identity_control, 0, 0, candidate_api
     findings.require(
         set(by_phase) == set(expected),
@@ -280,7 +319,9 @@ def _audit_accounting(
         fallbacks = item.get("candidate_fallbacks")
         delegations = item.get("candidate_reference_delegations")
         trusted = item.get("candidate_trusted_config_calls")
-        if all(isinstance(value, int) for value in (hits, fallbacks, delegations, trusted)):
+        if all(
+            isinstance(value, int) for value in (hits, fallbacks, delegations, trusted)
+        ):
             findings.require(
                 fallbacks <= hits and delegations <= hits and trusted <= hits,
                 f"{prefix} candidate sub-count exceeds hit count",
@@ -349,7 +390,9 @@ def _audit_artifacts(
     verify_files: bool,
 ) -> dict[str, dict[str, Any]]:
     artifacts = provenance.get("artifacts")
-    if not findings.require(_list(artifacts) and bool(artifacts), "missing provenance.artifacts"):
+    if not findings.require(
+        _list(artifacts) and bool(artifacts), "missing provenance.artifacts"
+    ):
         return {}
     by_role: dict[str, dict[str, Any]] = {}
     for index, artifact in enumerate(artifacts):
@@ -425,7 +468,9 @@ def _audit_imports(
             f"python executable does not exist: {executable}",
         )
     modules = imports.get("modules")
-    if not findings.require(_list(modules) and bool(modules), "missing actual Python import paths"):
+    if not findings.require(
+        _list(modules) and bool(modules), "missing actual Python import paths"
+    ):
         return
     module_names: set[str] = set()
     candidate_paths: set[str] = set()
@@ -436,7 +481,9 @@ def _audit_imports(
             continue
         name = item.get("module")
         path_raw = item.get("path")
-        findings.require(isinstance(name, str) and bool(name), f"{prefix}.module missing")
+        findings.require(
+            isinstance(name, str) and bool(name), f"{prefix}.module missing"
+        )
         findings.require(
             isinstance(path_raw, str) and Path(path_raw).is_absolute(),
             f"{prefix}.path must be absolute",
@@ -448,10 +495,13 @@ def _audit_imports(
         if item.get("kind") == "shared_object" and isinstance(path_raw, str):
             shared_module_paths.add(str(Path(path_raw).resolve()))
         if verify_files and isinstance(path_raw, str):
-            findings.require(Path(path_raw).is_file(), f"{prefix}.path not found: {path_raw}")
+            findings.require(
+                Path(path_raw).is_file(), f"{prefix}.path not found: {path_raw}"
+            )
     for root in ("torch", "sglang", "deep_gemm", "serving_native_candidate"):
         findings.require(
-            root in module_names or any(name.startswith(f"{root}.") for name in module_names),
+            root in module_names
+            or any(name.startswith(f"{root}.") for name in module_names),
             f"actual import provenance omits {root}",
         )
     candidate_artifact = by_role.get("candidate")
@@ -492,7 +542,9 @@ def _audit_repositories(findings: Findings, provenance: dict[str, Any]) -> None:
         return
     for name in ("kernel_harness", "sglang"):
         item = repositories.get(name)
-        if not findings.require(_mapping(item), f"missing repository provenance: {name}"):
+        if not findings.require(
+            _mapping(item), f"missing repository provenance: {name}"
+        ):
             continue
         findings.require(
             isinstance(item.get("path"), str) and Path(item["path"]).is_absolute(),
@@ -518,8 +570,7 @@ def _audit_hardware(findings: Findings, provenance: dict[str, Any]) -> None:
     if not findings.require(_mapping(hardware), "missing provenance.hardware"):
         return
     findings.require(
-        isinstance(hardware.get("uuid"), str)
-        and hardware["uuid"].startswith("GPU-"),
+        isinstance(hardware.get("uuid"), str) and hardware["uuid"].startswith("GPU-"),
         "GPU UUID missing or invalid",
     )
     findings.require(
@@ -533,7 +584,9 @@ def _audit_hardware(findings: Findings, provenance: dict[str, Any]) -> None:
         "CUDA runtime version missing",
     )
     clocks = hardware.get("clock_samples")
-    if not findings.require(_list(clocks) and len(clocks) >= 2, "GPU clock samples incomplete"):
+    if not findings.require(
+        _list(clocks) and len(clocks) >= 2, "GPU clock samples incomplete"
+    ):
         return
     for index, sample in enumerate(clocks):
         prefix = f"provenance.hardware.clock_samples[{index}]"
@@ -545,8 +598,7 @@ def _audit_hardware(findings: Findings, provenance: dict[str, Any]) -> None:
             f"{prefix} GPU UUID mismatch",
         )
         findings.require(
-            isinstance(sample.get("sm_clock_mhz"), int)
-            and sample["sm_clock_mhz"] > 0,
+            isinstance(sample.get("sm_clock_mhz"), int) and sample["sm_clock_mhz"] > 0,
             f"{prefix} SM clock invalid",
         )
         findings.require(
@@ -568,8 +620,7 @@ def _audit_jit(
     findings.require(jit.get("warmup_completed") is True, "JIT/warmup did not complete")
     warmup_activity = jit.get("warmup_activity")
     findings.require(
-        _mapping(warmup_activity)
-        and warmup_activity.get("phase") == "jit_warmup",
+        _mapping(warmup_activity) and warmup_activity.get("phase") == "jit_warmup",
         "JIT warmup activity record missing",
     )
     observations = jit.get("observations")
@@ -614,6 +665,265 @@ def _audit_jit(
     )
 
 
+def _audit_w13_runtime(
+    findings: Findings,
+    provenance: dict[str, Any],
+    *,
+    verify_files: bool,
+) -> None:
+    prefix = "provenance.w13_runtime"
+    runtime = provenance.get("w13_runtime")
+    if not findings.require(_mapping(runtime), f"{prefix} missing"):
+        return
+
+    manifest_text = runtime.get("manifest")
+    manifest_path = (
+        Path(manifest_text).resolve()
+        if isinstance(manifest_text, str) and manifest_text
+        else None
+    )
+    findings.require(manifest_path is not None, f"{prefix}.manifest missing")
+    manifest_sha = runtime.get("manifest_sha256")
+    findings.require(
+        isinstance(manifest_sha, str) and len(manifest_sha) == 64,
+        f"{prefix}.manifest_sha256 invalid",
+    )
+    manifest = None
+    if (
+        verify_files
+        and manifest_path is not None
+        and findings.require(
+            manifest_path.is_file(),
+            f"{prefix}.manifest not found",
+        )
+    ):
+        findings.require(
+            sha256_file(manifest_path) == manifest_sha,
+            f"{prefix}.manifest hash mismatch",
+        )
+        try:
+            manifest = json.loads(manifest_path.read_text())
+        except (OSError, json.JSONDecodeError):
+            findings.errors.append(f"{prefix}.manifest is not valid JSON")
+        else:
+            source = manifest.get("source", {})
+            findings.require(
+                manifest.get("schema_version") == 2,
+                f"{prefix}.manifest schema mismatch",
+            )
+            expected_source = {
+                "commit": W13_BASE_COMMIT,
+                "cutlass_commit": W13_CUTLASS_COMMIT,
+                "fmt_commit": W13_FMT_COMMIT,
+                "candidate_patch_sha256": W13_PATCH_SHA256,
+                "base_blob_sha256": W13_BASE_BLOB_SHA256,
+                "stock_source_tree_sha256": W13_STOCK_TREE_SHA256,
+                "candidate_source_tree_sha256": W13_CANDIDATE_TREE_SHA256,
+                "complete_source_diff_sha256": W13_PATCH_SHA256,
+            }
+            findings.require(
+                {key: source.get(key) for key in expected_source} == expected_source,
+                f"{prefix}.manifest source identity mismatch",
+            )
+            build = manifest.get("build", {})
+            required_build = {
+                "cuda_arch": "10.0a",
+                "stock_candidate_command_identical": True,
+                "submodule_update": False,
+                "compile_api": "tvm_ffi.cpp.build",
+                "force_clean_build_directories": True,
+                "jit_compiler": "nvcc",
+                "max_jobs": "1",
+                "cpp_files_template": ["<SOURCE>/csrc/tvm_ffi_api.cpp"],
+                "build_directory_template": "<OUTPUT>/compile/<VARIANT>",
+                "jit_cache_template": "<OUTPUT>/jit/<VARIANT>",
+            }
+            findings.require(
+                {key: build.get(key) for key in required_build} == required_build,
+                f"{prefix}.manifest build contract mismatch",
+            )
+            build_plan_sha = build.get("normalized_build_plan_sha256")
+            findings.require(
+                isinstance(build_plan_sha, str) and len(build_plan_sha) == 64,
+                f"{prefix}.manifest normalized build-plan hash missing",
+            )
+            for compiler in ("cxx", "nvcc"):
+                compiler_path = Path(str(build.get(f"{compiler}_path", ""))).resolve()
+                compiler_sha = build.get(f"{compiler}_sha256")
+                findings.require(
+                    compiler_path.is_file()
+                    and isinstance(compiler_sha, str)
+                    and sha256_file(compiler_path) == compiler_sha,
+                    f"{prefix}.manifest {compiler} identity mismatch",
+                )
+
+    variant = runtime.get("variant")
+    configs = {
+        "bm32_2sm": [32, 128, 128, 11, 2],
+        "bm32_1sm": [32, 128, 128, 10, 1],
+    }
+    findings.require(variant in configs, f"{prefix}.variant invalid")
+    if variant in configs:
+        findings.require(
+            runtime.get("config") == configs[variant],
+            f"{prefix}.config does not match variant",
+        )
+    findings.require(
+        runtime.get("broad_precompile_enabled") is False,
+        f"{prefix} broad precompile was not disabled",
+    )
+    findings.require(
+        runtime.get("jit_use_nvrtc") is False,
+        f"{prefix} did not freeze the NVCC JIT backend",
+    )
+
+    required_state = {"pdl": True, "num_sms": 148, "tc_util": 100}
+    states = runtime.get("runtime_state")
+    if findings.require(_mapping(states), f"{prefix}.runtime_state missing"):
+        for name in ("installed_downstream", "stock", "candidate"):
+            findings.require(
+                states.get(name) == required_state,
+                f"{prefix}.runtime_state.{name} mismatch",
+            )
+
+    independence = runtime.get("state_independence")
+    mutations = {"pdl": False, "num_sms": 147, "tc_util": 99}
+    if findings.require(_mapping(independence), f"{prefix}.state_independence missing"):
+        for field, mutation in mutations.items():
+            proof = independence.get(field)
+            if not findings.require(
+                _mapping(proof), f"{prefix}.state_independence.{field} missing"
+            ):
+                continue
+            for mutated, other in (
+                ("stock", "candidate"),
+                ("candidate", "stock"),
+            ):
+                direction = proof.get(f"mutate_{mutated}")
+                if not findings.require(
+                    _mapping(direction),
+                    f"{prefix}.state_independence.{field}.mutate_{mutated} missing",
+                ):
+                    continue
+                findings.require(
+                    direction.get("mutated_value") == mutation,
+                    f"{prefix}.{field} {mutated} mutation mismatch",
+                )
+                findings.require(
+                    direction.get(f"{other}_unchanged") == required_state[field],
+                    f"{prefix}.{field} changed independent {other} runtime",
+                )
+                findings.require(
+                    direction.get("restored") == required_state[field],
+                    f"{prefix}.{field} {mutated} restore mismatch",
+                )
+
+    modules = runtime.get("modules")
+    resolved: dict[str, dict[str, Path]] = {}
+    if findings.require(_mapping(modules), f"{prefix}.modules missing"):
+        for name in ("stock", "candidate"):
+            item = modules.get(name)
+            if not findings.require(_mapping(item), f"{prefix}.modules.{name} missing"):
+                continue
+            paths: dict[str, Path] = {}
+            for field in ("package", "shared_object", "jit_cache"):
+                value = item.get(field)
+                if findings.require(
+                    isinstance(value, str) and bool(value),
+                    f"{prefix}.modules.{name}.{field} missing",
+                ):
+                    paths[field] = Path(value).resolve()
+            resolved[name] = paths
+            for field in ("package_init_sha256", "shared_object_sha256"):
+                findings.require(
+                    isinstance(item.get(field), str) and len(item[field]) == 64,
+                    f"{prefix}.modules.{name}.{field} invalid",
+                )
+            artifacts = item.get("jit_artifacts")
+            findings.require(
+                _mapping(artifacts) and bool(artifacts),
+                f"{prefix}.modules.{name}.jit_artifacts empty",
+            )
+            if (
+                verify_files
+                and {"package", "shared_object", "jit_cache"} <= paths.keys()
+            ):
+                init_py = paths["package"] / "__init__.py"
+                shared_object = paths["shared_object"]
+                findings.require(
+                    init_py.is_file()
+                    and sha256_file(init_py) == item.get("package_init_sha256"),
+                    f"{prefix}.modules.{name} package init hash mismatch",
+                )
+                findings.require(
+                    shared_object.is_file()
+                    and sha256_file(shared_object) == item.get("shared_object_sha256"),
+                    f"{prefix}.modules.{name} DSO hash mismatch",
+                )
+                for relative, digest in (
+                    artifacts.items() if _mapping(artifacts) else ()
+                ):
+                    relative_path = Path(relative)
+                    safe_relative = (
+                        not relative_path.is_absolute()
+                        and ".." not in relative_path.parts
+                    )
+                    findings.require(
+                        safe_relative and isinstance(digest, str) and len(digest) == 64,
+                        f"{prefix}.modules.{name} JIT artifact identity invalid",
+                    )
+                    if safe_relative:
+                        artifact = paths["jit_cache"] / relative_path
+                        findings.require(
+                            artifact.is_file() and sha256_file(artifact) == digest,
+                            f"{prefix}.modules.{name} JIT artifact hash mismatch",
+                        )
+            if manifest is not None:
+                manifest_record = manifest.get("variants", {}).get(name, {})
+                expected_tree = (
+                    W13_STOCK_TREE_SHA256
+                    if name == "stock"
+                    else W13_CANDIDATE_TREE_SHA256
+                )
+                required_record = {
+                    "package": item.get("package"),
+                    "package_init_sha256": item.get("package_init_sha256"),
+                    "shared_object": item.get("shared_object"),
+                    "shared_object_sha256": item.get("shared_object_sha256"),
+                    "jit_cache": item.get("jit_cache"),
+                    "source_tree_sha256": expected_tree,
+                    "patched": name == "candidate",
+                    "normalized_build_plan_sha256": manifest.get("build", {}).get(
+                        "normalized_build_plan_sha256"
+                    ),
+                }
+                findings.require(
+                    {key: manifest_record.get(key) for key in required_record}
+                    == required_record,
+                    f"{prefix}.modules.{name} does not match manifest variant",
+                )
+                build_ninja_text = manifest_record.get("build_ninja")
+                build_ninja = (
+                    Path(build_ninja_text).resolve()
+                    if isinstance(build_ninja_text, str)
+                    else None
+                )
+                findings.require(
+                    build_ninja is not None
+                    and build_ninja.is_file()
+                    and sha256_file(build_ninja)
+                    == manifest_record.get("build_ninja_sha256"),
+                    f"{prefix}.modules.{name} build-plan file mismatch",
+                )
+    if all(name in resolved for name in ("stock", "candidate")):
+        for field in ("package", "shared_object", "jit_cache"):
+            if all(field in resolved[name] for name in ("stock", "candidate")):
+                findings.require(
+                    resolved["stock"][field] != resolved["candidate"][field],
+                    f"{prefix} stock/candidate {field} paths alias",
+                )
+
+
 def _audit_correctness(
     findings: Findings,
     result: dict[str, Any],
@@ -622,7 +932,9 @@ def _audit_correctness(
     correctness = result.get("correctness")
     if not findings.require(_mapping(correctness), "missing correctness record"):
         return
-    findings.require(correctness.get("status") == "pass", "correctness status is not pass")
+    findings.require(
+        correctness.get("status") == "pass", "correctness status is not pass"
+    )
     for field in (
         "pre_timing_reference",
         "pre_timing_candidate",
@@ -630,7 +942,9 @@ def _audit_correctness(
         "post_timing_candidate",
         "fresh_inputs_post_timing",
     ):
-        findings.require(correctness.get(field) is True, f"correctness.{field} did not pass")
+        findings.require(
+            correctness.get(field) is True, f"correctness.{field} did not pass"
+        )
     tolerance = correctness.get("tolerance")
     findings.require(
         _mapping(tolerance)
@@ -651,6 +965,119 @@ def _expected_order(start_order: str, pair_index: int) -> str:
     return "BA" if start_order == "AB" else "AB"
 
 
+def _recompute_performance_estimates(
+    raw_samples: list[Any],
+) -> dict[str, Any]:
+    if not raw_samples or len(raw_samples) % 2:
+        raise ValueError("incomplete ordered sample pairs")
+    reference_values: list[float] = []
+    candidate_values: list[float] = []
+    by_order: dict[str, list[float]] = {"AB": [], "BA": []}
+    for offset in range(0, len(raw_samples), 2):
+        pair = raw_samples[offset : offset + 2]
+        if not all(_mapping(sample) for sample in pair):
+            raise ValueError("sample pair is not object-valued")
+        order = pair[0].get("order")
+        if order not in by_order or pair[1].get("order") != order:
+            raise ValueError("sample pair order mismatch")
+        values: dict[str, float] = {}
+        for sample in pair:
+            implementation = sample.get("implementation")
+            latency = sample.get("latency_ms")
+            if (
+                implementation not in ("reference", "candidate")
+                or implementation in values
+                or not _number(latency)
+                or float(latency) <= 0.0
+            ):
+                raise ValueError("sample pair latency/implementation invalid")
+            values[implementation] = float(latency)
+        if set(values) != {"reference", "candidate"}:
+            raise ValueError("sample pair is incomplete")
+        ratio = values["reference"] / values["candidate"]
+        if not math.isfinite(ratio) or ratio <= 0.0:
+            raise ValueError("sample pair ratio is non-finite")
+        reference_values.append(values["reference"])
+        candidate_values.append(values["candidate"])
+        by_order[order].append(ratio)
+    if not by_order["AB"] or not by_order["BA"]:
+        raise ValueError("both AB and BA observations are required")
+    pooled = statistics.median(reference_values) / statistics.median(candidate_values)
+    ab_estimate = statistics.median(by_order["AB"])
+    ba_estimate = statistics.median(by_order["BA"])
+    order_balanced = math.sqrt(ab_estimate * ba_estimate)
+    if not all(
+        math.isfinite(value) and value > 0.0
+        for value in (pooled, order_balanced, ab_estimate, ba_estimate)
+    ):
+        raise ValueError("performance estimate is non-finite")
+    return {
+        "contract": "finite_pooled_order_balanced_ab_ba_v1",
+        "pair_count": len(raw_samples) // 2,
+        "pooled_speedup": pooled,
+        "order_balanced_speedup": order_balanced,
+        "ab_median_speedup": ab_estimate,
+        "ba_median_speedup": ba_estimate,
+        "all_finite": True,
+    }
+
+
+def _four_estimator_gate_passes(estimates: dict[str, Any]) -> bool:
+    return all(
+        _number(estimates.get(field))
+        and float(estimates[field]) >= PERFORMANCE_THRESHOLD
+        for field in (
+            "pooled_speedup",
+            "order_balanced_speedup",
+            "ab_median_speedup",
+            "ba_median_speedup",
+        )
+    )
+
+
+def _audit_performance_estimates(
+    findings: Findings,
+    recorded: Any,
+    raw_samples: list[Any],
+    *,
+    prefix: str,
+) -> bool:
+    if not findings.require(
+        _mapping(recorded),
+        f"{prefix} performance estimates are missing",
+    ):
+        return False
+    try:
+        expected = _recompute_performance_estimates(raw_samples)
+    except ValueError as exc:
+        findings.require(False, f"{prefix} estimates cannot be recomputed: {exc}")
+        return False
+    findings.require(
+        set(recorded) == set(expected),
+        f"{prefix} performance-estimate fields do not close",
+    )
+    valid = True
+    for field, expected_value in expected.items():
+        if isinstance(expected_value, float):
+            matches = _close(recorded.get(field), expected_value)
+        else:
+            matches = recorded.get(field) == expected_value
+            if field == "pair_count":
+                matches = bool(
+                    matches
+                    and isinstance(recorded.get(field), int)
+                    and not isinstance(recorded.get(field), bool)
+                )
+            if field == "all_finite":
+                matches = recorded.get(field) is True
+        findings.require(
+            matches,
+            f"{prefix}.performance_estimates.{field} mismatch",
+        )
+        valid = bool(valid and matches)
+    return valid
+
+
 def _audit_one_series(
     findings: Findings,
     series: dict[str, Any],
@@ -663,14 +1090,18 @@ def _audit_one_series(
     capture_pools: dict[str, list[str]] | None,
 ) -> tuple[float | None, bool | None, list[float], list[float]]:
     prefix = f"series[{index}]"
-    findings.require(series.get("series_index") == index, f"{prefix}.series_index mismatch")
+    findings.require(
+        series.get("series_index") == index, f"{prefix}.series_index mismatch"
+    )
     expected_series_id = f"{run_id}:series-{index + 1:02d}"
     findings.require(
         series.get("series_id") == expected_series_id,
         f"{prefix}.series_id is not bound to run identity",
     )
     findings.require(series.get("independent") is True, f"{prefix} is not independent")
-    findings.require(series.get("execution_mode") == mode, f"{prefix} execution-mode mismatch")
+    findings.require(
+        series.get("execution_mode") == mode, f"{prefix} execution-mode mismatch"
+    )
     expected_start = "AB" if index % 2 == 0 else "BA"
     start_order = series.get("start_order")
     findings.require(start_order == expected_start, f"{prefix} start order mismatch")
@@ -698,7 +1129,9 @@ def _audit_one_series(
             continue
         pair_index = sample.get("pair_index")
         position = sample.get("position")
-        findings.require(sample.get("sequence") == sequence, f"{sample_prefix}.sequence mismatch")
+        findings.require(
+            sample.get("sequence") == sequence, f"{sample_prefix}.sequence mismatch"
+        )
         findings.require(
             isinstance(pair_index, int) and 0 <= pair_index < repeat,
             f"{sample_prefix}.pair_index invalid",
@@ -708,12 +1141,12 @@ def _audit_one_series(
             continue
         order = _expected_order(start_order, pair_index)
         expected_impl = (
-            ("reference", "candidate")
-            if order == "AB"
-            else ("candidate", "reference")
+            ("reference", "candidate") if order == "AB" else ("candidate", "reference")
         )[position]
         implementation = sample.get("implementation")
-        findings.require(sample.get("order") == order, f"{sample_prefix}.order mismatch")
+        findings.require(
+            sample.get("order") == order, f"{sample_prefix}.order mismatch"
+        )
         findings.require(
             implementation == expected_impl,
             f"{sample_prefix}.implementation breaks AB/BA ordering",
@@ -726,10 +1159,13 @@ def _audit_one_series(
             pools = capture_pools or {}
             pool = pools.get(str(implementation), [])
             capture_id = sample.get("graph_capture_id")
-            if findings.require(
-                bool(pool),
-                f"{sample_prefix} has no independently captured graph pool",
-            ) and implementation in capture_ordinals:
+            if (
+                findings.require(
+                    bool(pool),
+                    f"{sample_prefix} has no independently captured graph pool",
+                )
+                and implementation in capture_ordinals
+            ):
                 ordinal = capture_ordinals[implementation]
                 expected_capture_id = pool[ordinal % len(pool)]
                 findings.require(
@@ -794,7 +1230,20 @@ def _audit_one_series(
         _close(series.get("median_speedup"), median_speedup),
         f"{prefix}.median_speedup mismatch",
     )
-    passed = median_speedup >= PERFORMANCE_THRESHOLD
+    estimates_valid = _audit_performance_estimates(
+        findings,
+        series.get("performance_estimates"),
+        samples,
+        prefix=prefix,
+    )
+    try:
+        recomputed_estimates = _recompute_performance_estimates(samples)
+    except ValueError:
+        passed = False
+    else:
+        passed = bool(
+            estimates_valid and _four_estimator_gate_passes(recomputed_estimates)
+        )
     findings.require(
         series.get("passes_3pct_gate") is passed,
         f"{prefix}.passes_3pct_gate mismatch",
@@ -809,6 +1258,7 @@ def _audit_graph_series(
     index: int,
     identity_control: bool,
     candidate_api: str | None,
+    workload_family: str,
 ) -> dict[str, list[str]] | None:
     prefix = f"series[{index}].graph"
     graph = series.get("graph")
@@ -823,7 +1273,9 @@ def _audit_graph_series(
         f"{prefix} did not independently capture reference and candidate",
     )
     captures = graph.get("captures")
-    if not findings.require(_list(captures) and len(captures) == 4, f"{prefix} capture set incomplete"):
+    if not findings.require(
+        _list(captures) and len(captures) == 4, f"{prefix} capture set incomplete"
+    ):
         return None
     expected_implementations = ("reference", "candidate", "candidate", "reference")
     expected_suffixes = ("R-first", "C-after-R", "C-first", "R-after-C")
@@ -836,7 +1288,9 @@ def _audit_graph_series(
     pools: dict[str, list[str]] = {"reference": [], "candidate": []}
     for capture_index, capture in enumerate(captures):
         capture_prefix = f"{prefix}.captures[{capture_index}]"
-        if not findings.require(_mapping(capture), f"{capture_prefix} must be an object"):
+        if not findings.require(
+            _mapping(capture), f"{capture_prefix} must be an object"
+        ):
             continue
         capture_id = capture.get("capture_id")
         expected_capture_id = f"{series_id}:{expected_suffixes[capture_index]}"
@@ -845,17 +1299,17 @@ def _audit_graph_series(
             f"{capture_prefix}.capture_id is not bound to its series/capture order",
         )
         if isinstance(capture_id, str):
-            findings.require(capture_id not in capture_ids, f"duplicate graph capture id: {capture_id}")
+            findings.require(
+                capture_id not in capture_ids,
+                f"duplicate graph capture id: {capture_id}",
+            )
             capture_ids.add(capture_id)
         implementation = capture.get("implementation")
         findings.require(
             implementation == expected_implementations[capture_index],
             f"{capture_prefix}.implementation/capture order mismatch",
         )
-        if (
-            isinstance(capture_id, str)
-            and implementation in ("reference", "candidate")
-        ):
+        if isinstance(capture_id, str) and implementation in ("reference", "candidate"):
             pools[implementation].append(capture_id)
 
         raw_graph_handle = capture.get("raw_graph_handle")
@@ -886,7 +1340,9 @@ def _audit_graph_series(
             capture.get("non_default_stream") is computed_non_default,
             f"{capture_prefix}.non_default_stream does not match stream IDs",
         )
-        findings.require(computed_non_default, f"{capture_prefix} did not use a non-default stream")
+        findings.require(
+            computed_non_default, f"{capture_prefix} did not use a non-default stream"
+        )
         if isinstance(stream_id, int):
             findings.require(
                 stream_id not in stream_ids,
@@ -905,12 +1361,78 @@ def _audit_graph_series(
                 capture.get(field) is True,
                 f"{capture_prefix}.{field} did not pass",
             )
+        if workload_family in ("moe_grouped_masked", "moe_w13_region"):
+            for field in (
+                "masked_m_mutation_replayed",
+                "untouched_masked_regions_preserved",
+            ):
+                findings.require(
+                    capture.get(field) is True,
+                    f"{capture_prefix}.{field} did not pass",
+                )
+            findings.require(
+                capture.get("masked_store_contract")
+                == "poison preserved outside scheduled full store_block_m tiles",
+                f"{capture_prefix}.masked_store_contract invalid",
+            )
+            store_observation = capture.get("masked_store_observation")
+            if findings.require(
+                _mapping(store_observation),
+                f"{capture_prefix}.masked_store_observation missing",
+            ):
+                expected_outputs = {"out"}
+                if workload_family == "moe_w13_region":
+                    expected_outputs.add("down_out")
+                findings.require(
+                    set(store_observation) == expected_outputs,
+                    f"{capture_prefix}.masked_store_observation outputs mismatch",
+                )
+                for output_name in expected_outputs:
+                    output = store_observation.get(output_name)
+                    output_prefix = (
+                        f"{capture_prefix}.masked_store_observation.{output_name}"
+                    )
+                    if not findings.require(
+                        _mapping(output),
+                        f"{output_prefix} missing",
+                    ):
+                        continue
+                    expected_block_m = 128
+                    if (
+                        output_name == "out"
+                        and capture.get("implementation") == "candidate"
+                        and capture.get("reference_delegated") is False
+                    ):
+                        expected_block_m = 32
+                    findings.require(
+                        output.get("store_block_m") == expected_block_m,
+                        f"{output_prefix}.store_block_m mismatch",
+                    )
+                    for field in (
+                        "padding_rows_written",
+                        "untouched_rows_checked",
+                    ):
+                        findings.require(
+                            isinstance(output.get(field), int)
+                            and not isinstance(output.get(field), bool)
+                            and output[field] >= 0,
+                            f"{output_prefix}.{field} invalid",
+                        )
+                    findings.require(
+                        isinstance(output.get("untouched_rows_checked"), int)
+                        and output["untouched_rows_checked"] > 0,
+                        f"{output_prefix} did not check any untouched rows",
+                    )
         nodes = capture.get("nodes")
-        findings.require(_list(nodes) and bool(nodes), f"{capture_prefix}.nodes missing")
+        findings.require(
+            _list(nodes) and bool(nodes), f"{capture_prefix}.nodes missing"
+        )
         if _list(nodes):
             for node_index, node in enumerate(nodes):
                 node_prefix = f"{capture_prefix}.nodes[{node_index}]"
-                if not findings.require(_mapping(node), f"{node_prefix} must be an object"):
+                if not findings.require(
+                    _mapping(node), f"{node_prefix} must be an object"
+                ):
                     continue
                 findings.require(
                     node.get("index") == node_index,
@@ -923,8 +1445,7 @@ def _audit_graph_series(
                 )
                 if isinstance(node_type, str) and "KERNEL" in node_type:
                     findings.require(
-                        isinstance(node.get("kernel"), str)
-                        and bool(node["kernel"]),
+                        isinstance(node.get("kernel"), str) and bool(node["kernel"]),
                         f"{node_prefix}.kernel identity missing",
                     )
                     for dimension in ("grid", "block"):
@@ -967,7 +1488,9 @@ def _audit_graph_series(
                 capture.get("forbidden_nodes") == forbidden,
                 f"{capture_prefix}.forbidden_nodes do not match nodes",
             )
-            findings.require(not forbidden, f"{capture_prefix} has forbidden graph nodes")
+            findings.require(
+                not forbidden, f"{capture_prefix} has forbidden graph nodes"
+            )
             findings.require(bool(kernels), f"{capture_prefix} has no kernel identity")
         fallback = capture.get("fallback")
         reference_delegated = capture.get("reference_delegated")
@@ -1012,9 +1535,7 @@ def _audit_graph_series(
         elif implementation == "candidate":
             candidate_signatures.append(_graph_signature(capture))
     independent = (
-        len(capture_ids) == 4
-        and len(raw_graph_handles) == 4
-        and len(stream_ids) == 4
+        len(capture_ids) == 4 and len(raw_graph_handles) == 4 and len(stream_ids) == 4
     )
     findings.require(
         graph.get("reference_candidate_captured_independently") is independent,
@@ -1024,7 +1545,10 @@ def _audit_graph_series(
     if identity_control and reference_signatures and candidate_signatures:
         canonical = reference_signatures[0]
         findings.require(
-            all(signature == canonical for signature in reference_signatures + candidate_signatures),
+            all(
+                signature == canonical
+                for signature in reference_signatures + candidate_signatures
+            ),
             f"{prefix} identity A/B graph signatures differ",
         )
     return {
@@ -1044,7 +1568,9 @@ def _audit_kernel_profiles(
     identity_control: bool,
 ) -> None:
     profiles = execution.get("kernel_profiles")
-    if not findings.require(_mapping(profiles), "eager execution lacks kernel profiler capture"):
+    if not findings.require(
+        _mapping(profiles), "eager execution lacks kernel profiler capture"
+    ):
         return
     identities: dict[str, list[str]] = {}
     for implementation in ("reference", "candidate"):
@@ -1054,7 +1580,9 @@ def _audit_kernel_profiles(
             continue
         findings.require(profile.get("captured") is True, f"{prefix} was not captured")
         kernels = profile.get("kernel_identities")
-        findings.require(_list(kernels) and bool(kernels), f"{prefix} kernel identities missing")
+        findings.require(
+            _list(kernels) and bool(kernels), f"{prefix} kernel identities missing"
+        )
         events = profile.get("events")
         findings.require(_list(events) and bool(events), f"{prefix} events missing")
         recomputed: list[str] = []
@@ -1062,7 +1590,9 @@ def _audit_kernel_profiles(
             names: set[str] = set()
             for event_index, event in enumerate(events):
                 event_prefix = f"{prefix}.events[{event_index}]"
-                if not findings.require(_mapping(event), f"{event_prefix} must be an object"):
+                if not findings.require(
+                    _mapping(event), f"{event_prefix} must be an object"
+                ):
                     continue
                 name = event.get("name")
                 findings.require(
@@ -1102,8 +1632,14 @@ def audit_document(
 ) -> dict[str, Any]:
     findings = Findings()
     if not findings.require(_mapping(result), "result root must be an object"):
-        return {"valid": False, "errors": findings.errors, "warnings": findings.warnings}
-    findings.require(result.get("schema_version") == SCHEMA_VERSION, "schema_version must be 2")
+        return {
+            "valid": False,
+            "errors": findings.errors,
+            "warnings": findings.warnings,
+        }
+    findings.require(
+        result.get("schema_version") == SCHEMA_VERSION, "schema_version must be 2"
+    )
     findings.require(
         result.get("result_kind") == "serving_native_v2",
         "result_kind must be serving_native_v2",
@@ -1116,7 +1652,9 @@ def audit_document(
                 isinstance(run.get(field), str) and bool(run[field]),
                 f"run.{field} missing",
             )
-        findings.require(_list(run.get("command")) and bool(run["command"]), "run.command missing")
+        findings.require(
+            _list(run.get("command")) and bool(run["command"]), "run.command missing"
+        )
         findings.require(
             isinstance(run.get("requested_series"), int)
             and not isinstance(run["requested_series"], bool)
@@ -1148,14 +1686,13 @@ def audit_document(
             )
         findings.require(_mapping(workload.get("params")), "workload.params missing")
         findings.require(
-            _list(workload.get("execution_modes")) and bool(workload["execution_modes"]),
+            _list(workload.get("execution_modes"))
+            and bool(workload["execution_modes"]),
             "workload.execution_modes missing",
         )
         workload_name = workload.get("name")
         registered = (
-            WORKLOADS.get(workload_name)
-            if isinstance(workload_name, str)
-            else None
+            WORKLOADS.get(workload_name) if isinstance(workload_name, str) else None
         )
         if findings.require(
             registered is not None,
@@ -1185,14 +1722,12 @@ def audit_document(
             "execution graph-capture contract mismatch",
         )
         findings.require(
-            isinstance(execution.get("timer"), str)
-            and bool(execution["timer"]),
+            isinstance(execution.get("timer"), str) and bool(execution["timer"]),
             "execution timer identity missing",
         )
         if mode == "cuda_graph":
             findings.require(
-                execution.get("capture_stream")
-                == "independent non-default streams",
+                execution.get("capture_stream") == "independent non-default streams",
                 "execution capture-stream contract mismatch",
             )
             findings.require(
@@ -1234,9 +1769,7 @@ def audit_document(
             expected_jit_phases.append(f"{series_id}:timing")
 
     provenance_value = result.get("provenance")
-    provenance: dict[str, Any] = (
-        provenance_value if _mapping(provenance_value) else {}
-    )
+    provenance: dict[str, Any] = provenance_value if _mapping(provenance_value) else {}
     by_role: dict[str, dict[str, Any]] = {}
     if findings.require(bool(provenance), "missing provenance"):
         findings.require(
@@ -1253,16 +1786,20 @@ def audit_document(
             provenance,
             expected_phases=expected_jit_phases,
         )
+        if canonical_workload is not None and str(
+            canonical_workload.get("name", "")
+        ).startswith("moe_w13_"):
+            _audit_w13_runtime(
+                findings,
+                provenance,
+                verify_files=verify_files,
+            )
 
     identity_control = False
     fallback_count = 0
     reference_delegations = 0
     candidate_api: str | None = None
-    if (
-        mode in ("eager", "cuda_graph")
-        and canonical_workload is not None
-        and run
-    ):
+    if mode in ("eager", "cuda_graph") and canonical_workload is not None and run:
         (
             identity_control,
             fallback_count,
@@ -1309,6 +1846,7 @@ def audit_document(
     series: list[Any] = series_value if _list(series_value) else []
     series_passes: list[bool] = []
     series_medians: list[float] = []
+    all_raw_samples: list[Any] = []
     all_reference: list[float] = []
     all_candidate: list[float] = []
     series_ids: set[str] = set()
@@ -1318,14 +1856,24 @@ def audit_document(
         and len(series) == requested_series
         and len(series) >= MIN_REQUIRED_SERIES
     )
-    if findings.require(exact_series_count, "requested/raw series counts do not close exactly") and isinstance(mode, str):
+    if findings.require(
+        exact_series_count, "requested/raw series counts do not close exactly"
+    ) and isinstance(mode, str):
         for index, item in enumerate(series):
-            if not findings.require(_mapping(item), f"series[{index}] must be an object"):
+            if not findings.require(
+                _mapping(item), f"series[{index}] must be an object"
+            ):
                 continue
             series_id = item.get("series_id")
             if isinstance(series_id, str):
-                findings.require(series_id not in series_ids, f"duplicate series identity: {series_id}")
+                findings.require(
+                    series_id not in series_ids,
+                    f"duplicate series identity: {series_id}",
+                )
                 series_ids.add(series_id)
+            raw_samples = item.get("raw_ordered_samples")
+            if _list(raw_samples):
+                all_raw_samples.extend(raw_samples)
             capture_pools = None
             if mode == "cuda_graph":
                 capture_pools = _audit_graph_series(
@@ -1334,6 +1882,7 @@ def audit_document(
                     index=index,
                     identity_control=identity_control,
                     candidate_api=candidate_api,
+                    workload_family=str(canonical_workload.get("family", "")),
                 )
             else:
                 findings.require(
@@ -1378,9 +1927,7 @@ def audit_document(
             prefix="candidate",
             allow_extra_fields=True,
         )
-        recorded_series_medians = candidate_record.get(
-            "series_median_speedups"
-        )
+        recorded_series_medians = candidate_record.get("series_median_speedups")
         findings.require(
             _list(recorded_series_medians)
             and len(recorded_series_medians) == len(series_medians)
@@ -1396,9 +1943,7 @@ def audit_document(
 
     expected_gate = False
     aggregate_value = result.get("aggregate")
-    aggregate: dict[str, Any] = (
-        aggregate_value if _mapping(aggregate_value) else {}
-    )
+    aggregate: dict[str, Any] = aggregate_value if _mapping(aggregate_value) else {}
     if findings.require(bool(aggregate), "missing aggregate gate"):
         required = aggregate.get("required_series")
         completed = aggregate.get("completed_series")
@@ -1427,8 +1972,34 @@ def audit_document(
             aggregate.get("every_series_passes_3pct") is every_passes,
             "aggregate all-series gate mismatch",
         )
+        findings.require(
+            aggregate.get("series_gate_contract")
+            == "all_four_estimates_each_series_gte_1p03_v1",
+            "aggregate series-gate contract mismatch",
+        )
+        aggregate_estimates_valid = _audit_performance_estimates(
+            findings,
+            aggregate.get("performance_estimates"),
+            all_raw_samples,
+            prefix="aggregate",
+        )
+        required_estimates_finite = bool(
+            aggregate_estimates_valid
+            and all_raw_samples
+            and all(
+                _mapping(item)
+                and _mapping(item.get("performance_estimates"))
+                and item["performance_estimates"].get("all_finite") is True
+                for item in series
+            )
+        )
+        findings.require(
+            aggregate.get("required_estimates_finite") is required_estimates_finite,
+            "aggregate required-estimates-finite mismatch",
+        )
         expected_gate = (
             every_passes
+            and required_estimates_finite
             and not identity_control
             and fallback_count == 0
             and (
@@ -1446,8 +2017,7 @@ def audit_document(
                 "identity A/B must not pass the performance gate",
             )
         findings.require(
-            aggregate.get("identity_control_forced_non_win")
-            is identity_control,
+            aggregate.get("identity_control_forced_non_win") is identity_control,
             "aggregate identity-control disposition mismatch",
         )
         if (

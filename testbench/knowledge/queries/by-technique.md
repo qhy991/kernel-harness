@@ -11,6 +11,18 @@
 - `glm52--routed_gateup_nvfp4_decode--b200--20260714b` [no-win] Routed Expert Gate+Up NVFP4/decode — For GLM-5.2 NVFP4 MoE decode on sm_100, enabling FlashInfer PDL may shift median latency by about 1-2%, but it is not stable enough to satisfy the conservative gate on the M=16/32 sweep. The main remaining headroom is likely reducing fixed TRT-LLM runner overhead or exposing a gate-up-only primitive instead of timing the fused MoE path.
 - `glm52--routed_gateup_nvfp4_decode--b200--20260714a` [no-win] Routed Expert Gate+Up NVFP4/decode — For a new SGLang NVFP4 MoE task, first validate the exact FlashInfer TRT-LLM packed tensor and scale contract separately from FP8 DeepGEMM. A pass-through baseline is useful for contract validation but provides no speedup; future work must reduce TRTLLM runner overhead or expose a gate-up-only primitive for the M=16/32 decode regime.
 
+## bm32-genuine-one-sm-tcgen05
+
+- `glm52--moe_gate_proj_decode--b200--20260728a` [no-win] moe_gate/decode — For small-active-M SM100 masked grouped GEMMs, leaf speedups are insufficient evidence. First close same-source runtime/cache fairness, then require every alternating-order estimator to pass in a production-shaped graph-containing region before enabling a dispatch.
+
+## bm32-two-sm-tcgen05
+
+- `glm52--moe_gate_proj_decode--b200--20260728a` [no-win] moe_gate/decode — For small-active-M SM100 masked grouped GEMMs, leaf speedups are insufficient evidence. First close same-source runtime/cache fairness, then require every alternating-order estimator to pass in a production-shaped graph-containing region before enabling a dispatch.
+
+## clc-persistent-scheduler-rewrite
+
+- `glm52--moe_gate_proj_decode--b200--20260728a` [no-win] moe_gate/decode — For small-active-M SM100 masked grouped GEMMs, leaf speedups are insufficient evidence. First close same-source runtime/cache fairness, then require every alternating-order estimator to pass in a production-shaped graph-containing region before enabling a dispatch.
+
 ## cuda-direct-expert-token-kernel
 
 - `glm52--routed_swiglu_decode--b200--20260714a` [no-win] Routed Expert SwiGLU+FP8 Quant/decode — For GLM-5.2 masked routed SwiGLU decode on B200, the production SGLang C++ kernel is already close to the small-shape floor despite sparse active rows. Removing the CTA prefix mapping is not enough; a replacement must match the production vectorized bf16x2/fp8x2 instruction quality and beat run-to-run noise on M=16.
@@ -100,6 +112,10 @@
 ## routing-method-topk-type-1
 
 - `glm52--routed_gateup_nvfp4_decode--b200--20260714c` [win] Routed Expert Gate+Up NVFP4/decode — For fixed-shape GLM-5.2 NVFP4 MoE decode harness tasks, do not pass small CUDA scalar tensors through .item() in solution.py. If values are fixed by task.json/definition axes, use Python constants or shape-derived Python ints so the timed call contains the real FlashInfer work instead of device-host synchronization. Validate each FlashInfer routing knob with repeat-3 because several correct API choices differ mostly by noise.
+
+## same-source-pdl-fairness-rebuild
+
+- `glm52--moe_gate_proj_decode--b200--20260728a` [no-win] moe_gate/decode — For small-active-M SM100 masked grouped GEMMs, leaf speedups are insufficient evidence. First close same-source runtime/cache fairness, then require every alternating-order estimator to pass in a production-shaped graph-containing region before enabling a dispatch.
 
 ## separate-nvfp4-task-contract
 

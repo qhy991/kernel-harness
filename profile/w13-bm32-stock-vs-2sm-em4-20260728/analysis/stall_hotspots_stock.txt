@@ -1,0 +1,48 @@
+===== Stall hotspots for stock =====
+Total distinct (file, line) entries: 1
+
+Rank      Total File                            Line  Breakdown (stall: count)
+------------------------------------------------------------------------------------------------------------------------------------------------------
+   0       8477 ?                                  0  long_scoreboard: 5618, barrier: 1694, sleeping: 422, wait: 211, branch_resolving: 181, selected: 177, no_instructions: 83, short_scoreboard: 68, dispatch_stall: 14, misc: 5, math_pipe_throttle: 2, mio_throttle: 1, not_selected: 1
+
+
+===== Per-stall-type top lines =====
+
+--- long_scoreboard ---
+      5618  ?:0
+
+--- short_scoreboard ---
+        68  ?:0
+
+--- wait ---
+       211  ?:0
+
+--- math_pipe_throttle ---
+         2  ?:0
+
+--- mio_throttle ---
+         1  ?:0
+
+--- not_selected ---
+         1  ?:0
+
+--- dispatch_stall ---
+        14  ?:0
+
+--- no_instructions ---
+        83  ?:0
+
+--- selected ---
+       177  ?:0
+
+--- branch_resolving ---
+       181  ?:0
+
+--- barrier ---
+      1694  ?:0
+
+--- sleeping ---
+       422  ?:0
+
+--- misc ---
+         5  ?:0

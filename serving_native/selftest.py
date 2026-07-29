@@ -27,13 +27,18 @@ def main() -> int:
     )
 
     names = set(WORKLOADS)
-    assert len(names) == 40
+    assert len(names) == 46
     assert "linear_attn_o_prefill_m4096" in names
     assert "linear_indexer_wq_b_decode_m16" in names
     assert "linear_indexer_wq_b_decode_m32" in names
     assert "indexer_wk_weights_decode_m16" in names
     assert "dsa_trtllm_decode_m32" in names
-    assert "moe_w13_grouped_decode_m16" in names
+    assert "moe_w13_grouped_decode_m16_em4" in names
+    assert "moe_w13_grouped_decode_m16_em5" in names
+    assert "moe_w13_grouped_decode_m32_em8" in names
+    assert "moe_w13_grouped_decode_m32_em9" in names
+    assert "moe_w13_region_decode_m16_em4" in names
+    assert "moe_w13_region_decode_m32_em9" in names
     assert "moe_w2_grouped_decode_m32" in names
     assert "deepep_normal_dispatch_prefill" in names
     assert "deepep_ll_combine_decode_m16" in names
@@ -70,6 +75,14 @@ def main() -> int:
     } == {
         "linear_attn_o_decode_m16",
         "linear_attn_o_decode_m32",
+        "moe_w13_grouped_decode_m16_em4",
+        "moe_w13_grouped_decode_m16_em5",
+        "moe_w13_grouped_decode_m32_em8",
+        "moe_w13_grouped_decode_m32_em9",
+        "moe_w13_region_decode_m16_em4",
+        "moe_w13_region_decode_m16_em5",
+        "moe_w13_region_decode_m32_em8",
+        "moe_w13_region_decode_m32_em9",
     }
     assert {
         workload.params["batch"]
@@ -82,11 +95,38 @@ def main() -> int:
         if workload.family in ("deepep_ll_dispatch", "deepep_ll_combine")
     } == decode_ms
     for workload in WORKLOADS.values():
-        if workload.family in ("moe_grouped_masked", "moe_swiglu_quant"):
+        if workload.family in (
+            "moe_grouped_masked",
+            "moe_swiglu_quant",
+            "moe_w13_region",
+        ):
             m = workload.params["decode_m"]
             assert m in decode_ms
-            assert workload.params["expected_m"] == m // 4
             assert workload.params["valid_assignments"] == m * 8
+            if workload.name.startswith(("moe_w13_grouped", "moe_w13_region")):
+                expected = {16: {4, 5}, 32: {8, 9}}[m]
+                assert workload.params["expected_m"] in expected
+            else:
+                assert workload.params["expected_m"] == m // 4
+
+    assert {
+        (
+            workload.params["decode_m"],
+            workload.params["expected_m"],
+            workload.family,
+        )
+        for workload in WORKLOADS.values()
+        if workload.name.startswith(("moe_w13_grouped", "moe_w13_region"))
+    } == {
+        (16, 4, "moe_grouped_masked"),
+        (16, 5, "moe_grouped_masked"),
+        (32, 8, "moe_grouped_masked"),
+        (32, 9, "moe_grouped_masked"),
+        (16, 4, "moe_w13_region"),
+        (16, 5, "moe_w13_region"),
+        (32, 8, "moe_w13_region"),
+        (32, 9, "moe_w13_region"),
+    }
 
     paired_sglang = REPO_ROOT.parent / "sglang"
     default_sglang = (
@@ -128,7 +168,9 @@ def main() -> int:
     for relative, needles in source_checks.items():
         source = (sglang_root / relative).read_text()
         for needle in needles:
-            assert needle in source, f"production source contract drift: {relative}: {needle}"
+            assert needle in source, (
+                f"production source contract drift: {relative}: {needle}"
+            )
 
     for path in HERE.glob("*.py"):
         ast.parse(path.read_text(), filename=str(path))

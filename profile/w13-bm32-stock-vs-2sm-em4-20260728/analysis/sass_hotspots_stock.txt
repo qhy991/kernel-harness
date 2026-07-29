@@ -1,0 +1,44 @@
+SASS stall hotspots: stock
+kernel: sm100_fp8_fp4_gemm_1d1d_impl
+
+rank total address stalls SASS
+01   3650 0x100055e5b60 long_scoreboard=3649,wait=1 @!P0  NANOSLEEP.SYNCS 0x989680
+02   1677 0x100055e5470 barrier=1677 UCGABAR_WAIT
+03    797 0x100055e1250 long_scoreboard=797 @!P1  BRA 0x100055e5790
+04    395 0x100055e3ba0 long_scoreboard=395 @!P0  BRA 0x100055e5b50
+05    379 0x100055e5420 sleeping=376,branch_resolving=3 WARPSYNC.ALL
+06    313 0x100055e2990 long_scoreboard=312,selected=1 @!P0  BRA 0x100055e59d0
+07    103 0x100055e2f40 long_scoreboard=103 @!P0  BRA 0x100055e5a90
+08     96 0x100055e5430 branch_resolving=80,wait=10,selected=6 UCGABAR_ARV
+09     50 0x100055e5850 sleeping=33,branch_resolving=9,wait=4,selected=4 @!P0  SYNCS.PHASECHK.TRANS64 P0, [R0+URZ+0x34040], R7
+10     39 0x100055e5840 long_scoreboard=36,wait=2,selected=1 @!P0  NANOSLEEP.SYNCS 0x989680
+11     33 0x100055e1440 long_scoreboard=33 @!P0  BRA 0x100055e57e0
+12     32 0x100055e1660 long_scoreboard=32 VIADD R10, R10, 0x7f
+13     29 0x100055e5860 long_scoreboard=27,wait=1,selected=1 @!P0  BRA 0x100055e5830
+14     22 0x100055e1a80 branch_resolving=22 SHF.L.U32 R7, R7, 0x1f, RZ
+15     20 0x100055e5b70 branch_resolving=16,wait=2,selected=2 @!P0  SYNCS.PHASECHK.TRANS64 P0, [R21+URZ+0x340c0], R4
+16     19 0x100055e58b0 long_scoreboard=18,selected=1 @!P0  BRA 0x100055e5880
+17     17 0x100055e58f0 sleeping=9,branch_resolving=5,wait=2,selected=1 @!P0  SYNCS.PHASECHK.TRANS64 P0, [R8+URZ+0x34040], R5
+18     17 0x100055e1e90 long_scoreboard=17 @!P1  BRA 0x100055e5880
+19     16 0x100055e58e0 long_scoreboard=15,wait=1 @!P0  NANOSLEEP.SYNCS 0x989680
+20     16 0x100055e2290 long_scoreboard=16 @!P0  BRA 0x100055e5920
+21     16 0x100055e0f50 barrier=16 UCGABAR_WAIT
+22     15 0x100055e5900 long_scoreboard=15 @!P0  BRA 0x100055e58d0
+23     15 0x100055e1420 long_scoreboard=13,branch_resolving=2 SYNCS.ARRIVE.TRANS64.RED.A1T0 RZ, [R15+URZ], RZ
+24     13 0x100055e5940 branch_resolving=10,sleeping=2,wait=1 @!P0  SYNCS.PHASECHK.TRANS64 P0, [R5+URZ+0x34040], R0
+25     13 0x100055e5930 long_scoreboard=13 @!P0  NANOSLEEP.SYNCS 0x989680
+26     13 0x100055e1ac0 long_scoreboard=13 @!P0  BRA 0x100055e5830
+27     12 0x100055e5890 long_scoreboard=12 @!P0  NANOSLEEP.SYNCS 0x989680
+28     11 0x100055e5b80 long_scoreboard=10,wait=1 @!P0  BRA 0x100055e5b50
+29     11 0x100055e20c0 long_scoreboard=11 @!P1  BRA 0x100055e58d0
+30     11 0x100055e12e0 short_scoreboard=9,wait=2 LEA R5, R4, R5, 0x18
+31     11 0x100055e1240 short_scoreboard=8,selected=3 LEA R3, R3, R4, 0x18
+32     11 0x100055e1100 long_scoreboard=11 VIADD R2, R2, 0x7f
+33     10 0x100055e58a0 branch_resolving=7,sleeping=2,wait=1 @!P0  SYNCS.PHASECHK.TRANS64 P0, [R6+URZ+0x34040], R7
+34     10 0x100055e1410 long_scoreboard=5,wait=5 FENCE.VIEW.ASYNC.S
+35      9 0x100055e5950 long_scoreboard=9 @!P0  BRA 0x100055e5920
+36      9 0x100055e10e0 short_scoreboard=9 IMAD.WIDE.U32 R4, R18, 0x4, R2
+37      8 0x100055e5b90 wait=7,selected=1 BRA 0x100055e3bb0
+38      8 0x100055e13f0 short_scoreboard=7,selected=1 STS.128 [R16+0x33000], R4
+39      8 0x100055e1370 short_scoreboard=7,wait=1 STS.128 [R16+0x32000], R8
+40      7 0x100055e3590 long_scoreboard=7 @!P0  NANOSLEEP.SYNCS 0x989680

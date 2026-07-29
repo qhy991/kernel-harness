@@ -42,10 +42,7 @@ WORKLOADS: dict[str, Workload] = {
         "packed_fp8_gemm",
         "prefill",
         1,
-        (
-            "sglang.kernels.ops.quantization.fp8_kernel."
-            "w8a8_block_fp8_matmul_deepgemm"
-        ),
+        ("sglang.kernels.ops.quantization.fp8_kernel.w8a8_block_fp8_matmul_deepgemm"),
         dict(m=4096, n=6144, k=16384),
         (
             "DP8 attention O projection at the balanced local prefill bucket; "
@@ -100,8 +97,7 @@ def _add_decode_bucket(m: int) -> None:
     """Add the two production CUDA-graph decode buckets (M=16 and M=32)."""
     suffix = f"m{m}"
     packed_symbol = (
-        "sglang.kernels.ops.quantization.fp8_kernel."
-        "w8a8_block_fp8_matmul_deepgemm"
+        "sglang.kernels.ops.quantization.fp8_kernel.w8a8_block_fp8_matmul_deepgemm"
     )
     linear_specs = {
         "linear_fused_qkv_a_decode": (
@@ -135,11 +131,7 @@ def _add_decode_bucket(m: int) -> None:
             packed_symbol,
             dict(m=m, n=n, k=k),
             notes,
-            (
-                ("eager", "cuda_graph")
-                if base == "linear_attn_o_decode"
-                else ("eager",)
-            ),
+            (("eager", "cuda_graph") if base == "linear_attn_o_decode" else ("eager",)),
         )
 
     name = f"indexer_wk_weights_decode_{suffix}"
@@ -170,17 +162,9 @@ def _add_decode_bucket(m: int) -> None:
         topk=_COMMON["topk"],
     )
     grouped_symbol = (
-        "sglang.srt.layers.deep_gemm_wrapper.entrypoint."
-        "grouped_gemm_nt_f8f8bf16_masked"
+        "sglang.srt.layers.deep_gemm_wrapper.entrypoint.grouped_gemm_nt_f8f8bf16_masked"
     )
     for base, family, params, symbol, notes in (
-        (
-            "moe_w13_grouped_decode",
-            "moe_grouped_masked",
-            dict(**moe, k=6144, n=4096),
-            grouped_symbol,
-            "Real fused W13 grouped GEMM after DeepEP low-latency dispatch.",
-        ),
         (
             "moe_swiglu_quant_decode",
             "moe_swiglu_quant",
@@ -197,8 +181,43 @@ def _add_decode_bucket(m: int) -> None:
         ),
     ):
         name = f"{base}_{suffix}"
-        WORKLOADS[name] = Workload(
-            name, family, "decode", 1, symbol, params, notes
+        WORKLOADS[name] = Workload(name, family, "decode", 1, symbol, params, notes)
+
+    required_expected_m = (4, 5) if m == 16 else (8, 9)
+    for expected_m in required_expected_m:
+        w13 = {**moe, "expected_m": expected_m, "k": 6144, "n": 4096}
+        leaf_name = f"moe_w13_grouped_decode_{suffix}_em{expected_m}"
+        WORKLOADS[leaf_name] = Workload(
+            leaf_name,
+            "moe_grouped_masked",
+            "decode",
+            1,
+            grouped_symbol,
+            w13,
+            (
+                "Exact W13 leaf after DeepEP low-latency dispatch; expected-M "
+                f"{expected_m} is an independent required point."
+            ),
+            ("eager", "cuda_graph"),
+        )
+        region_name = f"moe_w13_region_decode_{suffix}_em{expected_m}"
+        WORKLOADS[region_name] = Workload(
+            region_name,
+            "moe_w13_region",
+            "decode",
+            1,
+            (
+                f"{grouped_symbol} -> "
+                "sglang.srt.layers.moe.moe_runner.deep_gemm."
+                "_varlen_deep_gemm_silu_mul_quant -> "
+                f"{grouped_symbol}"
+            ),
+            dict(**w13, w2_k=2048, w2_n=6144),
+            (
+                "Containing compute region: selected W13 followed by stock "
+                "SwiGLU+packed quant and stock W2."
+            ),
+            ("eager", "cuda_graph"),
         )
 
     name = f"dsa_trtllm_decode_{suffix}"
@@ -394,7 +413,9 @@ def get_workload(name: str) -> Workload:
     try:
         return WORKLOADS[name]
     except KeyError as exc:
-        raise KeyError(f"unknown workload {name!r}; choose from: {', '.join(WORKLOADS)}") from exc
+        raise KeyError(
+            f"unknown workload {name!r}; choose from: {', '.join(WORKLOADS)}"
+        ) from exc
 
 
 def as_dict(workload: Workload) -> dict[str, Any]:

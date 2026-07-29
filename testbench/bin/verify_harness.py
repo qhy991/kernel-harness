@@ -6,6 +6,7 @@ knowledge bank, reviewer audit schemas, serving-native contract, and touched
 Python files are coherent. It does not run CUDA kernels; use a task's run.sh
 separately for GPU gate checks.
 """
+
 from __future__ import annotations
 
 import argparse
@@ -39,7 +40,15 @@ PY_FILES = [
     "serving_native/runner.py",
     "serving_native/selftest.py",
     "serving_native/test_contract_v2.py",
+    "serving_native/test_w13_graph_contract.py",
+    "serving_native/validate_w13.py",
+    "serving_native/validate_w13_production.py",
+    "serving_native/w13_runtime.py",
     "serving_native/workloads.py",
+    "serving_native/candidates/w13_bm32_1sm.py",
+    "serving_native/candidates/w13_bm32_2sm.py",
+    "serving_native/candidates/w13_common.py",
+    "serving_native/candidates/w13_stock_identity.py",
 ]
 
 DIFF_CHECK_PATHS = [
@@ -187,7 +196,9 @@ def _audit_classification(stdout: str) -> tuple[str, dict | None, str | None]:
     return "invalid", verdict, "audit_result.py emitted an unclassified verdict"
 
 
-def _compact_audit_example(path: Path, verdict: dict | None, parse_error: str | None = None) -> dict:
+def _compact_audit_example(
+    path: Path, verdict: dict | None, parse_error: str | None = None
+) -> dict:
     out = {"path": str(path)}
     if parse_error:
         out["error"] = parse_error
@@ -204,8 +215,9 @@ def _compact_audit_example(path: Path, verdict: dict | None, parse_error: str | 
     return out
 
 
-def _audit_sweep(*, quiet: bool = False, strict: bool = False,
-                 collect_findings: bool = False) -> dict:
+def _audit_sweep(
+    *, quiet: bool = False, strict: bool = False, collect_findings: bool = False
+) -> dict:
     results = list((ROOT / "runs" / "glm52").glob("*/*/result.json"))
     invalid = 0
     official = 0
@@ -236,10 +248,12 @@ def _audit_sweep(*, quiet: bool = False, strict: bool = False,
                 print(r.stdout, end="")
                 print(r.stderr, end="", file=sys.stderr)
             if collect_findings:
-                audit_items.append({
-                    "classification": "invalid",
-                    **_compact_audit_example(path, verdict, parse_error),
-                })
+                audit_items.append(
+                    {
+                        "classification": "invalid",
+                        **_compact_audit_example(path, verdict, parse_error),
+                    }
+                )
         elif label == "official":
             official += 1
         else:
@@ -247,19 +261,31 @@ def _audit_sweep(*, quiet: bool = False, strict: bool = False,
             if first_provisional is None:
                 first_provisional = _compact_audit_example(path, verdict)
             if collect_findings:
-                audit_items.append({
-                    "classification": "provisional",
-                    **_compact_audit_example(path, verdict),
-                })
-    summary = {"audited": len(results), "invalid": invalid,
-               "official": official, "provisional": provisional}
+                audit_items.append(
+                    {
+                        "classification": "provisional",
+                        **_compact_audit_example(path, verdict),
+                    }
+                )
+    summary = {
+        "audited": len(results),
+        "invalid": invalid,
+        "official": official,
+        "provisional": provisional,
+    }
     rc = 1 if invalid or (strict and provisional) else 0
     if not quiet:
         print("audit sweep: " + " ".join(f"{k}={v}" for k, v in summary.items()))
         if strict and provisional:
-            print("audit sweep strict mode: provisional results are not accepted", file=sys.stderr)
+            print(
+                "audit sweep strict mode: provisional results are not accepted",
+                file=sys.stderr,
+            )
             if first_provisional:
-                print(f"first provisional audit: {first_provisional['path']}", file=sys.stderr)
+                print(
+                    f"first provisional audit: {first_provisional['path']}",
+                    file=sys.stderr,
+                )
     return {
         "cmd": ["audit_result.py", "runs/glm52/*/*/result.json"],
         "returncode": rc,
@@ -296,7 +322,9 @@ def _result_metadata(result: dict) -> dict:
     }
 
 
-def _compare_pointer_metadata(row: dict, result: dict, keys: tuple[str, ...]) -> str | None:
+def _compare_pointer_metadata(
+    row: dict, result: dict, keys: tuple[str, ...]
+) -> str | None:
     meta = _result_metadata(result)
     for key in keys:
         if row.get(key) != meta.get(key):
@@ -311,8 +339,9 @@ def _compare_latest_summary(row: dict, result: dict) -> str | None:
     return None
 
 
-def _pointer_audit(*, quiet: bool = False, strict: bool = False,
-                   collect_problems: bool = False) -> dict:
+def _pointer_audit(
+    *, quiet: bool = False, strict: bool = False, collect_problems: bool = False
+) -> dict:
     index_path = ROOT / "runs" / "index.jsonl"
     latest_paths = list((ROOT / "runs" / "glm52").glob("*/latest.json"))
     index_rows = 0
@@ -343,16 +372,27 @@ def _pointer_audit(*, quiet: bool = False, strict: bool = False,
                 continue
             if not _resolve_run_path(result_path).is_file():
                 stale_index += 1
-                remember("index", index_path, f"line {lineno}: stale result pointer {result_path}")
+                remember(
+                    "index",
+                    index_path,
+                    f"line {lineno}: stale result pointer {result_path}",
+                )
                 continue
             try:
                 result = json.loads(_resolve_run_path(result_path).read_text())
             except json.JSONDecodeError as exc:
                 malformed += 1
-                remember("index", index_path, f"line {lineno}: result target is invalid JSON: {exc}")
+                remember(
+                    "index",
+                    index_path,
+                    f"line {lineno}: result target is invalid JSON: {exc}",
+                )
                 continue
             mismatch = _compare_pointer_metadata(
-                row, result, ("run_id", "task", "status", "exit_code", "candidate_sha256"))
+                row,
+                result,
+                ("run_id", "task", "status", "exit_code", "candidate_sha256"),
+            )
             if mismatch:
                 mismatched += 1
                 remember("index", index_path, f"line {lineno}: {mismatch}")
@@ -403,7 +443,10 @@ def _pointer_audit(*, quiet: bool = False, strict: bool = False,
     if not quiet:
         print("pointer audit: " + " ".join(f"{k}={v}" for k, v in summary.items()))
         if problem_items:
-            print(f"pointer audit first problem: {problem_items[0]['detail']}", file=sys.stderr)
+            print(
+                f"pointer audit first problem: {problem_items[0]['detail']}",
+                file=sys.stderr,
+            )
     return {
         "cmd": ["verify_harness.py", "pointer-audit"],
         "returncode": rc,
@@ -416,8 +459,15 @@ def _pointer_audit(*, quiet: bool = False, strict: bool = False,
 
 
 def _print_pointer_report(report: dict) -> None:
-    fields = ("index_rows", "latest_files", "stale_index", "stale_latest",
-              "malformed", "mismatched", "problem_count")
+    fields = (
+        "index_rows",
+        "latest_files",
+        "stale_index",
+        "stale_latest",
+        "malformed",
+        "mismatched",
+        "problem_count",
+    )
     print("pointer audit: " + " ".join(f"{k}={report.get(k, 0)}" for k in fields))
     for item in report.get("_problems", []):
         print(f"{item['kind']} {item['path']}: {item['detail']}")
@@ -425,29 +475,65 @@ def _print_pointer_report(report: dict) -> None:
 
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
-    ap.add_argument("--skip-audit-sweep", action="store_true",
-                    help="skip historical runs/glm52 audit_result.py sweep")
-    ap.add_argument("--skip-pointer-audit", action="store_true",
-                    help="skip runs/index.jsonl and latest.json pointer audit")
-    ap.add_argument("--skip-task-projection", action="store_true",
-                    help="skip the device-backed generated-task projection check")
-    ap.add_argument("--strict-audit-sweep", action="store_true",
-                    help="fail the audit sweep when any historical result is provisional")
-    ap.add_argument("--strict-pointer-audit", action="store_true",
-                    help="fail when runs/index.jsonl or latest.json has stale, malformed, or mismatched pointers")
-    ap.add_argument("--audit-report", action="store_true",
-                    help="print every non-official historical result audit finding and exit")
-    ap.add_argument("--pointer-report", action="store_true",
-                    help="print every runs/index.jsonl/latest.json pointer problem and exit")
-    ap.add_argument("--json", action="store_true", help="emit a machine-readable summary")
-    ap.add_argument("--print-review-paths", action="store_true",
-                    help="print the harness-reviewable pathspecs and exit")
-    ap.add_argument("--print-review-files", action="store_true",
-                    help="print changed harness-reviewable files and exit")
-    ap.add_argument("--with-status", action="store_true",
-                    help="with --print-review-files, include git status codes")
-    ap.add_argument("-0", "--null", action="store_true",
-                    help="with --print-review-files, separate paths with NUL bytes")
+    ap.add_argument(
+        "--skip-audit-sweep",
+        action="store_true",
+        help="skip historical runs/glm52 audit_result.py sweep",
+    )
+    ap.add_argument(
+        "--skip-pointer-audit",
+        action="store_true",
+        help="skip runs/index.jsonl and latest.json pointer audit",
+    )
+    ap.add_argument(
+        "--skip-task-projection",
+        action="store_true",
+        help="skip the device-backed generated-task projection check",
+    )
+    ap.add_argument(
+        "--strict-audit-sweep",
+        action="store_true",
+        help="fail the audit sweep when any historical result is provisional",
+    )
+    ap.add_argument(
+        "--strict-pointer-audit",
+        action="store_true",
+        help="fail when runs/index.jsonl or latest.json has stale, malformed, or mismatched pointers",
+    )
+    ap.add_argument(
+        "--audit-report",
+        action="store_true",
+        help="print every non-official historical result audit finding and exit",
+    )
+    ap.add_argument(
+        "--pointer-report",
+        action="store_true",
+        help="print every runs/index.jsonl/latest.json pointer problem and exit",
+    )
+    ap.add_argument(
+        "--json", action="store_true", help="emit a machine-readable summary"
+    )
+    ap.add_argument(
+        "--print-review-paths",
+        action="store_true",
+        help="print the harness-reviewable pathspecs and exit",
+    )
+    ap.add_argument(
+        "--print-review-files",
+        action="store_true",
+        help="print changed harness-reviewable files and exit",
+    )
+    ap.add_argument(
+        "--with-status",
+        action="store_true",
+        help="with --print-review-files, include git status codes",
+    )
+    ap.add_argument(
+        "-0",
+        "--null",
+        action="store_true",
+        help="with --print-review-files, separate paths with NUL bytes",
+    )
     args = ap.parse_args()
     if args.print_review_paths:
         print("\n".join(REVIEW_PATHS))
@@ -462,16 +548,18 @@ def main() -> int:
         sys.stdout.write(sep.join(lines) + (sep if lines else ""))
         return 0
     if args.pointer_report:
-        report = _pointer_audit(quiet=True, strict=args.strict_pointer_audit,
-                                collect_problems=True)
+        report = _pointer_audit(
+            quiet=True, strict=args.strict_pointer_audit, collect_problems=True
+        )
         if args.json:
             print(json.dumps(report, indent=2))
         else:
             _print_pointer_report(report)
         return report["returncode"]
     if args.audit_report:
-        report = _audit_sweep(quiet=True, strict=args.strict_audit_sweep,
-                              collect_findings=True)
+        report = _audit_sweep(
+            quiet=True, strict=args.strict_audit_sweep, collect_findings=True
+        )
         if args.json:
             print(json.dumps(report, indent=2))
         else:
@@ -505,7 +593,9 @@ def main() -> int:
     if not args.skip_audit_sweep:
         results.append(_audit_sweep(quiet=args.json, strict=args.strict_audit_sweep))
     if not args.skip_pointer_audit:
-        results.append(_pointer_audit(quiet=args.json, strict=args.strict_pointer_audit))
+        results.append(
+            _pointer_audit(quiet=args.json, strict=args.strict_pointer_audit)
+        )
     failures = sum(1 for r in results if r["returncode"])
     if args.json:
         print(json.dumps({"ok": failures == 0, "checks": results}, indent=2))

@@ -1,0 +1,113 @@
+{
+  "build": {
+    "build_directory_template": "<OUTPUT>/compile/<VARIANT>",
+    "compile_api": "tvm_ffi.cpp.build",
+    "cpp_files_template": [
+      "<SOURCE>/csrc/tvm_ffi_api.cpp"
+    ],
+    "cuda_arch": "10.0a",
+    "cuda_home": "/usr/local/cuda-13.2",
+    "cxx": "c++ (Ubuntu 13.3.0-6ubuntu2~24.04.1) 13.3.0",
+    "cxx11_abi": true,
+    "cxx_path": "/usr/bin/x86_64-linux-gnu-g++-13",
+    "cxx_sha256": "1353e9bdd29a7295c7226bf6c63abccce056d8cac31f112e5cdbecc3f28c2769",
+    "extra_cflags": [
+      "-std=c++17",
+      "-O3",
+      "-fPIC",
+      "-Wno-psabi",
+      "-Wno-deprecated-declarations",
+      "-D_GLIBCXX_USE_CXX11_ABI=1"
+    ],
+    "extra_include_path_template": [
+      "/usr/local/cuda-13.2/include",
+      "/home/qinhaiyan/glm52-v2-goal-runs/worktrees/24-moe-w13-decode/kernel-harness/.venv/include/python3.12",
+      "/mnt/OS-oKqEXySb/home/qinhaiyan/miniconda3/envs/sglang/lib/python3.12/site-packages/torch/include",
+      "/mnt/OS-oKqEXySb/home/qinhaiyan/miniconda3/envs/sglang/lib/python3.12/site-packages/torch/include/torch/csrc/api/include",
+      "<SOURCE>/deep_gemm/include",
+      "<SOURCE>/third-party/cutlass/include",
+      "<SOURCE>/third-party/fmt/include",
+      "/usr/local/cuda-13.2/include/cccl"
+    ],
+    "extra_ldflags": [
+      "-L/usr/local/cuda-13.2/lib64",
+      "-L/mnt/OS-oKqEXySb/home/qinhaiyan/miniconda3/envs/sglang/lib/python3.12/site-packages/torch/lib",
+      "-lcudart",
+      "-lnvrtc",
+      "-lcublasLt",
+      "-lcublas",
+      "-ltorch",
+      "-ltorch_cpu",
+      "-lc10",
+      "-lc10_cuda",
+      "-ltorch_cuda"
+    ],
+    "force_clean_build_directories": true,
+    "jit_cache_template": "<OUTPUT>/jit/<VARIANT>",
+    "jit_compiler": "nvcc",
+    "max_jobs": "1",
+    "normalized_build_plan_sha256": "9c3896ef36e436ee9de3a5808cad755f58e00adc34e0440498bca2973b109c46",
+    "nvcc": "Build cuda_13.2.r13.2/compiler.37668154_0",
+    "nvcc_path": "/usr/local/cuda-13.2/bin/nvcc",
+    "nvcc_sha256": "02afd6a20bd29fae33bf278fa847a4e9711db25afec4a1bf648be81a3b210af0",
+    "package_template": "<OUTPUT>/artifacts/<VARIANT>/site/deep_gemm_w13_<VARIANT>",
+    "platform": "Linux-6.8.0-100-generic-x86_64-with-glibc2.39",
+    "python": "3.12.13 | packaged by Anaconda, Inc. | (main, Jul  9 2026, 14:38:16) [GCC 14.3.0]",
+    "python_executable": "/home/qinhaiyan/glm52-v2-goal-runs/worktrees/24-moe-w13-decode/kernel-harness/.venv/bin/python",
+    "source_materialization": "git archive(base) + git archive(CUTLASS) + git archive(fmt) + candidate-only tracked patch",
+    "stock_candidate_command_identical": true,
+    "submodule_update": false,
+    "torch": "2.11.0+cu130",
+    "torch_cuda": "13.0",
+    "tvm_ffi": "0.1.11"
+  },
+  "schema_version": 2,
+  "source": {
+    "base_blob_sha256": {
+      "csrc/apis/gemm.hpp": "0840d64249e2a5a4a994d495e8320a0fff26bad9ca107426a1a1226e7d621186",
+      "csrc/jit_kernels/heuristics/sm100.hpp": "487cac2ff19027c781b08e9a0391836e77c03cdffcb7ceb3346d8633c8eb0884",
+      "csrc/jit_kernels/impls/sm100_fp8_fp4_gemm_1d1d.hpp": "cca1ddb5b5787942c31b39a9d5618929ee609c6c3b57b877fe636df39540366b",
+      "csrc/tvm_ffi_api.cpp": "d1e5dbd833f257d2c4be516772404c02f1747247eef5075315ff2d1220a64c1f",
+      "sgl_deep_gemm/__init__.py": "243eeaa71fa65cecaddd7298245438cb371ca765d7bf914a9427e132be8d5f26"
+    },
+    "candidate_patch": "/home/qinhaiyan/glm52-v2-goal-runs/worktrees/24-moe-w13-decode/sglang/third_party/deepgemm_w13/patches/0001-explicit-w13-config.patch",
+    "candidate_patch_sha256": "997348b6498aa18a7d70a5b1d36249b356b508cdc71e2f514a979818c48490a5",
+    "candidate_source_tree_sha256": "d38d8bf9a2118a2506be0fd71827568e70a20839505238a36a9c0325415332ef",
+    "commit": "731e7c7a97d269e4b9f482ea18d0e709a948f293",
+    "complete_source_diff_sha256": "997348b6498aa18a7d70a5b1d36249b356b508cdc71e2f514a979818c48490a5",
+    "cutlass_commit": "f3fde58372d33e9a5650ba7b80fc48b3b49d40c8",
+    "fmt_commit": "553ec11ec06fbe0beebfbb45f9dc3c9eabd83d28",
+    "remote": "https://github.com/sgl-project/DeepGEMM",
+    "repository": "/home/qinhaiyan/DeepGEMM-GLM52",
+    "stock_source_tree_sha256": "917592ab68ea0608c9be33208c2c609bc7f20bd9b1603f32743dd0d1ae03d0ed",
+    "tag": "v0.1.4"
+  },
+  "variants": {
+    "candidate": {
+      "build_ninja": "/home/qinhaiyan/glm52-v2-goal-runs/cache/24-moe_w13_decode/deepgemm/w13_variants/compile/candidate/build.ninja",
+      "build_ninja_sha256": "74b79153b54f14fbc83e099dbfb97f06f2e50f66b2370b00b1e0c24120276be6",
+      "jit_cache": "/home/qinhaiyan/glm52-v2-goal-runs/cache/24-moe_w13_decode/deepgemm/w13_variants/jit/candidate",
+      "normalized_build_plan_sha256": "9c3896ef36e436ee9de3a5808cad755f58e00adc34e0440498bca2973b109c46",
+      "package": "/home/qinhaiyan/glm52-v2-goal-runs/cache/24-moe_w13_decode/deepgemm/w13_variants/artifacts/candidate/site/deep_gemm_w13_candidate",
+      "package_init_sha256": "4db10ad437f64434cf78f139e114e02bbae8fa31bfdef07943641e659826a876",
+      "patched": true,
+      "shared_object": "/home/qinhaiyan/glm52-v2-goal-runs/cache/24-moe_w13_decode/deepgemm/w13_variants/artifacts/candidate/site/deep_gemm_w13_candidate/_C.so",
+      "shared_object_sha256": "d2bf446348ea1c4e285b3862240990d5369c7c13d7aea4a5d75673a98a75efd7",
+      "source": "/home/qinhaiyan/glm52-v2-goal-runs/cache/24-moe_w13_decode/deepgemm/w13_variants/sources/candidate",
+      "source_tree_sha256": "d38d8bf9a2118a2506be0fd71827568e70a20839505238a36a9c0325415332ef"
+    },
+    "stock": {
+      "build_ninja": "/home/qinhaiyan/glm52-v2-goal-runs/cache/24-moe_w13_decode/deepgemm/w13_variants/compile/stock/build.ninja",
+      "build_ninja_sha256": "1de4bc4f24442b63360801fa947da05ea991f9bffe76a228ef9e29045bea3fb2",
+      "jit_cache": "/home/qinhaiyan/glm52-v2-goal-runs/cache/24-moe_w13_decode/deepgemm/w13_variants/jit/stock",
+      "normalized_build_plan_sha256": "9c3896ef36e436ee9de3a5808cad755f58e00adc34e0440498bca2973b109c46",
+      "package": "/home/qinhaiyan/glm52-v2-goal-runs/cache/24-moe_w13_decode/deepgemm/w13_variants/artifacts/stock/site/deep_gemm_w13_stock",
+      "package_init_sha256": "243eeaa71fa65cecaddd7298245438cb371ca765d7bf914a9427e132be8d5f26",
+      "patched": false,
+      "shared_object": "/home/qinhaiyan/glm52-v2-goal-runs/cache/24-moe_w13_decode/deepgemm/w13_variants/artifacts/stock/site/deep_gemm_w13_stock/_C.so",
+      "shared_object_sha256": "085ded6f88cb6f1f0cf7542d1362d9a732772052996aca5e849d732be1ef45d8",
+      "source": "/home/qinhaiyan/glm52-v2-goal-runs/cache/24-moe_w13_decode/deepgemm/w13_variants/sources/stock",
+      "source_tree_sha256": "917592ab68ea0608c9be33208c2c609bc7f20bd9b1603f32743dd0d1ae03d0ed"
+    }
+  }
+}

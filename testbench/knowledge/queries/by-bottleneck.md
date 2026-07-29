@@ -26,5 +26,6 @@
 
 ## synchronization
 
+- `glm52--moe_gate_proj_decode--b200--20260728a` [no-win] moe_gate/decode — For small-active-M SM100 masked grouped GEMMs, leaf speedups are insufficient evidence. First close same-source runtime/cache fairness, then require every alternating-order estimator to pass in a production-shaped graph-containing region before enabling a dispatch.
 - `glm52--sparse_mla_decode--b200--20260715a` [win] Sparse MLA Decode/decode — sparse-mla-decode is intentionally fused-only: agents must NOT invent a drop-in integrate symbol. A harness WIN that keeps the FlashInfer call signature (including device tensor scales) is the production-ready claim.
 - `glm52--routed_gateup_nvfp4_decode--b200--20260714c` [win] Routed Expert Gate+Up NVFP4/decode — For fixed-shape GLM-5.2 NVFP4 MoE decode harness tasks, do not pass small CUDA scalar tensors through .item() in solution.py. If values are fixed by task.json/definition axes, use Python constants or shape-derived Python ints so the timed call contains the real FlashInfer work instead of device-host synchronization. Validate each FlashInfer routing knob with repeat-3 because several correct API choices differ mostly by noise.

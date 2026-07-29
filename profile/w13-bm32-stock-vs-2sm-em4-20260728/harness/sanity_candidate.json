@@ -1,0 +1,138 @@
+{
+  "candidate": "/home/qinhaiyan/glm52-v2-goal-runs/worktrees/24-moe-w13-decode/kernel-harness/serving_native/candidates/w13_bm32_2sm.py",
+  "expected_m": 4,
+  "implementation": "candidate",
+  "manifest": "/home/qinhaiyan/glm52-v2-goal-runs/cache/24-moe_w13_decode/deepgemm/w13_variants/manifest.json",
+  "masked_m_cpu": [
+    2,
+    3,
+    6,
+    3,
+    1,
+    5,
+    3,
+    7,
+    5,
+    6,
+    8,
+    5,
+    4,
+    3,
+    2,
+    1,
+    2,
+    4,
+    7,
+    5,
+    5,
+    1,
+    3,
+    9,
+    5,
+    5,
+    4,
+    2,
+    2,
+    4,
+    4,
+    2
+  ],
+  "output_pointer": 126938295304192,
+  "runtime": {
+    "broad_precompile_enabled": false,
+    "config": [
+      32,
+      128,
+      128,
+      11,
+      2
+    ],
+    "jit_use_nvrtc": false,
+    "manifest": "/home/qinhaiyan/glm52-v2-goal-runs/cache/24-moe_w13_decode/deepgemm/w13_variants/manifest.json",
+    "manifest_sha256": "afa7063a860cd045138e51abcb5b8b44c226db13c08e212ae30da077f5655621",
+    "modules": {
+      "candidate": {
+        "jit_artifacts": {
+          "cache/kernel.sm100_m_grouped_fp8_fp4_gemm_masked_1d1d.51dabe4dc4117fcdce86e78f87f10636/kernel.cu": "daa9dd98317b6d2d1a83c288965223427edd21e56f5c8368c5e32d566d7402ac",
+          "cache/kernel.sm100_m_grouped_fp8_fp4_gemm_masked_1d1d.51dabe4dc4117fcdce86e78f87f10636/kernel.cubin": "11a3daf1a42d2f6dd8c36db1b335483fa68c7edf0c4751d3eefd4abeb9f2178e",
+          "cache/kernel.sm100_m_grouped_fp8_fp4_gemm_masked_1d1d.8e4280b1570bdb24108477c0207e76bb/kernel.cu": "da27f3dd2dcd3f3c71042f6c323f955ad46a8d5347777a0c3607d94578ed8f46",
+          "cache/kernel.sm100_m_grouped_fp8_fp4_gemm_masked_1d1d.8e4280b1570bdb24108477c0207e76bb/kernel.cubin": "c9556f1194e15c2539185d1d0e0f05f63c08225d4b0af9be8b61b894812d0ea1"
+        },
+        "jit_cache": "/home/qinhaiyan/glm52-v2-goal-runs/cache/24-moe_w13_decode/deepgemm/w13_variants/jit/candidate",
+        "package": "/home/qinhaiyan/glm52-v2-goal-runs/cache/24-moe_w13_decode/deepgemm/w13_variants/artifacts/candidate/site/deep_gemm_w13_candidate",
+        "package_init_sha256": "4db10ad437f64434cf78f139e114e02bbae8fa31bfdef07943641e659826a876",
+        "shared_object": "/home/qinhaiyan/glm52-v2-goal-runs/cache/24-moe_w13_decode/deepgemm/w13_variants/artifacts/candidate/site/deep_gemm_w13_candidate/_C.so",
+        "shared_object_sha256": "d2bf446348ea1c4e285b3862240990d5369c7c13d7aea4a5d75673a98a75efd7"
+      },
+      "stock": {
+        "jit_artifacts": {
+          "cache/kernel.sm100_m_grouped_fp8_fp4_gemm_masked_1d1d.fd165cc8140afb4214951eb474041a15/kernel.cu": "a768d3cbee53eafa04c944012b716af0cef56dd6f4c1db4ec834c5b662a5bffe",
+          "cache/kernel.sm100_m_grouped_fp8_fp4_gemm_masked_1d1d.fd165cc8140afb4214951eb474041a15/kernel.cubin": "92d200dfaf0d9a25c651905be06ae991bbd88a3b8c6f18b0aa8594064a5432b7"
+        },
+        "jit_cache": "/home/qinhaiyan/glm52-v2-goal-runs/cache/24-moe_w13_decode/deepgemm/w13_variants/jit/stock",
+        "package": "/home/qinhaiyan/glm52-v2-goal-runs/cache/24-moe_w13_decode/deepgemm/w13_variants/artifacts/stock/site/deep_gemm_w13_stock",
+        "package_init_sha256": "243eeaa71fa65cecaddd7298245438cb371ca765d7bf914a9427e132be8d5f26",
+        "shared_object": "/home/qinhaiyan/glm52-v2-goal-runs/cache/24-moe_w13_decode/deepgemm/w13_variants/artifacts/stock/site/deep_gemm_w13_stock/_C.so",
+        "shared_object_sha256": "085ded6f88cb6f1f0cf7542d1362d9a732772052996aca5e849d732be1ef45d8"
+      }
+    },
+    "runtime_state": {
+      "candidate": {
+        "num_sms": 148,
+        "pdl": true,
+        "tc_util": 100
+      },
+      "installed_downstream": {
+        "num_sms": 148,
+        "pdl": true,
+        "tc_util": 100
+      },
+      "stock": {
+        "num_sms": 148,
+        "pdl": true,
+        "tc_util": 100
+      }
+    },
+    "state_independence": {
+      "num_sms": {
+        "mutate_candidate": {
+          "mutated_value": 147,
+          "restored": 148,
+          "stock_unchanged": 148
+        },
+        "mutate_stock": {
+          "candidate_unchanged": 148,
+          "mutated_value": 147,
+          "restored": 148
+        }
+      },
+      "pdl": {
+        "mutate_candidate": {
+          "mutated_value": false,
+          "restored": true,
+          "stock_unchanged": true
+        },
+        "mutate_stock": {
+          "candidate_unchanged": true,
+          "mutated_value": false,
+          "restored": true
+        }
+      },
+      "tc_util": {
+        "mutate_candidate": {
+          "mutated_value": 99,
+          "restored": 100,
+          "stock_unchanged": 100
+        },
+        "mutate_stock": {
+          "candidate_unchanged": 100,
+          "mutated_value": 99,
+          "restored": 100
+        }
+      }
+    },
+    "variant": "bm32_2sm"
+  },
+  "stream": 0,
+  "workload": "moe_w13_grouped_decode_m16_em4"
+}

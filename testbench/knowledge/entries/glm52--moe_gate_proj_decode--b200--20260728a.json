@@ -1,0 +1,91 @@
+{
+  "schema_version": 1,
+  "id": "glm52--moe_gate_proj_decode--b200--20260728a",
+  "date": "2026-07-28",
+  "model": "glm52",
+  "task": "glm52/moe_gate_proj_decode",
+  "op": "moe_gate",
+  "family": "moe",
+  "phase": "decode",
+  "shapes": {
+    "regime": "production fused W13 decode",
+    "E": 32,
+    "expert_slab": 1024,
+    "K": 6144,
+    "N": 4096,
+    "token_buckets": [
+      16,
+      32
+    ],
+    "expected_m": [
+      4,
+      5,
+      8,
+      9
+    ],
+    "scale_dtype": "packed int32 UE8M0"
+  },
+  "hardware": {
+    "gpu": "NVIDIA B200",
+    "sm": "sm_100"
+  },
+  "stack": {
+    "sglang_commit": "1c671bf3a",
+    "torch": "2.11.0+cu130",
+    "cuda": "13.0"
+  },
+  "baseline_kernel": "same-source DeepGEMM fp8_m_grouped_gemm_nt_masked with packed int32 UE8M0 scales, PDL enabled, and fixed SM/TC-util state",
+  "bottleneck": {
+    "kind": "synchronization",
+    "evidence": "The exact same-source NCU reports show a complete single-wave launch with persistent long-scoreboard sleep and cooperative cluster-barrier PCs; the mandatory graph-containing region then failed one required order estimator."
+  },
+  "approaches": [
+    {
+      "technique": "same-source-pdl-fairness-rebuild",
+      "summary": "Rebuilt independent stock and candidate modules from one pinned DeepGEMM source with distinct deterministic compiler caches and explicit runtime-state readback.",
+      "outcome": "abandoned",
+      "geomean_speedup": null,
+      "why": "It repaired the inadmissible historical denominator but is a reproducibility prerequisite rather than an independently deployable optimization."
+    },
+    {
+      "technique": "bm32-genuine-one-sm-tcgen05",
+      "summary": "Instantiated a genuine one-CTA tcgen05 W13 route with exact production shape, stride, packed-scale, marker, and return guards.",
+      "outcome": "abandoned",
+      "geomean_speedup": null,
+      "why": "The first fair eager-leaf lane missed the required threshold in an independent series and therefore could not promote to graph or region validation."
+    },
+    {
+      "technique": "bm32-two-sm-tcgen05",
+      "summary": "Instantiated the two-CTA BM32 route and promoted it through eager leaf, graph leaf, and eager containing-region validation.",
+      "outcome": "abandoned",
+      "geomean_speedup": null,
+      "why": "A required order estimator in the graph-containing region missed the promotion threshold, making the candidate terminally ineligible despite positive pooled diagnostics."
+    },
+    {
+      "technique": "clc-persistent-scheduler-rewrite",
+      "summary": "Considered replacing the persistent scheduler after collecting exact same-source NCU and code-generation evidence.",
+      "outcome": "abandoned",
+      "geomean_speedup": null,
+      "why": "The exact launch already filled one complete wave, so the profile supplied no tail-underfill evidence for a CLC rewrite."
+    }
+  ],
+  "result": {
+    "status": "no-win",
+    "geomean_speedup": null,
+    "min_speedup_conservative": null,
+    "repeat": null,
+    "integrate": "no-recipe"
+  },
+  "lesson": "For small-active-M SM100 masked grouped GEMMs, leaf speedups are insufficient evidence. First close same-source runtime/cache fairness, then require every alternating-order estimator to pass in a production-shaped graph-containing region before enabling a dispatch.",
+  "transfers_to": [
+    "packed-UE8M0 grouped MoE decode kernels on sm_100",
+    "small-active-M tcgen05 candidates promoted from leaf kernels into CUDA-graph regions",
+    "side-by-side JIT library experiments that require independent runtime globals and cache ownership"
+  ],
+  "caveats": [
+    "Serving-native performance numbers are intentionally not copied into this frozen-task result because its production E32 packed-int32 ABI differs from the task runner's E8 float-scale ABI.",
+    "The terminal local failure stopped the remaining expected-M performance lanes; correctness still covered all four expected-M points.",
+    "TP8 checkpoint acceptance was not run and cannot rescue a candidate that already failed the mandatory local containing-region gate."
+  ],
+  "agent": "Codex GPT-5"
+}

@@ -10,6 +10,7 @@ from __future__ import annotations
 import argparse
 import importlib.util
 import json
+import math
 import os
 import socket
 import statistics
@@ -25,12 +26,15 @@ HERE = Path(__file__).resolve().parent
 REPO_ROOT = HERE.parent
 PAIRED_SGLANG_ROOT = REPO_ROOT.parent / "sglang"
 DEFAULT_SGLANG_ROOT = (
-    PAIRED_SGLANG_ROOT if PAIRED_SGLANG_ROOT.is_dir() else Path("/home/qinhaiyan/sglang")
+    PAIRED_SGLANG_ROOT
+    if PAIRED_SGLANG_ROOT.is_dir()
+    else Path("/home/qinhaiyan/sglang")
 )
 SGLANG_ROOT = Path(os.environ.get("SGLANG_ROOT", DEFAULT_SGLANG_ROOT)).resolve()
 SGLANG_PYTHON = SGLANG_ROOT / "python"
 CALLABLE_CANDIDATE_API = "callable_v1"
 TRUSTED_CONFIG_CANDIDATE_API = "reference_with_config_v1"
+MOE_OUTPUT_POISON = -57344.0
 if str(SGLANG_PYTHON) not in sys.path:
     sys.path.insert(0, str(SGLANG_PYTHON))
 if str(REPO_ROOT) not in sys.path:
@@ -71,7 +75,9 @@ def _load_candidate(path: str | None) -> ModuleType | None:
         candidate_path = candidate_path / "candidate.py"
     if not candidate_path.is_file():
         raise FileNotFoundError(f"candidate not found: {candidate_path}")
-    spec = importlib.util.spec_from_file_location("serving_native_candidate", candidate_path)
+    spec = importlib.util.spec_from_file_location(
+        "serving_native_candidate", candidate_path
+    )
     if spec is None or spec.loader is None:
         raise RuntimeError(f"cannot import candidate: {candidate_path}")
     module = importlib.util.module_from_spec(spec)
@@ -207,7 +213,11 @@ class CallAccounting:
 
 
 class Runtime:
-    def __init__(self, workload: Workload):
+    def __init__(
+        self,
+        workload: Workload,
+        candidate_module: ModuleType | None = None,
+    ):
         import torch
 
         # A stale side-channel glm52_opt.env must not turn the reference into
@@ -234,11 +244,39 @@ class Runtime:
         self.accounting = CallAccounting()
         self._inside_candidate = False
         self._candidate_reference_calls = 0
+        self.w13_runtime = None
 
         if not torch.cuda.is_available():
             raise RuntimeError("serving-native workloads require CUDA")
         torch.cuda.set_device(self.local_rank)
         self.device = torch.device("cuda", self.local_rank)
+
+        if workload.family in ("moe_grouped_masked", "moe_w13_region") and (
+            workload.name.startswith("moe_w13_")
+        ):
+            manifest = os.environ.get("SGLANG_GLM52_W13_DECODE_MANIFEST", "").strip()
+            if not manifest:
+                raise RuntimeError(
+                    "W13 serving-native workloads require "
+                    "SGLANG_GLM52_W13_DECODE_MANIFEST"
+                )
+            variant = (
+                str(getattr(candidate_module, "W13_VARIANT", "")).strip().lower()
+                if candidate_module is not None
+                else ""
+            )
+            if not variant:
+                raise RuntimeError(
+                    "W13 serving-native candidate must declare W13_VARIANT"
+                )
+            from serving_native.w13_runtime import W13Runtime
+
+            self.w13_runtime = W13Runtime(
+                torch,
+                self.device,
+                manifest_path=Path(manifest),
+                variant=variant,
+            )
 
         if workload.distributed:
             self._init_distributed()
@@ -308,6 +346,8 @@ class Runtime:
             return self._build_bf16_linear()
         if family == "moe_grouped_masked":
             return self._build_moe_grouped_masked()
+        if family == "moe_w13_region":
+            return self._build_moe_w13_region()
         if family == "moe_swiglu_quant":
             return self._build_moe_swiglu_quant()
         if family == "dsa_trtllm":
@@ -330,7 +370,10 @@ class Runtime:
         p = self.workload.params
         m, n, k = p["m"], p["n"], p["k"]
         x_bf16 = self.torch.randn(
-            (m, k), device=self.device, dtype=self.torch.bfloat16, generator=self._generator(1)
+            (m, k),
+            device=self.device,
+            dtype=self.torch.bfloat16,
+            generator=self._generator(1),
         )
         x_fp8, x_scale = sglang_per_token_group_quant_fp8(
             x_bf16,
@@ -340,7 +383,10 @@ class Runtime:
             scale_ue8m0=True,
         )
         weight_bf16 = self.torch.randn(
-            (n, k), device=self.device, dtype=self.torch.bfloat16, generator=self._generator(2)
+            (n, k),
+            device=self.device,
+            dtype=self.torch.bfloat16,
+            generator=self._generator(2),
         )
         weight_fp8, weight_scale_blocks = deep_gemm.utils.math.per_block_cast_to_fp8(
             weight_bf16, use_ue8m0=True, gran_k=128
@@ -348,7 +394,9 @@ class Runtime:
         weight_scale = transform_scale_ue8m0(weight_scale_blocks, mn=n)
         del x_bf16, weight_bf16, weight_scale_blocks
         if x_scale.dtype != self.torch.int32 or weight_scale.dtype != self.torch.int32:
-            raise RuntimeError("B200 production task requires packed int32 UE8M0 scales")
+            raise RuntimeError(
+                "B200 production task requires packed int32 UE8M0 scales"
+            )
         return {
             "x_fp8": x_fp8,
             "weight_fp8": weight_fp8,
@@ -375,16 +423,37 @@ class Runtime:
         }
 
     def _fixed_decode_masked_m(self, params: dict[str, Any]):
+        return self._decode_mask_metadata(params)["masked_m"]
+
+    def _decode_mask_metadata(self, params: dict[str, Any]) -> dict[str, Any]:
+        """Create two CPU-known masks before capture; never observe device masks."""
+
         experts = params["experts_per_rank"]
         assignments = params["valid_assignments"]
-        generator = self.torch.Generator(device="cpu")
-        generator.manual_seed(20260722)
-        expert_ids = self.torch.randint(
-            experts, (assignments,), dtype=self.torch.int64, generator=generator
-        )
-        return self.torch.bincount(expert_ids, minlength=experts).to(
-            device=self.device, dtype=self.torch.int32
-        )
+        host_counts = []
+        for seed in (20260722, 20260723):
+            generator = self.torch.Generator(device="cpu")
+            generator.manual_seed(seed)
+            expert_ids = self.torch.randint(
+                experts,
+                (assignments,),
+                dtype=self.torch.int64,
+                generator=generator,
+            )
+            counts = self.torch.bincount(expert_ids, minlength=experts).to(
+                dtype=self.torch.int32
+            )
+            host_counts.append(counts)
+        if self.torch.equal(host_counts[0], host_counts[1]):
+            raise RuntimeError("deterministic graph masks unexpectedly alias")
+        initial_cpu = tuple(int(value) for value in host_counts[0].tolist())
+        replay_cpu = tuple(int(value) for value in host_counts[1].tolist())
+        return {
+            "masked_m": host_counts[0].to(device=self.device),
+            "masked_m_replay": host_counts[1].to(device=self.device),
+            "masked_m_initial_cpu": initial_cpu,
+            "masked_m_replay_cpu": replay_cpu,
+        }
 
     def _build_moe_grouped_masked(self) -> dict[str, Any]:
         import deep_gemm
@@ -396,7 +465,7 @@ class Runtime:
             p["k"],
             p["n"],
         )
-        masked_m = self._fixed_decode_masked_m(p)
+        mask_metadata = self._decode_mask_metadata(p)
         activations_bf16 = self.torch.randn(
             (experts, slab, k),
             device=self.device,
@@ -442,7 +511,10 @@ class Runtime:
             is_sfa=False,
         )
         del activations_bf16, weights_bf16, activation_pairs, weight_pairs
-        if activation_scale.dtype != self.torch.int32 or weight_scale.dtype != self.torch.int32:
+        if (
+            activation_scale.dtype != self.torch.int32
+            or weight_scale.dtype != self.torch.int32
+        ):
             raise RuntimeError("production MoE task requires packed int32 UE8M0 scales")
         return {
             "activation_fp8": activation_fp8,
@@ -452,9 +524,54 @@ class Runtime:
             "out": self.torch.empty(
                 (experts, slab, n), device=self.device, dtype=self.torch.bfloat16
             ),
-            "masked_m": masked_m,
             "expected_m": p["expected_m"],
+            **mask_metadata,
         }
+
+    def _build_moe_w13_region(self) -> dict[str, Any]:
+        import deep_gemm
+
+        inputs = self._build_moe_grouped_masked()
+        p = self.workload.params
+        experts = p["experts_per_rank"]
+        slab = p["expert_slab"]
+        w2_k = p["w2_k"]
+        w2_n = p["w2_n"]
+        w2_bf16 = self.torch.randn(
+            (experts, w2_n, w2_k),
+            device=self.device,
+            dtype=self.torch.bfloat16,
+            generator=self._generator(7),
+        ) * (w2_k**-0.5)
+        w2_pairs = [
+            deep_gemm.utils.math.per_block_cast_to_fp8(w2_bf16[expert], use_ue8m0=True)
+            for expert in range(experts)
+        ]
+        w2_weight_fp8 = self.torch.stack([pair[0] for pair in w2_pairs])
+        w2_weight_scale = self.torch.stack([pair[1] for pair in w2_pairs])
+        w2_weight_scale = deep_gemm.transform_sf_into_required_layout(
+            w2_weight_scale,
+            mn=w2_n,
+            k=w2_k,
+            recipe=(1, 128, 128),
+            num_groups=experts,
+            is_sfa=False,
+        )
+        del w2_bf16, w2_pairs
+        if w2_weight_scale.dtype != self.torch.int32:
+            raise RuntimeError("W13 region requires packed int32 W2 scales")
+        inputs.update(
+            {
+                "w2_weight_fp8": w2_weight_fp8,
+                "w2_weight_scale": w2_weight_scale,
+                "down_out": self.torch.empty(
+                    (experts, slab, w2_n),
+                    device=self.device,
+                    dtype=self.torch.bfloat16,
+                ),
+            }
+        )
+        return inputs
 
     def _build_moe_swiglu_quant(self) -> dict[str, Any]:
         p = self.workload.params
@@ -551,6 +668,10 @@ class Runtime:
         """Restore destructive collective inputs outside the timed window."""
         if self.workload.family == "allreduce":
             inputs["local"].copy_(inputs["source"])
+        if self.workload.family in ("moe_grouped_masked", "moe_w13_region"):
+            inputs["out"].fill_(MOE_OUTPUT_POISON)
+            if self.workload.family == "moe_w13_region":
+                inputs["down_out"].fill_(MOE_OUTPUT_POISON)
 
     def _init_deepep_buffer(self, params: dict[str, Any]) -> None:
         if self.deep_ep_buffer is not None:
@@ -613,7 +734,9 @@ class Runtime:
             dtype=self.torch.float32,
             generator=self._generator(10),
         )
-        topk_idx = scores.topk(p["topk"], dim=-1, sorted=False).indices.to(self.torch.int64)
+        topk_idx = scores.topk(p["topk"], dim=-1, sorted=False).indices.to(
+            self.torch.int64
+        )
         topk_weights = self.torch.softmax(
             scores.gather(1, topk_idx), dim=-1, dtype=self.torch.float32
         )
@@ -662,6 +785,95 @@ class Runtime:
             return self.deep_ep.Config(**config)
         return config
 
+    def _observe_masked_output(
+        self,
+        inputs: dict[str, Any],
+        output_name: str,
+    ) -> Any:
+        """Return the full stable output buffer without reading the device mask."""
+
+        return inputs[output_name]
+
+    def _production_w13_launcher(self, *args, **kwargs):
+        if self.w13_runtime is not None:
+            return self.w13_runtime.stock_launcher(*args, **kwargs)
+        from sglang.srt.layers.deep_gemm_wrapper.entrypoint import (
+            grouped_gemm_nt_f8f8bf16_masked,
+        )
+
+        return grouped_gemm_nt_f8f8bf16_masked(*args, **kwargs)
+
+    def candidate_w13(self, inputs: dict[str, Any]) -> TaskResult:
+        if self.w13_runtime is None:
+            raise RuntimeError("candidate W13 runtime is not initialized")
+        if self.workload.family == "moe_grouped_masked":
+            return self.run_w13_leaf(
+                inputs,
+                launcher=self.w13_runtime.candidate_launcher,
+            )
+        if self.workload.family == "moe_w13_region":
+            return self.run_w13_region(
+                inputs,
+                launcher=self.w13_runtime.candidate_launcher,
+            )
+        raise RuntimeError(
+            f"W13 candidate cannot run workload family {self.workload.family}"
+        )
+
+    def run_w13_leaf(
+        self,
+        inputs: dict[str, Any],
+        *,
+        launcher: Callable[..., Any],
+    ) -> TaskResult:
+        returned = launcher(
+            (inputs["activation_fp8"], inputs["activation_scale"]),
+            (inputs["weight_fp8"], inputs["weight_scale"]),
+            inputs["out"],
+            inputs["masked_m"],
+            inputs["expected_m"],
+        )
+        if returned is not None:
+            raise RuntimeError(
+                "masked W13 no-overlap launcher must return exactly None"
+            )
+        return TaskResult(self._observe_masked_output(inputs, "out"))
+
+    def run_w13_region(
+        self,
+        inputs: dict[str, Any],
+        *,
+        launcher: Callable[..., Any],
+    ) -> TaskResult:
+        from sglang.srt.layers.deep_gemm_wrapper.entrypoint import (
+            grouped_gemm_nt_f8f8bf16_masked,
+        )
+        from sglang.srt.layers.moe.moe_runner.deep_gemm import (
+            _varlen_deep_gemm_silu_mul_quant,
+        )
+
+        self.run_w13_leaf(inputs, launcher=launcher)
+        down_input, down_input_scale = _varlen_deep_gemm_silu_mul_quant(
+            inputs["out"],
+            inputs["masked_m"],
+            group_size=self.workload.params["group_size"],
+            topk=self.workload.params["topk"],
+        )
+        if down_input_scale.dtype != self.torch.int32:
+            raise RuntimeError(
+                "W13 containing region did not preserve production packed-int32 quant"
+            )
+        returned = grouped_gemm_nt_f8f8bf16_masked(
+            (down_input, down_input_scale),
+            (inputs["w2_weight_fp8"], inputs["w2_weight_scale"]),
+            inputs["down_out"],
+            inputs["masked_m"],
+            inputs["expected_m"],
+        )
+        if returned is not None:
+            raise RuntimeError("masked W2 no-overlap launcher must return exactly None")
+        return TaskResult(self._observe_masked_output(inputs, "down_out"))
+
     def reference(self, inputs: dict[str, Any], *, config: Any = None) -> TaskResult:
         if self._inside_candidate:
             self._candidate_reference_calls += 1
@@ -683,24 +895,19 @@ class Runtime:
             )
             return TaskResult(out)
         if family == "bf16_linear":
-            return TaskResult(self.torch.nn.functional.linear(inputs["x"], inputs["weight"]))
+            return TaskResult(
+                self.torch.nn.functional.linear(inputs["x"], inputs["weight"])
+            )
         if family == "moe_grouped_masked":
-            from sglang.srt.layers.deep_gemm_wrapper.entrypoint import (
-                grouped_gemm_nt_f8f8bf16_masked,
+            return self.run_w13_leaf(
+                inputs,
+                launcher=self._production_w13_launcher,
             )
-
-            grouped_gemm_nt_f8f8bf16_masked(
-                (inputs["activation_fp8"], inputs["activation_scale"]),
-                (inputs["weight_fp8"], inputs["weight_scale"]),
-                inputs["out"],
-                inputs["masked_m"],
-                inputs["expected_m"],
+        if family == "moe_w13_region":
+            return self.run_w13_region(
+                inputs,
+                launcher=self._production_w13_launcher,
             )
-            valid = [
-                inputs["out"][expert, : int(count)]
-                for expert, count in enumerate(inputs["masked_m"].tolist())
-            ]
-            return TaskResult(valid)
         if family == "moe_swiglu_quant":
             from sglang.srt.layers.moe.moe_runner.deep_gemm import (
                 _varlen_deep_gemm_silu_mul_quant,
@@ -731,7 +938,9 @@ class Runtime:
                 bmm1_scale=inputs["bmm1_scale"],
                 backend="trtllm-gen",
             )
-            return TaskResult(out.squeeze(1) if out.ndim == 4 and out.shape[1] == 1 else out)
+            return TaskResult(
+                out.squeeze(1) if out.ndim == 4 and out.shape[1] == 1 else out
+            )
         if family == "allgather":
             self.tp_group.all_gather_into_tensor(inputs["output"], inputs["local"])
             return TaskResult(inputs["output"])
@@ -762,7 +971,9 @@ class Runtime:
             return TaskResult(combined)
         raise NotImplementedError(family)
 
-    def _run_deepep_normal_dispatch(self, inputs: dict[str, Any], config: Any) -> TaskResult:
+    def _run_deepep_normal_dispatch(
+        self, inputs: dict[str, Any], config: Any
+    ) -> TaskResult:
         self._deepep_buffer_facade.set_dispatch_mode_as_normal()
         buffer = self.deep_ep_buffer
         (
@@ -771,7 +982,9 @@ class Runtime:
             num_tokens_per_expert,
             is_token_in_rank,
             previous_event,
-        ) = buffer.get_dispatch_layout(inputs["topk_idx"], self.workload.params["experts"])
+        ) = buffer.get_dispatch_layout(
+            inputs["topk_idx"], self.workload.params["experts"]
+        )
         recv_x, recv_ids, recv_weights, recv_counts, handle, event = buffer.dispatch(
             inputs["x_comm"],
             topk_idx=inputs["topk_idx"],
@@ -794,22 +1007,29 @@ class Runtime:
                 observed_x = tuple(t[valid] for t in recv_x)
             else:
                 observed_x = recv_x[valid]
-        observed = (observed_x, recv_ids[valid], recv_weights[valid], tuple(recv_counts))
+        observed = (
+            observed_x,
+            recv_ids[valid],
+            recv_weights[valid],
+            tuple(recv_counts),
+        )
         return TaskResult(observed, {"handle": handle, "recv_x": recv_x})
 
     def _run_deepep_ll_dispatch(self, inputs: dict[str, Any]) -> TaskResult:
         self._deepep_buffer_facade.set_dispatch_mode_as_low_latency()
         p = self.workload.params
-        recv_x, recv_count, handle, event, _hook = self.deep_ep_buffer.low_latency_dispatch(
-            inputs["x_bf16"],
-            inputs["topk_idx"],
-            p["max_dispatch_tokens"],
-            p["experts"],
-            use_fp8=True,
-            async_finish=True,
-            return_recv_hook=False,
-            round_scale=True,
-            use_ue8m0=True,
+        recv_x, recv_count, handle, event, _hook = (
+            self.deep_ep_buffer.low_latency_dispatch(
+                inputs["x_bf16"],
+                inputs["topk_idx"],
+                p["max_dispatch_tokens"],
+                p["experts"],
+                use_fp8=True,
+                async_finish=True,
+                return_recv_hook=False,
+                round_scale=True,
+                use_ue8m0=True,
+            )
         )
         event.current_stream_wait()
         values = recv_x[0] if isinstance(recv_x, tuple) else recv_x
@@ -830,7 +1050,9 @@ class Runtime:
     def rank_max(self, latency_ms: float) -> float:
         if not self.workload.distributed:
             return latency_ms
-        value = self.torch.tensor([latency_ms], device=self.device, dtype=self.torch.float64)
+        value = self.torch.tensor(
+            [latency_ms], device=self.device, dtype=self.torch.float64
+        )
         self.torch.distributed.all_reduce(
             value, op=self.torch.distributed.ReduceOp.MAX, group=self.device_group
         )
@@ -858,7 +1080,9 @@ def _compare(reference: TaskResult, candidate: TaskResult) -> None:
     ref_items = list(_iter_pairs(reference))
     cand_items = list(_iter_pairs(candidate))
     if len(ref_items) != len(cand_items):
-        raise AssertionError(f"output structure differs: {len(ref_items)} != {len(cand_items)}")
+        raise AssertionError(
+            f"output structure differs: {len(ref_items)} != {len(cand_items)}"
+        )
     for (ref_name, ref_value), (cand_name, cand_value) in zip(ref_items, cand_items):
         if ref_name != cand_name:
             raise AssertionError(f"output structure differs: {ref_name} != {cand_name}")
@@ -873,16 +1097,72 @@ def _compare(reference: TaskResult, candidate: TaskResult) -> None:
                 raise AssertionError(
                     f"{ref_name}: dtype {ref_value.dtype} != {cand_value.dtype}"
                 )
-            ref_f = ref_value.float() if ref_value.dtype.is_floating_point else ref_value
-            cand_f = cand_value.float() if cand_value.dtype.is_floating_point else cand_value
+            ref_f = (
+                ref_value.float() if ref_value.dtype.is_floating_point else ref_value
+            )
+            cand_f = (
+                cand_value.float() if cand_value.dtype.is_floating_point else cand_value
+            )
             if ref_value.dtype.is_floating_point:
-                if not torch.allclose(ref_f, cand_f, rtol=2e-2, atol=2e-2, equal_nan=False):
+                if not torch.allclose(
+                    ref_f, cand_f, rtol=2e-2, atol=2e-2, equal_nan=False
+                ):
                     diff = (ref_f - cand_f).abs().max().item()
                     raise AssertionError(f"{ref_name}: max abs diff {diff}")
             elif not torch.equal(ref_value, cand_value):
                 raise AssertionError(f"{ref_name}: integer tensor mismatch")
         elif ref_value != cand_value:
             raise AssertionError(f"{ref_name}: {ref_value!r} != {cand_value!r}")
+
+
+def _compare_masked(
+    reference: TaskResult,
+    candidate: TaskResult,
+    counts: tuple[int, ...],
+) -> None:
+    """Compare only semantically valid rows using CPU-owned mask metadata."""
+
+    import torch
+
+    ref = reference.observed
+    cand = candidate.observed
+    if not torch.is_tensor(ref) or not torch.is_tensor(cand):
+        raise AssertionError("masked output must be represented by one full tensor")
+    if ref.shape != cand.shape:
+        raise AssertionError(
+            f"masked output shape {tuple(ref.shape)} != {tuple(cand.shape)}"
+        )
+    if ref.dtype != cand.dtype:
+        raise AssertionError(f"masked output dtype {ref.dtype} != {cand.dtype}")
+    if ref.ndim != 3 or ref.shape[0] != len(counts):
+        raise AssertionError(
+            "masked output does not match CPU-owned expert-count metadata"
+        )
+    for expert, count in enumerate(counts):
+        if count < 0 or count > ref.shape[1]:
+            raise AssertionError(f"invalid CPU-owned masked_m[{expert}]={count}")
+        _compare(
+            TaskResult(ref[expert, :count]),
+            TaskResult(cand[expert, :count]),
+        )
+
+
+def _compare_for_workload(
+    runtime: Runtime,
+    inputs: dict[str, Any],
+    reference: TaskResult,
+    candidate: TaskResult,
+    *,
+    counts: tuple[int, ...] | None = None,
+) -> None:
+    if runtime.workload.family in {"moe_grouped_masked", "moe_w13_region"}:
+        _compare_masked(
+            reference,
+            candidate,
+            counts if counts is not None else inputs["masked_m_initial_cpu"],
+        )
+        return
+    _compare(reference, candidate)
 
 
 def _clone_observed(value: Any) -> Any:
@@ -985,9 +1265,7 @@ def _poison_is_visible(value: Any) -> bool:
         elif item.dtype == torch.bool:
             checks.append(bool(item.all().item()))
         else:
-            checks.append(
-                bool(item.eq(torch.iinfo(item.dtype).max).all().item())
-            )
+            checks.append(bool(item.eq(torch.iinfo(item.dtype).max).all().item()))
     return bool(checks) and all(checks)
 
 
@@ -1011,9 +1289,7 @@ def _candidate_result(
         runtime._inside_candidate = False
     delegated = runtime._candidate_reference_calls > before
     identity_control = bool(getattr(module, "IDENTITY_CONTROL", False))
-    trusted_config = (
-        delegated and candidate_api == TRUSTED_CONFIG_CANDIDATE_API
-    )
+    trusted_config = delegated and candidate_api == TRUSTED_CONFIG_CANDIDATE_API
     fallback = delegated and not (identity_control or trusted_config)
     runtime.accounting.candidate(
         fallback=fallback,
@@ -1185,6 +1461,7 @@ def _capture_one_graph(
     runtime.accounting.phase = f"{capture_id}:warmup"
     with torch.cuda.stream(stream):
         for _ in range(3):
+            runtime.prepare_inputs(inputs)
             fn()
     stream.synchronize()
     current.wait_stream(stream)
@@ -1194,6 +1471,8 @@ def _capture_one_graph(
     delegation_before = runtime.accounting.candidate_reference_delegations
     trusted_config_before = runtime.accounting.candidate_trusted_config_calls
     runtime.accounting.phase = f"{capture_id}:capture"
+    with torch.cuda.stream(stream):
+        runtime.prepare_inputs(inputs)
     graph = torch.cuda.CUDAGraph(keep_graph=True)
     with torch.cuda.graph(graph, stream=stream):
         captured_result = fn()
@@ -1213,13 +1492,11 @@ def _capture_one_graph(
     )
     reference_delegated = (
         implementation == "candidate"
-        and runtime.accounting.candidate_reference_delegations
-        > delegation_before
+        and runtime.accounting.candidate_reference_delegations > delegation_before
     )
     trusted_config = (
         implementation == "candidate"
-        and runtime.accounting.candidate_trusted_config_calls
-        > trusted_config_before
+        and runtime.accounting.candidate_trusted_config_calls > trusted_config_before
     )
     raw_graph_handle = int(graph.raw_cuda_graph())
     inspected = inspect_cuda_graph(raw_graph_handle)
@@ -1236,7 +1513,17 @@ def _capture_one_graph(
         "stable_input_pointers": False,
         "stable_output_pointers": False,
         "input_mutation_replayed": False,
+        "masked_m_mutation_replayed": (
+            False
+            if runtime.workload.family in ("moe_grouped_masked", "moe_w13_region")
+            else None
+        ),
         "output_poison_replayed": False,
+        "untouched_masked_regions_preserved": (
+            False
+            if runtime.workload.family in ("moe_grouped_masked", "moe_w13_region")
+            else None
+        ),
         "deterministic_replay": False,
         "approved_tolerance_passed": False,
         "fallback": fallback,
@@ -1262,6 +1549,7 @@ def _capture_one_graph(
 
 def _replay_for_validation(
     replica: GraphReplica,
+    inputs: dict[str, Any],
     *,
     poison: bool,
 ) -> tuple[TaskResult, bool]:
@@ -1271,12 +1559,30 @@ def _replay_for_validation(
     poison_visible = False
     with torch.cuda.stream(replica.stream):
         if poison:
-            count = _poison_observed(replica.captured_result)
-            if count < 1:
-                raise AssertionError("graph output contains no poisonable tensor")
+            if replica.runtime.workload.family in (
+                "moe_grouped_masked",
+                "moe_w13_region",
+            ):
+                replica.runtime.prepare_inputs(inputs)
+            else:
+                count = _poison_observed(replica.captured_result)
+                if count < 1:
+                    raise AssertionError("graph output contains no poisonable tensor")
     replica.stream.synchronize()
     if poison:
-        poison_visible = _poison_is_visible(replica.captured_result)
+        if replica.runtime.workload.family in (
+            "moe_grouped_masked",
+            "moe_w13_region",
+        ):
+            output_names = ["out"]
+            if replica.runtime.workload.family == "moe_w13_region":
+                output_names.append("down_out")
+            poison_visible = all(
+                bool(inputs[name].eq(MOE_OUTPUT_POISON).all().item())
+                for name in output_names
+            )
+        else:
+            poison_visible = _poison_is_visible(replica.captured_result)
         if not poison_visible:
             raise AssertionError("graph output poison was not observable before replay")
     replica.record_replay()
@@ -1287,6 +1593,76 @@ def _replay_for_validation(
     return result, poison_visible
 
 
+def _masked_store_limit(count: int, block_m: int, slab: int) -> int:
+    if count <= 0:
+        return 0
+    return min(((count + block_m - 1) // block_m) * block_m, slab)
+
+
+def _masked_store_blocks(
+    runtime: Runtime,
+    *,
+    implementation: str,
+    reference_delegated: bool,
+) -> dict[str, int]:
+    # The pinned same-source stock W13 and installed W2 heuristics select
+    # store_block_m=128 for these exact shapes. The tracked candidates select
+    # BM32. MGroupedMasked predicates CTA scheduling, then stores whole tiles.
+    w13_block_m = 128
+    if implementation == "candidate" and not reference_delegated:
+        if runtime.w13_runtime is None:
+            raise AssertionError("candidate W13 store envelope has no runtime")
+        w13_block_m = int(runtime.w13_runtime.config[0])
+    blocks = {"out": w13_block_m}
+    if runtime.workload.family == "moe_w13_region":
+        blocks["down_out"] = 128
+    return blocks
+
+
+def _assert_untouched_masked_regions(
+    runtime: Runtime,
+    inputs: dict[str, Any],
+    counts: tuple[int, ...],
+    *,
+    implementation: str = "reference",
+    reference_delegated: bool = False,
+) -> dict[str, dict[str, int]]:
+    """Check poison outside every scheduled full-tile store envelope."""
+
+    blocks = _masked_store_blocks(
+        runtime,
+        implementation=implementation,
+        reference_delegated=reference_delegated,
+    )
+    observations = {}
+    for output_name, block_m in blocks.items():
+        output = inputs[output_name]
+        padding_rows_written = 0
+        untouched_rows_checked = 0
+        slab = int(output.shape[1])
+        for expert, count in enumerate(counts):
+            store_limit = _masked_store_limit(count, block_m, slab)
+            padding = output[expert, count:store_limit]
+            if padding.numel():
+                padding_rows_written += int(
+                    padding.ne(MOE_OUTPUT_POISON).any(dim=-1).sum().item()
+                )
+            untouched = output[expert, store_limit:]
+            untouched_rows_checked += int(untouched.shape[0])
+            if not bool(untouched.eq(MOE_OUTPUT_POISON).all().item()):
+                raise AssertionError(
+                    f"{output_name}[{expert}, {store_limit}:] changed outside "
+                    "scheduled masked-store tiles "
+                    f"(masked_m={count}, block_m={block_m})"
+                )
+        observations[output_name] = {
+            "store_block_m": block_m,
+            "padding_rows_written": padding_rows_written,
+            "untouched_rows_checked": untouched_rows_checked,
+        }
+    return observations
+
+
 def _validate_graph_replicas(
     runtime: Runtime,
     inputs: dict[str, Any],
@@ -1294,14 +1670,26 @@ def _validate_graph_replicas(
     reference_snapshot: TaskResult,
     replicas: list[GraphReplica],
 ) -> None:
-    if runtime.workload.family != "packed_fp8_gemm":
+    supported_families = {
+        "packed_fp8_gemm",
+        "moe_grouped_masked",
+        "moe_w13_region",
+    }
+    if runtime.workload.family not in supported_families:
         raise RuntimeError(
-            "schema-v2 graph validation currently supports packed_fp8_gemm only"
+            f"schema-v2 graph validation does not support {runtime.workload.family}"
         )
-    mutation_target = inputs["x_fp8"]
+    is_masked = runtime.workload.family in {
+        "moe_grouped_masked",
+        "moe_w13_region",
+    }
+    mutation_target = inputs["activation_fp8"] if is_masked else inputs["x_fp8"]
     original = mutation_target.clone()
+    original_mask = inputs["masked_m"].clone() if is_masked else None
     runtime.accounting.phase = "graph_validation"
     mutation_target.zero_()
+    if is_masked:
+        inputs["masked_m"].copy_(inputs["masked_m_replay"])
     runtime.torch.cuda.synchronize(runtime.device)
     mutated_reference = _correctness_snapshot(
         runtime,
@@ -1314,46 +1702,115 @@ def _validate_graph_replicas(
     for replica in replicas:
         if _tensor_pointers(inputs, "inputs") != replica.input_pointers:
             raise AssertionError(f"{replica.capture_id}: input pointers changed")
-        first_result, poison_visible = _replay_for_validation(replica, poison=True)
+        first_result, poison_visible = _replay_for_validation(
+            replica,
+            inputs,
+            poison=True,
+        )
         first_snapshot = _clone_result(first_result)
-        _compare(mutated_reference, first_snapshot)
+        _compare_for_workload(
+            runtime,
+            inputs,
+            mutated_reference,
+            first_snapshot,
+            counts=inputs["masked_m_replay_cpu"] if is_masked else None,
+        )
+        masked_store_observation = None
+        if is_masked:
+            masked_store_observation = _assert_untouched_masked_regions(
+                runtime,
+                inputs,
+                inputs["masked_m_replay_cpu"],
+                implementation=replica.implementation,
+                reference_delegated=replica.reference_delegated,
+            )
         if _tensor_pointers(first_result, "output") != replica.output_pointers:
             raise AssertionError(f"{replica.capture_id}: output pointers changed")
         second_result, second_poison_visible = _replay_for_validation(
             replica,
+            inputs,
             poison=True,
         )
         second_snapshot = _clone_result(second_result)
         _exact_compare(first_snapshot, second_snapshot)
-        _compare(mutated_reference, second_snapshot)
+        _compare_for_workload(
+            runtime,
+            inputs,
+            mutated_reference,
+            second_snapshot,
+            counts=inputs["masked_m_replay_cpu"] if is_masked else None,
+        )
+        if is_masked:
+            second_masked_store_observation = _assert_untouched_masked_regions(
+                runtime,
+                inputs,
+                inputs["masked_m_replay_cpu"],
+                implementation=replica.implementation,
+                reference_delegated=replica.reference_delegated,
+            )
+            if second_masked_store_observation != masked_store_observation:
+                raise AssertionError(
+                    f"{replica.capture_id}: masked-store envelope changed on replay"
+                )
         replica.details.update(
             {
                 "stable_input_pointers": (
                     _tensor_pointers(inputs, "inputs") == replica.input_pointers
                 ),
                 "stable_output_pointers": (
-                    _tensor_pointers(second_result, "output")
-                    == replica.output_pointers
+                    _tensor_pointers(second_result, "output") == replica.output_pointers
                 ),
                 "input_mutation_replayed": True,
-                "output_poison_replayed": poison_visible
-                and second_poison_visible,
+                "masked_m_mutation_replayed": True if is_masked else None,
+                "output_poison_replayed": poison_visible and second_poison_visible,
+                "untouched_masked_regions_preserved": (True if is_masked else None),
+                "masked_store_contract": (
+                    "poison preserved outside scheduled full store_block_m tiles"
+                    if is_masked
+                    else None
+                ),
+                "masked_store_observation": masked_store_observation,
                 "deterministic_replay": True,
                 "approved_tolerance_passed": True,
             }
         )
 
     mutation_target.copy_(original)
+    if is_masked:
+        assert original_mask is not None
+        inputs["masked_m"].copy_(original_mask)
     runtime.torch.cuda.synchronize(runtime.device)
     restored_reference = _correctness_snapshot(
         runtime,
         inputs,
         eager_reference_fn,
     )
-    _compare(reference_snapshot, restored_reference)
+    _compare_for_workload(
+        runtime,
+        inputs,
+        reference_snapshot,
+        restored_reference,
+    )
     for replica in replicas:
-        replayed, poison_visible = _replay_for_validation(replica, poison=True)
-        _compare(restored_reference, _clone_result(replayed))
+        replayed, poison_visible = _replay_for_validation(
+            replica,
+            inputs,
+            poison=True,
+        )
+        _compare_for_workload(
+            runtime,
+            inputs,
+            restored_reference,
+            _clone_result(replayed),
+        )
+        if is_masked:
+            _assert_untouched_masked_regions(
+                runtime,
+                inputs,
+                inputs["masked_m_initial_cpu"],
+                implementation=replica.implementation,
+                reference_delegated=replica.reference_delegated,
+            )
         replica.details["output_poison_replayed"] = (
             replica.details["output_poison_replayed"] and poison_visible
         )
@@ -1421,6 +1878,74 @@ def _series_order(start_order: str, pair_index: int) -> str:
     return "BA" if start_order == "AB" else "AB"
 
 
+def _performance_estimates(
+    raw_samples: list[dict[str, Any]],
+) -> dict[str, Any]:
+    """Recompute all promotion estimators from complete ordered pairs."""
+
+    if not raw_samples or len(raw_samples) % 2 != 0:
+        raise RuntimeError("performance estimates require complete ordered pairs")
+    reference_values: list[float] = []
+    candidate_values: list[float] = []
+    by_order: dict[str, list[float]] = {"AB": [], "BA": []}
+    for offset in range(0, len(raw_samples), 2):
+        pair = raw_samples[offset : offset + 2]
+        order = pair[0].get("order")
+        if order not in by_order or pair[1].get("order") != order:
+            raise RuntimeError("performance estimate pair order is malformed")
+        values = {
+            str(sample.get("implementation")): float(sample["latency_ms"])
+            for sample in pair
+        }
+        if set(values) != {"reference", "candidate"}:
+            raise RuntimeError("performance estimate pair is incomplete")
+        reference_ms = values["reference"]
+        candidate_ms = values["candidate"]
+        if not all(
+            math.isfinite(value) and value > 0.0
+            for value in (reference_ms, candidate_ms)
+        ):
+            raise RuntimeError("performance estimate latency is non-finite")
+        ratio = reference_ms / candidate_ms
+        if not math.isfinite(ratio) or ratio <= 0.0:
+            raise RuntimeError("performance estimate ratio is non-finite")
+        reference_values.append(reference_ms)
+        candidate_values.append(candidate_ms)
+        by_order[order].append(ratio)
+    if not by_order["AB"] or not by_order["BA"]:
+        raise RuntimeError("both AB and BA samples are required")
+
+    pooled = statistics.median(reference_values) / statistics.median(candidate_values)
+    ab_estimate = statistics.median(by_order["AB"])
+    ba_estimate = statistics.median(by_order["BA"])
+    order_balanced = math.sqrt(ab_estimate * ba_estimate)
+    estimates = (pooled, order_balanced, ab_estimate, ba_estimate)
+    if not all(math.isfinite(value) and value > 0.0 for value in estimates):
+        raise RuntimeError("required performance estimate is non-finite")
+    return {
+        "contract": "finite_pooled_order_balanced_ab_ba_v1",
+        "pair_count": len(raw_samples) // 2,
+        "pooled_speedup": pooled,
+        "order_balanced_speedup": order_balanced,
+        "ab_median_speedup": ab_estimate,
+        "ba_median_speedup": ba_estimate,
+        "all_finite": True,
+    }
+
+
+def _four_estimator_gate_passes(estimates: dict[str, Any]) -> bool:
+    return all(
+        math.isfinite(float(estimates[field]))
+        and float(estimates[field]) >= PERFORMANCE_THRESHOLD
+        for field in (
+            "pooled_speedup",
+            "order_balanced_speedup",
+            "ab_median_speedup",
+            "ba_median_speedup",
+        )
+    )
+
+
 def _measure_series(
     runtime: Runtime,
     reference_pool: ExecutionPool,
@@ -1443,9 +1968,7 @@ def _measure_series(
     for pair_index in range(warmup):
         order = _series_order(start_order, pair_index)
         implementations = (
-            ("reference", "candidate")
-            if order == "AB"
-            else ("candidate", "reference")
+            ("reference", "candidate") if order == "AB" else ("candidate", "reference")
         )
         for implementation in implementations:
             _invoke_sync(runtime, pools[implementation])
@@ -1460,9 +1983,7 @@ def _measure_series(
     for pair_index in range(repeat):
         order = _series_order(start_order, pair_index)
         implementations = (
-            ("reference", "candidate")
-            if order == "AB"
-            else ("candidate", "reference")
+            ("reference", "candidate") if order == "AB" else ("candidate", "reference")
         )
         for position, implementation in enumerate(implementations):
             latency_ms, capture_id = _time_one(
@@ -1499,6 +2020,8 @@ def _measure_series(
         )
     ]
     median_speedup = statistics.median(paired_speedups)
+    performance_estimates = _performance_estimates(raw_samples)
+    strict_estimator_pass = _four_estimator_gate_passes(performance_estimates)
     series = {
         "series_index": series_index,
         "series_id": series_id,
@@ -1512,7 +2035,10 @@ def _measure_series(
         "candidate": latency_summary(candidate_values),
         "paired_speedups": paired_speedups,
         "median_speedup": median_speedup,
-        "passes_3pct_gate": median_speedup >= PERFORMANCE_THRESHOLD,
+        "performance_estimates": performance_estimates,
+        # Paired median is diagnostic only. Promotion requires both order
+        # strata plus pooled and order-balanced estimates.
+        "passes_3pct_gate": strict_estimator_pass,
     }
     if graph_record is not None:
         series["graph"] = graph_record
@@ -1538,10 +2064,7 @@ def _profile_eager_pool(
 def _candidate_artifacts(module: ModuleType) -> list[Path]:
     return [
         Path(module.__candidate_path__).resolve(),
-        *[
-            Path(path).resolve()
-            for path in module.__candidate_artifact_paths__
-        ],
+        *[Path(path).resolve() for path in module.__candidate_artifact_paths__],
     ]
 
 
@@ -1585,8 +2108,7 @@ def run_task(args: argparse.Namespace) -> int:
     assert candidate_module is not None
     if (
         candidate_module.__candidate_api__ == TRUSTED_CONFIG_CANDIDATE_API
-        and workload.family
-        not in {"deepep_normal_dispatch", "deepep_normal_combine"}
+        and workload.family not in {"deepep_normal_dispatch", "deepep_normal_combine"}
     ):
         raise RuntimeError(
             f"{TRUSTED_CONFIG_CANDIDATE_API} is runner-owned and only valid "
@@ -1597,7 +2119,16 @@ def run_task(args: argparse.Namespace) -> int:
         started_utc.replace("-", "").replace(":", "").replace(".", "")
         + f"-{uuid.uuid4().hex[:8]}"
     )
-    runtime = Runtime(workload)
+    runtime = Runtime(workload, candidate_module)
+    if runtime.w13_runtime is not None:
+        known = set(artifacts_for_snapshot)
+        for module in runtime.w13_runtime.identity["modules"].values():
+            cache = Path(module["jit_cache"])
+            for relative in module["jit_artifacts"]:
+                artifact = (cache / relative).resolve()
+                if artifact not in known:
+                    known.add(artifact)
+                    artifacts_for_snapshot.append(artifact)
     runtime._active_inputs = None
     try:
         hardware = collect_hardware_provenance(runtime.torch, runtime.device)
@@ -1622,7 +2153,12 @@ def run_task(args: argparse.Namespace) -> int:
             inputs,
             eager_candidate_fn,
         )
-        _compare(reference_snapshot, candidate_snapshot)
+        _compare_for_workload(
+            runtime,
+            inputs,
+            reference_snapshot,
+            candidate_snapshot,
+        )
 
         runtime.accounting.phase = "jit_warmup"
         warmup_before = runtime_state_snapshot(artifacts_for_snapshot)
@@ -1708,8 +2244,18 @@ def run_task(args: argparse.Namespace) -> int:
             candidate_pool.reset()
             post_reference, _ = _invoke_sync(runtime, reference_pool)
             post_candidate, _ = _invoke_sync(runtime, candidate_pool)
-            _compare(reference_snapshot, _clone_result(post_reference))
-            _compare(reference_snapshot, _clone_result(post_candidate))
+            _compare_for_workload(
+                runtime,
+                inputs,
+                reference_snapshot,
+                _clone_result(post_reference),
+            )
+            _compare_for_workload(
+                runtime,
+                inputs,
+                reference_snapshot,
+                _clone_result(post_candidate),
+            )
         else:
             post_reference = _correctness_snapshot(
                 runtime,
@@ -1721,8 +2267,18 @@ def run_task(args: argparse.Namespace) -> int:
                 inputs,
                 eager_candidate_fn,
             )
-            _compare(reference_snapshot, post_reference)
-            _compare(reference_snapshot, post_candidate)
+            _compare_for_workload(
+                runtime,
+                inputs,
+                reference_snapshot,
+                post_reference,
+            )
+            _compare_for_workload(
+                runtime,
+                inputs,
+                reference_snapshot,
+                post_candidate,
+            )
 
         runtime.accounting.phase = "fresh_inputs_correctness"
         fresh_inputs = runtime.build_inputs()
@@ -1740,7 +2296,12 @@ def run_task(args: argparse.Namespace) -> int:
                 runtime,
             ),
         )
-        _compare(fresh_reference, fresh_candidate)
+        _compare_for_workload(
+            runtime,
+            fresh_inputs,
+            fresh_reference,
+            fresh_candidate,
+        )
 
         kernel_profiles = None
         if execution_mode == "eager":
@@ -1759,24 +2320,33 @@ def run_task(args: argparse.Namespace) -> int:
 
         clock_samples.append(clock_sample())
         workload_record = as_dict(workload)
-        all_reference = [
-            float(sample["latency_ms"])
+        all_raw_samples = [
+            sample
             for series in series_results
             for sample in series["raw_ordered_samples"]
+        ]
+        all_reference = [
+            float(sample["latency_ms"])
+            for sample in all_raw_samples
             if sample["implementation"] == "reference"
         ]
         all_candidate = [
             float(sample["latency_ms"])
-            for series in series_results
-            for sample in series["raw_ordered_samples"]
+            for sample in all_raw_samples
             if sample["implementation"] == "candidate"
         ]
+        aggregate_estimates = _performance_estimates(all_raw_samples)
+        required_estimates_finite = bool(
+            aggregate_estimates["all_finite"]
+            and all(
+                series["performance_estimates"]["all_finite"]
+                for series in series_results
+            )
+        )
         every_series_passes = all(
             series["passes_3pct_gate"] for series in series_results
         )
-        identity_control = bool(
-            getattr(candidate_module, "IDENTITY_CONTROL", False)
-        )
+        identity_control = bool(getattr(candidate_module, "IDENTITY_CONTROL", False))
         implementation_record = runtime.accounting.render(candidate_module)
         fallback_count = implementation_record["candidate"]["fallback_count"]
         reference_delegations = implementation_record["candidate"][
@@ -1785,6 +2355,7 @@ def run_task(args: argparse.Namespace) -> int:
         candidate_api = implementation_record["candidate"]["api"]
         performance_gate_passed = (
             every_series_passes
+            and required_estimates_finite
             and not identity_control
             and fallback_count == 0
             and (
@@ -1796,9 +2367,7 @@ def run_task(args: argparse.Namespace) -> int:
         execution_record: dict[str, Any] = {
             "mode": execution_mode,
             "timer": "CUDA events; maximum rank latency for distributed workloads",
-            "reference_candidate_captured_separately": (
-                execution_mode == "cuda_graph"
-            ),
+            "reference_candidate_captured_separately": (execution_mode == "cuda_graph"),
             "capture_stream": (
                 "independent non-default streams"
                 if execution_mode == "cuda_graph"
@@ -1839,9 +2408,7 @@ def run_task(args: argparse.Namespace) -> int:
                 "post_timing_reference": True,
                 "post_timing_candidate": True,
                 "fresh_inputs_post_timing": True,
-                "graph_validation": (
-                    True if execution_mode == "cuda_graph" else None
-                ),
+                "graph_validation": (True if execution_mode == "cuda_graph" else None),
                 "tolerance": {
                     "dtype_and_shape_exact": True,
                     "rtol": 2e-2,
@@ -1865,8 +2432,7 @@ def run_task(args: argparse.Namespace) -> int:
                     "warmup_completed": True,
                     "warmup_activity": warmup_delta,
                     "capture_or_timing_detected": any(
-                        not observation["clean"]
-                        for observation in jit_observations
+                        not observation["clean"] for observation in jit_observations
                     ),
                     "observations": jit_observations,
                 },
@@ -1879,6 +2445,11 @@ def run_task(args: argparse.Namespace) -> int:
                         "TORCH_EXTENSIONS_DIR",
                     )
                 },
+                "w13_runtime": (
+                    runtime.w13_runtime.identity
+                    if runtime.w13_runtime is not None
+                    else None
+                ),
             },
             "implementations": implementation_record,
             "series": series_results,
@@ -1897,6 +2468,9 @@ def run_task(args: argparse.Namespace) -> int:
                 "completed_series": len(series_results),
                 "threshold": PERFORMANCE_THRESHOLD,
                 "every_series_passes_3pct": every_series_passes,
+                "series_gate_contract": ("all_four_estimates_each_series_gte_1p03_v1"),
+                "required_estimates_finite": required_estimates_finite,
+                "performance_estimates": aggregate_estimates,
                 "performance_gate_passed": performance_gate_passed,
                 "identity_control_forced_non_win": identity_control,
             },
@@ -1939,9 +2513,7 @@ def parse_args() -> argparse.Namespace:
     if args.warmup < 1 or args.repeat < 2:
         parser.error("--warmup must be >= 1 and --repeat must be >= 2")
     if args.series < MIN_REQUIRED_SERIES:
-        parser.error(
-            f"--series must be >= {MIN_REQUIRED_SERIES} for the V2 contract"
-        )
+        parser.error(f"--series must be >= {MIN_REQUIRED_SERIES} for the V2 contract")
     return args
 
 
@@ -1956,7 +2528,9 @@ def main() -> int:
             )
         return 0
     if args.describe is not None:
-        print(json.dumps(as_dict(get_workload(args.describe)), indent=2, sort_keys=True))
+        print(
+            json.dumps(as_dict(get_workload(args.describe)), indent=2, sort_keys=True)
+        )
         return 0
     return run_task(args)
 

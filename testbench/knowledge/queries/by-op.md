@@ -28,3 +28,7 @@
 
 - `glm52--sparse_mla_decode--b200--20260715a` [win] Sparse MLA Decode/decode — sparse-mla-decode is intentionally fused-only: agents must NOT invent a drop-in integrate symbol. A harness WIN that keeps the FlashInfer call signature (including device tensor scales) is the production-ready claim.
 - `glm52--sparse_mla_decode--b200--20260714a` [win] Sparse MLA Decode/decode — For FlashInfer TRT-LLM FP8 sparse MLA decode on Blackwell, preserve device tensor scale inputs when the wrapper supports them; converting scalar scale tensors to Python floats can silently select a slower static-scale path. Do not shrink sparse_mla_top_k unless the block-table shape and production semantics also change.
+
+## moe_gate
+
+- `glm52--moe_gate_proj_decode--b200--20260728a` [no-win] moe_gate/decode — For small-active-M SM100 masked grouped GEMMs, leaf speedups are insufficient evidence. First close same-source runtime/cache fairness, then require every alternating-order estimator to pass in a production-shaped graph-containing region before enabling a dispatch.

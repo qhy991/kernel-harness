@@ -1,0 +1,2476 @@
+	.target	sm_100
+
+	.elftype	@"ET_EXEC"
+
+
+//--------------------- .debug_frame              --------------------------
+	.section	.debug_frame,"",@progbits
+.debug_frame:
+        /*0000*/ 	.byte	0xff, 0xff, 0xff, 0xff, 0x24, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xff, 0xff, 0xff, 0xff
+        /*0010*/ 	.byte	0xff, 0xff, 0xff, 0xff, 0x03, 0x00, 0x04, 0x7c, 0xff, 0xff, 0xff, 0xff, 0x0f, 0x0c, 0x81, 0x80
+        /*0020*/ 	.byte	0x80, 0x28, 0x00, 0x08, 0xff, 0x81, 0x80, 0x28, 0x08, 0x81, 0x80, 0x80, 0x28, 0x00, 0x00, 0x00
+        /*0030*/ 	.byte	0xff, 0xff, 0xff, 0xff, 0x2c, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
+        /*0040*/ 	.byte	0x00, 0x00, 0x00, 0x00
+        /*0044*/ 	.dword	_ZN9deep_gemm28sm100_fp8_fp4_gemm_1d1d_implILN4cute4UMMA5MajorE0ELS3_0ELj128ELj128ELj128ELj0ELj4096ELj6144ELj32ELj128ELj128ELj32ELj128ELj128ELj128ELj10ELj128ELj128ELj1ELb0ELj148ELb1ELb1ELNS_8GemmTypeE2ELb0EN7cutlass12float_e4m3_tES6_NS5_10bfloat16_tENS_8epilogue9transform16EpilogueIdentityEEEvPijjj14CUtensorMap_stSC_SC_SC_SC_
+        /*004c*/ 	.byte	0x90, 0x3b, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x04, 0x18, 0x00, 0x00, 0x00, 0x0c, 0x81, 0x80
+        /*005c*/ 	.byte	0x80, 0x28, 0x00, 0x04, 0xbc, 0x0e, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xff, 0xff, 0xff, 0xff
+        /*006c*/ 	.byte	0x3c, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff
+        /*007c*/ 	.byte	0x03, 0x00, 0x04, 0x7c, 0x80, 0x82, 0x80, 0x28, 0x0c, 0x81, 0x80, 0x80, 0x28, 0x00, 0x08, 0xff
+        /*008c*/ 	.byte	0x81, 0x80, 0x28, 0x08, 0x81, 0x80, 0x80, 0x28, 0x08, 0x82, 0x80, 0x80, 0x28, 0x16, 0x80, 0x82
+        /*009c*/ 	.byte	0x80, 0x28, 0x10, 0x03
+        /*00a0*/ 	.dword	_ZN9deep_gemm28sm100_fp8_fp4_gemm_1d1d_implILN4cute4UMMA5MajorE0ELS3_0ELj128ELj128ELj128ELj0ELj4096ELj6144ELj32ELj128ELj128ELj32ELj128ELj128ELj128ELj10ELj128ELj128ELj1ELb0ELj148ELb1ELb1ELNS_8GemmTypeE2ELb0EN7cutlass12float_e4m3_tES6_NS5_10bfloat16_tENS_8epilogue9transform16EpilogueIdentityEEEvPijjj14CUtensorMap_stSC_SC_SC_SC_
+        /*00a8*/ 	.byte	0x92, 0x82, 0x80, 0x80, 0x28, 0x00, 0x22, 0x00, 0xff, 0xff, 0xff, 0xff, 0x1c, 0x00, 0x00, 0x00
+        /*00b8*/ 	.byte	0x00, 0x00, 0x00, 0x00, 0x68, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
+        /*00c4*/ 	.dword	(_ZN9deep_gemm28sm100_fp8_fp4_gemm_1d1d_implILN4cute4UMMA5MajorE0ELS3_0ELj128ELj128ELj128ELj0ELj4096ELj6144ELj32ELj128ELj128ELj32ELj128ELj128ELj128ELj10ELj128ELj128ELj1ELb0ELj148ELb1ELb1ELNS_8GemmTypeE2ELb0EN7cutlass12float_e4m3_tES6_NS5_10bfloat16_tENS_8epilogue9transform16EpilogueIdentityEEEvPijjj14CUtensorMap_stSC_SC_SC_SC_ + $__internal_0_$__cuda_sm10x_tcgen05_guardrail_trap_col_being_dealloced_not_returned_by_alloc@srel)
+        /*00cc*/ 	.byte	0x30, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xff, 0xff, 0xff, 0xff
+        /*00dc*/ 	.byte	0x3c, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff
+        /*00ec*/ 	.byte	0x03, 0x00, 0x04, 0x7c, 0x80, 0x82, 0x80, 0x28, 0x0c, 0x81, 0x80, 0x80, 0x28, 0x00, 0x08, 0xff
+        /*00fc*/ 	.byte	0x81, 0x80, 0x28, 0x08, 0x81, 0x80, 0x80, 0x28, 0x08, 0x82, 0x80, 0x80, 0x28, 0x16, 0x80, 0x82
+        /*010c*/ 	.byte	0x80, 0x28, 0x10, 0x03
+        /*0110*/ 	.dword	_ZN9deep_gemm28sm100_fp8_fp4_gemm_1d1d_implILN4cute4UMMA5MajorE0ELS3_0ELj128ELj128ELj128ELj0ELj4096ELj6144ELj32ELj128ELj128ELj32ELj128ELj128ELj128ELj10ELj128ELj128ELj1ELb0ELj148ELb1ELb1ELNS_8GemmTypeE2ELb0EN7cutlass12float_e4m3_tES6_NS5_10bfloat16_tENS_8epilogue9transform16EpilogueIdentityEEEvPijjj14CUtensorMap_stSC_SC_SC_SC_
+        /*0118*/ 	.byte	0x92, 0x82, 0x80, 0x80, 0x28, 0x00, 0x22, 0x00, 0xff, 0xff, 0xff, 0xff, 0x1c, 0x00, 0x00, 0x00
+        /*0128*/ 	.byte	0x00, 0x00, 0x00, 0x00, 0xd8, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
+        /*0134*/ 	.dword	(_ZN9deep_gemm28sm100_fp8_fp4_gemm_1d1d_implILN4cute4UMMA5MajorE0ELS3_0ELj128ELj128ELj128ELj0ELj4096ELj6144ELj32ELj128ELj128ELj32ELj128ELj128ELj128ELj10ELj128ELj128ELj1ELb0ELj148ELb1ELb1ELNS_8GemmTypeE2ELb0EN7cutlass12float_e4m3_tES6_NS5_10bfloat16_tENS_8epilogue9transform16EpilogueIdentityEEEvPijjj14CUtensorMap_stSC_SC_SC_SC_ + $__internal_1_$__cuda_sm10x_tcgen05_guardrail_trap_phase_invalid_during_alloc@srel)
+        /*013c*/ 	.byte	0x30, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xff, 0xff, 0xff, 0xff
+        /*014c*/ 	.byte	0x3c, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff
+        /*015c*/ 	.byte	0x03, 0x00, 0x04, 0x7c, 0x80, 0x82, 0x80, 0x28, 0x0c, 0x81, 0x80, 0x80, 0x28, 0x00, 0x08, 0xff
+        /*016c*/ 	.byte	0x81, 0x80, 0x28, 0x08, 0x81, 0x80, 0x80, 0x28, 0x08, 0x82, 0x80, 0x80, 0x28, 0x16, 0x80, 0x82
+        /*017c*/ 	.byte	0x80, 0x28, 0x10, 0x03
+        /*0180*/ 	.dword	_ZN9deep_gemm28sm100_fp8_fp4_gemm_1d1d_implILN4cute4UMMA5MajorE0ELS3_0ELj128ELj128ELj128ELj0ELj4096ELj6144ELj32ELj128ELj128ELj32ELj128ELj128ELj128ELj10ELj128ELj128ELj1ELb0ELj148ELb1ELb1ELNS_8GemmTypeE2ELb0EN7cutlass12float_e4m3_tES6_NS5_10bfloat16_tENS_8epilogue9transform16EpilogueIdentityEEEvPijjj14CUtensorMap_stSC_SC_SC_SC_
+        /*0188*/ 	.byte	0x92, 0x82, 0x80, 0x80, 0x28, 0x00, 0x22, 0x00, 0xff, 0xff, 0xff, 0xff, 0x1c, 0x00, 0x00, 0x00
+        /*0198*/ 	.byte	0x00, 0x00, 0x00, 0x00, 0x48, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
+        /*01a4*/ 	.dword	(_ZN9deep_gemm28sm100_fp8_fp4_gemm_1d1d_implILN4cute4UMMA5MajorE0ELS3_0ELj128ELj128ELj128ELj0ELj4096ELj6144ELj32ELj128ELj128ELj32ELj128ELj128ELj128ELj10ELj128ELj128ELj1ELb0ELj148ELb1ELb1ELNS_8GemmTypeE2ELb0EN7cutlass12float_e4m3_tES6_NS5_10bfloat16_tENS_8epilogue9transform16EpilogueIdentityEEEvPijjj14CUtensorMap_stSC_SC_SC_SC_ + $__internal_2_$__cuda_sm10x_tcgen05_guardrail_trap_unallocated_columns_being_dealloced@srel)
+        /*01ac*/ 	.byte	0x30, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xff, 0xff, 0xff, 0xff
+        /*01bc*/ 	.byte	0x3c, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff
+        /*01cc*/ 	.byte	0x03, 0x00, 0x04, 0x7c, 0x80, 0x82, 0x80, 0x28, 0x0c, 0x81, 0x80, 0x80, 0x28, 0x00, 0x08, 0xff
+        /*01dc*/ 	.byte	0x81, 0x80, 0x28, 0x08, 0x81, 0x80, 0x80, 0x28, 0x08, 0x80, 0x80, 0x80, 0x28, 0x16, 0x80, 0x82
+        /*01ec*/ 	.byte	0x80, 0x28, 0x10, 0x03
+        /*01f0*/ 	.dword	_ZN9deep_gemm28sm100_fp8_fp4_gemm_1d1d_implILN4cute4UMMA5MajorE0ELS3_0ELj128ELj128ELj128ELj0ELj4096ELj6144ELj32ELj128ELj128ELj32ELj128ELj128ELj128ELj10ELj128ELj128ELj1ELb0ELj148ELb1ELb1ELNS_8GemmTypeE2ELb0EN7cutlass12float_e4m3_tES6_NS5_10bfloat16_tENS_8epilogue9transform16EpilogueIdentityEEEvPijjj14CUtensorMap_stSC_SC_SC_SC_
+        /*01f8*/ 	.byte	0x92, 0x80, 0x80, 0x80, 0x28, 0x00, 0x22, 0x00, 0xff, 0xff, 0xff, 0xff, 0x2c, 0x00, 0x00, 0x00
+        /*0208*/ 	.byte	0x00, 0x00, 0x00, 0x00, 0xb8, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
+        /*0214*/ 	.dword	(_ZN9deep_gemm28sm100_fp8_fp4_gemm_1d1d_implILN4cute4UMMA5MajorE0ELS3_0ELj128ELj128ELj128ELj0ELj4096ELj6144ELj32ELj128ELj128ELj32ELj128ELj128ELj128ELj10ELj128ELj128ELj1ELb0ELj148ELb1ELb1ELNS_8GemmTypeE2ELb0EN7cutlass12float_e4m3_tES6_NS5_10bfloat16_tENS_8epilogue9transform16EpilogueIdentityEEEvPijjj14CUtensorMap_stSC_SC_SC_SC_ + $__internal_3_$__cuda_sm20_div_u16@srel)
+        /*021c*/ 	.byte	0xe0, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x04, 0x10, 0x00, 0x00, 0x00, 0x09, 0x80, 0x80
+        /*022c*/ 	.byte	0x80, 0x28, 0x92, 0x80, 0x80, 0x28, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
+
+
+//--------------------- .note.nv.tkinfo           --------------------------
+	.section	.note.nv.tkinfo,"",@"SHT_NOTE"
+	.sectionflags	@"SHF_NOTE_NV_TKINFO"
+	.tkinfo
+        /*0018*/ 	.word	0x00000002
+        /*0030*/ 	.string	""
+        /*0030*/ 	.string	"ptxas"
+        /*0030*/ 	.string	"Cuda compilation tools, release 13.2, V13.2.78"
+        /*0030*/ 	.string	"Build cuda_13.2.r13.2/compiler.37668154_0"
+        /*0030*/ 	.string	"-regUsageLevel 10 -arch sm_100f -m 64 "
+
+
+
+//--------------------- .note.nv.cuinfo           --------------------------
+	.section	.note.nv.cuinfo,"",@"SHT_NOTE"
+	.sectionflags	@"SHF_NOTE_NV_CUINFO"
+        /*0018*/ 	.short	0x0002
+        /*001a*/ 	.short	0x0064
+        /*001c*/ 	.short	0x0084
+	.zero		2
+
+
+//--------------------- .nv.info                  --------------------------
+	.section	.nv.info,"",@"SHT_CUDA_INFO"
+	.align	4
+
+
+	//----- nvinfo : EIATTR_REGCOUNT
+	.align		4
+        /*0000*/ 	.byte	0x04, 0x2f
+        /*0002*/ 	.short	(.L_14 - .L_13)
+	.align		4
+.L_13:
+        /*0004*/ 	.word	index@(_ZN9deep_gemm28sm100_fp8_fp4_gemm_1d1d_implILN4cute4UMMA5MajorE0ELS3_0ELj128ELj128ELj128ELj0ELj4096ELj6144ELj32ELj128ELj128ELj32ELj128ELj128ELj128ELj10ELj128ELj128ELj1ELb0ELj148ELb1ELb1ELNS_8GemmTypeE2ELb0EN7cutlass12float_e4m3_tES6_NS5_10bfloat16_tENS_8epilogue9transform16EpilogueIdentityEEEvPijjj14CUtensorMap_stSC_SC_SC_SC_)
+        /*0008*/ 	.word	0x00000021
+
+
+	//----- nvinfo : EIATTR_FRAME_SIZE
+	.align		4
+.L_14:
+        /*000c*/ 	.byte	0x04, 0x11
+        /*000e*/ 	.short	(.L_16 - .L_15)
+	.align		4
+.L_15:
+        /*0010*/ 	.word	index@($__internal_3_$__cuda_sm20_div_u16)
+        /*0014*/ 	.word	0x00000000
+
+
+	//----- nvinfo : EIATTR_FRAME_SIZE
+	.align		4
+.L_16:
+        /*0018*/ 	.byte	0x04, 0x11
+        /*001a*/ 	.short	(.L_18 - .L_17)
+	.align		4
+.L_17:
+        /*001c*/ 	.word	index@($__internal_2_$__cuda_sm10x_tcgen05_guardrail_trap_unallocated_columns_being_dealloced)
+        /*0020*/ 	.word	0x00000000
+
+
+	//----- nvinfo : EIATTR_FRAME_SIZE
+	.align		4
+.L_18:
+        /*0024*/ 	.byte	0x04, 0x11
+        /*0026*/ 	.short	(.L_20 - .L_19)
+	.align		4
+.L_19:
+        /*0028*/ 	.word	index@($__internal_1_$__cuda_sm10x_tcgen05_guardrail_trap_phase_invalid_during_alloc)
+        /*002c*/ 	.word	0x00000000
+
+
+	//----- nvinfo : EIATTR_FRAME_SIZE
+	.align		4
+.L_20:
+        /*0030*/ 	.byte	0x04, 0x11
+        /*0032*/ 	.short	(.L_22 - .L_21)
+	.align		4
+.L_21:
+        /*0034*/ 	.word	index@($__internal_0_$__cuda_sm10x_tcgen05_guardrail_trap_col_being_dealloced_not_returned_by_alloc)
+        /*0038*/ 	.word	0x00000000
+
+
+	//----- nvinfo : EIATTR_FRAME_SIZE
+	.align		4
+.L_22:
+        /*003c*/ 	.byte	0x04, 0x11
+        /*003e*/ 	.short	(.L_24 - .L_23)
+	.align		4
+.L_23:
+        /*0040*/ 	.word	index@(_ZN9deep_gemm28sm100_fp8_fp4_gemm_1d1d_implILN4cute4UMMA5MajorE0ELS3_0ELj128ELj128ELj128ELj0ELj4096ELj6144ELj32ELj128ELj128ELj32ELj128ELj128ELj128ELj10ELj128ELj128ELj1ELb0ELj148ELb1ELb1ELNS_8GemmTypeE2ELb0EN7cutlass12float_e4m3_tES6_NS5_10bfloat16_tENS_8epilogue9transform16EpilogueIdentityEEEvPijjj14CUtensorMap_stSC_SC_SC_SC_)
+        /*0044*/ 	.word	0x00000000
+
+
+	//----- nvinfo : EIATTR_MIN_STACK_SIZE
+	.align		4
+.L_24:
+        /*0048*/ 	.byte	0x04, 0x12
+        /*004a*/ 	.short	(.L_26 - .L_25)
+	.align		4
+.L_25:
+        /*004c*/ 	.word	index@(_ZN9deep_gemm28sm100_fp8_fp4_gemm_1d1d_implILN4cute4UMMA5MajorE0ELS3_0ELj128ELj128ELj128ELj0ELj4096ELj6144ELj32ELj128ELj128ELj32ELj128ELj128ELj128ELj10ELj128ELj128ELj1ELb0ELj148ELb1ELb1ELNS_8GemmTypeE2ELb0EN7cutlass12float_e4m3_tES6_NS5_10bfloat16_tENS_8epilogue9transform16EpilogueIdentityEEEvPijjj14CUtensorMap_stSC_SC_SC_SC_)
+        /*0050*/ 	.word	0x00000000
+.L_26:
+
+
+//--------------------- .nv.compat                --------------------------
+	.section	.nv.compat,"",@"SHT_CUDA_COMPAT_INFO"
+	.align	4
+        /*0000*/ 	.byte	0x02, 0x09, 0x00, 0x00, 0x02, 0x02, 0x02, 0x00, 0x03, 0x07, 0x01, 0x01, 0x02, 0x03, 0x01, 0x00
+        /*0010*/ 	.byte	0x04, 0x0b, 0x08, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
+
+
+//--------------------- .nv.info._ZN9deep_gemm28sm100_fp8_fp4_gemm_1d1d_implILN4cute4UMMA5MajorE0ELS3_0ELj128ELj128ELj128ELj0ELj4096ELj6144ELj32ELj128ELj128ELj32ELj128ELj128ELj128ELj10ELj128ELj128ELj1ELb0ELj148ELb1ELb1ELNS_8GemmTypeE2ELb0EN7cutlass12float_e4m3_tES6_NS5_10bfloat16_tENS_8epilogue9transform16EpilogueIdentityEEEvPijjj14CUtensorMap_stSC_SC_SC_SC_ --------------------------
+	.section	.nv.info._ZN9deep_gemm28sm100_fp8_fp4_gemm_1d1d_implILN4cute4UMMA5MajorE0ELS3_0ELj128ELj128ELj128ELj0ELj4096ELj6144ELj32ELj128ELj128ELj32ELj128ELj128ELj128ELj10ELj128ELj128ELj1ELb0ELj148ELb1ELb1ELNS_8GemmTypeE2ELb0EN7cutlass12float_e4m3_tES6_NS5_10bfloat16_tENS_8epilogue9transform16EpilogueIdentityEEEvPijjj14CUtensorMap_stSC_SC_SC_SC_,"",@"SHT_CUDA_INFO"
+	.sectionflags	@""
+	.align	4
+
+
+	//----- nvinfo : EIATTR_LANGUAGE
+	.align		4
+        /*0000*/ 	.byte	0x04, 0x66
+        /*0002*/ 	.short	(.L_28 - .L_27)
+
+
+	//   ....[0]....
+.L_27:
+        /*0004*/ 	.word	0x00000003
+
+
+	//----- nvinfo : EIATTR_CUDA_API_VERSION
+	.align		4
+.L_28:
+        /*0008*/ 	.byte	0x04, 0x37
+        /*000a*/ 	.short	(.L_30 - .L_29)
+.L_29:
+        /*000c*/ 	.word	0x00000084
+
+
+	//----- nvinfo : EIATTR_KPARAM_INFO
+	.align		4
+.L_30:
+        /*0010*/ 	.byte	0x04, 0x17
+        /*0012*/ 	.short	(.L_32 - .L_31)
+.L_31:
+        /*0014*/ 	.word	0x00000000
+        /*0018*/ 	.short	0x0008
+        /*001a*/ 	.short	0x0280
+        /*001c*/ 	.byte	0x00, 0xf0, 0x01, 0x02
+
+
+	//----- nvinfo : EIATTR_KPARAM_INFO
+	.align		4
+.L_32:
+        /*0020*/ 	.byte	0x04, 0x17
+        /*0022*/ 	.short	(.L_34 - .L_33)
+.L_33:
+        /*0024*/ 	.word	0x00000000
+        /*0028*/ 	.short	0x0007
+        /*002a*/ 	.short	0x0200
+        /*002c*/ 	.byte	0x00, 0xf0, 0x01, 0x02
+
+
+	//----- nvinfo : EIATTR_KPARAM_INFO
+	.align		4
+.L_34:
+        /*0030*/ 	.byte	0x04, 0x17
+        /*0032*/ 	.short	(.L_36 - .L_35)
+.L_35:
+        /*0034*/ 	.word	0x00000000
+        /*0038*/ 	.short	0x0006
+        /*003a*/ 	.short	0x0180
+        /*003c*/ 	.byte	0x00, 0xf0, 0x01, 0x02
+
+
+	//----- nvinfo : EIATTR_KPARAM_INFO
+	.align		4
+.L_36:
+        /*0040*/ 	.byte	0x04, 0x17
+        /*0042*/ 	.short	(.L_38 - .L_37)
+.L_37:
+        /*0044*/ 	.word	0x00000000
+        /*0048*/ 	.short	0x0005
+        /*004a*/ 	.short	0x0100
+        /*004c*/ 	.byte	0x00, 0xf0, 0x01, 0x02
+
+
+	//----- nvinfo : EIATTR_KPARAM_INFO
+	.align		4
+.L_38:
+        /*0050*/ 	.byte	0x04, 0x17
+        /*0052*/ 	.short	(.L_40 - .L_39)
+.L_39:
+        /*0054*/ 	.word	0x00000000
+        /*0058*/ 	.short	0x0004
+        /*005a*/ 	.short	0x0080
+        /*005c*/ 	.byte	0x00, 0xf0, 0x01, 0x02
+
+
+	//----- nvinfo : EIATTR_KPARAM_INFO
+	.align		4
+.L_40:
+        /*0060*/ 	.byte	0x04, 0x17
+        /*0062*/ 	.short	(.L_42 - .L_41)
+.L_41:
+        /*0064*/ 	.word	0x00000000
+        /*0068*/ 	.short	0x0003
+        /*006a*/ 	.short	0x0010
+        /*006c*/ 	.byte	0x00, 0xf0, 0x11, 0x00
+
+
+	//----- nvinfo : EIATTR_KPARAM_INFO
+	.align		4
+.L_42:
+        /*0070*/ 	.byte	0x04, 0x17
+        /*0072*/ 	.short	(.L_44 - .L_43)
+.L_43:
+        /*0074*/ 	.word	0x00000000
+        /*0078*/ 	.short	0x0002
+        /*007a*/ 	.short	0x000c
+        /*007c*/ 	.byte	0x00, 0xf0, 0x11, 0x00
+
+
+	//----- nvinfo : EIATTR_KPARAM_INFO
+	.align		4
+.L_44:
+        /*0080*/ 	.byte	0x04, 0x17
+        /*0082*/ 	.short	(.L_46 - .L_45)
+.L_45:
+        /*0084*/ 	.word	0x00000000
+        /*0088*/ 	.short	0x0001
+        /*008a*/ 	.short	0x0008
+        /*008c*/ 	.byte	0x00, 0xf0, 0x11, 0x00
+
+
+	//----- nvinfo : EIATTR_KPARAM_INFO
+	.align		4
+.L_46:
+        /*0090*/ 	.byte	0x04, 0x17
+        /*0092*/ 	.short	(.L_48 - .L_47)
+.L_47:
+        /*0094*/ 	.word	0x00000000
+        /*0098*/ 	.short	0x0000
+        /*009a*/ 	.short	0x0000
+        /*009c*/ 	.byte	0x00, 0xf5, 0x21, 0x00
+
+
+	//----- nvinfo : EIATTR_AT_ENTRY_FRAGMENTS
+	.align		4
+.L_48:
+        /*00a0*/ 	.byte	0x04, 0x4f
+        /*00a2*/ 	.short	(.L_50 - .L_49)
+
+
+	//   ....[0]....
+.L_49:
+        /*00a4*/ 	.word	0x00000006
+
+
+	//----- nvinfo : EIATTR_RESERVED_SMEM_USED
+	.align		4
+.L_50:
+        /*00a8*/ 	.byte	0x01, 0x41
+	.zero		2
+
+
+	//----- nvinfo : EIATTR_SPARSE_MMA_MASK
+	.align		4
+        /*00ac*/ 	.byte	0x03, 0x50
+        /*00ae*/ 	.short	0x0000
+
+
+	//----- nvinfo : EIATTR_TCGEN05_1CTA_USED
+	.align		4
+        /*00b0*/ 	.byte	0x01, 0x51
+	.zero		2
+
+
+	//----- nvinfo : EIATTR_MAXREG_COUNT
+	.align		4
+        /*00b4*/ 	.byte	0x03, 0x1b
+        /*00b6*/ 	.short	0x00ff
+
+
+	//----- nvinfo : EIATTR_NUM_BARRIERS
+	.align		4
+        /*00b8*/ 	.byte	0x02, 0x4c
+        /*00ba*/ 	.byte	0x09
+	.zero		1
+
+
+	//----- nvinfo : EIATTR_MERCURY_ISA_VERSION
+	.align		4
+        /*00bc*/ 	.byte	0x03, 0x5f
+        /*00be*/ 	.short	0x0101
+
+
+	//----- nvinfo : EIATTR_INT_WARP_WIDE_INSTR_OFFSETS
+	.align		4
+        /*00c0*/ 	.byte	0x04, 0x31
+        /*00c2*/ 	.short	(.L_52 - .L_51)
+
+
+	//   ....[0]....
+.L_51:
+        /*00c4*/ 	.word	0x00003640
+
+
+	//   ....[1]....
+        /*00c8*/ 	.word	0x00003670
+
+
+	//   ....[2]....
+        /*00cc*/ 	.word	0x00003680
+
+
+	//----- nvinfo : EIATTR_COOP_GROUP_MASK_REGIDS
+	.align		4
+.L_52:
+        /*00d0*/ 	.byte	0x04, 0x29
+        /*00d2*/ 	.short	(.L_54 - .L_53)
+
+
+	//   ....[0]....
+.L_53:
+        /*00d4*/ 	.word	0xffffffff
+
+
+	//   ....[1]....
+        /*00d8*/ 	.word	0xffffffff
+
+
+	//   ....[2]....
+        /*00dc*/ 	.word	0xffffffff
+
+
+	//   ....[3]....
+        /*00e0*/ 	.word	0xffffffff
+
+
+	//   ....[4]....
+        /*00e4*/ 	.word	0xffffffff
+
+
+	//   ....[5]....
+        /*00e8*/ 	.word	0xffffffff
+
+
+	//   ....[6]....
+        /*00ec*/ 	.word	0xffffffff
+
+
+	//   ....[7]....
+        /*00f0*/ 	.word	0xffffffff
+
+
+	//   ....[8]....
+        /*00f4*/ 	.word	0xffffffff
+
+
+	//   ....[9]....
+        /*00f8*/ 	.word	0xffffffff
+
+
+	//   ....[10]....
+        /*00fc*/ 	.word	0xffffffff
+
+
+	//   ....[11]....
+        /*0100*/ 	.word	0xffffffff
+
+
+	//   ....[12]....
+        /*0104*/ 	.word	0xffffffff
+
+
+	//   ....[13]....
+        /*0108*/ 	.word	0xffffffff
+
+
+	//   ....[14]....
+        /*010c*/ 	.word	0xffffffff
+
+
+	//   ....[15]....
+        /*0110*/ 	.word	0xffffffff
+
+
+	//   ....[16]....
+        /*0114*/ 	.word	0xffffffff
+
+
+	//   ....[17]....
+        /*0118*/ 	.word	0xffffffff
+
+
+	//   ....[18]....
+        /*011c*/ 	.word	0xffffffff
+
+
+	//   ....[19]....
+        /*0120*/ 	.word	0xffffffff
+
+
+	//   ....[20]....
+        /*0124*/ 	.word	0xffffffff
+
+
+	//   ....[21]....
+        /*0128*/ 	.word	0xffffffff
+
+
+	//   ....[22]....
+        /*012c*/ 	.word	0xffffffff
+
+
+	//   ....[23]....
+        /*0130*/ 	.word	0xffffffff
+
+
+	//   ....[24]....
+        /*0134*/ 	.word	0xffffffff
+
+
+	//----- nvinfo : EIATTR_COOP_GROUP_INSTR_OFFSETS
+	.align		4
+.L_54:
+        /*0138*/ 	.byte	0x04, 0x28
+        /*013a*/ 	.short	(.L_56 - .L_55)
+
+
+	//   ....[0]....
+.L_55:
+        /*013c*/ 	.word	0x00000030
+
+
+	//   ....[1]....
+        /*0140*/ 	.word	0x00000550
+
+
+	//   ....[2]....
+        /*0144*/ 	.word	0x00000760
+
+
+	//   ....[3]....
+        /*0148*/ 	.word	0x00000b40
+
+
+	//   ....[4]....
+        /*014c*/ 	.word	0x00000bc0
+
+
+	//   ....[5]....
+        /*0150*/ 	.word	0x00001f70
+
+
+	//   ....[6]....
+        /*0154*/ 	.word	0x00001fa0
+
+
+	//   ....[7]....
+        /*0158*/ 	.word	0x00002240
+
+
+	//   ....[8]....
+        /*015c*/ 	.word	0x00002260
+
+
+	//   ....[9]....
+        /*0160*/ 	.word	0x000022a0
+
+
+	//   ....[10]....
+        /*0164*/ 	.word	0x000022d0
+
+
+	//   ....[11]....
+        /*0168*/ 	.word	0x000024a0
+
+
+	//   ....[12]....
+        /*016c*/ 	.word	0x000024c0
+
+
+	//   ....[13]....
+        /*0170*/ 	.word	0x00002500
+
+
+	//   ....[14]....
+        /*0174*/ 	.word	0x00002530
+
+
+	//   ....[15]....
+        /*0178*/ 	.word	0x00002700
+
+
+	//   ....[16]....
+        /*017c*/ 	.word	0x00002720
+
+
+	//   ....[17]....
+        /*0180*/ 	.word	0x00002760
+
+
+	//   ....[18]....
+        /*0184*/ 	.word	0x00002790
+
+
+	//   ....[19]....
+        /*0188*/ 	.word	0x000028e0
+
+
+	//   ....[20]....
+        /*018c*/ 	.word	0x00002940
+
+
+	//   ....[21]....
+        /*0190*/ 	.word	0x000031a0
+
+
+	//   ....[22]....
+        /*0194*/ 	.word	0x000034c0
+
+
+	//   ....[23]....
+        /*0198*/ 	.word	0x00003580
+
+
+	//   ....[24]....
+        /*019c*/ 	.word	0x00003760
+
+
+	//----- nvinfo : EIATTR_VRC_CTA_INIT_COUNT
+	.align		4
+.L_56:
+        /*01a0*/ 	.byte	0x02, 0x4a
+        /*01a2*/ 	.byte	0x80
+	.zero		1
+
+
+	//----- nvinfo : EIATTR_MBARRIER_INSTR_OFFSETS
+	.align		4
+        /*01a4*/ 	.byte	0x04, 0x39
+        /*01a6*/ 	.short	(.L_58 - .L_57)
+
+
+	//   ....[0]....
+.L_57:
+        /*01a8*/ 	.word	0x000002e0
+        /*01ac*/ 	.word	0x000000ff
+        /*01b0*/ 	.word	0x00036800
+        /*01b4*/ 	.short	0x0100
+        /*01b6*/ 	.byte	0x05
+	.zero		1
+
+
+	//   ....[1]....
+        /*01b8*/ 	.word	0x000002f0
+        /*01bc*/ 	.word	0x000000ff
+        /*01c0*/ 	.word	0x00036850
+        /*01c4*/ 	.short	0x0100
+        /*01c6*/ 	.byte	0x05
+	.zero		1
+
+
+	//   ....[2]....
+        /*01c8*/ 	.word	0x00000300
+        /*01cc*/ 	.word	0x000000ff
+        /*01d0*/ 	.word	0x000368a0
+        /*01d4*/ 	.short	0x0100
+        /*01d6*/ 	.byte	0x05
+	.zero		1
+
+
+	//   ....[3]....
+        /*01d8*/ 	.word	0x00000310
+        /*01dc*/ 	.word	0x000000ff
+        /*01e0*/ 	.word	0x00036808
+        /*01e4*/ 	.short	0x0100
+        /*01e6*/ 	.byte	0x05
+	.zero		1
+
+
+	//   ....[4]....
+        /*01e8*/ 	.word	0x00000320
+        /*01ec*/ 	.word	0x000000ff
+        /*01f0*/ 	.word	0x00036858
+        /*01f4*/ 	.short	0x0100
+        /*01f6*/ 	.byte	0x05
+	.zero		1
+
+
+	//   ....[5]....
+        /*01f8*/ 	.word	0x00000330
+        /*01fc*/ 	.word	0x000000ff
+        /*0200*/ 	.word	0x000368a8
+        /*0204*/ 	.short	0x0100
+        /*0206*/ 	.byte	0x05
+	.zero		1
+
+
+	//   ....[6]....
+        /*0208*/ 	.word	0x00000340
+        /*020c*/ 	.word	0x000000ff
+        /*0210*/ 	.word	0x00036810
+        /*0214*/ 	.short	0x0100
+        /*0216*/ 	.byte	0x05
+	.zero		1
+
+
+	//   ....[7]....
+        /*0218*/ 	.word	0x00000350
+        /*021c*/ 	.word	0x000000ff
+        /*0220*/ 	.word	0x00036860
+        /*0224*/ 	.short	0x0100
+        /*0226*/ 	.byte	0x05
+	.zero		1
+
+
+	//   ....[8]....
+        /*0228*/ 	.word	0x00000360
+        /*022c*/ 	.word	0x000000ff
+        /*0230*/ 	.word	0x000368b0
+        /*0234*/ 	.short	0x0100
+        /*0236*/ 	.byte	0x05
+	.zero		1
+
+
+	//   ....[9]....
+        /*0238*/ 	.word	0x00000370
+        /*023c*/ 	.word	0x000000ff
+        /*0240*/ 	.word	0x00036818
+        /*0244*/ 	.short	0x0100
+        /*0246*/ 	.byte	0x05
+	.zero		1
+
+
+	//   ....[10]....
+        /*0248*/ 	.word	0x00000380
+        /*024c*/ 	.word	0x000000ff
+        /*0250*/ 	.word	0x00036868
+        /*0254*/ 	.short	0x0100
+        /*0256*/ 	.byte	0x05
+	.zero		1
+
+
+	//   ....[11]....
+        /*0258*/ 	.word	0x00000390
+        /*025c*/ 	.word	0x000000ff
+        /*0260*/ 	.word	0x000368b8
+        /*0264*/ 	.short	0x0100
+        /*0266*/ 	.byte	0x05
+	.zero		1
+
+
+	//   ....[12]....
+        /*0268*/ 	.word	0x000003a0
+        /*026c*/ 	.word	0x000000ff
+        /*0270*/ 	.word	0x00036820
+        /*0274*/ 	.short	0x0100
+        /*0276*/ 	.byte	0x05
+	.zero		1
+
+
+	//   ....[13]....
+        /*0278*/ 	.word	0x000003b0
+        /*027c*/ 	.word	0x000000ff
+        /*0280*/ 	.word	0x00036870
+        /*0284*/ 	.short	0x0100
+        /*0286*/ 	.byte	0x05
+	.zero		1
+
+
+	//   ....[14]....
+        /*0288*/ 	.word	0x000003c0
+        /*028c*/ 	.word	0x000000ff
+        /*0290*/ 	.word	0x000368c0
+        /*0294*/ 	.short	0x0100
+        /*0296*/ 	.byte	0x05
+	.zero		1
+
+
+	//   ....[15]....
+        /*0298*/ 	.word	0x000003d0
+        /*029c*/ 	.word	0x000000ff
+        /*02a0*/ 	.word	0x00036828
+        /*02a4*/ 	.short	0x0100
+        /*02a6*/ 	.byte	0x05
+	.zero		1
+
+
+	//   ....[16]....
+        /*02a8*/ 	.word	0x000003e0
+        /*02ac*/ 	.word	0x000000ff
+        /*02b0*/ 	.word	0x00036878
+        /*02b4*/ 	.short	0x0100
+        /*02b6*/ 	.byte	0x05
+	.zero		1
+
+
+	//   ....[17]....
+        /*02b8*/ 	.word	0x000003f0
+        /*02bc*/ 	.word	0x000000ff
+        /*02c0*/ 	.word	0x000368c8
+        /*02c4*/ 	.short	0x0100
+        /*02c6*/ 	.byte	0x05
+	.zero		1
+
+
+	//   ....[18]....
+        /*02c8*/ 	.word	0x00000400
+        /*02cc*/ 	.word	0x000000ff
+        /*02d0*/ 	.word	0x00036830
+        /*02d4*/ 	.short	0x0100
+        /*02d6*/ 	.byte	0x05
+	.zero		1
+
+
+	//   ....[19]....
+        /*02d8*/ 	.word	0x00000410
+        /*02dc*/ 	.word	0x000000ff
+        /*02e0*/ 	.word	0x00036880
+        /*02e4*/ 	.short	0x0100
+        /*02e6*/ 	.byte	0x05
+	.zero		1
+
+
+	//   ....[20]....
+        /*02e8*/ 	.word	0x00000420
+        /*02ec*/ 	.word	0x000000ff
+        /*02f0*/ 	.word	0x000368d0
+        /*02f4*/ 	.short	0x0100
+        /*02f6*/ 	.byte	0x05
+	.zero		1
+
+
+	//   ....[21]....
+        /*02f8*/ 	.word	0x00000430
+        /*02fc*/ 	.word	0x000000ff
+        /*0300*/ 	.word	0x00036838
+        /*0304*/ 	.short	0x0100
+        /*0306*/ 	.byte	0x05
+	.zero		1
+
+
+	//   ....[22]....
+        /*0308*/ 	.word	0x00000440
+        /*030c*/ 	.word	0x000000ff
+        /*0310*/ 	.word	0x00036888
+        /*0314*/ 	.short	0x0100
+        /*0316*/ 	.byte	0x05
+	.zero		1
+
+
+	//   ....[23]....
+        /*0318*/ 	.word	0x00000450
+        /*031c*/ 	.word	0x000000ff
+        /*0320*/ 	.word	0x000368d8
+        /*0324*/ 	.short	0x0100
+        /*0326*/ 	.byte	0x05
+	.zero		1
+
+
+	//   ....[24]....
+        /*0328*/ 	.word	0x00000460
+        /*032c*/ 	.word	0x000000ff
+        /*0330*/ 	.word	0x00036840
+        /*0334*/ 	.short	0x0100
+        /*0336*/ 	.byte	0x05
+	.zero		1
+
+
+	//   ....[25]....
+        /*0338*/ 	.word	0x00000470
+        /*033c*/ 	.word	0x000000ff
+        /*0340*/ 	.word	0x00036890
+        /*0344*/ 	.short	0x0100
+        /*0346*/ 	.byte	0x05
+	.zero		1
+
+
+	//   ....[26]....
+        /*0348*/ 	.word	0x00000480
+        /*034c*/ 	.word	0x000000ff
+        /*0350*/ 	.word	0x000368e0
+        /*0354*/ 	.short	0x0100
+        /*0356*/ 	.byte	0x05
+	.zero		1
+
+
+	//   ....[27]....
+        /*0358*/ 	.word	0x00000490
+        /*035c*/ 	.word	0x000000ff
+        /*0360*/ 	.word	0x00036848
+        /*0364*/ 	.short	0x0100
+        /*0366*/ 	.byte	0x05
+	.zero		1
+
+
+	//   ....[28]....
+        /*0368*/ 	.word	0x000004a0
+        /*036c*/ 	.word	0x000000ff
+        /*0370*/ 	.word	0x00036898
+        /*0374*/ 	.short	0x0100
+        /*0376*/ 	.byte	0x05
+	.zero		1
+
+
+	//   ....[29]....
+        /*0378*/ 	.word	0x000004b0
+        /*037c*/ 	.word	0x000000ff
+        /*0380*/ 	.word	0x000368e8
+        /*0384*/ 	.short	0x0100
+        /*0386*/ 	.byte	0x05
+	.zero		1
+
+
+	//   ....[30]....
+        /*0388*/ 	.word	0x000004c0
+        /*038c*/ 	.word	0x000000ff
+        /*0390*/ 	.word	0x000368f0
+        /*0394*/ 	.short	0x0100
+        /*0396*/ 	.byte	0x05
+	.zero		1
+
+
+	//   ....[31]....
+        /*0398*/ 	.word	0x000004d0
+        /*039c*/ 	.word	0x000000ff
+        /*03a0*/ 	.word	0x00036900
+        /*03a4*/ 	.short	0x0100
+        /*03a6*/ 	.byte	0x05
+	.zero		1
+
+
+	//   ....[32]....
+        /*03a8*/ 	.word	0x000004e0
+        /*03ac*/ 	.word	0x000000ff
+        /*03b0*/ 	.word	0x000368f8
+        /*03b4*/ 	.short	0x0100
+        /*03b6*/ 	.byte	0x05
+	.zero		1
+
+
+	//   ....[33]....
+        /*03b8*/ 	.word	0x000004f0
+        /*03bc*/ 	.word	0x000000ff
+        /*03c0*/ 	.word	0x00036908
+        /*03c4*/ 	.short	0x0100
+        /*03c6*/ 	.byte	0x05
+	.zero		1
+
+
+	//   ....[34]....
+        /*03c8*/ 	.word	0x000009c0
+        /*03cc*/ 	.word	0x00000005
+        /*03d0*/ 	.word	0x00036800
+        /*03d4*/ 	.short	0x010a
+        /*03d6*/ 	.byte	0xff
+	.zero		1
+
+
+	//   ....[35]....
+        /*03d8*/ 	.word	0x00000c00
+        /*03dc*/ 	.word	0x0000000f
+        /*03e0*/ 	.word	0x00000000
+        /*03e4*/ 	.short	0x0101
+        /*03e6*/ 	.byte	0xff
+	.zero		1
+
+
+	//   ....[36]....
+        /*03e8*/ 	.word	0x00000c10
+        /*03ec*/ 	.word	0x0000000d
+        /*03f0*/ 	.word	0x00036800
+        /*03f4*/ 	.short	0x010a
+        /*03f6*/ 	.byte	0xff
+	.zero		1
+
+
+	//   ....[37]....
+        /*03f8*/ 	.word	0x00000ca0
+        /*03fc*/ 	.word	0x00000002
+        /*0400*/ 	.word	0x00000000
+        /*0404*/ 	.short	0x0101
+        /*0406*/ 	.byte	0xff
+	.zero		1
+
+
+	//   ....[38]....
+        /*0408*/ 	.word	0x00001090
+        /*040c*/ 	.word	0x00000009
+        /*0410*/ 	.word	0x00036850
+        /*0414*/ 	.short	0x010a
+        /*0416*/ 	.byte	0xff
+	.zero		1
+
+
+	//   ....[39]....
+        /*0418*/ 	.word	0x00001400
+        /*041c*/ 	.word	0x0000000e
+        /*0420*/ 	.word	0x00036850
+        /*0424*/ 	.short	0x010a
+        /*0426*/ 	.byte	0xff
+	.zero		1
+
+
+	//   ....[40]....
+        /*0428*/ 	.word	0x00001640
+        /*042c*/ 	.word	0x00000014
+        /*0430*/ 	.word	0x00036850
+        /*0434*/ 	.short	0x010a
+        /*0436*/ 	.byte	0xff
+	.zero		1
+
+
+	//   ....[41]....
+        /*0438*/ 	.word	0x00001840
+        /*043c*/ 	.word	0x00000016
+        /*0440*/ 	.word	0x00036850
+        /*0444*/ 	.short	0x010a
+        /*0446*/ 	.byte	0xff
+	.zero		1
+
+
+	//   ....[42]....
+        /*0448*/ 	.word	0x00001e20
+        /*044c*/ 	.word	0x00000000
+        /*0450*/ 	.word	0x00036900
+        /*0454*/ 	.short	0x010a
+        /*0456*/ 	.byte	0x14
+	.zero		1
+
+
+	//   ....[43]....
+        /*0458*/ 	.word	0x00001f40
+        /*045c*/ 	.word	0x000000ff
+        /*0460*/ 	.word	0x000368a0
+        /*0464*/ 	.short	0x010a
+        /*0466*/ 	.byte	0x17
+	.zero		1
+
+
+	//   ....[44]....
+        /*0468*/ 	.word	0x00002270
+        /*046c*/ 	.word	0x000000ff
+        /*0470*/ 	.word	0x000368a0
+        /*0474*/ 	.short	0x010a
+        /*0476*/ 	.byte	0x12
+	.zero		1
+
+
+	//   ....[45]....
+        /*0478*/ 	.word	0x000024d0
+        /*047c*/ 	.word	0x000000ff
+        /*0480*/ 	.word	0x000368a0
+        /*0484*/ 	.short	0x010a
+        /*0486*/ 	.byte	0x12
+	.zero		1
+
+
+	//   ....[46]....
+        /*0488*/ 	.word	0x00002730
+        /*048c*/ 	.word	0x000000ff
+        /*0490*/ 	.word	0x000368a0
+        /*0494*/ 	.short	0x010a
+        /*0496*/ 	.byte	0x12
+	.zero		1
+
+
+	//   ....[47]....
+        /*0498*/ 	.word	0x00002dd0
+        /*049c*/ 	.word	0x0000001c
+        /*04a0*/ 	.word	0x000368f0
+        /*04a4*/ 	.short	0x010a
+        /*04a6*/ 	.byte	0xff
+	.zero		1
+
+
+	//   ....[48]....
+        /*04a8*/ 	.word	0x00003350
+        /*04ac*/ 	.word	0x0000001c
+        /*04b0*/ 	.word	0x00000000
+        /*04b4*/ 	.short	0x0101
+        /*04b6*/ 	.byte	0xff
+	.zero		1
+
+
+	//   ....[49]....
+        /*04b8*/ 	.word	0x00003780
+        /*04bc*/ 	.word	0x00000005
+        /*04c0*/ 	.word	0x00036800
+        /*04c4*/ 	.short	0x010a
+        /*04c6*/ 	.byte	0xff
+	.zero		1
+
+
+	//   ....[50]....
+        /*04c8*/ 	.word	0x000037d0
+        /*04cc*/ 	.word	0x0000000d
+        /*04d0*/ 	.word	0x00036800
+        /*04d4*/ 	.short	0x010a
+        /*04d6*/ 	.byte	0xff
+	.zero		1
+
+
+	//   ....[51]....
+        /*04d8*/ 	.word	0x00003820
+        /*04dc*/ 	.word	0x00000009
+        /*04e0*/ 	.word	0x00036850
+        /*04e4*/ 	.short	0x010a
+        /*04e6*/ 	.byte	0xff
+	.zero		1
+
+
+	//   ....[52]....
+        /*04e8*/ 	.word	0x00003870
+        /*04ec*/ 	.word	0x0000000e
+        /*04f0*/ 	.word	0x00036850
+        /*04f4*/ 	.short	0x010a
+        /*04f6*/ 	.byte	0xff
+	.zero		1
+
+
+	//   ....[53]....
+        /*04f8*/ 	.word	0x000038c0
+        /*04fc*/ 	.word	0x00000014
+        /*0500*/ 	.word	0x00036850
+        /*0504*/ 	.short	0x010a
+        /*0506*/ 	.byte	0xff
+	.zero		1
+
+
+	//   ....[54]....
+        /*0508*/ 	.word	0x00003910
+        /*050c*/ 	.word	0x00000016
+        /*0510*/ 	.word	0x00036850
+        /*0514*/ 	.short	0x010a
+        /*0516*/ 	.byte	0xff
+	.zero		1
+
+
+	//   ....[55]....
+        /*0518*/ 	.word	0x00003970
+        /*051c*/ 	.word	0x00000000
+        /*0520*/ 	.word	0x00036900
+        /*0524*/ 	.short	0x010a
+        /*0526*/ 	.byte	0xff
+	.zero		1
+
+
+	//   ....[56]....
+        /*0528*/ 	.word	0x000039d0
+        /*052c*/ 	.word	0x00000003
+        /*0530*/ 	.word	0x000368a0
+        /*0534*/ 	.short	0x010a
+        /*0536*/ 	.byte	0xff
+	.zero		1
+
+
+	//   ....[57]....
+        /*0538*/ 	.word	0x00003a30
+        /*053c*/ 	.word	0x00000002
+        /*0540*/ 	.word	0x000368a0
+        /*0544*/ 	.short	0x010a
+        /*0546*/ 	.byte	0xff
+	.zero		1
+
+
+	//   ....[58]....
+        /*0548*/ 	.word	0x00003a90
+        /*054c*/ 	.word	0x00000002
+        /*0550*/ 	.word	0x000368a0
+        /*0554*/ 	.short	0x010a
+        /*0556*/ 	.byte	0xff
+	.zero		1
+
+
+	//   ....[59]....
+        /*0558*/ 	.word	0x00003af0
+        /*055c*/ 	.word	0x00000002
+        /*0560*/ 	.word	0x000368a0
+        /*0564*/ 	.short	0x010a
+        /*0566*/ 	.byte	0xff
+	.zero		1
+
+
+	//   ....[60]....
+        /*0568*/ 	.word	0x00003b40
+        /*056c*/ 	.word	0x0000001c
+        /*0570*/ 	.word	0x000368f0
+        /*0574*/ 	.short	0x010a
+        /*0576*/ 	.byte	0xff
+	.zero		1
+
+
+	//----- nvinfo : EIATTR_NUM_MBARRIERS
+	.align		4
+.L_58:
+        /*0578*/ 	.byte	0x03, 0x38
+        /*057a*/ 	.short	0x0022
+
+
+	//----- nvinfo : EIATTR_EXIT_INSTR_OFFSETS
+	.align		4
+        /*057c*/ 	.byte	0x04, 0x1c
+        /*057e*/ 	.short	(.L_60 - .L_59)
+
+
+	//   ....[0]....
+.L_59:
+        /*0580*/ 	.word	0x00003550
+
+
+	//   ....[1]....
+        /*0584*/ 	.word	0x00003770
+
+
+	//----- nvinfo : EIATTR_INDIRECT_BRANCH_TARGETS
+	.align		4
+.L_60:
+        /*0588*/ 	.byte	0x04, 0x34
+        /*058a*/ 	.short	(.L_62 - .L_61)
+
+
+	//   ....[0]....
+.L_61:
+        /*058c*/ 	.word	.L_x_68@srel
+        /*0590*/ 	.short	0x0
+        /*0592*/ 	.short	0x0
+        /*0594*/ 	.word	0x3
+        /*0598*/ 	.word	.L_x_69@srel
+        /*059c*/ 	.word	.L_x_70@srel
+        /*05a0*/ 	.word	.L_x_71@srel
+
+
+	//----- nvinfo : EIATTR_MAX_THREADS
+	.align		4
+.L_62:
+        /*05a4*/ 	.byte	0x04, 0x05
+        /*05a6*/ 	.short	(.L_64 - .L_63)
+.L_63:
+        /*05a8*/ 	.word	0x00000100
+        /*05ac*/ 	.word	0x00000001
+        /*05b0*/ 	.word	0x00000001
+
+
+	//----- nvinfo : EIATTR_CRS_STACK_SIZE
+	.align		4
+.L_64:
+        /*05b4*/ 	.byte	0x04, 0x1e
+        /*05b6*/ 	.short	(.L_66 - .L_65)
+.L_65:
+        /*05b8*/ 	.word	0x00000000
+
+
+	//----- nvinfo : EIATTR_CBANK_PARAM_SIZE
+	.align		4
+.L_66:
+        /*05bc*/ 	.byte	0x03, 0x19
+        /*05be*/ 	.short	0x0300
+
+
+	//----- nvinfo : EIATTR_PARAM_CBANK
+	.align		4
+        /*05c0*/ 	.byte	0x04, 0x0a
+        /*05c2*/ 	.short	(.L_68 - .L_67)
+	.align		4
+.L_67:
+        /*05c4*/ 	.word	index@(.nv.constant0._ZN9deep_gemm28sm100_fp8_fp4_gemm_1d1d_implILN4cute4UMMA5MajorE0ELS3_0ELj128ELj128ELj128ELj0ELj4096ELj6144ELj32ELj128ELj128ELj32ELj128ELj128ELj128ELj10ELj128ELj128ELj1ELb0ELj148ELb1ELb1ELNS_8GemmTypeE2ELb0EN7cutlass12float_e4m3_tES6_NS5_10bfloat16_tENS_8epilogue9transform16EpilogueIdentityEEEvPijjj14CUtensorMap_stSC_SC_SC_SC_)
+        /*05c8*/ 	.short	0x0380
+        /*05ca*/ 	.short	0x0300
+
+
+	//----- nvinfo : EIATTR_SW_WAR
+	.align		4
+.L_68:
+        /*05cc*/ 	.byte	0x04, 0x36
+        /*05ce*/ 	.short	(.L_70 - .L_69)
+.L_69:
+        /*05d0*/ 	.word	0x00000008
+.L_70:
+
+
+//--------------------- .nv.callgraph             --------------------------
+	.section	.nv.callgraph,"",@"SHT_CUDA_CALLGRAPH"
+	.align	4
+	.sectionentsize	8
+	.align		4
+        /*0000*/ 	.word	0x00000000
+	.align		4
+        /*0004*/ 	.word	0xffffffff
+	.align		4
+        /*0008*/ 	.word	0x00000000
+	.align		4
+        /*000c*/ 	.word	0xfffffffe
+	.align		4
+        /*0010*/ 	.word	0x00000000
+	.align		4
+        /*0014*/ 	.word	0xfffffffd
+	.align		4
+        /*0018*/ 	.word	0x00000000
+	.align		4
+        /*001c*/ 	.word	0xfffffffc
+
+
+//--------------------- .nv.constant4             --------------------------
+	.section	.nv.constant4,"a",@progbits
+	.align	8
+	.align		8
+.nv.constant4:
+        /*0000*/ 	.dword	_ZN47_INTERNAL_a5c5f8be_9_kernel_cu_ff47da86_21042364cuda3std3__45__cpo5beginE
+	.align		8
+        /*0008*/ 	.dword	_ZN47_INTERNAL_a5c5f8be_9_kernel_cu_ff47da86_21042364cuda3std3__45__cpo3endE
+	.align		8
+        /*0010*/ 	.dword	_ZN47_INTERNAL_a5c5f8be_9_kernel_cu_ff47da86_21042364cuda3std3__45__cpo6cbeginE
+	.align		8
+        /*0018*/ 	.dword	_ZN47_INTERNAL_a5c5f8be_9_kernel_cu_ff47da86_21042364cuda3std3__45__cpo4cendE
+	.align		8
+        /*0020*/ 	.dword	_ZN47_INTERNAL_a5c5f8be_9_kernel_cu_ff47da86_21042364cuda3std3__449_GLOBAL__N__a5c5f8be_9_kernel_cu_ff47da86_21042366ignoreE
+	.align		8
+        /*0028*/ 	.dword	_ZN47_INTERNAL_a5c5f8be_9_kernel_cu_ff47da86_21042364cuda3std3__419piecewise_constructE
+	.align		8
+        /*0030*/ 	.dword	_ZN47_INTERNAL_a5c5f8be_9_kernel_cu_ff47da86_21042364cuda3std3__48in_placeE
+	.align		8
+        /*0038*/ 	.dword	_ZN47_INTERNAL_a5c5f8be_9_kernel_cu_ff47da86_21042364cuda3std6ranges3__45__cpo4swapE
+	.align		8
+        /*0040*/ 	.dword	_ZN47_INTERNAL_a5c5f8be_9_kernel_cu_ff47da86_21042364cuda3std6ranges3__45__cpo9iter_moveE
+	.align		8
+        /*0048*/ 	.dword	_ZN47_INTERNAL_a5c5f8be_9_kernel_cu_ff47da86_21042364cuda3__413in_place_fromE
+	.align		8
+        /*0050*/ 	.dword	_ZN47_INTERNAL_a5c5f8be_9_kernel_cu_ff47da86_21042364cute7productE
+	.align		8
+        /*0058*/ 	.dword	_ZN47_INTERNAL_a5c5f8be_9_kernel_cu_ff47da86_21042364cute1_E
+
+
+//--------------------- .nv.constant2._ZN9deep_gemm28sm100_fp8_fp4_gemm_1d1d_implILN4cute4UMMA5MajorE0ELS3_0ELj128ELj128ELj128ELj0ELj4096ELj6144ELj32ELj128ELj128ELj32ELj128ELj128ELj128ELj10ELj128ELj128ELj1ELb0ELj148ELb1ELb1ELNS_8GemmTypeE2ELb0EN7cutlass12float_e4m3_tES6_NS5_10bfloat16_tENS_8epilogue9transform16EpilogueIdentityEEEvPijjj14CUtensorMap_stSC_SC_SC_SC_ --------------------------
+	.section	.nv.constant2._ZN9deep_gemm28sm100_fp8_fp4_gemm_1d1d_implILN4cute4UMMA5MajorE0ELS3_0ELj128ELj128ELj128ELj0ELj4096ELj6144ELj32ELj128ELj128ELj32ELj128ELj128ELj128ELj10ELj128ELj128ELj1ELb0ELj148ELb1ELb1ELNS_8GemmTypeE2ELb0EN7cutlass12float_e4m3_tES6_NS5_10bfloat16_tENS_8epilogue9transform16EpilogueIdentityEEEvPijjj14CUtensorMap_stSC_SC_SC_SC_,"a",@progbits
+	.sectionflags	@""
+	.align	4
+.nv.constant2._ZN9deep_gemm28sm100_fp8_fp4_gemm_1d1d_implILN4cute4UMMA5MajorE0ELS3_0ELj128ELj128ELj128ELj0ELj4096ELj6144ELj32ELj128ELj128ELj32ELj128ELj128ELj128ELj10ELj128ELj128ELj1ELb0ELj148ELb1ELb1ELNS_8GemmTypeE2ELb0EN7cutlass12float_e4m3_tES6_NS5_10bfloat16_tENS_8epilogue9transform16EpilogueIdentityEEEvPijjj14CUtensorMap_stSC_SC_SC_SC_:
+        /*0000*/ 	.byte	0x50, 0x0d, 0x00, 0x00, 0xc0, 0x1a, 0x00, 0x00, 0x10, 0x08, 0x00, 0x00
+
+
+//--------------------- .text._ZN9deep_gemm28sm100_fp8_fp4_gemm_1d1d_implILN4cute4UMMA5MajorE0ELS3_0ELj128ELj128ELj128ELj0ELj4096ELj6144ELj32ELj128ELj128ELj32ELj128ELj128ELj128ELj10ELj128ELj128ELj1ELb0ELj148ELb1ELb1ELNS_8GemmTypeE2ELb0EN7cutlass12float_e4m3_tES6_NS5_10bfloat16_tENS_8epilogue9transform16EpilogueIdentityEEEvPijjj14CUtensorMap_stSC_SC_SC_SC_ --------------------------
+	.section	.text._ZN9deep_gemm28sm100_fp8_fp4_gemm_1d1d_implILN4cute4UMMA5MajorE0ELS3_0ELj128ELj128ELj128ELj0ELj4096ELj6144ELj32ELj128ELj128ELj32ELj128ELj128ELj128ELj10ELj128ELj128ELj1ELb0ELj148ELb1ELb1ELNS_8GemmTypeE2ELb0EN7cutlass12float_e4m3_tES6_NS5_10bfloat16_tENS_8epilogue9transform16EpilogueIdentityEEEvPijjj14CUtensorMap_stSC_SC_SC_SC_,"ax",@progbits
+	.align	128
+.text._ZN9deep_gemm28sm100_fp8_fp4_gemm_1d1d_implILN4cute4UMMA5MajorE0ELS3_0ELj128ELj128ELj128ELj0ELj4096ELj6144ELj32ELj128ELj128ELj32ELj128ELj128ELj128ELj10ELj128ELj128ELj1ELb0ELj148ELb1ELb1ELNS_8GemmTypeE2ELb0EN7cutlass12float_e4m3_tES6_NS5_10bfloat16_tENS_8epilogue9transform16EpilogueIdentityEEEvPijjj14CUtensorMap_stSC_SC_SC_SC_:
+        .type           _ZN9deep_gemm28sm100_fp8_fp4_gemm_1d1d_implILN4cute4UMMA5MajorE0ELS3_0ELj128ELj128ELj128ELj0ELj4096ELj6144ELj32ELj128ELj128ELj32ELj128ELj128ELj128ELj10ELj128ELj128ELj1ELb0ELj148ELb1ELb1ELNS_8GemmTypeE2ELb0EN7cutlass12float_e4m3_tES6_NS5_10bfloat16_tENS_8epilogue9transform16EpilogueIdentityEEEvPijjj14CUtensorMap_stSC_SC_SC_SC_,@function
+        .size           _ZN9deep_gemm28sm100_fp8_fp4_gemm_1d1d_implILN4cute4UMMA5MajorE0ELS3_0ELj128ELj128ELj128ELj0ELj4096ELj6144ELj32ELj128ELj128ELj32ELj128ELj128ELj128ELj10ELj128ELj128ELj1ELb0ELj148ELb1ELb1ELNS_8GemmTypeE2ELb0EN7cutlass12float_e4m3_tES6_NS5_10bfloat16_tENS_8epilogue9transform16EpilogueIdentityEEEvPijjj14CUtensorMap_stSC_SC_SC_SC_,(.L_x_72 - _ZN9deep_gemm28sm100_fp8_fp4_gemm_1d1d_implILN4cute4UMMA5MajorE0ELS3_0ELj128ELj128ELj128ELj0ELj4096ELj6144ELj32ELj128ELj128ELj32ELj128ELj128ELj128ELj10ELj128ELj128ELj1ELb0ELj148ELb1ELb1ELNS_8GemmTypeE2ELb0EN7cutlass12float_e4m3_tES6_NS5_10bfloat16_tENS_8epilogue9transform16EpilogueIdentityEEEvPijjj14CUtensorMap_stSC_SC_SC_SC_)
+        .other          _ZN9deep_gemm28sm100_fp8_fp4_gemm_1d1d_implILN4cute4UMMA5MajorE0ELS3_0ELj128ELj128ELj128ELj0ELj4096ELj6144ELj32ELj128ELj128ELj32ELj128ELj128ELj128ELj10ELj128ELj128ELj1ELb0ELj148ELb1ELb1ELNS_8GemmTypeE2ELb0EN7cutlass12float_e4m3_tES6_NS5_10bfloat16_tENS_8epilogue9transform16EpilogueIdentityEEEvPijjj14CUtensorMap_stSC_SC_SC_SC_,@"STO_CUDA_ENTRY STV_DEFAULT"
+_ZN9deep_gemm28sm100_fp8_fp4_gemm_1d1d_implILN4cute4UMMA5MajorE0ELS3_0ELj128ELj128ELj128ELj0ELj4096ELj6144ELj32ELj128ELj128ELj32ELj128ELj128ELj128ELj10ELj128ELj128ELj1ELb0ELj148ELb1ELb1ELNS_8GemmTypeE2ELb0EN7cutlass12float_e4m3_tES6_NS5_10bfloat16_tENS_8epilogue9transform16EpilogueIdentityEEEvPijjj14CUtensorMap_stSC_SC_SC_SC_:
+        /*0000*/                   LDC R1, c[0x0][0x37c] ;
+        /*0010*/                   S2R R0, SR_TID.X ;
+        /*0020*/                   SHF.R.U32.HI R0, RZ, 0x5, R0 ;
+        /*0030*/                   SHFL.IDX PT, R27, R0, RZ, 0x1f ;
+        /*0040*/                   ISETP.NE.U32.AND P0, PT, R27, 0x2, PT ;
+        /*0050*/              @!P0 BRA `(.L_x_0) ;
+        /*0060*/                   ISETP.NE.U32.AND P0, PT, R27, 0x1, PT ;
+        /*0070*/              @!P0 BRA `(.L_x_1) ;
+        /*0080*/                   ISETP.NE.U32.AND P0, PT, R27, RZ, PT ;
+        /*0090*/               @P0 BRA `(.L_x_2) ;
+        /*00a0*/                   LDCU.64 UR4, c[0x0][0x348] ;
+        /*00b0*/                   UIADD3 UR12, UP4, UPT, UR4, 0x80, URZ ;
+        /*00c0*/                   UIADD3 UR10, UP3, UPT, UR4, 0x100, URZ ;
+        /*00d0*/                   UIADD3 UR8, UP2, UPT, UR4, 0x180, URZ ;
+        /*00e0*/                   UIADD3 UR6, UP1, UPT, UR4, 0x200, URZ ;
+        /*00f0*/                   UIADD3 UR4, UP0, UPT, UR4, 0x280, URZ ;
+        /*0100*/                   UIADD3.X UR13, UPT, UPT, URZ, UR5, URZ, UP4, !UPT ;
+        /*0110*/                   UIADD3.X UR11, UPT, UPT, URZ, UR5, URZ, UP3, !UPT ;
+        /*0120*/                   UIADD3.X UR9, UPT, UPT, URZ, UR5, URZ, UP2, !UPT ;
+        /*0130*/                   UIADD3.X UR7, UPT, UPT, URZ, UR5, URZ, UP1, !UPT ;
+        /*0140*/                   UIADD3.X UR5, UPT, UPT, URZ, UR5, URZ, UP0, !UPT ;
+        /*0150*/                   UTMACCTL.PF [UR12] ;
+        /*0160*/                   UTMACCTL.PF [UR10] ;
+        /*0170*/                   UTMACCTL.PF [UR8] ;
+        /*0180*/                   UTMACCTL.PF [UR6] ;
+        /*0190*/                   UTMACCTL.PF [UR4] ;
+        /*01a0*/                   BRA `(.L_x_2) ;
+.L_x_1:
+        /*01b0*/                   ELECT P0, URZ, PT ;
+        /*01c0*/                   BSSY.RECONVERGENT B0, `(.L_x_3) ;
+        /*01d0*/              @!P0 BRA `(.L_x_4) ;
+        /*01e0*/                   S2UR UR5, SR_CgaCtaId ;
+        /*01f0*/                   UMOV UR7, 0x400 ;
+        /*0200*/                   UMOV UR6, 0x1 ;
+        /*0210*/                   UMOV UR4, 0x20 ;
+        /*0220*/                   UIADD3 UR8, UPT, UPT, -UR4, 0x100000, URZ ;
+        /*0230*/                   USHF.L.U32 UR9, UR8, 0xb, URZ ;
+        /*0240*/                   USHF.L.U32 UR8, UR8, 0x1, URZ ;
+        /*0250*/                   UMOV UR4, 0x80 ;
+        /*0260*/                   UIADD3 UR10, UPT, UPT, -UR4, 0x100000, URZ ;
+        /*0270*/                   USHF.L.U32 UR11, UR10, 0xb, URZ ;
+        /*0280*/                   USHF.L.U32 UR10, UR10, 0x1, URZ ;
+        /*0290*/                   ULEA UR5, UR5, UR7, 0x18 ;
+        /*02a0*/                   UIADD3 UR6, UPT, UPT, -UR6, 0x100000, URZ ;
+        /*02b0*/                   USHF.L.U32 UR7, UR6, 0xb, URZ ;
+        /*02c0*/                   USHF.L.U32 UR6, UR6, 0x1, URZ ;
+        /*02d0*/                   FENCE.VIEW.ASYNC.S ;
+        /*02e0*/                   SYNCS.EXCH.64 URZ, [UR5+0x36800], UR6 ;
+        /*02f0*/                   SYNCS.EXCH.64 URZ, [UR5+0x36850], UR6 ;
+        /*0300*/                   SYNCS.EXCH.64 URZ, [UR5+0x368a0], UR8 ;
+        /*0310*/                   SYNCS.EXCH.64 URZ, [UR5+0x36808], UR6 ;
+        /*0320*/                   SYNCS.EXCH.64 URZ, [UR5+0x36858], UR6 ;
+        /*0330*/                   SYNCS.EXCH.64 URZ, [UR5+0x368a8], UR8 ;
+        /*0340*/                   SYNCS.EXCH.64 URZ, [UR5+0x36810], UR6 ;
+        /*0350*/                   SYNCS.EXCH.64 URZ, [UR5+0x36860], UR6 ;
+        /*0360*/                   SYNCS.EXCH.64 URZ, [UR5+0x368b0], UR8 ;
+        /*0370*/                   SYNCS.EXCH.64 URZ, [UR5+0x36818], UR6 ;
+        /*0380*/                   SYNCS.EXCH.64 URZ, [UR5+0x36868], UR6 ;
+        /*0390*/                   SYNCS.EXCH.64 URZ, [UR5+0x368b8], UR8 ;
+        /*03a0*/                   SYNCS.EXCH.64 URZ, [UR5+0x36820], UR6 ;
+        /*03b0*/                   SYNCS.EXCH.64 URZ, [UR5+0x36870], UR6 ;
+        /*03c0*/                   SYNCS.EXCH.64 URZ, [UR5+0x368c0], UR8 ;
+        /*03d0*/                   SYNCS.EXCH.64 URZ, [UR5+0x36828], UR6 ;
+        /*03e0*/                   SYNCS.EXCH.64 URZ, [UR5+0x36878], UR6 ;
+        /*03f0*/                   SYNCS.EXCH.64 URZ, [UR5+0x368c8], UR8 ;
+        /*0400*/                   SYNCS.EXCH.64 URZ, [UR5+0x36830], UR6 ;
+        /*0410*/                   SYNCS.EXCH.64 URZ, [UR5+0x36880], UR6 ;
+        /*0420*/                   SYNCS.EXCH.64 URZ, [UR5+0x368d0], UR8 ;
+        /*0430*/                   SYNCS.EXCH.64 URZ, [UR5+0x36838], UR6 ;
+        /*0440*/                   SYNCS.EXCH.64 URZ, [UR5+0x36888], UR6 ;
+        /*0450*/                   SYNCS.EXCH.64 URZ, [UR5+0x368d8], UR8 ;
+        /*0460*/                   SYNCS.EXCH.64 URZ, [UR5+0x36840], UR6 ;
+        /*0470*/                   SYNCS.EXCH.64 URZ, [UR5+0x36890], UR6 ;
+        /*0480*/                   SYNCS.EXCH.64 URZ, [UR5+0x368e0], UR8 ;
+        /*0490*/                   SYNCS.EXCH.64 URZ, [UR5+0x36848], UR6 ;
+        /*04a0*/                   SYNCS.EXCH.64 URZ, [UR5+0x36898], UR6 ;
+        /*04b0*/                   SYNCS.EXCH.64 URZ, [UR5+0x368e8], UR8 ;
+        /*04c0*/                   SYNCS.EXCH.64 URZ, [UR5+0x368f0], UR6 ;
+        /*04d0*/                   SYNCS.EXCH.64 URZ, [UR5+0x36900], UR10 ;
+        /*04e0*/                   SYNCS.EXCH.64 URZ, [UR5+0x368f8], UR6 ;
+        /*04f0*/                   SYNCS.EXCH.64 URZ, [UR5+0x36908], UR10 ;
+        /*0500*/                   NOP ;
+.L_x_4:
+        /*0510*/                   BSYNC.RECONVERGENT B0 ;
+.L_x_3:
+        /*0520*/                   BRA `(.L_x_2) ;
+.L_x_0:
+        /*0530*/                   S2UR UR5, SR_CgaCtaId ;
+        /*0540*/                   UMOV UR6, 0x40 ;
+        /*0550*/                   NOP ;
+        /*0560*/                   UMOV UR4, 0x400 ;
+        /*0570*/                   ULEA UR6, UR5, UR6, 0x18 ;
+        /*0580*/                   ULEA UR5, UR5, UR4, 0x18 ;
+        /*0590*/                   LDS.U8 R0, [UR6+0x1c] ;
+        /*05a0*/                   ISETP.NE.AND P0, PT, R0, RZ, PT ;
+        /*05b0*/               @P0 BRA `(.L_x_5) ;
+        /*05c0*/                   ELECT P0, URZ, PT ;
+        /*05d0*/              @!P0 BRA `(.L_x_6) ;
+        /*05e0*/                   UMOV UR4, 0x4 ;
+        /*05f0*/                   HFMA2 R2, -RZ, RZ, 0, 8.94069671630859375e-07 ;
+        /*0600*/                   MOV R0, 0x1 ;
+        /*0610*/                   DEPBAR.LE SB1, 0x36 ;
+        /*0620*/                   UTCATOMSWS.FIND_AND_SET.ALIGN UP0, UR4, UR4 ;
+        /*0630*/                   MOV R3, UR4 ;
+        /*0640*/                   BRA.U UP0, `(.L_x_7) ;
+.L_x_8:
+        /*0650*/                   NANOSLEEP 0x64 ;
+        /*0660*/                   UMOV UR4, 0x4 ;
+        /*0670*/                   DEPBAR.LE SB1, 0x36 ;
+        /*0680*/                   UTCATOMSWS.FIND_AND_SET.ALIGN UP0, UR4, UR4 ;
+        /*0690*/                   MOV R3, UR4 ;
+        /*06a0*/                   BRA.U !UP0, `(.L_x_8) ;
+.L_x_7:
+        /*06b0*/                   SHF.L.U32 R2, R2, R3.reuse, RZ ;
+        /*06c0*/                   SHF.L.U32 R0, R0, R3, RZ ;
+        /*06d0*/                   IMAD.SHL.U32 R3, R3, 0x20, RZ ;
+        /*06e0*/                   ATOMS.OR RZ, [UR6+0x14], R2 ;
+        /*06f0*/                   ATOMS.OR RZ, [UR6+0x18], R0 ;
+        /*0700*/                   STS [UR5+0x36910], R3 ;
+        /*0710*/                   BRA `(.L_x_6) ;
+.L_x_5:
+        /*0720*/                   MOV R0, 0xffffffff ;
+        /*0730*/                   MOV R2, 0x760 ;
+        /*0740*/                   STS [UR5+0x36910], R0 ;
+        /*0750*/                   CALL.REL.NOINC `($__internal_1_$__cuda_sm10x_tcgen05_guardrail_trap_phase_invalid_during_alloc) ;
+.L_x_6:
+        /*0760*/                   WARPSYNC.ALL ;
+.L_x_2:
+        /*0770*/                   VIMNMX.U32 R4, PT, PT, R27, 0x2, PT ;
+        /*0780*/                   BAR.SYNC.DEFER_BLOCKING 0x0 ;
+        /*0790*/                   IMAD.SHL.U32 R4, R4, 0x4, RZ ;
+        /*07a0*/                   S2UR UR12, SR_CgaCtaId ;
+        /*07b0*/                   LDCU.64 UR14, c[0x0][0x358] ;
+        /*07c0*/                   S2R R0, SR_LANEID ;
+        /*07d0*/                   LDC R2, c[0x2][R4] ;
+        /*07e0*/                   ACQBULK ;
+        /*07f0*/                   SHF.R.S32.HI R3, RZ, 0x1f, R2 ;
+.L_x_68:
+        /*0800*/                   BRX R2 -0x810                                                                                                                                                                                                                                                                                                                                                 (*"BRANCH_TARGETS .L_x_69,.L_x_70,.L_x_71"*);
+.L_x_71:
+        /*0810*/                   ISETP.NE.U32.AND P0, PT, R27, 0x2, PT ;
+        /*0820*/               @P0 BRA `(.L_x_9) ;
+        /*0830*/                   S2UR UR6, SR_CTAID.X ;
+        /*0840*/                   HFMA2 R17, -RZ, RZ, 0, 0 ;
+        /*0850*/                   CS2R R6, SRZ ;
+        /*0860*/                   IMAD.MOV.U32 R18, RZ, RZ, RZ ;
+        /*0870*/                   UMOV UR5, 0xffffffff ;
+.L_x_15:
+        /*0880*/                   UIMAD UR4, UR5, 0x94, UR6 ;
+        /*0890*/                   UIADD3 UR5, UPT, UPT, UR5, 0x1, URZ ;
+        /*08a0*/                   UIADD3 UR4, UPT, UPT, UR4, 0x94, URZ ;
+.L_x_17:
+        /*08b0*/                   LDC.64 R2, c[0x0][0x380] ;
+        /*08c0*/                   IMAD.WIDE.U32 R4, R18, 0x4, R2 ;
+        /*08d0*/                   LDG.E R2, desc[UR14][R4.64] ;
+        /*08e0*/                   VIADD R2, R2, 0x1f ;
+        /*08f0*/                   LEA.HI R2, R2, R17, RZ, 0x1b ;
+        /*0900*/                   SHF.L.U32 R3, R2, 0x5, RZ ;
+        /*0910*/                   ISETP.LE.U32.AND P0, PT, R3, UR4, PT ;
+        /*0920*/               @P0 BRA `(.L_x_10) ;
+        /*0930*/                   S2R R3, SR_CgaCtaId ;
+        /*0940*/                   MOV R2, 0x400 ;
+        /*0950*/                   UMOV UR4, URZ ;
+        /*0960*/                   LEA R3, R3, R2, 0x18 ;
+.L_x_14:
+        /*0970*/                   IMAD R5, R6.reuse, 0x8, R3 ;
+        /*0980*/                   SHF.L.U32 R2, R7, 0x1f, RZ ;
+        /*0990*/                   S2R R3, SR_CgaCtaId ;
+        /*09a0*/                   VIADD R14, R6.reuse, 0x1 ;
+        /*09b0*/                   ISETP.NE.U32.AND P0, PT, R6, 0x9, PT ;
+        /*09c0*/                   SYNCS.PHASECHK.TRANS64.TRYWAIT P1, [R5+URZ+0x36800], R2 ;
+        /*09d0*/                   MOV R4, 0x400 ;
+        /*09e0*/                   VIADD R15, R5, 0x368a0 ;
+        /*09f0*/                   SEL R14, R14, RZ, P0 ;
+        /*0a00*/                   ISETP.NE.U32.AND P0, PT, R14, RZ, PT ;
+        /*0a10*/                   SEL R12, RZ, 0x1, P0 ;
+        /*0a20*/                   LEA R3, R3, R4, 0x18 ;
+        /*0a30*/              @!P1 BRA `(.L_x_11) ;
+.L_x_50:
+        /*0a40*/                   ULOP3.LUT UP0, URZ, UR4, 0x2, URZ, 0xc0, !UPT ;
+        /*0a50*/                   LOP3.LUT R12, R7, R12, RZ, 0x3c, !PT ;
+        /*0a60*/                   IMAD R13, R14, 0x8, R3 ;
+        /*0a70*/                   PRMT R15, RZ, 0x654, R15 ;
+        /*0a80*/                   SHF.L.U32 R2, R12, 0x1f, RZ ;
+        /*0a90*/                   BRA.U UP0, `(.L_x_12) ;
+        /*0aa0*/                   S2R R4, SR_CgaCtaId ;
+        /*0ab0*/                   MOV R5, 0x400 ;
+        /*0ac0*/                   LEA R5, R4, R5, 0x18 ;
+        /*0ad0*/                   IMAD R5, R6, 0x200, R5 ;
+        /*0ae0*/                   IMAD R16, R0.reuse, 0x10, R5 ;
+        /*0af0*/                   LEA R19, R0, R5, 0x2 ;
+        /*0b00*/                   LDS R8, [R19+0x34000] ;
+        /*0b10*/                   LDS R9, [R19+0x34080] ;
+        /*0b20*/                   LDS R10, [R19+0x34100] ;
+        /*0b30*/                   LDS R11, [R19+0x34180] ;
+        /*0b40*/                   NOP ;
+        /*0b50*/                   STS.128 [R16+0x34000], R8 ;
+        /*0b60*/                   MEMBAR.ALL.CTA ;
+        /*0b70*/                   FENCE.VIEW.ASYNC.S ;
+        /*0b80*/                   LDS R4, [R19+0x35400] ;
+        /*0b90*/                   LDS R5, [R19+0x35480] ;
+        /*0ba0*/                   LDS R6, [R19+0x35500] ;
+        /*0bb0*/                   LDS R7, [R19+0x35580] ;
+        /*0bc0*/                   NOP ;
+        /*0bd0*/                   STS.128 [R16+0x35400], R4 ;
+        /*0be0*/                   MEMBAR.ALL.CTA ;
+        /*0bf0*/                   FENCE.VIEW.ASYNC.S ;
+.L_x_12:
+        /*0c00*/                   SYNCS.ARRIVE.TRANS64.RED.A1T0 RZ, [R15+URZ], RZ ;
+        /*0c10*/                   SYNCS.PHASECHK.TRANS64.TRYWAIT P0, [R13+URZ+0x36800], R2 ;
+        /*0c20*/              @!P0 BRA `(.L_x_13) ;
+.L_x_51:
+        /*0c30*/                   VIADD R2, R13, 0x368a0 ;
+        /*0c40*/                   ISETP.NE.U32.AND P0, PT, R14.reuse, 0x9, PT ;
+        /*0c50*/                   VIADD R6, R14, 0x1 ;
+        /*0c60*/                   UIADD3 UR4, UPT, UPT, UR4, 0x2, URZ ;
+        /*0c70*/                   PRMT R2, RZ, 0x654, R2 ;
+        /*0c80*/                   SEL R6, R6, RZ, P0 ;
+        /*0c90*/                   UISETP.NE.U32.AND UP0, UPT, UR4, 0x30, UPT ;
+        /*0ca0*/                   SYNCS.ARRIVE.TRANS64.RED.A1T0 RZ, [R2+URZ], RZ ;
+        /*0cb0*/                   ISETP.NE.U32.AND P0, PT, R6, RZ, PT ;
+        /*0cc0*/                   SEL R7, RZ, 0x1, P0 ;
+        /*0cd0*/                   LOP3.LUT R7, R12, R7, RZ, 0x3c, !PT ;
+        /*0ce0*/                   BRA.U UP0, `(.L_x_14) ;
+        /*0cf0*/                   BRA `(.L_x_15) ;
+.L_x_10:
+        /*0d00*/                   IADD3 R18, PT, PT, R18, 0x1, RZ ;
+        /*0d10*/                   ISETP.NE.U32.AND P0, PT, R18, 0x20, PT ;
+        /*0d20*/              @!P0 BRA `(.L_x_16) ;
+        /*0d30*/                   MOV R17, R2 ;
+        /*0d40*/                   BRA `(.L_x_17) ;
+.L_x_69:
+        /*0d50*/                   ELECT P0, URZ, PT ;
+        /*0d60*/              @!P0 BRA `(.L_x_9) ;
+        /*0d70*/                   S2R R2, SR_CTAID.X ;
+        /*0d80*/                   LDC.64 R16, c[0x0][0x348] ;
+        /*0d90*/                   HFMA2 R14, -RZ, RZ, 0, 0 ;
+        /*0da0*/                   IMAD.MOV.U32 R10, RZ, RZ, -0x1 ;
+        /*0db0*/                   CS2R R12, SRZ ;
+        /*0dc0*/                   IMAD.MOV.U32 R11, RZ, RZ, RZ ;
+.L_x_24:
+        /*0dd0*/                   IMAD R6, R10.reuse, 0x94, R2 ;
+        /*0de0*/                   IADD3 R10, PT, PT, R10, 0x1, RZ ;
+        /*0df0*/                   IADD3 R6, PT, PT, R6, 0x94, RZ ;
+.L_x_25:
+        /*0e00*/                   LDC.64 R4, c[0x0][0x380] ;
+        /*0e10*/                   IMAD.WIDE.U32 R8, R12, 0x4, R4 ;
+        /*0e20*/                   LDG.E R4, desc[UR14][R8.64] ;
+        /*0e30*/                   VIADD R4, R4, 0x1f ;
+        /*0e40*/                   LEA.HI R0, R4, R11, RZ, 0x1b ;
+        /*0e50*/                   SHF.L.U32 R3, R0, 0x5, RZ ;
+        /*0e60*/                   ISETP.GE.U32.AND P0, PT, R6, R3, PT ;
+        /*0e70*/               @P0 BRA `(.L_x_18) ;
+        /*0e80*/                   IMAD R3, R11, -0x20, R6 ;
+        /*0e90*/                   MOV R0, 0xf00 ;
+        /*0ea0*/                   SHF.R.U32.HI R5, RZ, 0x5, R3 ;
+        /*0eb0*/                   LOP3.LUT R3, R3, 0x1ff, RZ, 0xc0, !PT ;
+        /*0ec0*/                   LOP3.LUT R5, R5, 0x7fffff0, RZ, 0xc0, !PT ;
+        /*0ed0*/                   LEA.HI R4, R4, -R5, RZ, 0x1b ;
+        /*0ee0*/                   VIMNMX.U32 R4, PT, PT, R4, 0x10, PT ;
+        /*0ef0*/                   CALL.REL.NOINC `($__internal_3_$__cuda_sm20_div_u16) ;
+        /*0f00*/                   PRMT R6, R4, 0x9910, RZ ;
+        /*0f10*/                   S2R R0, SR_CgaCtaId ;
+        /*0f20*/                   PRMT R4, R29.reuse, 0x9910, RZ ;
+        /*0f30*/                   LDCU UR4, c[0x0][0x388] ;
+        /*0f40*/                   SHF.L.U32 R29, R29, 0x7, RZ ;
+        /*0f50*/                   IMAD R8, R12, 0xc, RZ ;
+        /*0f60*/                   IMAD R4, R6, R4, RZ ;
+        /*0f70*/                   IMAD.MOV.U32 R6, RZ, RZ, 0x180 ;
+        /*0f80*/                   IMAD.MOV R4, RZ, RZ, -R4 ;
+        /*0f90*/                   PRMT R4, R4, 0x7710, RZ ;
+        /*0fa0*/                   IMAD.IADD R4, R3, 0x1, R4 ;
+        /*0fb0*/                   MOV R3, 0x400 ;
+        /*0fc0*/                   LOP3.LUT R4, R4, 0xffff, RZ, 0xc0, !PT ;
+        /*0fd0*/                   IMAD.IADD R7, R5, 0x1, R4 ;
+        /*0fe0*/                   LOP3.LUT R5, R29, 0x7fff80, RZ, 0xe2, !PT ;
+        /*0ff0*/                   LEA R3, R0, R3, 0x18 ;
+        /*1000*/                   SHF.L.U32 R7, R7, 0x5, RZ ;
+        /*1010*/                   LEA R0, R12, R5, 0xc ;
+        /*1020*/                   IMAD R4, R12, UR4, R7 ;
+.L_x_23:
+        /*1030*/                   LOP3.LUT R18, R13, 0x1, RZ, 0x3c, !PT ;
+        /*1040*/                   IMAD R9, R14, 0x8, R3.reuse ;
+        /*1050*/                   YIELD ;
+        /*1060*/                   SHF.L.U32 R18, R18, 0x1f, RZ ;
+        /*1070*/                   IMAD R21, R14.reuse, 0x1000, R3 ;
+        /*1080*/                   ISETP.NE.U32.AND P2, PT, R14, 0x9, PT ;
+        /*1090*/                   SYNCS.PHASECHK.TRANS64.TRYWAIT P0, [R9+URZ+0x36850], R18 ;
+        /*10a0*/              @!P0 BRA `(.L_x_19) ;
+.L_x_52:
+        /*10b0*/                   LDCU.64 UR18, c[0x0][0x348] ;
+        /*10c0*/                   VIADD R20, R14, 0x1 ;
+        /*10d0*/                   IADD3 R24, P1, PT, R16, 0x80, RZ ;
+        /*10e0*/                   IMAD R15, R14, 0x4000, R3.reuse ;
+        /*10f0*/                   IADD3 R18, P0, PT, R16, 0x100, RZ ;
+        /*1100*/                   IMAD R14, R14, 0x200, R3 ;
+        /*1110*/                   R2UR UR10, R6 ;
+        /*1120*/                   IMAD.X R25, RZ, RZ, R17.reuse, P1 ;
+        /*1130*/                   R2UR UR9, R9 ;
+        /*1140*/                   IMAD.X R19, RZ, RZ, R17, P0 ;
+        /*1150*/                   R2UR UR8, R21 ;
+        /*1160*/                   UMOV UR24, 0x0 ;
+        /*1170*/                   R2UR UR4, R15 ;
+        /*1180*/                   UMOV UR25, 0x10000000 ;
+        /*1190*/                   R2UR UR16, R14 ;
+        /*11a0*/                   SEL R20, R20, RZ, P2 ;
+        /*11b0*/                   R2UR UR28, R24 ;
+        /*11c0*/                   UIADD3 UR32, UP1, UPT, UR18, 0x180, URZ ;
+        /*11d0*/                   ISETP.NE.U32.AND P0, PT, R20, RZ, PT ;
+        /*11e0*/                   UIADD3 UR30, UP0, UPT, UR18, 0x200, URZ ;
+        /*11f0*/                   R2UR UR29, R25 ;
+        /*1200*/                   UIADD3 UR10, UPT, UPT, UR10, -0x180, URZ ;
+        /*1210*/                   R2UR UR11, R4 ;
+        /*1220*/                   UIADD3 UR9, UPT, UPT, UR9, 0x36800, URZ ;
+        /*1230*/                   R2UR UR26, R18 ;
+        /*1240*/                   UIADD3 UR8, UPT, UPT, UR8, 0x2000, URZ ;
+        /*1250*/                   R2UR UR27, R19 ;
+        /*1260*/                   UIADD3 UR4, UPT, UPT, UR4, 0xc000, URZ ;
+        /*1270*/                   R2UR UR7, R0 ;
+        /*1280*/                   UIADD3 UR20, UPT, UPT, UR16, 0x34000, URZ ;
+        /*1290*/                   R2UR UR23, R8 ;
+        /*12a0*/                   UIADD3.X UR33, UPT, UPT, URZ, UR19, URZ, UP1, !UPT ;
+        /*12b0*/                   SEL R22, RZ, 0x1, P0 ;
+        /*12c0*/                   UIADD3 UR16, UPT, UPT, UR16, 0x35400, URZ ;
+        /*12d0*/                   R2UR UR22, R7 ;
+        /*12e0*/                   UIADD3.X UR31, UPT, UPT, URZ, UR19, URZ, UP0, !UPT ;
+        /*12f0*/                   R2UR UR18, R5 ;
+        /*1300*/                   UMOV UR5, UR9 ;
+        /*1310*/                   LOP3.LUT R15, R13, R22, RZ, 0x3c, !PT ;
+        /*1320*/                   UMOV UR6, UR10 ;
+        /*1330*/                   UTMALDG.2D [UR8], [UR28], desc[UR24] ;
+        /*1340*/                   IMAD.MOV.U32 R22, RZ, RZ, 0x5280 ;
+        /*1350*/                   LOP3.LUT R13, R15, 0x1, RZ, 0x3c, !PT ;
+        /*1360*/                   UMOV UR21, UR9 ;
+        /*1370*/                   IMAD R14, R20.reuse, 0x8, R3 ;
+        /*1380*/                   UMOV UR19, UR23 ;
+        /*1390*/                   SHF.L.U32 R13, R13, 0x1f, RZ ;
+        /*13a0*/                   UMOV UR17, UR9 ;
+        /*13b0*/                   UTMALDG.2D [UR4], [UR26], desc[UR24] ;
+        /*13c0*/                   ISETP.NE.U32.AND P0, PT, R20.reuse, 0x9, PT ;
+        /*13d0*/                   UTMALDG.2D [UR20], [UR32], desc[UR24] ;
+        /*13e0*/                   UTMALDG.2D [UR16], [UR30], desc[UR24] ;
+        /*13f0*/                   SYNCS.ARRIVE.TRANS64 RZ, [R9+URZ+0x36800], R22 ;
+        /*1400*/                   SYNCS.PHASECHK.TRANS64.TRYWAIT P1, [R14+URZ+0x36850], R13 ;
+        /*1410*/                   VIADD R22, R20, 0x1 ;
+        /*1420*/                   IMAD R9, R20, 0x1000, R3 ;
+        /*1430*/                   SEL R22, R22, RZ, P0 ;
+        /*1440*/              @!P1 BRA `(.L_x_20) ;
+.L_x_53:
+        /*1450*/                   IMAD R20, R20, 0x4000, R3.reuse ;
+        /*1460*/                   R2UR UR10, R6 ;
+        /*1470*/                   IMAD.MOV.U32 R21, RZ, RZ, 0x5000 ;
+        /*1480*/                   R2UR UR9, R14 ;
+        /*1490*/                   UMOV UR18, 0x0 ;
+        /*14a0*/                   R2UR UR8, R9 ;
+        /*14b0*/                   UMOV UR19, 0x10000000 ;
+        /*14c0*/                   R2UR UR4, R20 ;
+        /*14d0*/                   IMAD R9, R22.reuse, 0x1000, R3 ;
+        /*14e0*/                   ISETP.NE.U32.AND P0, PT, R22, RZ, PT ;
+        /*14f0*/                   R2UR UR20, R24 ;
+        /*1500*/                   SEL R20, RZ, 0x1, P0 ;
+        /*1510*/                   UIADD3 UR10, UPT, UPT, UR10, -0x100, URZ ;
+        /*1520*/                   R2UR UR21, R25 ;
+        /*1530*/                   UIADD3 UR9, UPT, UPT, UR9, 0x36800, URZ ;
+        /*1540*/                   R2UR UR11, R4 ;
+        /*1550*/                   UIADD3 UR8, UPT, UPT, UR8, 0x2000, URZ ;
+        /*1560*/                   R2UR UR16, R18 ;
+        /*1570*/                   UIADD3 UR4, UPT, UPT, UR4, 0xc000, URZ ;
+        /*1580*/                   R2UR UR17, R19 ;
+        /*1590*/                   UMOV UR6, UR10 ;
+        /*15a0*/                   R2UR UR7, R0 ;
+        /*15b0*/                   UMOV UR5, UR9 ;
+        /*15c0*/                   LOP3.LUT R15, R15, R20, RZ, 0x3c, !PT ;
+        /*15d0*/                   IMAD R20, R22.reuse, 0x8, R3 ;
+        /*15e0*/                   ISETP.NE.U32.AND P0, PT, R22, 0x9, PT ;
+        /*15f0*/                   LOP3.LUT R13, R15, 0x1, RZ, 0x3c, !PT ;
+        /*1600*/                   UTMALDG.2D [UR8], [UR20], desc[UR18] ;
+        /*1610*/                   SHF.L.U32 R13, R13, 0x1f, RZ ;
+        /*1620*/                   UTMALDG.2D [UR4], [UR16], desc[UR18] ;
+        /*1630*/                   SYNCS.ARRIVE.TRANS64 RZ, [R14+URZ+0x36800], R21 ;
+        /*1640*/                   SYNCS.PHASECHK.TRANS64.TRYWAIT P1, [R20+URZ+0x36850], R13 ;
+        /*1650*/                   VIADD R14, R22, 0x1 ;
+        /*1660*/                   SEL R14, R14, RZ, P0 ;
+        /*1670*/              @!P1 BRA `(.L_x_21) ;
+.L_x_54:
+        /*1680*/                   IMAD R22, R22, 0x4000, R3 ;
+        /*1690*/                   R2UR UR10, R6 ;
+        /*16a0*/                   UMOV UR18, 0x0 ;
+        /*16b0*/                   R2UR UR9, R20 ;
+        /*16c0*/                   UMOV UR19, 0x10000000 ;
+        /*16d0*/                   R2UR UR8, R9 ;
+        /*16e0*/                   R2UR UR4, R22 ;
+        /*16f0*/                   ISETP.NE.U32.AND P0, PT, R14, RZ, PT ;
+        /*1700*/                   R2UR UR20, R24 ;
+        /*1710*/                   SEL R22, RZ, 0x1, P0 ;
+        /*1720*/                   UIADD3 UR10, UPT, UPT, UR10, -0x80, URZ ;
+        /*1730*/                   R2UR UR21, R25 ;
+        /*1740*/                   UIADD3 UR9, UPT, UPT, UR9, 0x36800, URZ ;
+        /*1750*/                   R2UR UR11, R4 ;
+        /*1760*/                   UIADD3 UR8, UPT, UPT, UR8, 0x2000, URZ ;
+        /*1770*/                   R2UR UR16, R18 ;
+        /*1780*/                   UIADD3 UR4, UPT, UPT, UR4, 0xc000, URZ ;
+        /*1790*/                   R2UR UR17, R19 ;
+        /*17a0*/                   UMOV UR6, UR10 ;
+        /*17b0*/                   R2UR UR7, R0 ;
+        /*17c0*/                   UMOV UR5, UR9 ;
+        /*17d0*/                   LOP3.LUT R13, R15, R22, RZ, 0x3c, !PT ;
+        /*17e0*/                   IMAD R22, R14, 0x8, R3 ;
+        /*17f0*/                   LOP3.LUT R9, R13, 0x1, RZ, 0x3c, !PT ;
+        /*1800*/                   UTMALDG.2D [UR8], [UR20], desc[UR18] ;
+        /*1810*/                   SHF.L.U32 R9, R9, 0x1f, RZ ;
+        /*1820*/                   UTMALDG.2D [UR4], [UR16], desc[UR18] ;
+        /*1830*/                   SYNCS.ARRIVE.TRANS64 RZ, [R20+URZ+0x36800], R21 ;
+        /*1840*/                   SYNCS.PHASECHK.TRANS64.TRYWAIT P0, [R22+URZ+0x36850], R9 ;
+        /*1850*/              @!P0 BRA `(.L_x_22) ;
+.L_x_55:
+        /*1860*/                   IMAD R15, R14, 0x1000, R3.reuse ;
+        /*1870*/                   R2UR UR9, R22 ;
+        /*1880*/                   IMAD R9, R14.reuse, 0x4000, R3 ;
+        /*1890*/                   ISETP.NE.U32.AND P0, PT, R14.reuse, 0x9, PT ;
+        /*18a0*/                   VIADD R14, R14, 0x1 ;
+        /*18b0*/                   R2UR UR8, R15 ;
+        /*18c0*/                   UMOV UR18, 0x0 ;
+        /*18d0*/                   R2UR UR4, R9 ;
+        /*18e0*/                   UMOV UR19, 0x10000000 ;
+        /*18f0*/                   R2UR UR10, R6.reuse ;
+        /*1900*/                   VIADD R6, R6, 0x200 ;
+        /*1910*/                   R2UR UR20, R24 ;
+        /*1920*/                   VIADD R8, R8, 0x1 ;
+        /*1930*/                   R2UR UR21, R25 ;
+        /*1940*/                   UIADD3 UR9, UPT, UPT, UR9, 0x36800, URZ ;
+        /*1950*/                   R2UR UR11, R4 ;
+        /*1960*/                   R2UR UR16, R18 ;
+        /*1970*/                   UIADD3 UR8, UPT, UPT, UR8, 0x2000, URZ ;
+        /*1980*/                   R2UR UR17, R19 ;
+        /*1990*/                   UIADD3 UR4, UPT, UPT, UR4, 0xc000, URZ ;
+        /*19a0*/                   R2UR UR7, R0 ;
+        /*19b0*/                   UMOV UR6, UR10 ;
+        /*19c0*/                   SEL R14, R14, RZ, P0 ;
+        /*19d0*/                   UMOV UR5, UR9 ;
+        /*19e0*/                   ISETP.NE.U32.AND P0, PT, R6, 0x1980, PT ;
+        /*19f0*/                   ISETP.NE.U32.AND P1, PT, R14, RZ, PT ;
+        /*1a00*/                   UTMALDG.2D [UR8], [UR20], desc[UR18] ;
+        /*1a10*/                   SEL R18, RZ, 0x1, P1 ;
+        /*1a20*/                   LOP3.LUT R13, R13, R18, RZ, 0x3c, !PT ;
+        /*1a30*/                   UTMALDG.2D [UR4], [UR16], desc[UR18] ;
+        /*1a40*/                   SYNCS.ARRIVE.TRANS64 RZ, [R22+URZ+0x36800], R21 ;
+        /*1a50*/               @P0 BRA `(.L_x_23) ;
+        /*1a60*/                   BRA `(.L_x_24) ;
+.L_x_18:
+        /*1a70*/                   IADD3 R12, PT, PT, R12, 0x1, RZ ;
+        /*1a80*/                   ISETP.NE.U32.AND P0, PT, R12, 0x20, PT ;
+        /*1a90*/              @!P0 BRA `(.L_x_16) ;
+        /*1aa0*/                   MOV R11, R0 ;
+        /*1ab0*/                   BRA `(.L_x_25) ;
+.L_x_70:
+        /*1ac0*/                   UISETP.NE.U32.AND UP0, UPT, UR12, URZ, UPT ;
+        /*1ad0*/                   BRA.U UP0, `(.L_x_9) ;
+        /*1ae0*/                   UMOV UR4, 0x400 ;
+        /*1af0*/                   S2UR UR13, SR_CTAID.X ;
+        /*1b00*/                   ULEA UR4, UR12, UR4, 0x18 ;
+        /*1b10*/                   ISETP.GE.U32.AND P0, PT, R0, 0xa, PT ;
+        /*1b20*/                   IMAD.MOV.U32 R2, RZ, RZ, RZ ;
+        /*1b30*/                   UMOV UR22, 0xffffffff ;
+        /*1b40*/                   UIADD3 UR5, UPT, UPT, UR4, 0x2000, URZ ;
+        /*1b50*/                   IMAD.MOV.U32 R6, RZ, RZ, RZ ;
+        /*1b60*/                   UIADD3 UR4, UPT, UPT, UR4, 0xc000, URZ ;
+        /*1b70*/                   IMAD.MOV.U32 R5, RZ, RZ, RZ ;
+        /*1b80*/                   USHF.R.U32.HI UR5, URZ, 0x4, UR5 ;
+        /*1b90*/                   USHF.R.U32.HI UR4, URZ, 0x4, UR4 ;
+        /*1ba0*/                   ULOP3.LUT UR5, UR5, 0x3fc0, URZ, 0xc0, !UPT ;
+        /*1bb0*/                   ULOP3.LUT UR4, UR4, 0x3fc0, URZ, 0xc0, !UPT ;
+        /*1bc0*/                   UMOV UR19, URZ ;
+        /*1bd0*/                   LEA R9, R0.reuse, UR5, 0x8 ;
+        /*1be0*/                   LEA R7, R0, UR4, 0xa ;
+        /*1bf0*/                   SEL R9, R9, RZ, !P0 ;
+        /*1c00*/                   SEL R7, R7, RZ, !P0 ;
+.L_x_34:
+        /*1c10*/                   UIMAD UR4, UR22, 0x94, UR13 ;
+        /*1c20*/                   UIADD3 UR22, UPT, UPT, UR22, 0x1, URZ ;
+        /*1c30*/                   UIADD3 UR4, UPT, UPT, UR4, 0x94, URZ ;
+.L_x_35:
+        /*1c40*/                   LDC.64 R10, c[0x0][0x380] ;
+        /*1c50*/                   IMAD.WIDE.U32 R10, R6, 0x4, R10 ;
+        /*1c60*/                   LDG.E R0, desc[UR14][R10.64] ;
+        /*1c70*/                   VIADD R0, R0, 0x1f ;
+        /*1c80*/                   LEA.HI R0, R0, R5, RZ, 0x1b ;
+        /*1c90*/                   SHF.L.U32 R3, R0, 0x5, RZ ;
+        /*1ca0*/                   ISETP.LE.U32.AND P0, PT, R3, UR4, PT ;
+        /*1cb0*/               @P0 BRA `(.L_x_26) ;
+        /*1cc0*/                   S2UR UR17, SR_CgaCtaId ;
+        /*1cd0*/                   USHF.R.U32.HI UR4, URZ, 0x1, UR22 ;
+        /*1ce0*/                   USHF.L.U32 UR20, UR22, 0x3, URZ ;
+        /*1cf0*/                   ULOP3.LUT UR4, UR4, 0x1, URZ, 0xc, !UPT ;
+        /*1d00*/                   UMOV UR5, 0x400 ;
+        /*1d10*/                   ULOP3.LUT UR20, UR20, 0x8, URZ, 0xc0, !UPT ;
+        /*1d20*/                   S2UR UR16, SR_CgaCtaId ;
+        /*1d30*/                   UMOV UR34, 0x0 ;
+        /*1d40*/                   IMAD.U32 R3, RZ, RZ, UR4 ;
+        /*1d50*/                   UMOV UR4, 0x400 ;
+        /*1d60*/                   UMOV UR35, 0x8880000 ;
+        /*1d70*/                   UMOV UR32, 0x0 ;
+        /*1d80*/                   UMOV UR33, 0x28880010 ;
+        /*1d90*/                   SHF.L.U32 R3, R3, 0x1f, RZ ;
+        /*1da0*/                   UMOV UR30, 0x0 ;
+        /*1db0*/                   UMOV UR31, 0x48880020 ;
+        /*1dc0*/                   UMOV UR28, 0x0 ;
+        /*1dd0*/                   UMOV UR29, 0x68880030 ;
+        /*1de0*/                   UMOV UR10, 0x44 ;
+        /*1df0*/                   UMOV UR11, 0x40 ;
+        /*1e00*/                   ULEA UR17, UR17, UR5, 0x18 ;
+        /*1e10*/                   MOV R0, UR17 ;
+        /*1e20*/                   SYNCS.PHASECHK.TRANS64.TRYWAIT P0, [R0+UR20+0x36900], R3 ;
+        /*1e30*/                   UIADD3 UR20, UPT, UPT, UR20, UR17, URZ ;
+        /*1e40*/              @!P0 BRA `(.L_x_27) ;
+.L_x_57:
+        /*1e50*/                   USHF.L.U32 UR21, UR22, 0x5, URZ ;
+        /*1e60*/                   NOP ;
+        /*1e70*/                   ULEA UR16, UR16, UR4, 0x18 ;
+        /*1e80*/                   UIADD3 UR20, UPT, UPT, UR20, 0x368f0, URZ ;
+        /*1e90*/                   ULOP3.LUT UR21, UR21, 0x20, URZ, 0xc0, !UPT ;
+        /*1ea0*/                   UMOV UR8, 0x44 ;
+        /*1eb0*/                   UMOV UR9, 0x40 ;
+        /*1ec0*/                   UMOV UR6, 0x44 ;
+        /*1ed0*/                   UMOV UR7, 0x40 ;
+        /*1ee0*/                   UMOV UR4, 0x44 ;
+        /*1ef0*/                   UMOV UR5, 0x40 ;
+        /*1f00*/                   UMOV UR26, URZ ;
+.L_x_33:
+        /*1f10*/                   ULEA UR23, UR19, UR17, 0x3 ;
+        /*1f20*/                   SHF.L.U32 R4, R2, 0x1f, RZ ;
+        /*1f30*/                   MOV R0, UR19 ;
+        /*1f40*/                   SYNCS.PHASECHK.TRANS64.TRYWAIT P0, [UR23+0x368a0], R4 ;
+        /*1f50*/              @!P0 BRA `(.L_x_28) ;
+.L_x_59:
+        /*1f60*/                   ULEA UR24, UR19, UR16, 0x9 ;
+        /*1f70*/                   SHFL.IDX PT, R3, R7, R0, 0x1f ;
+        /*1f80*/                   UISETP.NE.U32.AND UP0, UPT, UR19, 0x9, UPT ;
+        /*1f90*/                   UIADD3 UR19, UPT, UPT, UR19, 0x1, URZ ;
+        /*1fa0*/                   SHFL.IDX PT, R4, R9, R0, 0x1f ;
+        /*1fb0*/                   UIADD3 UR25, UPT, UPT, UR24, 0x34000, URZ ;
+        /*1fc0*/                   NOP ;
+        /*1fd0*/                   USEL UR19, UR19, URZ, UP0 ;
+        /*1fe0*/                   UIADD3 UR24, UPT, UPT, UR24, 0x35400, URZ ;
+        /*1ff0*/                   USHF.R.U32.HI UR25, URZ, 0x4, UR25 ;
+        /*2000*/                   USHF.R.U32.HI UR24, URZ, 0x4, UR24 ;
+        /*2010*/                   ISETP.NE.U32.AND P0, PT, RZ, UR19, PT ;
+        /*2020*/                   UISETP.NE.U32.AND UP1, UPT, UR26, URZ, UPT ;
+        /*2030*/                   ULOP3.LUT UR52, UR25, 0x3fe0, URZ, 0xc0, !UPT ;
+        /*2040*/                   SEL R11, RZ, 0x1, P0 ;
+        /*2050*/                   ULOP3.LUT UR24, UR24, 0x3fe0, URZ, 0xc0, !UPT ;
+        /*2060*/                   UIADD3 UR23, UPT, UPT, UR23, 0x36850, URZ ;
+        /*2070*/                   UMOV UR53, 0x4008 ;
+        /*2080*/                   UMOV UR25, 0x4008 ;
+        /*2090*/                   UMOV UR39, 0x40004040 ;
+        /*20a0*/                   UTCCP.T.S.4x32dp128bit tmem[0x40], gdesc[UR52] ;
+        /*20b0*/                   UMOV UR37, 0x40004040 ;
+        /*20c0*/                   R2UR UR38, R3 ;
+        /*20d0*/                   UTCCP.T.S.4x32dp128bit tmem[0x44], gdesc[UR24] ;
+        /*20e0*/                   R2UR UR36, R4 ;
+        /*20f0*/                   UMOV UR51, 0x40004040 ;
+        /*2100*/                   UMOV UR49, 0x40004040 ;
+        /*2110*/                   UMOV UR47, 0x40004040 ;
+        /*2120*/                   UMOV UR45, 0x40004040 ;
+        /*2130*/                   UMOV UR43, 0x40004040 ;
+        /*2140*/                   UMOV UR41, 0x40004040 ;
+        /*2150*/                   UMOV UR17, UR16 ;
+        /*2160*/                   LOP3.LUT R4, R2, R11, RZ, 0x3c, !PT ;
+        /*2170*/                   ULEA UR18, UR19, UR17, 0x3 ;
+        /*2180*/                   IMAD.U32 R0, RZ, RZ, UR19 ;
+        /*2190*/                   UIADD3 UR50, UPT, UPT, UR38, 0x2, URZ ;
+        /*21a0*/                   SHF.L.U32 R3, R4, 0x1f, RZ ;
+        /*21b0*/                   UIADD3 UR48, UPT, UPT, UR36, 0x2, URZ ;
+        /*21c0*/                   UTCQMMA gdesc[UR38], gdesc[UR36], tmem[UR21], tmem[UR34], idesc[UR35], tmem[UR10], UP1 ;
+        /*21d0*/                   UIADD3 UR46, UPT, UPT, UR38, 0x4, URZ ;
+        /*21e0*/                   UIADD3 UR44, UPT, UPT, UR36, 0x4, URZ ;
+        /*21f0*/                   UIADD3 UR42, UPT, UPT, UR38, 0x6, URZ ;
+        /*2200*/                   UIADD3 UR40, UPT, UPT, UR36, 0x6, URZ ;
+        /*2210*/                   UTCQMMA gdesc[UR50], gdesc[UR48], tmem[UR21], tmem[UR34], idesc[UR35], tmem[UR10], UPT ;
+        /*2220*/                   UTCQMMA gdesc[UR46], gdesc[UR44], tmem[UR21], tmem[UR34], idesc[UR35], tmem[UR10], UPT ;
+        /*2230*/                   UTCQMMA gdesc[UR42], gdesc[UR40], tmem[UR21], tmem[UR34], idesc[UR35], tmem[UR10], UPT ;
+        /*2240*/                   NOP ;
+        /*2250*/                   UTCBAR [UR23], URZ ;
+        /*2260*/                   NOP ;
+        /*2270*/                   SYNCS.PHASECHK.TRANS64.TRYWAIT P0, [UR18+0x368a0], R3 ;
+        /*2280*/              @!P0 BRA `(.L_x_29) ;
+.L_x_61:
+        /*2290*/                   UISETP.NE.U32.AND UP0, UPT, UR19, 0x9, UPT ;
+        /*22a0*/                   SHFL.IDX PT, R2, R7, R0, 0x1f ;
+        /*22b0*/                   UIADD3 UR19, UPT, UPT, UR19, 0x1, URZ ;
+        /*22c0*/                   UIADD3 UR23, UPT, UPT, UR18, 0x36850, URZ ;
+        /*22d0*/                   SHFL.IDX PT, R8, R9, R0, 0x1f ;
+        /*22e0*/                   USEL UR19, UR19, URZ, UP0 ;
+        /*22f0*/                   NOP ;
+        /*2300*/                   UMOV UR37, 0x40004040 ;
+        /*2310*/                   UMOV UR25, 0x40004040 ;
+        /*2320*/                   ULEA UR18, UR19, UR17, 0x3 ;
+        /*2330*/                   ISETP.NE.U32.AND P0, PT, RZ, UR19, PT ;
+        /*2340*/                   UMOV UR49, 0x40004040 ;
+        /*2350*/                   UMOV UR47, 0x40004040 ;
+        /*2360*/                   UMOV UR45, 0x40004040 ;
+        /*2370*/                   SEL R11, RZ, 0x1, P0 ;
+        /*2380*/                   UMOV UR43, 0x40004040 ;
+        /*2390*/                   UMOV UR41, 0x40004040 ;
+        /*23a0*/                   UMOV UR39, 0x40004040 ;
+        /*23b0*/                   LOP3.LUT R4, R4, R11, RZ, 0x3c, !PT ;
+        /*23c0*/                   SHF.L.U32 R3, R4, 0x1f, RZ ;
+        /*23d0*/                   R2UR UR24, R8 ;
+        /*23e0*/                   IMAD.U32 R0, RZ, RZ, UR19 ;
+        /*23f0*/                   R2UR UR36, R2 ;
+        /*2400*/                   UIADD3 UR46, UPT, UPT, UR24, 0x2, URZ ;
+        /*2410*/                   UIADD3 UR48, UPT, UPT, UR36, 0x2, URZ ;
+        /*2420*/                   UTCQMMA gdesc[UR36], gdesc[UR24], tmem[UR21], tmem[UR32], idesc[UR33], tmem[UR8], UPT ;
+        /*2430*/                   UIADD3 UR44, UPT, UPT, UR36, 0x4, URZ ;
+        /*2440*/                   UIADD3 UR42, UPT, UPT, UR24, 0x4, URZ ;
+        /*2450*/                   UIADD3 UR40, UPT, UPT, UR36, 0x6, URZ ;
+        /*2460*/                   UIADD3 UR38, UPT, UPT, UR24, 0x6, URZ ;
+        /*2470*/                   UTCQMMA gdesc[UR48], gdesc[UR46], tmem[UR21], tmem[UR32], idesc[UR33], tmem[UR8], UPT ;
+        /*2480*/                   UTCQMMA gdesc[UR44], gdesc[UR42], tmem[UR21], tmem[UR32], idesc[UR33], tmem[UR8], UPT ;
+        /*2490*/                   UTCQMMA gdesc[UR40], gdesc[UR38], tmem[UR21], tmem[UR32], idesc[UR33], tmem[UR8], UPT ;
+        /*24a0*/                   NOP ;
+        /*24b0*/                   UTCBAR [UR23], URZ ;
+        /*24c0*/                   NOP ;
+        /*24d0*/                   SYNCS.PHASECHK.TRANS64.TRYWAIT P0, [UR18+0x368a0], R3 ;
+        /*24e0*/              @!P0 BRA `(.L_x_30) ;
+.L_x_63:
+        /*24f0*/                   UISETP.NE.U32.AND UP0, UPT, UR19, 0x9, UPT ;
+        /*2500*/                   SHFL.IDX PT, R2, R7, R0, 0x1f ;
+        /*2510*/                   UIADD3 UR19, UPT, UPT, UR19, 0x1, URZ ;
+        /*2520*/                   UIADD3 UR23, UPT, UPT, UR18, 0x36850, URZ ;
+        /*2530*/                   SHFL.IDX PT, R8, R9, R0, 0x1f ;
+        /*2540*/                   USEL UR19, UR19, URZ, UP0 ;
+        /*2550*/                   NOP ;
+        /*2560*/                   UMOV UR37, 0x40004040 ;
+        /*2570*/                   UMOV UR25, 0x40004040 ;
+        /*2580*/                   ULEA UR18, UR19, UR17, 0x3 ;
+        /*2590*/                   ISETP.NE.U32.AND P0, PT, RZ, UR19, PT ;
+        /*25a0*/                   UMOV UR49, 0x40004040 ;
+        /*25b0*/                   UMOV UR47, 0x40004040 ;
+        /*25c0*/                   UMOV UR45, 0x40004040 ;
+        /*25d0*/                   SEL R11, RZ, 0x1, P0 ;
+        /*25e0*/                   UMOV UR43, 0x40004040 ;
+        /*25f0*/                   UMOV UR41, 0x40004040 ;
+        /*2600*/                   UMOV UR39, 0x40004040 ;
+        /*2610*/                   LOP3.LUT R4, R4, R11, RZ, 0x3c, !PT ;
+        /*2620*/                   SHF.L.U32 R3, R4, 0x1f, RZ ;
+        /*2630*/                   R2UR UR24, R8 ;
+        /*2640*/                   IMAD.U32 R0, RZ, RZ, UR19 ;
+        /*2650*/                   R2UR UR36, R2 ;
+        /*2660*/                   UIADD3 UR46, UPT, UPT, UR24, 0x2, URZ ;
+        /*2670*/                   UIADD3 UR48, UPT, UPT, UR36, 0x2, URZ ;
+        /*2680*/                   UTCQMMA gdesc[UR36], gdesc[UR24], tmem[UR21], tmem[UR30], idesc[UR31], tmem[UR6], UPT ;
+        /*2690*/                   UIADD3 UR44, UPT, UPT, UR36, 0x4, URZ ;
+        /*26a0*/                   UIADD3 UR42, UPT, UPT, UR24, 0x4, URZ ;
+        /*26b0*/                   UIADD3 UR40, UPT, UPT, UR36, 0x6, URZ ;
+        /*26c0*/                   UIADD3 UR38, UPT, UPT, UR24, 0x6, URZ ;
+        /*26d0*/                   UTCQMMA gdesc[UR48], gdesc[UR46], tmem[UR21], tmem[UR30], idesc[UR31], tmem[UR6], UPT ;
+        /*26e0*/                   UTCQMMA gdesc[UR44], gdesc[UR42], tmem[UR21], tmem[UR30], idesc[UR31], tmem[UR6], UPT ;
+        /*26f0*/                   UTCQMMA gdesc[UR40], gdesc[UR38], tmem[UR21], tmem[UR30], idesc[UR31], tmem[UR6], UPT ;
+        /*2700*/                   NOP ;
+        /*2710*/                   UTCBAR [UR23], URZ ;
+        /*2720*/                   NOP ;
+        /*2730*/                   SYNCS.PHASECHK.TRANS64.TRYWAIT P0, [UR18+0x368a0], R3 ;
+        /*2740*/              @!P0 BRA `(.L_x_31) ;
+.L_x_65:
+        /*2750*/                   UIADD3 UR18, UPT, UPT, UR18, 0x36850, URZ ;
+        /*2760*/                   SHFL.IDX PT, R2, R7, R0, 0x1f ;
+        /*2770*/                   UISETP.NE.U32.AND UP0, UPT, UR26, 0x2c, UPT ;
+        /*2780*/                   UMOV UR37, 0x40004040 ;
+        /*2790*/                   SHFL.IDX PT, R3, R9, R0, 0x1f ;
+        /*27a0*/                   NOP ;
+        /*27b0*/                   UMOV UR25, 0x40004040 ;
+        /*27c0*/                   UMOV UR49, 0x40004040 ;
+        /*27d0*/                   UMOV UR47, 0x40004040 ;
+        /*27e0*/                   UMOV UR45, 0x40004040 ;
+        /*27f0*/                   UMOV UR43, 0x40004040 ;
+        /*2800*/                   UMOV UR41, 0x40004040 ;
+        /*2810*/                   UMOV UR39, 0x40004040 ;
+        /*2820*/                   R2UR UR24, R3 ;
+        /*2830*/                   R2UR UR36, R2 ;
+        /*2840*/                   UIADD3 UR46, UPT, UPT, UR24, 0x2, URZ ;
+        /*2850*/                   UIADD3 UR48, UPT, UPT, UR36, 0x2, URZ ;
+        /*2860*/                   UTCQMMA gdesc[UR36], gdesc[UR24], tmem[UR21], tmem[UR28], idesc[UR29], tmem[UR4], UPT ;
+        /*2870*/                   UIADD3 UR44, UPT, UPT, UR36, 0x4, URZ ;
+        /*2880*/                   UIADD3 UR42, UPT, UPT, UR24, 0x4, URZ ;
+        /*2890*/                   UIADD3 UR40, UPT, UPT, UR36, 0x6, URZ ;
+        /*28a0*/                   UIADD3 UR38, UPT, UPT, UR24, 0x6, URZ ;
+        /*28b0*/                   UTCQMMA gdesc[UR48], gdesc[UR46], tmem[UR21], tmem[UR28], idesc[UR29], tmem[UR4], UPT ;
+        /*28c0*/                   UTCQMMA gdesc[UR44], gdesc[UR42], tmem[UR21], tmem[UR28], idesc[UR29], tmem[UR4], UPT ;
+        /*28d0*/                   UTCQMMA gdesc[UR40], gdesc[UR38], tmem[UR21], tmem[UR28], idesc[UR29], tmem[UR4], UPT ;
+        /*28e0*/                   NOP ;
+        /*28f0*/                   UTCBAR [UR18], URZ ;
+        /*2900*/                   BRA.U UP0, `(.L_x_32) ;
+        /*2910*/                   UTCBAR [UR20], URZ ;
+        /*2920*/                   NOP ;
+.L_x_32:
+        /*2930*/                   UISETP.NE.U32.AND UP0, UPT, UR19, 0x9, UPT ;
+        /*2940*/                   NOP ;
+        /*2950*/                   UIADD3 UR19, UPT, UPT, UR19, 0x1, URZ ;
+        /*2960*/                   UIADD3 UR26, UPT, UPT, UR26, 0x4, URZ ;
+        /*2970*/                   USEL UR19, UR19, URZ, UP0 ;
+        /*2980*/                   UISETP.NE.U32.AND UP0, UPT, UR26, 0x30, UPT ;
+        /*2990*/                   ISETP.NE.U32.AND P0, PT, RZ, UR19, PT ;
+        /*29a0*/                   SEL R3, RZ, 0x1, P0 ;
+        /*29b0*/                   LOP3.LUT R2, R4, R3, RZ, 0x3c, !PT ;
+        /*29c0*/                   BRA.U UP0, `(.L_x_33) ;
+        /*29d0*/                   BRA `(.L_x_34) ;
+.L_x_26:
+        /*29e0*/                   IADD3 R6, PT, PT, R6, 0x1, RZ ;
+        /*29f0*/                   ISETP.NE.U32.AND P0, PT, R6, 0x20, PT ;
+        /*2a00*/              @!P0 BRA `(.L_x_16) ;
+        /*2a10*/                   MOV R5, R0 ;
+        /*2a20*/                   BRA `(.L_x_35) ;
+.L_x_9:
+        /*2a30*/                   LOP3.LUT R2, R27, 0xfffffffc, RZ, 0xc0, !PT ;
+        /*2a40*/                   ISETP.NE.U32.AND P0, PT, R2, 0x4, PT ;
+        /*2a50*/               @P0 BRA `(.L_x_16) ;
+        /*2a60*/                   UMOV UR4, 0x400 ;
+        /*2a70*/                   ULEA UR4, UR12, UR4, 0x18 ;
+        /*2a80*/                   LDS R2, [UR4+0x36910] ;
+        /*2a90*/                   ISETP.NE.U32.AND P0, PT, R2, RZ, PT ;
+        /*2aa0*/              @!P0 BRA `(.L_x_36) ;
+        /*2ab0*/                   BPT.TRAP 0x1 ;
+.L_x_36:
+        /*2ac0*/                   IMAD.SHL.U32 R5, R27, 0x4, RZ ;
+        /*2ad0*/                   S2R R2, SR_CTAID.X ;
+        /*2ae0*/                   IMAD.SHL.U32 R3, R0.reuse, 0x80, RZ ;
+        /*2af0*/                   HFMA2 R20, -RZ, RZ, 0, 0 ;
+        /*2b00*/                   IMAD.MOV.U32 R22, RZ, RZ, RZ ;
+        /*2b10*/                   LOP3.LUT R5, R5, 0x4, RZ, 0xc0, !PT ;
+        /*2b20*/                   IMAD.MOV.U32 R21, RZ, RZ, -0x1 ;
+        /*2b30*/                   LOP3.LUT R3, R3, 0x380, RZ, 0xc0, !PT ;
+        /*2b40*/                   LEA.HI R5, R0, R5, RZ, 0x1d ;
+        /*2b50*/                   LOP3.LUT R4, R5, 0x7, R0, 0x78, !PT ;
+        /*2b60*/                   IMAD.SHL.U32 R0, R27, 0x400, RZ ;
+        /*2b70*/                   LEA R3, R4, R3, 0x4 ;
+        /*2b80*/                   LOP3.LUT R0, R0, 0x800, RZ, 0xc0, !PT ;
+        /*2b90*/                   IADD3 R26, PT, PT, R3, UR4, R0 ;
+        /*2ba0*/                   IADD3 R23, PT, PT, R26.reuse, 0x1400, RZ ;
+        /*2bb0*/                   VIADD R25, R26.reuse, 0x400 ;
+        /*2bc0*/                   VIADD R24, R26, 0x1000 ;
+.L_x_45:
+        /*2bd0*/                   IMAD R3, R21.reuse, 0x94, R2 ;
+        /*2be0*/                   IADD3 R21, PT, PT, R21, 0x1, RZ ;
+        /*2bf0*/                   IADD3 R3, PT, PT, R3, 0x94, RZ ;
+.L_x_46:
+        /*2c00*/                   LDC.64 R4, c[0x0][0x380] ;
+        /*2c10*/                   IMAD.WIDE.U32 R8, R22, 0x4, R4 ;
+        /*2c20*/                   LDG.E R4, desc[UR14][R8.64] ;
+        /*2c30*/                   VIADD R4, R4, 0x1f ;
+        /*2c40*/                   LEA.HI R0, R4, R20, RZ, 0x1b ;
+        /*2c50*/                   SHF.L.U32 R6, R0, 0x5, RZ ;
+        /*2c60*/                   ISETP.GE.U32.AND P0, PT, R3, R6, PT ;
+        /*2c70*/               @P0 BRA `(.L_x_37) ;
+        /*2c80*/                   IMAD R3, R20, -0x20, R3 ;
+        /*2c90*/                   ISETP.NE.U32.AND P1, PT, R27, 0x4, PT ;
+        /*2ca0*/                   MOV R0, 0x2d10 ;
+        /*2cb0*/                   SHF.R.U32.HI R5, RZ, 0x5, R3 ;
+        /*2cc0*/                   LOP3.LUT R3, R3, 0x1ff, RZ, 0xc0, !PT ;
+        /*2cd0*/                   LOP3.LUT R5, R5, 0x7fffff0, RZ, 0xc0, !PT ;
+        /*2ce0*/                   LEA.HI R4, R4, -R5, RZ, 0x1b ;
+        /*2cf0*/                   VIMNMX.U32 R4, PT, PT, R4, 0x10, PT ;
+        /*2d00*/                   CALL.REL.NOINC `($__internal_3_$__cuda_sm20_div_u16) ;
+        /*2d10*/                   S2R R0, SR_CgaCtaId ;
+        /*2d20*/                   MOV R9, 0x400 ;
+        /*2d30*/                   IMAD.SHL.U32 R6, R21, 0x8, RZ ;
+        /*2d40*/                   SHF.R.U32.HI R7, RZ, 0x1, R21 ;
+        /*2d50*/                   YIELD ;
+        /*2d60*/                   LOP3.LUT R7, R7, 0x1, RZ, 0xc0, !PT ;
+        /*2d70*/                   SHF.L.U32 R7, R7, 0x1f, RZ ;
+        /*2d80*/                   LEA R0, R0, R9, 0x18 ;
+        /*2d90*/                   LOP3.LUT R9, R6, 0x8, RZ, 0xc0, !PT ;
+        /*2da0*/                   PRMT R6, R4, 0x9910, RZ ;
+        /*2db0*/                   PRMT R4, R29, 0x9910, RZ ;
+        /*2dc0*/                   IMAD.IADD R28, R0, 0x1, R9 ;
+        /*2dd0*/                   SYNCS.PHASECHK.TRANS64.TRYWAIT P0, [R28+URZ+0x368f0], R7 ;
+        /*2de0*/                   IMAD R4, R4, R6, RZ ;
+        /*2df0*/                   IMAD.MOV R4, RZ, RZ, -R4 ;
+        /*2e00*/                   PRMT R4, R4, 0x7710, RZ ;
+        /*2e10*/              @!P0 BRA `(.L_x_38) ;
+.L_x_66:
+        /*2e20*/                   IMAD.IADD R4, R3, 0x1, R4 ;
+        /*2e30*/                   LDCU UR4, c[0x0][0x388] ;
+        /*2e40*/                   LOP3.LUT R30, R21, 0x1, RZ, 0xc0, !PT ;
+        /*2e50*/                   NOP ;
+        /*2e60*/                   LOP3.LUT R4, R4, 0xffff, RZ, 0xc0, !PT ;
+        /*2e70*/                   SHF.L.U32 R30, R30, 0x5, RZ ;
+        /*2e80*/                   IMAD.IADD R3, R5, 0x1, R4 ;
+        /*2e90*/                   SHF.L.U32 R3, R3, 0x5, RZ ;
+        /*2ea0*/                   IMAD R3, R22, UR4, R3 ;
+        /*2eb0*/               @P1 BRA `(.L_x_39) ;
+        /*2ec0*/                   DEPBAR.LE SB0, 0x1 ;
+.L_x_39:
+        /*2ed0*/                   WARPSYNC.ALL ;
+        /*2ee0*/                   BAR.SYNC.DEFER_BLOCKING 0x8, 0x80 ;
+        /*2ef0*/                   R2UR UR7, R30.reuse ;
+        /*2f00*/                   IMAD.SHL.U32 R29, R29, 0x80, RZ ;
+        /*2f10*/                   R2UR UR6, R30.reuse ;
+        /*2f20*/                   R2UR UR5, R30 ;
+        /*2f30*/                   R2UR UR4, R30 ;
+        /*2f40*/                   ISETP.NE.U32.AND P0, PT, R27, 0x4, PT ;
+        /*2f50*/                   LOP3.LUT R29, R29, 0x7fff80, RZ, 0xe2, !PT ;
+        /*2f60*/                   LDTM.16dp256bit R16, tmem[UR7] ;
+        /*2f70*/                   LDTM.16dp256bit R12, tmem[UR6+0x100000] ;
+        /*2f80*/                   NOP ;
+        /*2f90*/                   LDTM.16dp256bit R8, tmem[UR5+0x8] ;
+        /*2fa0*/                   LDTM.16dp256bit R4, tmem[UR4+0x100008] ;
+        /*2fb0*/                   F2FP.BF16.F32.PACK_AB R16, R17, R16 ;
+        /*2fc0*/                   F2FP.BF16.F32.PACK_AB R17, R19, R18 ;
+        /*2fd0*/                   F2FP.BF16.F32.PACK_AB R18, R13, R12 ;
+        /*2fe0*/                   F2FP.BF16.F32.PACK_AB R19, R15, R14 ;
+        /*2ff0*/                   F2FP.BF16.F32.PACK_AB R8, R9, R8 ;
+        /*3000*/                   STSM.16.MT88.4 [R26], R16 ;
+        /*3010*/                   F2FP.BF16.F32.PACK_AB R9, R11, R10 ;
+        /*3020*/                   NOP ;
+        /*3030*/                   F2FP.BF16.F32.PACK_AB R10, R5, R4 ;
+        /*3040*/                   F2FP.BF16.F32.PACK_AB R11, R7, R6 ;
+        /*3050*/                   STSM.16.MT88.4 [R25], R8 ;
+        /*3060*/                   MEMBAR.ALL.CTA ;
+        /*3070*/                   FENCE.VIEW.ASYNC.S ;
+        /*3080*/                   BAR.SYNC.DEFER_BLOCKING 0x8, 0x80 ;
+        /*3090*/               @P0 BRA `(.L_x_40) ;
+        /*30a0*/                   ELECT P1, URZ, PT ;
+        /*30b0*/                   BSSY.RECONVERGENT B0, `(.L_x_40) ;
+        /*30c0*/              @!P1 BRA `(.L_x_41) ;
+        /*30d0*/                   LDCU.64 UR10, c[0x0][0x348] ;
+        /*30e0*/                   R2UR UR5, R29 ;
+        /*30f0*/                   R2UR UR4, R0 ;
+        /*3100*/                   R2UR UR6, R3 ;
+        /*3110*/                   UIADD3 UR9, UPT, UPT, UR5, 0x40, URZ ;
+        /*3120*/                   UIADD3 UR8, UPT, UPT, UR4, 0x800, URZ ;
+        /*3130*/                   UIADD3 UR16, UP0, UPT, UR10, 0x280, URZ ;
+        /*3140*/                   UMOV UR10, UR6 ;
+        /*3150*/                   UIADD3.X UR17, UPT, UPT, URZ, UR11, URZ, UP0, !UPT ;
+        /*3160*/                   UTMASTG.2D [UR4], [UR16] ;
+        /*3170*/                   UTMASTG.2D [UR8], [UR16] ;
+        /*3180*/                   UTMACMDFLUSH ;
+.L_x_41:
+        /*3190*/                   BSYNC.RECONVERGENT B0 ;
+.L_x_40:
+        /*31a0*/                   NOP ;
+        /*31b0*/               @P0 BRA `(.L_x_42) ;
+        /*31c0*/                   DEPBAR.LE SB0, 0x1 ;
+.L_x_42:
+        /*31d0*/                   BAR.SYNC.DEFER_BLOCKING 0x8, 0x80 ;
+        /*31e0*/                   R2UR UR7, R30 ;
+        /*31f0*/                   VIADD R28, R28, 0x36900 ;
+        /*3200*/                   R2UR UR6, R30.reuse ;
+        /*3210*/                   R2UR UR5, R30.reuse ;
+        /*3220*/                   R2UR UR4, R30 ;
+        /*3230*/                   PRMT R28, RZ, 0x654, R28 ;
+        /*3240*/                   LDTM.16dp256bit R16, tmem[UR7+0x10] ;
+        /*3250*/                   LDTM.16dp256bit R12, tmem[UR6+0x100010] ;
+        /*3260*/                   NOP ;
+        /*3270*/                   LDTM.16dp256bit R8, tmem[UR5+0x18] ;
+        /*3280*/                   LDTM.16dp256bit R4, tmem[UR4+0x100018] ;
+        /*3290*/                   F2FP.BF16.F32.PACK_AB R16, R17, R16 ;
+        /*32a0*/                   F2FP.BF16.F32.PACK_AB R17, R19, R18 ;
+        /*32b0*/                   F2FP.BF16.F32.PACK_AB R18, R13, R12 ;
+        /*32c0*/                   F2FP.BF16.F32.PACK_AB R19, R15, R14 ;
+        /*32d0*/                   F2FP.BF16.F32.PACK_AB R8, R9, R8 ;
+        /*32e0*/                   STSM.16.MT88.4 [R24], R16 ;
+        /*32f0*/                   F2FP.BF16.F32.PACK_AB R9, R11, R10 ;
+        /*3300*/                   NOP ;
+        /*3310*/                   F2FP.BF16.F32.PACK_AB R10, R5, R4 ;
+        /*3320*/                   F2FP.BF16.F32.PACK_AB R11, R7, R6 ;
+        /*3330*/                   STSM.16.MT88.4 [R23], R8 ;
+        /*3340*/                   NOP ;
+        /*3350*/                   SYNCS.ARRIVE.TRANS64.RED.A1T0 RZ, [R28+URZ], RZ ;
+        /*3360*/                   MEMBAR.ALL.CTA ;
+        /*3370*/                   FENCE.VIEW.ASYNC.S ;
+        /*3380*/                   BAR.SYNC.DEFER_BLOCKING 0x8, 0x80 ;
+        /*3390*/               @P0 BRA `(.L_x_43) ;
+        /*33a0*/                   ELECT P0, URZ, PT ;
+        /*33b0*/                   BSSY.RECONVERGENT B0, `(.L_x_43) ;
+        /*33c0*/              @!P0 BRA `(.L_x_44) ;
+        /*33d0*/                   LDCU.64 UR6, c[0x0][0x348] ;
+        /*33e0*/                   R2UR UR10, R3 ;
+        /*33f0*/                   R2UR UR4, R0 ;
+        /*3400*/                   R2UR UR9, R29 ;
+        /*3410*/                   UIADD3 UR10, UPT, UPT, UR10, 0x10, URZ ;
+        /*3420*/                   UIADD3 UR8, UPT, UPT, UR4, 0x1000, URZ ;
+        /*3430*/                   UIADD3 UR16, UP0, UPT, UR6, 0x280, URZ ;
+        /*3440*/                   UIADD3 UR5, UPT, UPT, UR9, 0x40, URZ ;
+        /*3450*/                   UIADD3.X UR17, UPT, UPT, URZ, UR7, URZ, UP0, !UPT ;
+        /*3460*/                   UIADD3 UR4, UPT, UPT, UR4, 0x1800, URZ ;
+        /*3470*/                   UMOV UR6, UR10 ;
+        /*3480*/                   UTMASTG.2D [UR8], [UR16] ;
+        /*3490*/                   UTMASTG.2D [UR4], [UR16] ;
+        /*34a0*/                   UTMACMDFLUSH ;
+.L_x_44:
+        /*34b0*/                   BSYNC.RECONVERGENT B0 ;
+.L_x_43:
+        /*34c0*/                   NOP ;
+        /*34d0*/                   BRA `(.L_x_45) ;
+.L_x_37:
+        /*34e0*/                   VIADD R22, R22, 0x1 ;
+        /*34f0*/                   MOV R20, R0 ;
+        /*3500*/                   ISETP.NE.U32.AND P0, PT, R22, 0x20, PT ;
+        /*3510*/               @P0 BRA `(.L_x_46) ;
+.L_x_16:
+        /*3520*/                   WARPSYNC.ALL ;
+        /*3530*/                   BAR.SYNC.DEFER_BLOCKING 0x0 ;
+        /*3540*/                   ISETP.NE.U32.AND P0, PT, R27, RZ, PT ;
+        /*3550*/               @P0 EXIT ;
+        /*3560*/                   S2UR UR6, SR_CgaCtaId ;
+        /*3570*/                   UMOV UR4, 0x40 ;
+        /*3580*/                   NOP ;
+        /*3590*/                   ULEA UR6, UR6, UR4, 0x18 ;
+        /*35a0*/                   LDS R0, [UR6+0x14] ;
+        /*35b0*/                   LOP3.LUT R0, R0, 0xf, RZ, 0xc0, !PT ;
+        /*35c0*/                   ISETP.NE.AND P0, PT, R0, 0xf, PT ;
+        /*35d0*/               @P0 BRA `(.L_x_47) ;
+        /*35e0*/                   LDS R0, [UR6+0x18] ;
+        /*35f0*/                   LOP3.LUT R0, R0, 0x1, RZ, 0xc0, !PT ;
+        /*3600*/                   ISETP.NE.AND P0, PT, R0, 0x1, PT ;
+        /*3610*/               @P0 BRA `(.L_x_48) ;
+        /*3620*/                   S2R R0, SR_LANEID ;
+        /*3630*/                   IMAD.MOV.U32 R3, RZ, RZ, -0x10 ;
+        /*3640*/                   VOTEU.ANY UR7, UPT, PT ;
+        /*3650*/                   IMAD.MOV.U32 R2, RZ, RZ, -0x2 ;
+        /*3660*/                   UFLO.U32 UR7, UR7 ;
+        /*3670*/                   REDUX UR5, R3 ;
+        /*3680*/                   REDUX UR4, R2 ;
+        /*3690*/                   MOV R4, UR5 ;
+        /*36a0*/                   ISETP.EQ.U32.AND P0, PT, R0, UR7, PT ;
+        /*36b0*/                   MOV R0, UR4 ;
+        /*36c0*/                   UMOV UR4, 0xfffffff0 ;
+        /*36d0*/                   UTCATOMSWS.AND URZ, UR4 ;
+        /*36e0*/               @P0 ATOMS.AND RZ, [UR6+0x14], R4 ;
+        /*36f0*/               @P0 ATOMS.AND RZ, [UR6+0x18], R0 ;
+        /*3700*/                   BRA `(.L_x_49) ;
+.L_x_48:
+        /*3710*/                   MOV R2, 0x3730 ;
+        /*3720*/                   CALL.REL.NOINC `($__internal_0_$__cuda_sm10x_tcgen05_guardrail_trap_col_being_dealloced_not_returned_by_alloc) ;
+        /*3730*/                   BRA `(.L_x_49) ;
+.L_x_47:
+        /*3740*/                   MOV R2, 0x3760 ;
+        /*3750*/                   CALL.REL.NOINC `($__internal_2_$__cuda_sm10x_tcgen05_guardrail_trap_unallocated_columns_being_dealloced) ;
+.L_x_49:
+        /*3760*/                   NOP ;
+        /*3770*/                   EXIT ;
+.L_x_11:
+        /*3780*/                   SYNCS.PHASECHK.TRANS64.TRYWAIT P0, [R5+URZ+0x36800], R2 ;
+        /*3790*/              @!P0 NANOSLEEP.SYNCS 0x989680 ;
+        /*37a0*/              @!P0 SYNCS.PHASECHK.TRANS64 P0, [R5+URZ+0x36800], R2 ;
+        /*37b0*/              @!P0 BRA `(.L_x_11) ;
+        /*37c0*/                   BRA `(.L_x_50) ;
+.L_x_13:
+        /*37d0*/                   SYNCS.PHASECHK.TRANS64.TRYWAIT P0, [R13+URZ+0x36800], R2 ;
+        /*37e0*/              @!P0 NANOSLEEP.SYNCS 0x989680 ;
+        /*37f0*/              @!P0 SYNCS.PHASECHK.TRANS64 P0, [R13+URZ+0x36800], R2 ;
+        /*3800*/              @!P0 BRA `(.L_x_13) ;
+        /*3810*/                   BRA `(.L_x_51) ;
+.L_x_19:
+        /*3820*/                   SYNCS.PHASECHK.TRANS64.TRYWAIT P0, [R9+URZ+0x36850], R18 ;
+        /*3830*/              @!P0 NANOSLEEP.SYNCS 0x989680 ;
+        /*3840*/              @!P0 SYNCS.PHASECHK.TRANS64 P0, [R9+URZ+0x36850], R18 ;
+        /*3850*/              @!P0 BRA `(.L_x_19) ;
+        /*3860*/                   BRA `(.L_x_52) ;
+.L_x_20:
+        /*3870*/                   SYNCS.PHASECHK.TRANS64.TRYWAIT P0, [R14+URZ+0x36850], R13 ;
+        /*3880*/              @!P0 NANOSLEEP.SYNCS 0x989680 ;
+        /*3890*/              @!P0 SYNCS.PHASECHK.TRANS64 P0, [R14+URZ+0x36850], R13 ;
+        /*38a0*/              @!P0 BRA `(.L_x_20) ;
+        /*38b0*/                   BRA `(.L_x_53) ;
+.L_x_21:
+        /*38c0*/                   SYNCS.PHASECHK.TRANS64.TRYWAIT P0, [R20+URZ+0x36850], R13 ;
+        /*38d0*/              @!P0 NANOSLEEP.SYNCS 0x989680 ;
+        /*38e0*/              @!P0 SYNCS.PHASECHK.TRANS64 P0, [R20+URZ+0x36850], R13 ;
+        /*38f0*/              @!P0 BRA `(.L_x_21) ;
+        /*3900*/                   BRA `(.L_x_54) ;
+.L_x_22:
+        /*3910*/                   SYNCS.PHASECHK.TRANS64.TRYWAIT P0, [R22+URZ+0x36850], R9 ;
+        /*3920*/              @!P0 NANOSLEEP.SYNCS 0x989680 ;
+        /*3930*/              @!P0 SYNCS.PHASECHK.TRANS64 P0, [R22+URZ+0x36850], R9 ;
+        /*3940*/              @!P0 BRA `(.L_x_22) ;
+        /*3950*/                   BRA `(.L_x_55) ;
+.L_x_27:
+        /*3960*/                   MOV R0, UR20 ;
+.L_x_56:
+        /*3970*/                   SYNCS.PHASECHK.TRANS64.TRYWAIT P0, [R0+URZ+0x36900], R3 ;
+        /*3980*/              @!P0 NANOSLEEP.SYNCS 0x989680 ;
+        /*3990*/              @!P0 SYNCS.PHASECHK.TRANS64 P0, [R0+URZ+0x36900], R3 ;
+        /*39a0*/              @!P0 BRA `(.L_x_56) ;
+        /*39b0*/                   BRA `(.L_x_57) ;
+.L_x_28:
+        /*39c0*/                   MOV R3, UR23 ;
+.L_x_58:
+        /*39d0*/                   SYNCS.PHASECHK.TRANS64.TRYWAIT P0, [R3+URZ+0x368a0], R4 ;
+        /*39e0*/              @!P0 NANOSLEEP.SYNCS 0x989680 ;
+        /*39f0*/              @!P0 SYNCS.PHASECHK.TRANS64 P0, [R3+URZ+0x368a0], R4 ;
+        /*3a00*/              @!P0 BRA `(.L_x_58) ;
+        /*3a10*/                   BRA `(.L_x_59) ;
+.L_x_29:
+        /*3a20*/                   MOV R2, UR18 ;
+.L_x_60:
+        /*3a30*/                   SYNCS.PHASECHK.TRANS64.TRYWAIT P0, [R2+URZ+0x368a0], R3 ;
+        /*3a40*/              @!P0 NANOSLEEP.SYNCS 0x989680 ;
+        /*3a50*/              @!P0 SYNCS.PHASECHK.TRANS64 P0, [R2+URZ+0x368a0], R3 ;
+        /*3a60*/              @!P0 BRA `(.L_x_60) ;
+        /*3a70*/                   BRA `(.L_x_61) ;
+.L_x_30:
+        /*3a80*/                   MOV R2, UR18 ;
+.L_x_62:
+        /*3a90*/                   SYNCS.PHASECHK.TRANS64.TRYWAIT P0, [R2+URZ+0x368a0], R3 ;
+        /*3aa0*/              @!P0 NANOSLEEP.SYNCS 0x989680 ;
+        /*3ab0*/              @!P0 SYNCS.PHASECHK.TRANS64 P0, [R2+URZ+0x368a0], R3 ;
+        /*3ac0*/              @!P0 BRA `(.L_x_62) ;
+        /*3ad0*/                   BRA `(.L_x_63) ;
+.L_x_31:
+        /*3ae0*/                   MOV R2, UR18 ;
+.L_x_64:
+        /*3af0*/                   SYNCS.PHASECHK.TRANS64.TRYWAIT P0, [R2+URZ+0x368a0], R3 ;
+        /*3b00*/              @!P0 NANOSLEEP.SYNCS 0x989680 ;
+        /*3b10*/              @!P0 SYNCS.PHASECHK.TRANS64 P0, [R2+URZ+0x368a0], R3 ;
+        /*3b20*/              @!P0 BRA `(.L_x_64) ;
+        /*3b30*/                   BRA `(.L_x_65) ;
+.L_x_38:
+        /*3b40*/                   SYNCS.PHASECHK.TRANS64.TRYWAIT P0, [R28+URZ+0x368f0], R7 ;
+        /*3b50*/              @!P0 NANOSLEEP.SYNCS 0x989680 ;
+        /*3b60*/              @!P0 SYNCS.PHASECHK.TRANS64 P0, [R28+URZ+0x368f0], R7 ;
+        /*3b70*/              @!P0 BRA `(.L_x_38) ;
+        /*3b80*/                   BRA `(.L_x_66) ;
+        .type           $__internal_0_$__cuda_sm10x_tcgen05_guardrail_trap_col_being_dealloced_not_returned_by_alloc,@function
+        .size           $__internal_0_$__cuda_sm10x_tcgen05_guardrail_trap_col_being_dealloced_not_returned_by_alloc,($__internal_1_$__cuda_sm10x_tcgen05_guardrail_trap_phase_invalid_during_alloc - $__internal_0_$__cuda_sm10x_tcgen05_guardrail_trap_col_being_dealloced_not_returned_by_alloc)
+$__internal_0_$__cuda_sm10x_tcgen05_guardrail_trap_col_being_dealloced_not_returned_by_alloc:
+        /*3b90*/                   BPT.TRAP 0x1 ;
+        /*3ba0*/                   HFMA2 R3, -RZ, RZ, 0, 0 ;
+        /*3bb0*/                   RET.REL.NODEC R2 `(_ZN9deep_gemm28sm100_fp8_fp4_gemm_1d1d_implILN4cute4UMMA5MajorE0ELS3_0ELj128ELj128ELj128ELj0ELj4096ELj6144ELj32ELj128ELj128ELj32ELj128ELj128ELj128ELj10ELj128ELj128ELj1ELb0ELj148ELb1ELb1ELNS_8GemmTypeE2ELb0EN7cutlass12float_e4m3_tES6_NS5_10bfloat16_tENS_8epilogue9transform16EpilogueIdentityEEEvPijjj14CUtensorMap_stSC_SC_SC_SC_) ;
+        .type           $__internal_1_$__cuda_sm10x_tcgen05_guardrail_trap_phase_invalid_during_alloc,@function
+        .size           $__internal_1_$__cuda_sm10x_tcgen05_guardrail_trap_phase_invalid_during_alloc,($__internal_2_$__cuda_sm10x_tcgen05_guardrail_trap_unallocated_columns_being_dealloced - $__internal_1_$__cuda_sm10x_tcgen05_guardrail_trap_phase_invalid_during_alloc)
+$__internal_1_$__cuda_sm10x_tcgen05_guardrail_trap_phase_invalid_during_alloc:
+        /*3bc0*/                   BPT.TRAP 0x1 ;
+        /*3bd0*/                   MOV R3, 0x0 ;
+        /*3be0*/                   RET.REL.NODEC R2 `(_ZN9deep_gemm28sm100_fp8_fp4_gemm_1d1d_implILN4cute4UMMA5MajorE0ELS3_0ELj128ELj128ELj128ELj0ELj4096ELj6144ELj32ELj128ELj128ELj32ELj128ELj128ELj128ELj10ELj128ELj128ELj1ELb0ELj148ELb1ELb1ELNS_8GemmTypeE2ELb0EN7cutlass12float_e4m3_tES6_NS5_10bfloat16_tENS_8epilogue9transform16EpilogueIdentityEEEvPijjj14CUtensorMap_stSC_SC_SC_SC_) ;
+        .type           $__internal_2_$__cuda_sm10x_tcgen05_guardrail_trap_unallocated_columns_being_dealloced,@function
+        .size           $__internal_2_$__cuda_sm10x_tcgen05_guardrail_trap_unallocated_columns_being_dealloced,($__internal_3_$__cuda_sm20_div_u16 - $__internal_2_$__cuda_sm10x_tcgen05_guardrail_trap_unallocated_columns_being_dealloced)
+$__internal_2_$__cuda_sm10x_tcgen05_guardrail_trap_unallocated_columns_being_dealloced:
+        /*3bf0*/                   BPT.TRAP 0x1 ;
+        /*3c00*/                   HFMA2 R3, -RZ, RZ, 0, 0 ;
+        /*3c10*/                   RET.REL.NODEC R2 `(_ZN9deep_gemm28sm100_fp8_fp4_gemm_1d1d_implILN4cute4UMMA5MajorE0ELS3_0ELj128ELj128ELj128ELj0ELj4096ELj6144ELj32ELj128ELj128ELj32ELj128ELj128ELj128ELj10ELj128ELj128ELj1ELb0ELj148ELb1ELb1ELNS_8GemmTypeE2ELb0EN7cutlass12float_e4m3_tES6_NS5_10bfloat16_tENS_8epilogue9transform16EpilogueIdentityEEEvPijjj14CUtensorMap_stSC_SC_SC_SC_) ;
+        .type           $__internal_3_$__cuda_sm20_div_u16,@function
+        .size           $__internal_3_$__cuda_sm20_div_u16,(.L_x_72 - $__internal_3_$__cuda_sm20_div_u16)
+$__internal_3_$__cuda_sm20_div_u16:
+        /*3c20*/                   I2F.U16 R7, R4 ;
+        /*3c30*/                   IMAD.MOV.U32 R6, RZ, RZ, 0x4b800000 ;
+        /*3c40*/                   HFMA2 R19, -RZ, RZ, 0, 0 ;
+        /*3c50*/                   IMAD.MOV.U32 R18, RZ, RZ, R0 ;
+        /*3c60*/                   I2F.U16.RZ R8, R3 ;
+        /*3c70*/                   FSETP.GEU.AND P0, PT, |R7|.reuse, 1.175494350822287508e-38, PT ;
+        /*3c80*/                   FSETP.GT.AND P2, PT, |R7|, 8.50705917302346158658e+37, PT ;
+        /*3c90*/                   FSEL R6, R6, 1, !P0 ;
+        /*3ca0*/                   ISETP.NE.U32.AND P0, PT, R4, RZ, PT ;
+        /*3cb0*/                   FSEL R6, R6, 0.25, !P2 ;
+        /*3cc0*/                   FMUL R7, R7, R6 ;
+        /*3cd0*/                   MUFU.RCP R7, R7 ;
+        /*3ce0*/                   FMUL R9, R6, R7 ;
+        /*3cf0*/                   VIADD R9, R9, 0x2 ;
+        /*3d00*/                   FMUL.RZ R8, R8, R9 ;
+        /*3d10*/                   F2I.U32.TRUNC.NTZ R29, R8 ;
+        /*3d20*/                   LOP3.LUT R29, R29, 0xffff, RZ, 0xc0, !PT ;
+        /*3d30*/              @!P0 MOV R29, 0xffffffff ;
+        /*3d40*/                   RET.REL.NODEC R18 `(_ZN9deep_gemm28sm100_fp8_fp4_gemm_1d1d_implILN4cute4UMMA5MajorE0ELS3_0ELj128ELj128ELj128ELj0ELj4096ELj6144ELj32ELj128ELj128ELj32ELj128ELj128ELj128ELj10ELj128ELj128ELj1ELb0ELj148ELb1ELb1ELNS_8GemmTypeE2ELb0EN7cutlass12float_e4m3_tES6_NS5_10bfloat16_tENS_8epilogue9transform16EpilogueIdentityEEEvPijjj14CUtensorMap_stSC_SC_SC_SC_) ;
+.L_x_67:
+        /*3d50*/                   BRA `(.L_x_67);
+        /*3d60*/                   NOP;
+        /*3d70*/                   NOP;
+        /*3d80*/                   NOP;
+        /*3d90*/                   NOP;
+        /*3da0*/                   NOP;
+        /*3db0*/                   NOP;
+        /*3dc0*/                   NOP;
+        /*3dd0*/                   NOP;
+        /*3de0*/                   NOP;
+        /*3df0*/                   NOP;
+.L_x_72:
+
+
+//--------------------- .nv.shared._ZN9deep_gemm28sm100_fp8_fp4_gemm_1d1d_implILN4cute4UMMA5MajorE0ELS3_0ELj128ELj128ELj128ELj0ELj4096ELj6144ELj32ELj128ELj128ELj32ELj128ELj128ELj128ELj10ELj128ELj128ELj1ELb0ELj148ELb1ELb1ELNS_8GemmTypeE2ELb0EN7cutlass12float_e4m3_tES6_NS5_10bfloat16_tENS_8epilogue9transform16EpilogueIdentityEEEvPijjj14CUtensorMap_stSC_SC_SC_SC_ --------------------------
+	.section	.nv.shared._ZN9deep_gemm28sm100_fp8_fp4_gemm_1d1d_implILN4cute4UMMA5MajorE0ELS3_0ELj128ELj128ELj128ELj0ELj4096ELj6144ELj32ELj128ELj128ELj32ELj128ELj128ELj128ELj10ELj128ELj128ELj1ELb0ELj148ELb1ELb1ELNS_8GemmTypeE2ELb0EN7cutlass12float_e4m3_tES6_NS5_10bfloat16_tENS_8epilogue9transform16EpilogueIdentityEEEvPijjj14CUtensorMap_stSC_SC_SC_SC_,"aw",@nobits
+	.sectionflags	@""
+	.align	1024
+	.zero		1024
+
+
+//--------------------- .nv.shared.reserved.0     --------------------------
+	.section	.nv.shared.reserved.0,"aw",@nobits
+	.weak		__nv_reservedSMEM_offset_0_alias
+	.size		__nv_reservedSMEM_offset_0_alias, 0, 64
+	.other		__nv_reservedSMEM_offset_0_alias,@"STO_CUDA_RESERVED_SHARED STV_DEFAULT"
+__nv_reservedSMEM_offset_0_alias:
+	.zero		0
+.nv.shared.reserved.0:
+	.zero		64
+	.weak		__nv_reservedSMEM_tcgen05_partition
+	.type		__nv_reservedSMEM_tcgen05_partition,@object
+	.size		__nv_reservedSMEM_tcgen05_partition,(.L_0 - __nv_reservedSMEM_tcgen05_partition)
+__nv_reservedSMEM_tcgen05_partition:
+	.zero		32
+.L_0:
+
+
+//--------------------- .nv.global                --------------------------
+	.section	.nv.global,"aw",@nobits
+.nv.global:
+	.type		_ZN47_INTERNAL_a5c5f8be_9_kernel_cu_ff47da86_21042364cute7productE,@object
+	.size		_ZN47_INTERNAL_a5c5f8be_9_kernel_cu_ff47da86_21042364cute7productE,(_ZN47_INTERNAL_a5c5f8be_9_kernel_cu_ff47da86_21042364cuda3std3__45__cpo6cbeginE - _ZN47_INTERNAL_a5c5f8be_9_kernel_cu_ff47da86_21042364cute7productE)
+_ZN47_INTERNAL_a5c5f8be_9_kernel_cu_ff47da86_21042364cute7productE:
+	.zero		1
+	.type		_ZN47_INTERNAL_a5c5f8be_9_kernel_cu_ff47da86_21042364cuda3std3__45__cpo6cbeginE,@object
+	.size		_ZN47_INTERNAL_a5c5f8be_9_kernel_cu_ff47da86_21042364cuda3std3__45__cpo6cbeginE,(_ZN47_INTERNAL_a5c5f8be_9_kernel_cu_ff47da86_21042364cuda3std3__48in_placeE - _ZN47_INTERNAL_a5c5f8be_9_kernel_cu_ff47da86_21042364cuda3std3__45__cpo6cbeginE)
+_ZN47_INTERNAL_a5c5f8be_9_kernel_cu_ff47da86_21042364cuda3std3__45__cpo6cbeginE:
+	.zero		1
+	.type		_ZN47_INTERNAL_a5c5f8be_9_kernel_cu_ff47da86_21042364cuda3std3__48in_placeE,@object
+	.size		_ZN47_INTERNAL_a5c5f8be_9_kernel_cu_ff47da86_21042364cuda3std3__48in_placeE,(_ZN47_INTERNAL_a5c5f8be_9_kernel_cu_ff47da86_21042364cuda3std6ranges3__45__cpo9iter_moveE - _ZN47_INTERNAL_a5c5f8be_9_kernel_cu_ff47da86_21042364cuda3std3__48in_placeE)
+_ZN47_INTERNAL_a5c5f8be_9_kernel_cu_ff47da86_21042364cuda3std3__48in_placeE:
+	.zero		1
+	.type		_ZN47_INTERNAL_a5c5f8be_9_kernel_cu_ff47da86_21042364cuda3std6ranges3__45__cpo9iter_moveE,@object
+	.size		_ZN47_INTERNAL_a5c5f8be_9_kernel_cu_ff47da86_21042364cuda3std6ranges3__45__cpo9iter_moveE,(_ZN47_INTERNAL_a5c5f8be_9_kernel_cu_ff47da86_21042364cuda3std3__45__cpo5beginE - _ZN47_INTERNAL_a5c5f8be_9_kernel_cu_ff47da86_21042364cuda3std6ranges3__45__cpo9iter_moveE)
+_ZN47_INTERNAL_a5c5f8be_9_kernel_cu_ff47da86_21042364cuda3std6ranges3__45__cpo9iter_moveE:
+	.zero		1
+	.type		_ZN47_INTERNAL_a5c5f8be_9_kernel_cu_ff47da86_21042364cuda3std3__45__cpo5beginE,@object
+	.size		_ZN47_INTERNAL_a5c5f8be_9_kernel_cu_ff47da86_21042364cuda3std3__45__cpo5beginE,(_ZN47_INTERNAL_a5c5f8be_9_kernel_cu_ff47da86_21042364cuda3std3__449_GLOBAL__N__a5c5f8be_9_kernel_cu_ff47da86_21042366ignoreE - _ZN47_INTERNAL_a5c5f8be_9_kernel_cu_ff47da86_21042364cuda3std3__45__cpo5beginE)
+_ZN47_INTERNAL_a5c5f8be_9_kernel_cu_ff47da86_21042364cuda3std3__45__cpo5beginE:
+	.zero		1
+	.type		_ZN47_INTERNAL_a5c5f8be_9_kernel_cu_ff47da86_21042364cuda3std3__449_GLOBAL__N__a5c5f8be_9_kernel_cu_ff47da86_21042366ignoreE,@object
+	.size		_ZN47_INTERNAL_a5c5f8be_9_kernel_cu_ff47da86_21042364cuda3std3__449_GLOBAL__N__a5c5f8be_9_kernel_cu_ff47da86_21042366ignoreE,(_ZN47_INTERNAL_a5c5f8be_9_kernel_cu_ff47da86_21042364cute1_E - _ZN47_INTERNAL_a5c5f8be_9_kernel_cu_ff47da86_21042364cuda3std3__449_GLOBAL__N__a5c5f8be_9_kernel_cu_ff47da86_21042366ignoreE)
+_ZN47_INTERNAL_a5c5f8be_9_kernel_cu_ff47da86_21042364cuda3std3__449_GLOBAL__N__a5c5f8be_9_kernel_cu_ff47da86_21042366ignoreE:
+	.zero		1
+	.type		_ZN47_INTERNAL_a5c5f8be_9_kernel_cu_ff47da86_21042364cute1_E,@object
+	.size		_ZN47_INTERNAL_a5c5f8be_9_kernel_cu_ff47da86_21042364cute1_E,(_ZN47_INTERNAL_a5c5f8be_9_kernel_cu_ff47da86_21042364cuda3std3__45__cpo4cendE - _ZN47_INTERNAL_a5c5f8be_9_kernel_cu_ff47da86_21042364cute1_E)
+_ZN47_INTERNAL_a5c5f8be_9_kernel_cu_ff47da86_21042364cute1_E:
+	.zero		1
+	.type		_ZN47_INTERNAL_a5c5f8be_9_kernel_cu_ff47da86_21042364cuda3std3__45__cpo4cendE,@object
+	.size		_ZN47_INTERNAL_a5c5f8be_9_kernel_cu_ff47da86_21042364cuda3std3__45__cpo4cendE,(_ZN47_INTERNAL_a5c5f8be_9_kernel_cu_ff47da86_21042364cuda3std6ranges3__45__cpo4swapE - _ZN47_INTERNAL_a5c5f8be_9_kernel_cu_ff47da86_21042364cuda3std3__45__cpo4cendE)
+_ZN47_INTERNAL_a5c5f8be_9_kernel_cu_ff47da86_21042364cuda3std3__45__cpo4cendE:
+	.zero		1
+	.type		_ZN47_INTERNAL_a5c5f8be_9_kernel_cu_ff47da86_21042364cuda3std6ranges3__45__cpo4swapE,@object
+	.size		_ZN47_INTERNAL_a5c5f8be_9_kernel_cu_ff47da86_21042364cuda3std6ranges3__45__cpo4swapE,(_ZN47_INTERNAL_a5c5f8be_9_kernel_cu_ff47da86_21042364cuda3__413in_place_fromE - _ZN47_INTERNAL_a5c5f8be_9_kernel_cu_ff47da86_21042364cuda3std6ranges3__45__cpo4swapE)
+_ZN47_INTERNAL_a5c5f8be_9_kernel_cu_ff47da86_21042364cuda3std6ranges3__45__cpo4swapE:
+	.zero		1
+	.type		_ZN47_INTERNAL_a5c5f8be_9_kernel_cu_ff47da86_21042364cuda3__413in_place_fromE,@object
+	.size		_ZN47_INTERNAL_a5c5f8be_9_kernel_cu_ff47da86_21042364cuda3__413in_place_fromE,(_ZN47_INTERNAL_a5c5f8be_9_kernel_cu_ff47da86_21042364cuda3std3__45__cpo3endE - _ZN47_INTERNAL_a5c5f8be_9_kernel_cu_ff47da86_21042364cuda3__413in_place_fromE)
+_ZN47_INTERNAL_a5c5f8be_9_kernel_cu_ff47da86_21042364cuda3__413in_place_fromE:
+	.zero		1
+	.type		_ZN47_INTERNAL_a5c5f8be_9_kernel_cu_ff47da86_21042364cuda3std3__45__cpo3endE,@object
+	.size		_ZN47_INTERNAL_a5c5f8be_9_kernel_cu_ff47da86_21042364cuda3std3__45__cpo3endE,(_ZN47_INTERNAL_a5c5f8be_9_kernel_cu_ff47da86_21042364cuda3std3__419piecewise_constructE - _ZN47_INTERNAL_a5c5f8be_9_kernel_cu_ff47da86_21042364cuda3std3__45__cpo3endE)
+_ZN47_INTERNAL_a5c5f8be_9_kernel_cu_ff47da86_21042364cuda3std3__45__cpo3endE:
+	.zero		1
+	.type		_ZN47_INTERNAL_a5c5f8be_9_kernel_cu_ff47da86_21042364cuda3std3__419piecewise_constructE,@object
+	.size		_ZN47_INTERNAL_a5c5f8be_9_kernel_cu_ff47da86_21042364cuda3std3__419piecewise_constructE,(.L_6 - _ZN47_INTERNAL_a5c5f8be_9_kernel_cu_ff47da86_21042364cuda3std3__419piecewise_constructE)
+_ZN47_INTERNAL_a5c5f8be_9_kernel_cu_ff47da86_21042364cuda3std3__419piecewise_constructE:
+	.zero		1
+.L_6:
+
+
+//--------------------- .nv.constant0._ZN9deep_gemm28sm100_fp8_fp4_gemm_1d1d_implILN4cute4UMMA5MajorE0ELS3_0ELj128ELj128ELj128ELj0ELj4096ELj6144ELj32ELj128ELj128ELj32ELj128ELj128ELj128ELj10ELj128ELj128ELj1ELb0ELj148ELb1ELb1ELNS_8GemmTypeE2ELb0EN7cutlass12float_e4m3_tES6_NS5_10bfloat16_tENS_8epilogue9transform16EpilogueIdentityEEEvPijjj14CUtensorMap_stSC_SC_SC_SC_ --------------------------
+	.section	.nv.constant0._ZN9deep_gemm28sm100_fp8_fp4_gemm_1d1d_implILN4cute4UMMA5MajorE0ELS3_0ELj128ELj128ELj128ELj0ELj4096ELj6144ELj32ELj128ELj128ELj32ELj128ELj128ELj128ELj10ELj128ELj128ELj1ELb0ELj148ELb1ELb1ELNS_8GemmTypeE2ELb0EN7cutlass12float_e4m3_tES6_NS5_10bfloat16_tENS_8epilogue9transform16EpilogueIdentityEEEvPijjj14CUtensorMap_stSC_SC_SC_SC_,"a",@progbits
+	.sectionflags	@""
+	.align	4
+.nv.constant0._ZN9deep_gemm28sm100_fp8_fp4_gemm_1d1d_implILN4cute4UMMA5MajorE0ELS3_0ELj128ELj128ELj128ELj0ELj4096ELj6144ELj32ELj128ELj128ELj32ELj128ELj128ELj128ELj10ELj128ELj128ELj1ELb0ELj148ELb1ELb1ELNS_8GemmTypeE2ELb0EN7cutlass12float_e4m3_tES6_NS5_10bfloat16_tENS_8epilogue9transform16EpilogueIdentityEEEvPijjj14CUtensorMap_stSC_SC_SC_SC_:
+	.zero		1664
+
+
+//--------------------- SYMBOLS --------------------------
+
+	.type		.nv.reservedSmem.offset0,@object
+	.size		.nv.reservedSmem.offset0,0x4
+	.type		.nv.reservedSmem.cap,@object
+	.size		.nv.reservedSmem.cap,0x4
