@@ -11,6 +11,10 @@
 - `glm52--routed_gateup_nvfp4_decode--b200--20260714b` [no-win] Routed Expert Gate+Up NVFP4/decode — For GLM-5.2 NVFP4 MoE decode on sm_100, enabling FlashInfer PDL may shift median latency by about 1-2%, but it is not stable enough to satisfy the conservative gate on the M=16/32 sweep. The main remaining headroom is likely reducing fixed TRT-LLM runner overhead or exposing a gate-up-only primitive instead of timing the fused MoE path.
 - `glm52--routed_gateup_nvfp4_decode--b200--20260714a` [no-win] Routed Expert Gate+Up NVFP4/decode — For a new SGLang NVFP4 MoE task, first validate the exact FlashInfer TRT-LLM packed tensor and scale contract separately from FP8 DeepGEMM. A pass-through baseline is useful for contract validation but provides no speedup; future work must reduce TRTLLM runner overhead or expose a gate-up-only primitive for the M=16/32 decode regime.
 
+## bm16-auto
+
+- `glm52--moe_w2_decode_hotspot--b200--20260729a` [no-win] MoE W2 down-projection/decode — A smaller grouped-GEMM tile can reduce padded output traffic yet still lose at the production callback boundary. Measure the complete selected interval early, and preserve caller-owned partial tiles in the kernel before spending profiling budget on stage or barrier refinements.
+
 ## cuda-direct-expert-token-kernel
 
 - `glm52--routed_swiglu_decode--b200--20260714a` [no-win] Routed Expert SwiGLU+FP8 Quant/decode — For GLM-5.2 masked routed SwiGLU decode on B200, the production SGLang C++ kernel is already close to the small-shape floor despite sparse active rows. Removing the CTA prefix mapping is not enough; a replacement must match the production vectorized bf16x2/fp8x2 instruction quality and beat run-to-run noise on M=16.
@@ -77,6 +81,10 @@
 - `glm52--routed_down_decode--b200--20260714b` [win] Routed Expert Down/decode — For decode-only GLM52 grouped-MoE tasks, avoid reading scalar layout tensors inside run() when the workload sweep fixes layout=1. The saved device synchronization can be larger than the DeepGEMM kernel tuning headroom at tiny routed loads.
 - `glm52--routed_down_decode--b200--20260714a` [win] Routed Expert Down/decode — For decode-only GLM52 grouped-MoE tasks, avoid reading scalar layout tensors inside run() when the workload sweep fixes layout=1. The saved device synchronization can be larger than the DeepGEMM kernel tuning headroom at tiny routed loads.
 
+## masked-tail-restore
+
+- `glm52--moe_w2_decode_hotspot--b200--20260729a` [no-win] MoE W2 down-projection/decode — A smaller grouped-GEMM tile can reduce padded output traffic yet still lose at the production callback boundary. Measure the complete selected interval early, and preserve caller-owned partial tiles in the kernel before spending profiling budget on stage or barrier refinements.
+
 ## packed-deepgemm-lower-op
 
 - `glm52--o_proj_decode--b200--20260714a` [no-win] Attention O Projection/decode — For small-M B200 FP8 decode GEMMs with SGLang-packed UE8M0 scales, the production DeepGEMM wrapper is already the safe path. Python-wrapper bypasses do not improve CUPTI device-kernel timing, and alternate APIs either need different scale layouts or fail to beat both M=16 and M=32.
@@ -117,3 +125,7 @@
 ## triton-direct-active-row-kernel
 
 - `glm52--routed_swiglu_decode--b200--20260714a` [no-win] Routed Expert SwiGLU+FP8 Quant/decode — For GLM-5.2 masked routed SwiGLU decode on B200, the production SGLang C++ kernel is already close to the small-shape floor despite sparse active rows. Removing the CTA prefix mapping is not enough; a replacement must match the production vectorized bf16x2/fp8x2 instruction quality and beat run-to-run noise on M=16.
+
+## vector-valid-row-store
+
+- `glm52--moe_w2_decode_hotspot--b200--20260729a` [no-win] MoE W2 down-projection/decode — A smaller grouped-GEMM tile can reduce padded output traffic yet still lose at the production callback boundary. Measure the complete selected interval early, and preserve caller-owned partial tiles in the kernel before spending profiling budget on stage or barrier refinements.

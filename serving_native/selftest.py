@@ -27,7 +27,7 @@ def main() -> int:
     )
 
     names = set(WORKLOADS)
-    assert len(names) == 48
+    assert len(names) == 56
     assert "linear_attn_o_prefill_m4096" in names
     assert "linear_indexer_wq_b_decode_m16" in names
     assert "linear_indexer_wq_b_decode_m32" in names
@@ -97,6 +97,14 @@ def main() -> int:
         "moe_w2_grouped_decode_m32_em8_bm16_stage11",
         "moe_w2_grouped_decode_m32_em8_bm16_stage11_v4",
         "moe_w13_swiglu_w2_region_decode_m32_em8_bm16_stage11_v4",
+        "moe_w2_hotspot_decode_em4",
+        "moe_w2_hotspot_decode_em5",
+        "moe_w2_hotspot_decode_em8",
+        "moe_w2_hotspot_decode_em9",
+        "moe_w2_hotspot_region_decode_em4",
+        "moe_w2_hotspot_region_decode_em5",
+        "moe_w2_hotspot_region_decode_em8",
+        "moe_w2_hotspot_region_decode_em9",
     }
     assert {
         workload.params["batch"]
@@ -116,10 +124,10 @@ def main() -> int:
         ):
             m = workload.params["decode_m"]
             assert m in decode_ms
-            expected = m // 4
-            if "current_source" in workload.name:
-                expected += 1
-            assert workload.params["expected_m"] == expected
+            assert workload.params["expected_m"] in {
+                m // 4,
+                m // 4 + 1,
+            }
             assert workload.params["valid_assignments"] == m * 8
     w2_identities = {
         (workload.params["decode_m"], workload.params["expected_m"]):
@@ -127,6 +135,7 @@ def main() -> int:
         for workload in WORKLOADS.values()
         if workload.name.startswith("moe_w2_grouped_decode_")
         and workload.params.get("candidate_variant") is None
+        and workload.params.get("hotspot_goal") is None
     }
     assert set(w2_identities) == {(16, 4), (16, 5), (32, 8), (32, 9)}
     for (_decode_m, expected_m), identity in w2_identities.items():
@@ -137,8 +146,27 @@ def main() -> int:
         for workload in WORKLOADS.values()
         if workload.family == "moe_compute_region"
         and workload.params.get("candidate_variant") is None
+        and workload.params.get("hotspot_goal") is None
     }
     assert set(region_identities) == {(16, 5), (32, 9)}
+    hotspot = [
+        workload
+        for workload in WORKLOADS.values()
+        if workload.params.get("hotspot_goal")
+        == "moe_w2_decode_bm16_auto_v1"
+    ]
+    assert len(hotspot) == 8
+    assert {
+        (item.family, item.params["decode_m"], item.params["expected_m"])
+        for item in hotspot
+    } == {
+        (family, decode_m, expected_m)
+        for family in ("moe_grouped_masked", "moe_compute_region")
+        for decode_m, expected_m in ((16, 4), (16, 5), (32, 8), (32, 9))
+    }
+    assert {
+        item.params["candidate_jit_identity"] for item in hotspot
+    } == {"infini_kernel_glm52_moe_w2_decode_bm16_auto"}
     stage11 = WORKLOADS[
         "moe_w2_grouped_decode_m32_em8_bm16_stage11"
     ]
@@ -225,6 +253,8 @@ def main() -> int:
     for path in HERE.glob("*.py"):
         ast.parse(path.read_text(), filename=str(path))
     for path in (HERE / "candidates").glob("*.py"):
+        ast.parse(path.read_text(), filename=str(path))
+    for path in (HERE / "providers").glob("*.py"):
         ast.parse(path.read_text(), filename=str(path))
     print(f"serving_native selftest OK: {len(WORKLOADS)} fixed workloads")
     return 0

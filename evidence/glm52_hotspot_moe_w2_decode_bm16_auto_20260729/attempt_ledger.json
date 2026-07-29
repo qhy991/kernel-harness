@@ -1,0 +1,148 @@
+{
+  "schema": "glm52-hotspot-attempt-ledger-v1",
+  "task": "moe_w2_decode",
+  "date_utc": "2026-07-29",
+  "target": {
+    "experts": 32,
+    "slab_m": 1024,
+    "k": 2048,
+    "n": 6144,
+    "expected_m": [4, 5, 8, 9],
+    "provider_api": 1,
+    "sglang_base": "83d313104d089bcd2af26b28453ff880f1e6a80b"
+  },
+  "material_kernel_binaries": 5,
+  "material_kernel_limit": 8,
+  "attempts": [
+    {
+      "id": "cpu-preimport-namespace-audit",
+      "route": "A0",
+      "outcome": "error",
+      "fair_result": null,
+      "why": "The initial smoke process had imported a different DeepGEMM namespace before candidate setup, so it was rejected before correctness or timing.",
+      "resolution": "Candidate prepare_process now selects and verifies the content-addressed package before SGLang or DeepGEMM imports."
+    },
+    {
+      "id": "cpu-runtime-ptxas-flag-audit",
+      "route": "A0",
+      "outcome": "error",
+      "fair_result": null,
+      "why": "Runtime flags omitted ptxas verbose, produced a different JIT key, and changed the sealed cache during warmup.",
+      "resolution": "The candidate exports DG_JIT_PTXAS_VERBOSE=1 and verifies an unchanged warmed cache.",
+      "artifact": "/home/qinhaiyan/glm52-hotspot-goal-runs/cache/moe_w2_decode/negative_attempts/runtime_flags_missing_verbose/kernel.infini_kernel_glm52_moe_w2_decode_bm16_auto.71d1656ecf77adb61e40dd0696716e70"
+    },
+    {
+      "id": "raw-bm16-auto",
+      "route": "A0",
+      "outcome": "incorrect",
+      "fair_result": null,
+      "why": "The unmodified BM16 epilogue used a full-tile TMA store and overwrote invalid caller-owned slab rows for partial tiles.",
+      "resolution": "Rejected before fair timing; moved to focused masked-epilogue work."
+    },
+    {
+      "id": "tail-restore-in-kernel",
+      "route": "B2",
+      "outcome": "slower",
+      "fair_result": {
+        "path": "/home/qinhaiyan/glm52-hotspot-goal-runs/cache/moe_w2_decode/results/b2_tail_preserve/leaf_eager_em4.json",
+        "sha256": "83c433f1842ad5a1b4102aef57e3b8a6d097986920027aabf8e9df3b3de5a150",
+        "pooled_speedup": 0.6986253820848479,
+        "order_balanced_speedup": 0.6955541804258569,
+        "ab_median_speedup": 0.685802049613775,
+        "ba_median_speedup": 0.7054449869030663,
+        "pairs": 150
+      },
+      "why": "Reading and restaging invalid BF16 rows preserved ownership but added enough work to lose badly."
+    },
+    {
+      "id": "scalar-direct-valid-store",
+      "route": "B2",
+      "outcome": "slower",
+      "fair_result": {
+        "path": "/home/qinhaiyan/glm52-hotspot-goal-runs/cache/moe_w2_decode/results/b2_direct_valid_store/leaf_eager_em4.json",
+        "sha256": "5544f62ab67518bd1d698b5a0d34a721712b59dfbc5ef2eb710f2fd2bde73ee4",
+        "pooled_speedup": 0.7999731615782553,
+        "order_balanced_speedup": 0.8079950292466866,
+        "ab_median_speedup": 0.7948100567887509,
+        "ba_median_speedup": 0.8213987250300656,
+        "pairs": 150
+      },
+      "why": "Predicated 32-bit global stores removed padded writes and passed correctness, but the selected API-v1 path remained slower than stock."
+    },
+    {
+      "id": "vector-direct-valid-store",
+      "route": "B2",
+      "outcome": "slower",
+      "fair_result": {
+        "path": "/home/qinhaiyan/glm52-hotspot-goal-runs/cache/moe_w2_decode/results/b2_vector_valid_store/leaf_eager_em4.json",
+        "sha256": "922ecb7fd690fdca25e9b06d9a3698f80b403a847d3957f32b02a1bd1cb62429",
+        "pooled_speedup": 0.7773512244984906,
+        "order_balanced_speedup": 0.7810478103495996,
+        "ab_median_speedup": 0.7630232462438462,
+        "ba_median_speedup": 0.7994981608423363,
+        "pairs": 150
+      },
+      "why": "A 16-byte valid-row store preserved tails and reduced store instructions, but per-call Python counter snapshots obscured the device-kernel gain."
+    },
+    {
+      "id": "vector-direct-valid-store-postrun-counters-v5",
+      "route": "B2",
+      "outcome": "slower",
+      "selected_final": true,
+      "fair_result": {
+        "path": "/home/qinhaiyan/glm52-hotspot-goal-runs/cache/moe_w2_decode/results/b2_vector_postrun_counters/leaf_eager_em4.json",
+        "sha256": "0f6506edd485d40dc360e717744c31ace1bcfc964445468148391640635603f0",
+        "run_id": "20260729T170259079757Z-23b59d8b",
+        "pooled_speedup": 0.8016415994159805,
+        "order_balanced_speedup": 0.8099019480579899,
+        "ab_median_speedup": 0.7955711751263687,
+        "ba_median_speedup": 0.8244908638927712,
+        "pairs": 150,
+        "series": 3,
+        "threshold": 1.03,
+        "self_audit": "VALID_NON_WIN"
+      },
+      "why": "Deferring counter dictionary materialization improved the selected path, but every estimator in every series remained below the required threshold."
+    }
+  ],
+  "routes_not_expanded": [
+    {
+      "route": "B1",
+      "why": "The auto-stage BM16 candidate failed the first required lane, so an adjacent stage experiment had no retained profile justification."
+    },
+    {
+      "route": "B3",
+      "why": "No surviving end-to-end candidate justified barrier, TMA, or scheduler surgery."
+    },
+    {
+      "route": "B4",
+      "why": "A replacement GEMM was not justified after the focused same-source epilogue candidate failed the API-v1 gate."
+    },
+    {
+      "route": "B5",
+      "why": "Final SASS showed no concrete defect whose repair could plausibly recover the measured end-to-end gap."
+    }
+  ],
+  "profilers": {
+    "torch_cuda": {
+      "captured_in_final_result": true,
+      "stock_kernel_us": 77.6590000000001,
+      "candidate_kernel_us": 68.22299999999996
+    },
+    "nsys": {
+      "run": false,
+      "why": "Promotion stopped at the first mandatory performance lane."
+    },
+    "ncu": {
+      "run": false,
+      "why": "There was no concrete survivor question."
+    }
+  },
+  "terminal": {
+    "disposition": "no-replacement",
+    "production_default": false,
+    "external_acceptance_eligible": false,
+    "external_commands": [],
+    "why": "The first required expected-M 4 eager leaf fairness lane failed."
+  }
+}

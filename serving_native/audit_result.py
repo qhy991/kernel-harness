@@ -51,6 +51,23 @@ W2_BM16_CACHE_DIR = (
     "26-moe_w2_decode_scoped_bm16/deepgemm"
 )
 W2_BM16_IMPL_NAME = "sm100_fp8_fp4_gemm_1d1d_impl"
+MOE_W2_HOTSPOT_GOAL = "moe_w2_decode_bm16_auto_v1"
+MOE_W2_HOTSPOT_SYMBOL = "infini_kernel_glm52_moe_w2_decode_bm16_auto"
+MOE_W2_HOTSPOT_CANDIDATE_IDENTITY = (
+    "glm52-moe-w2-decode-bm16-auto-vector-valid-store-postrun-counters-v5"
+)
+MOE_W2_HOTSPOT_READY_SHA256 = (
+    "17a5e23c0bd3cac16d88a1054047c4488fd9ca46b34fcca25560f83fdca7858b"
+)
+MOE_W2_HOTSPOT_STOCK_MANIFEST_SHA256 = (
+    "5cbda917dfc2be33362a3fcf9a0a7a7a240edc03db352b03a6beba20a2df4fb4"
+)
+MOE_W2_HOTSPOT_CANDIDATE_MANIFEST_SHA256 = (
+    "4b2eac068b797b3d798c3bc24ecdf1b4c72284868a1ef3a565137bcb6ce32734"
+)
+MOE_W2_HOTSPOT_DSO_SHA256 = (
+    "395655ab609ef5037fe3bb93f4a2d813c047f1265fd5f30554948dd8d0e51780"
+)
 W2_EM8_BM16_STAGE11_VARIANT = "em8_bm16_stage11"
 W2_EM8_BM16_STAGE11_JIT_IDENTITY = (
     "sm100_m_grouped_fp8_fp4_gemm_masked_1d1d_"
@@ -197,6 +214,14 @@ def _is_w2_leaf_workload(workload: dict[str, Any]) -> bool:
         workload.get("family") == "moe_grouped_masked"
         and _mapping(params)
         and "candidate_jit_identity" in params
+    )
+
+
+def _is_moe_w2_hotspot(workload: dict[str, Any]) -> bool:
+    params = workload.get("params")
+    return bool(
+        _mapping(params)
+        and params.get("hotspot_goal") == MOE_W2_HOTSPOT_GOAL
     )
 
 
@@ -2153,6 +2178,599 @@ def _audit_stage11_package_tree(
     return digest if isinstance(digest, str) else None
 
 
+def _hotspot_stock_kernel(kernel: Any) -> bool:
+    return bool(
+        isinstance(kernel, str)
+        and _w2_stage_template_mapping([kernel], 128, 8)
+        and MOE_W2_HOTSPOT_SYMBOL not in kernel
+    )
+
+
+def _hotspot_candidate_kernel(kernel: Any) -> bool:
+    return bool(
+        isinstance(kernel, str)
+        and MOE_W2_HOTSPOT_SYMBOL in kernel
+        and not _w2_template_mapping([kernel], 128)
+    )
+
+
+def _audit_moe_w2_hotspot_edge_masks(
+    findings: Findings,
+    result: dict[str, Any],
+    workload: dict[str, Any],
+    *,
+    mode: str,
+) -> None:
+    family = workload.get("family")
+    field = (
+        "edge_masks"
+        if family == "moe_grouped_masked"
+        else "region_edge_masks"
+    )
+    other_field = (
+        "region_edge_masks"
+        if field == "edge_masks"
+        else "edge_masks"
+    )
+    correctness = result.get("correctness")
+    edge = correctness.get(field) if _mapping(correctness) else None
+    findings.require(
+        _mapping(correctness) and correctness.get(other_field) is None,
+        f"hotspot {other_field} must be absent for {family}",
+    )
+    if not findings.require(
+        _mapping(edge),
+        f"hotspot correctness.{field} is missing",
+    ):
+        return
+    expected_scope = (
+        "single_B200_leaf_correctness_only"
+        if family == "moe_grouped_masked"
+        else "single_B200_containing_region_correctness"
+    )
+    findings.require(
+        edge.get("status") == "pass"
+        and edge.get("scope") == expected_scope
+        and edge.get("execution_mode") == mode,
+        f"hotspot correctness.{field} scope/status mismatch",
+    )
+    cases = edge.get("cases")
+    if not findings.require(
+        _list(cases) and len(cases) == len(W2_EDGE_MASK_CASES),
+        f"hotspot correctness.{field} case count mismatch",
+    ):
+        return
+    expected_patterns = {
+        "zero_all_experts": "seeded_random_finite",
+        "single_expert_one_row": "extreme_finite_fp8_alternating_sign",
+        "full_boundary_sweep": "seeded_random_finite",
+        "deterministic_ramp": "deterministic_fp8_ramp",
+        "deterministic_random_sparse": (
+            "seeded_random_fp8_and_packed_scales"
+        ),
+        "maximum_single_expert": "packed_ue8m0_exponent_boundaries",
+        "skewed_boundary_mix": "seeded_random_extreme_mask_skew",
+    }
+    expected_cases = dict(W2_EDGE_MASK_CASES)
+    findings.require(
+        [case.get("name") if _mapping(case) else None for case in cases]
+        == [name for name, _counts in W2_EDGE_MASK_CASES],
+        f"hotspot correctness.{field} case order mismatch",
+    )
+    for index, case in enumerate(cases):
+        prefix = f"correctness.{field}.cases[{index}]"
+        if not findings.require(_mapping(case), f"{prefix} is not an object"):
+            continue
+        name = case.get("name")
+        counts = expected_cases.get(name)
+        if not findings.require(
+            counts is not None
+            and case.get("masked_m") == list(counts)
+            and case.get("active_rows") == sum(counts)
+            and case.get("max_count") == max(counts)
+            and case.get("input_pattern") == expected_patterns.get(name),
+            f"{prefix} mask/value-pattern identity mismatch",
+        ):
+            continue
+        eager = case.get("eager")
+        expected_untouched = (32 * 1024 - sum(counts)) * 6144
+        expected_stock_untouched = all(
+            count == 0 or count % 128 == 0 for count in counts
+        )
+        findings.require(
+            _mapping(eager)
+            and eager.get("stock_candidate_match") is True
+            and eager.get("output_poisoned_before_launch")
+            == {"reference": True, "candidate": True}
+            and eager.get("masked_m_unmodified")
+            == {"reference": True, "candidate": True}
+            and eager.get("return_contract")
+            == {
+                "reference": "None",
+                "candidate": "None",
+                "enforced_before_TaskResult": True,
+            }
+            and eager.get("untouched_masked_rows")
+            == {
+                "reference": expected_stock_untouched,
+                "reference_expected": expected_stock_untouched,
+                "candidate": True,
+                "candidate_required": True,
+                "elements_checked": expected_untouched,
+            },
+            f"{prefix}.eager output/mask/return contract failed",
+        )
+        stream = eager.get("stream") if _mapping(eager) else None
+        findings.require(
+            _mapping(stream)
+            and stream.get("unchanged_default_stream") is True
+            and stream.get("before")
+            == stream.get("after_reference")
+            == stream.get("after_candidate")
+            == stream.get("default_stream_id"),
+            f"{prefix}.eager stream contract failed",
+        )
+        graph = case.get("graph")
+        if mode == "eager":
+            findings.require(
+                graph is None,
+                f"{prefix} eager lane carries graph evidence",
+            )
+            continue
+        if not findings.require(
+            _mapping(graph)
+            and graph.get("stock_candidate_match") is True
+            and graph.get("reference_candidate_captured_independently")
+            is True,
+            f"{prefix}.graph correctness/independence failed",
+        ):
+            continue
+        non_w2: dict[str, list[str]] = {}
+        handles: set[int] = set()
+        streams: set[int] = set()
+        for implementation in ("reference", "candidate"):
+            capture = graph.get(implementation)
+            capture_prefix = f"{prefix}.graph.{implementation}"
+            if not findings.require(
+                _mapping(capture),
+                f"{capture_prefix} is missing",
+            ):
+                continue
+            kernels = _audit_exact_single_kernel_graph(
+                findings,
+                capture,
+                prefix=capture_prefix,
+                exact_single=(family == "moe_grouped_masked"),
+            )
+            predicate = (
+                _hotspot_stock_kernel
+                if implementation == "reference"
+                else _hotspot_candidate_kernel
+            )
+            w2_indices = [
+                kernel_index
+                for kernel_index, kernel in enumerate(kernels)
+                if predicate(kernel)
+            ]
+            findings.require(
+                len(w2_indices) == 1,
+                f"{capture_prefix} does not contain exactly one expected W2",
+            )
+            if family == "moe_grouped_masked":
+                findings.require(
+                    len(kernels) == 1 and w2_indices == [0],
+                    f"{capture_prefix} leaf graph has an adapter/helper node",
+                )
+            else:
+                non_w2[implementation] = [
+                    kernel
+                    for kernel_index, kernel in enumerate(kernels)
+                    if kernel_index not in w2_indices
+                ]
+            for boolean_field in (
+                "stable_input_pointers",
+                "stable_output_pointers",
+                "fixed_edge_mask_replayed",
+                "output_poison_replayed",
+                "deterministic_replay",
+                "approved_tolerance_passed",
+            ):
+                findings.require(
+                    capture.get(boolean_field) is True,
+                    f"{capture_prefix}.{boolean_field} did not pass",
+                )
+            findings.require(
+                capture.get("untouched_masked_rows")
+                is (
+                    expected_stock_untouched
+                    if implementation == "reference"
+                    else True
+                )
+                and capture.get("untouched_masked_rows_expected")
+                is (
+                    expected_stock_untouched
+                    if implementation == "reference"
+                    else True
+                )
+                and capture.get("candidate_untouched_rows_required")
+                is (implementation == "candidate")
+                and capture.get("untouched_elements_checked")
+                == expected_untouched
+                and capture.get("input_mutation_replayed") is False
+                and capture.get("fallback") is False
+                and capture.get("reference_delegated") is False
+                and capture.get("trusted_config") is False,
+                f"{capture_prefix} masked-tail/delegation contract failed",
+            )
+            handle = capture.get("raw_graph_handle")
+            stream_id = capture.get("stream_id")
+            default_stream_id = capture.get("default_stream_id")
+            if isinstance(handle, int):
+                handles.add(handle)
+            if isinstance(stream_id, int):
+                streams.add(stream_id)
+            findings.require(
+                isinstance(stream_id, int)
+                and isinstance(default_stream_id, int)
+                and stream_id != default_stream_id
+                and capture.get("non_default_stream") is True,
+                f"{capture_prefix} did not use a non-default stream",
+            )
+        findings.require(
+            len(handles) == 2 and len(streams) == 2,
+            f"{prefix}.graph captures alias a graph or stream",
+        )
+        if family == "moe_compute_region":
+            findings.require(
+                bool(non_w2.get("reference"))
+                and non_w2.get("reference") == non_w2.get("candidate"),
+                f"{prefix}.graph changed a non-W2 region node",
+            )
+        observations = graph.get("capture_observations")
+        for implementation in ("reference", "candidate"):
+            observation = (
+                observations.get(implementation)
+                if _mapping(observations)
+                else None
+            )
+            findings.require(
+                _mapping(observation)
+                and observation.get("clean") is True
+                and observation.get("new_imports") == []
+                and observation.get("new_shared_objects") == []
+                and observation.get("cache_changes") == []
+                and observation.get("candidate_artifact_changes") == [],
+                f"{prefix}.graph.{implementation} had runtime/JIT activity",
+            )
+
+
+def _audit_moe_w2_hotspot_candidate(
+    findings: Findings,
+    result: dict[str, Any],
+    workload: dict[str, Any],
+    *,
+    mode: str,
+    verify_files: bool,
+) -> None:
+    params = workload.get("params")
+    family = workload.get("family")
+    if not findings.require(
+        _mapping(params),
+        "hotspot workload params are missing",
+    ):
+        return
+    expected_pair = (
+        params.get("decode_m") if _mapping(params) else None,
+        params.get("expected_m") if _mapping(params) else None,
+    )
+    findings.require(
+        family in {"moe_grouped_masked", "moe_compute_region"}
+        and expected_pair in {(16, 4), (16, 5), (32, 8), (32, 9)}
+        and params.get("experts_per_rank") == 32
+        and params.get("expert_slab") == 1024
+        and params.get("candidate_jit_identity") == MOE_W2_HOTSPOT_SYMBOL,
+        "hotspot workload is outside exact E32/slab1024/K2048/N6144 buckets",
+    )
+    correctness = result.get("correctness")
+    if not findings.require(
+        _mapping(correctness),
+        "hotspot correctness record is missing",
+    ):
+        return
+    input_contract = (
+        correctness.get("input_immutability")
+        if _mapping(correctness)
+        else None
+    )
+    output_contract = (
+        correctness.get("output_ownership")
+        if _mapping(correctness)
+        else None
+    )
+    findings.require(
+        correctness.get("fresh_inputs_differ") is True
+        and _mapping(input_contract)
+        and input_contract.get("status") == "pass"
+        and input_contract.get("packed_scale_bytes_unchanged") is True
+        and input_contract.get("total_bytes_checked", 0) > 0
+        and all(input_contract.get("byte_exact", {}).values())
+        and all(input_contract.get("pointer_stable", {}).values()),
+        "hotspot fresh-input or byte-exact input-immutability proof failed",
+    )
+    findings.require(
+        _mapping(output_contract)
+        and output_contract.get("status") == "pass"
+        and output_contract.get("caller_owned") is True
+        and output_contract.get("observed_views_share_storage") is True
+        and output_contract.get("shape") == [32, 1024, 6144]
+        and output_contract.get("stride") == [1024 * 6144, 6144, 1]
+        and output_contract.get("dtype") == "torch.bfloat16"
+        and output_contract.get("storage_offset") == 0,
+        "hotspot caller-owned output identity proof failed",
+    )
+    _audit_moe_w2_hotspot_edge_masks(
+        findings,
+        result,
+        workload,
+        mode=mode,
+    )
+
+    candidate = result.get("implementations", {}).get("candidate")
+    runtime = (
+        candidate.get("runtime_contract") if _mapping(candidate) else None
+    )
+    if not findings.require(
+        _mapping(runtime),
+        "hotspot runtime contract evidence is missing",
+    ):
+        return
+    exact = {
+        "contract": "glm52-moe-w2-decode-hotspot-v1",
+        "workload": workload.get("name"),
+        "hotspot_goal": MOE_W2_HOTSPOT_GOAL,
+        "candidate_identity": MOE_W2_HOTSPOT_CANDIDATE_IDENTITY,
+        "candidate_symbol": MOE_W2_HOTSPOT_SYMBOL,
+        "candidate_symbol_prefix": "infini_kernel_glm52_moe_w2_decode",
+        "deepgemm_base": W2_BM16_BASE_COMMIT,
+        "sglang_base": "83d313104d089bcd2af26b28453ff880f1e6a80b",
+        "cutlass_base": W2_BM16_CUTLASS_COMMIT,
+        "fmt_base": W2_BM16_FMT_COMMIT,
+        "runtime_dso_sha256": MOE_W2_HOTSPOT_DSO_SHA256,
+        "ready_sha256": MOE_W2_HOTSPOT_READY_SHA256,
+        "stock_manifest_sha256": MOE_W2_HOTSPOT_STOCK_MANIFEST_SHA256,
+        "candidate_manifest_sha256": (
+            MOE_W2_HOTSPOT_CANDIDATE_MANIFEST_SHA256
+        ),
+        "stock_jit_key": "394687d565c010ed0cc18272659871a9",
+        "candidate_jit_key": "e8a6deeb7f7a319bbe485bfc6c351cae",
+        "stock_kernel_name": "sm100_m_grouped_fp8_fp4_gemm_masked_1d1d",
+        "candidate_kernel_name": MOE_W2_HOTSPOT_SYMBOL,
+        "stock_block_m": 128,
+        "stock_num_stages": 8,
+        "candidate_block_m": 16,
+        "candidate_num_stages": 12,
+        "automatic_stage_selected": 12,
+        "num_sms": 148,
+        "pdl": True,
+        "compiled_dims": "nk",
+        "jit_ptxas_verbose": True,
+        "recipe": [1, 1, 128],
+        "disable_ue8m0_cast": True,
+        "production_default": False,
+        "fallback_after_selection": False,
+    }
+    for field, expected in exact.items():
+        findings.require(
+            runtime.get(field) == expected,
+            f"hotspot runtime contract {field} mismatch",
+        )
+    provider_state = runtime.get("provider_state")
+    provider = runtime.get("provider")
+    selected_invocations = runtime.get("selected_invocations")
+    call_counts = provider.get("call_counts") if _mapping(provider) else None
+    dispatch_hits = runtime.get("dispatch_hits")
+    dispatch_misses = runtime.get("dispatch_misses")
+    expected_hit_key = (
+        "hotspot_plugin:moe_down_proj:decode:"
+        f"m{params.get('decode_m')}"
+    )
+    expected_preselection_miss = (
+        None
+        if family == "moe_grouped_masked"
+        else (
+            "moe_no_spec:moe_gate_proj:decode:"
+            f"m{params.get('decode_m')}"
+        )
+    )
+    misses_valid = (
+        dispatch_misses == {}
+        if expected_preselection_miss is None
+        else (
+            _mapping(dispatch_misses)
+            and set(dispatch_misses) == {expected_preselection_miss}
+            and _strict_nonnegative_int(
+                dispatch_misses.get(expected_preselection_miss)
+            )
+            and dispatch_misses[expected_preselection_miss] > 0
+        )
+    )
+    findings.require(
+        _strict_nonnegative_int(selected_invocations)
+        and selected_invocations > 0
+        and _mapping(call_counts)
+        and call_counts.get("attempted") == selected_invocations
+        and call_counts.get("completed") == selected_invocations
+        and call_counts.get("warmup") == 4
+        and dispatch_hits == {expected_hit_key: selected_invocations}
+        and runtime.get("allowed_preselection_miss")
+        == expected_preselection_miss
+        and misses_valid,
+        "hotspot exact selected invocation/hit/miss counts do not close",
+    )
+    findings.require(
+        _mapping(provider_state)
+        and provider_state.get("ready") is True
+        and provider_state.get("selected_ops") == ["moe_down_proj"]
+        and provider_state.get("module_ref")
+        and _mapping(provider)
+        and provider.get("kernel_symbol") == MOE_W2_HOTSPOT_SYMBOL
+        and provider.get("cache_unchanged_during_warmup") is True
+        and provider.get("num_sms") == 148
+        and provider.get("pdl") is True
+        and provider.get("production_default") is False,
+        "hotspot API-v1 provider registration/readiness proof failed",
+    )
+    findings.require(
+        candidate.get("declared_fallback") is False
+        and candidate.get("fallback_count") == 0
+        and candidate.get("reference_delegations") == 0,
+        "hotspot candidate used or declared a fallback",
+    )
+
+    artifacts = result.get("provenance", {}).get("artifacts")
+    artifacts_by_path = {
+        str(Path(item["path"]).resolve()): item
+        for item in artifacts
+        if _mapping(item) and isinstance(item.get("path"), str)
+    } if _list(artifacts) else {}
+    for path_field, digest_field, label in (
+        ("ready_path", "ready_sha256", "READY"),
+        (
+            "stock_manifest_path",
+            "stock_manifest_sha256",
+            "stock manifest",
+        ),
+        (
+            "candidate_manifest_path",
+            "candidate_manifest_sha256",
+            "candidate manifest",
+        ),
+    ):
+        path_raw = runtime.get(path_field)
+        digest = runtime.get(digest_field)
+        artifact = (
+            artifacts_by_path.get(str(Path(path_raw).resolve()))
+            if isinstance(path_raw, str)
+            else None
+        )
+        findings.require(
+            _mapping(artifact) and artifact.get("sha256") == digest,
+            f"hotspot {label} is not bound to its hashed artifact",
+        )
+        if verify_files and isinstance(path_raw, str):
+            path = Path(path_raw)
+            findings.require(
+                path.is_file() and sha256_file(path) == digest,
+                f"hotspot {label} file hash changed",
+            )
+    dso_path = Path(str(runtime.get("runtime_package", ""))) / "_C.so"
+    dso_artifact = artifacts_by_path.get(str(dso_path.resolve()))
+    findings.require(
+        _mapping(dso_artifact)
+        and dso_artifact.get("sha256") == MOE_W2_HOTSPOT_DSO_SHA256,
+        "hotspot same-source DSO is not bound to result provenance",
+    )
+
+    if mode == "eager":
+        profiles = result.get("execution", {}).get("kernel_profiles")
+        reference_events = _profile_event_names(
+            profiles.get("reference") if _mapping(profiles) else None
+        )
+        candidate_events = _profile_event_names(
+            profiles.get("candidate") if _mapping(profiles) else None
+        )
+        reference_w2 = [
+            index
+            for index, kernel in enumerate(reference_events)
+            if _hotspot_stock_kernel(kernel)
+        ]
+        candidate_w2 = [
+            index
+            for index, kernel in enumerate(candidate_events)
+            if _hotspot_candidate_kernel(kernel)
+        ]
+        if family == "moe_grouped_masked":
+            findings.require(
+                len(reference_events) == 1
+                and reference_w2 == [0]
+                and len(candidate_events) == 1
+                and candidate_w2 == [0],
+                "hotspot leaf eager profile is not exact one-kernel stock/BM16",
+            )
+        else:
+            reference_non_w2 = [
+                kernel
+                for index, kernel in enumerate(reference_events)
+                if index not in reference_w2
+            ]
+            candidate_non_w2 = [
+                kernel
+                for index, kernel in enumerate(candidate_events)
+                if index not in candidate_w2
+            ]
+            findings.require(
+                len(reference_w2) == len(candidate_w2) == 1
+                and bool(reference_non_w2)
+                and reference_non_w2 == candidate_non_w2,
+                "hotspot region eager profile changed a non-W2 kernel/order",
+            )
+    else:
+        for series_index, series in enumerate(result.get("series", [])):
+            captures = series.get("graph", {}).get("captures", [])
+            region_non_w2: list[list[str]] = []
+            for capture_index, capture in enumerate(captures):
+                if not _mapping(capture):
+                    continue
+                implementation = capture.get("implementation")
+                kernels = _audit_exact_single_kernel_graph(
+                    findings,
+                    capture,
+                    prefix=(
+                        "hotspot series graph "
+                        f"[{series_index}][{capture_index}]"
+                    ),
+                    exact_single=(family == "moe_grouped_masked"),
+                )
+                predicate = (
+                    _hotspot_stock_kernel
+                    if implementation == "reference"
+                    else _hotspot_candidate_kernel
+                )
+                w2_indices = [
+                    index
+                    for index, kernel in enumerate(kernels)
+                    if predicate(kernel)
+                ]
+                findings.require(
+                    implementation in {"reference", "candidate"}
+                    and len(w2_indices) == 1,
+                    "hotspot graph does not contain exactly one role-correct W2",
+                )
+                if family == "moe_grouped_masked":
+                    findings.require(
+                        len(kernels) == 1 and w2_indices == [0],
+                        "hotspot leaf graph includes a helper/adapter node",
+                    )
+                else:
+                    region_non_w2.append(
+                        [
+                            kernel
+                            for index, kernel in enumerate(kernels)
+                            if index not in w2_indices
+                        ]
+                    )
+            if family == "moe_compute_region":
+                findings.require(
+                    len(region_non_w2) == 4
+                    and bool(region_non_w2[0])
+                    and all(
+                        kernels == region_non_w2[0]
+                        for kernels in region_non_w2[1:]
+                    ),
+                    "hotspot region graph changed non-W2 node order",
+                )
+
+
 def _audit_w2_bm16_candidate(
     findings: Findings,
     result: dict[str, Any],
@@ -2168,6 +2786,15 @@ def _audit_w2_bm16_candidate(
         or not _mapping(params)
         or "candidate_jit_identity" not in params
     ):
+        return
+    if _is_moe_w2_hotspot(workload):
+        _audit_moe_w2_hotspot_candidate(
+            findings,
+            result,
+            workload,
+            mode=mode,
+            verify_files=verify_files,
+        )
         return
 
     expected_m = params.get("expected_m")

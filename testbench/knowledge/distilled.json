@@ -1,5 +1,5 @@
 {
-  "generated_from_entries": 12,
+  "generated_from_entries": 13,
   "mistakes": [
     {
       "class": "launch-overhead::integration-empty-expert-diagnosis",
@@ -267,6 +267,63 @@
         "The quick no-baseline sweep showed no credible dual-shape direction: lower SM counts hurt M=16 or only tied M=32 within noise, so no setting justified a final merge."
       ],
       "suggested_owner": "doc|reviewer",
+      "promoted": false,
+      "recurring": false
+    },
+    {
+      "class": "launch-overhead::vector-valid-row-store",
+      "bottleneck": "launch-overhead",
+      "technique": "vector-valid-row-store",
+      "count": 1,
+      "distinct_entries": 1,
+      "ops": [
+        "MoE W2 down-projection"
+      ],
+      "outcomes": [
+        "slower"
+      ],
+      "whys": [
+        "The device kernel improved, but current SGLang API-v1 selection and enqueue overhead left the complete candidate interval slower than stock."
+      ],
+      "suggested_owner": "doc|reviewer",
+      "promoted": false,
+      "recurring": false
+    },
+    {
+      "class": "launch-overhead::masked-tail-restore",
+      "bottleneck": "launch-overhead",
+      "technique": "masked-tail-restore",
+      "count": 1,
+      "distinct_entries": 1,
+      "ops": [
+        "MoE W2 down-projection"
+      ],
+      "outcomes": [
+        "slower"
+      ],
+      "whys": [
+        "The extra read and restage work preserved ownership but overwhelmed the useful small-M work."
+      ],
+      "suggested_owner": "doc|reviewer",
+      "promoted": false,
+      "recurring": false
+    },
+    {
+      "class": "launch-overhead::bm16-auto",
+      "bottleneck": "launch-overhead",
+      "technique": "bm16-auto",
+      "count": 1,
+      "distinct_entries": 1,
+      "ops": [
+        "MoE W2 down-projection"
+      ],
+      "outcomes": [
+        "incorrect"
+      ],
+      "whys": [
+        "The generic full-tile TMA epilogue overwrote invalid rows in the caller-owned output slab."
+      ],
+      "suggested_owner": "typed-boundary|diagnostic",
       "promoted": false,
       "recurring": false
     },

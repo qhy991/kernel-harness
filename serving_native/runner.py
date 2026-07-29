@@ -123,6 +123,8 @@ def _load_candidate(path: str | None) -> ModuleType | None:
     else:
         raise TypeError(f"{candidate_path}: unsupported CANDIDATE_API={declared_api!r}")
     for hook_name in (
+        "prepare_process",
+        "cleanup_process",
         "prepare_runtime",
         "cleanup_runtime",
         "runtime_evidence",
@@ -138,6 +140,12 @@ def _load_candidate(path: str | None) -> ModuleType | None:
     ) is None:
         raise TypeError(
             f"{candidate_path}: cleanup_runtime requires prepare_runtime"
+        )
+    if getattr(module, "cleanup_process", None) is not None and getattr(
+        module, "prepare_process", None
+    ) is None:
+        raise TypeError(
+            f"{candidate_path}: cleanup_process requires prepare_process"
         )
     module.__candidate_path__ = str(candidate_path)
     module.__candidate_api__ = candidate_api
@@ -290,6 +298,7 @@ class Runtime:
         self.accounting = CallAccounting()
         self._inside_candidate = False
         self._candidate_reference_calls = 0
+        self._input_generation = 0
 
         if not torch.cuda.is_available():
             raise RuntimeError("serving-native workloads require CUDA")
@@ -353,10 +362,16 @@ class Runtime:
 
     def _generator(self, offset: int = 0):
         generator = self.torch.Generator(device=self.device)
-        generator.manual_seed(20260722 + self.rank * 1009 + offset)
+        generator.manual_seed(
+            20260722
+            + self.rank * 1009
+            + self._input_generation * 100003
+            + offset
+        )
         return generator
 
     def build_inputs(self) -> dict[str, Any]:
+        self._input_generation += 1
         family = self.workload.family
         if family == "packed_fp8_gemm":
             return self._build_packed_fp8_gemm()
@@ -652,6 +667,11 @@ class Runtime:
             raise RuntimeError(
                 "production W2 scale lost its packed UE8M0 ABI tag"
             )
+        out = self.torch.empty(
+            (experts, slab, hidden),
+            device=self.device,
+            dtype=self.torch.bfloat16,
+        )
         return {
             "activation_fp8": activation_fp8,
             "activation_scale": activation_scale,
@@ -659,6 +679,11 @@ class Runtime:
             "w13_weight_scale": w13_weight_scale,
             "w2_weight_fp8": w2_weight_fp8,
             "w2_weight_scale": w2_weight_scale,
+            "out": out,
+            "observed_out": tuple(
+                out[expert, :count]
+                for expert, count in enumerate(masked_counts)
+            ),
             "masked_m": masked_m,
             "masked_counts": masked_counts,
             "expected_m": p["expected_m"],
@@ -872,6 +897,29 @@ class Runtime:
             return self.deep_ep.Config(**config)
         return config
 
+    @staticmethod
+    def _stock_w2_gemm(
+        lhs: tuple[Any, Any],
+        rhs: tuple[Any, Any],
+        out: Any,
+        masked_m: Any,
+        expected_m: int,
+    ) -> None:
+        """Invoke the same-DSO stock denominator without candidate dispatch."""
+        import deep_gemm
+
+        result = deep_gemm.fp8_m_grouped_gemm_nt_masked(
+            lhs,
+            rhs,
+            out,
+            masked_m,
+            expected_m,
+            disable_ue8m0_cast=True,
+            glm52_moe_w2_decode_bm16_auto=False,
+        )
+        if result is not None:
+            raise RuntimeError("same-source stock W2 must return None")
+
     def run_moe_compute_region(
         self,
         inputs: dict[str, Any],
@@ -910,16 +958,19 @@ class Runtime:
                 topk=inputs["topk"],
             )
         )
-        out = self.torch.empty(
-            (experts, slab, hidden),
-            device=self.device,
-            dtype=self.torch.bfloat16,
-        )
-        selected_w2 = (
-            grouped_gemm_nt_f8f8bf16_masked
-            if w2_gemm is None
-            else w2_gemm
-        )
+        out = inputs.get("out")
+        if out is None:
+            out = self.torch.empty(
+                (experts, slab, hidden),
+                device=self.device,
+                dtype=self.torch.bfloat16,
+            )
+        if w2_gemm is not None:
+            selected_w2 = w2_gemm
+        elif self.workload.params.get("stock_w2_direct") is True:
+            selected_w2 = self._stock_w2_gemm
+        else:
+            selected_w2 = grouped_gemm_nt_f8f8bf16_masked
         with op_context("moe_down_proj"):
             result = selected_w2(
                 (down_input, down_input_scale),
@@ -961,6 +1012,15 @@ class Runtime:
         if family == "bf16_linear":
             return TaskResult(self.torch.nn.functional.linear(inputs["x"], inputs["weight"]))
         if family == "moe_grouped_masked":
+            if self.workload.params.get("stock_w2_direct") is True:
+                self._stock_w2_gemm(
+                    (inputs["activation_fp8"], inputs["activation_scale"]),
+                    (inputs["weight_fp8"], inputs["weight_scale"]),
+                    inputs["out"],
+                    inputs["masked_m"],
+                    inputs["expected_m"],
+                )
+                return TaskResult(inputs["observed_out"])
             from sglang.srt.layers.deep_gemm_wrapper.entrypoint import (
                 grouped_gemm_nt_f8f8bf16_masked,
             )
@@ -1572,11 +1632,11 @@ def _graph_mutation_target(runtime: Runtime, inputs: dict[str, Any]):
     family = runtime.workload.family
     if family == "packed_fp8_gemm":
         return inputs["x_fp8"]
-    if family == "moe_grouped_masked":
+    if family in {"moe_grouped_masked", "moe_compute_region"}:
         return inputs["activation_fp8"]
     raise RuntimeError(
         "schema-v2 graph validation supports only packed_fp8_gemm and "
-        "moe_grouped_masked"
+        "MoE W2 leaf/containing-region workloads"
     )
 
 
@@ -1669,6 +1729,14 @@ def _w2_edge_inputs(
     observed_out = tuple(
         out[expert, :count] for expert, count in enumerate(counts)
     )
+    if runtime.workload.family == "moe_compute_region":
+        return {
+            **source,
+            "out": out,
+            "observed_out": observed_out,
+            "masked_m": masked_m,
+            "masked_counts": counts,
+        }
     return {
         "activation_fp8": source["activation_fp8"],
         "activation_scale": source["activation_scale"],
@@ -1682,6 +1750,87 @@ def _w2_edge_inputs(
     }
 
 
+def _apply_w2_value_pattern(
+    runtime: Runtime,
+    source: dict[str, Any],
+    case_name: str,
+) -> tuple[str, Callable[[], None]]:
+    """Apply one bounded value-pattern probe and return an exact restore."""
+
+    torch = runtime.torch
+    activation = source["activation_fp8"]
+    activation_scale = source["activation_scale"]
+    restores: list[tuple[Any, Any]] = []
+    pattern = "seeded_random_finite"
+    if case_name == "single_expert_one_row":
+        view = activation[0, 0]
+        restores.append((view, view.clone()))
+        maximum = torch.finfo(activation.dtype).max
+        view.fill_(maximum)
+        view[1::2].fill_(-maximum)
+        pattern = "extreme_finite_fp8_alternating_sign"
+    elif case_name == "deterministic_ramp":
+        view = activation[1, : min(31, activation.shape[1])]
+        restores.append((view, view.clone()))
+        ramp = (
+            torch.arange(
+                view.numel(),
+                device=view.device,
+                dtype=torch.float32,
+            )
+            .remainder_(31)
+            .sub_(15)
+            .reshape(view.shape)
+            .to(view.dtype)
+        )
+        view.copy_(ramp)
+        pattern = "deterministic_fp8_ramp"
+    elif case_name == "deterministic_random_sparse":
+        pattern = "seeded_random_fp8_and_packed_scales"
+    elif case_name == "maximum_single_expert":
+        view = activation_scale[0, 0]
+        restores.append((view, view.clone()))
+        # Four UE8M0 exponent bytes per int32, explicitly spanning low/high
+        # finite exponent boundaries without a host read or scale adapter.
+        values = torch.tensor(
+            [0x00010100, 0x3F404142, 0x7C7D7E7F, 0x01020304],
+            device=view.device,
+            dtype=torch.int32,
+        )
+        view.copy_(
+            values.repeat((view.numel() + values.numel() - 1) // values.numel())[
+                : view.numel()
+            ]
+        )
+        pattern = "packed_ue8m0_exponent_boundaries"
+    elif case_name == "skewed_boundary_mix":
+        pattern = "seeded_random_extreme_mask_skew"
+
+    def restore() -> None:
+        for view, original in restores:
+            view.copy_(original)
+
+    return pattern, restore
+
+
+def _masked_tails_poisoned(
+    torch,
+    out,
+    counts: tuple[int, ...],
+) -> tuple[bool, int]:
+    checks = [
+        torch.isnan(out[expert, count:]).all()
+        for expert, count in enumerate(counts)
+        if count < out.shape[1]
+    ]
+    passed = bool(
+        not checks
+        or torch.stack([item.reshape(()) for item in checks]).all().item()
+    )
+    elements = sum(out.shape[1] - count for count in counts) * out.shape[2]
+    return passed, int(elements)
+
+
 def _validate_w2_edge_masks(
     runtime: Runtime,
     inputs: dict[str, Any],
@@ -1691,7 +1840,8 @@ def _validate_w2_edge_masks(
     candidate_artifacts: list[Path],
 ) -> dict[str, Any] | None:
     if (
-        runtime.workload.family != "moe_grouped_masked"
+        runtime.workload.family
+        not in {"moe_grouped_masked", "moe_compute_region"}
         or "candidate_jit_identity" not in runtime.workload.params
     ):
         return None
@@ -1702,6 +1852,11 @@ def _validate_w2_edge_masks(
     )
     records: list[dict[str, Any]] = []
     for case_index, (name, counts) in enumerate(W2_EDGE_MASK_CASES):
+        value_pattern, restore_value_pattern = _apply_w2_value_pattern(
+            runtime,
+            inputs,
+            name,
+        )
         reference_inputs = _w2_edge_inputs(runtime, inputs, counts)
         candidate_inputs = _w2_edge_inputs(runtime, inputs, counts)
         reference_mask_before = reference_inputs["masked_m"].clone()
@@ -1746,6 +1901,34 @@ def _validate_w2_edge_masks(
             torch.cuda.current_stream(runtime.device).cuda_stream
         )
         _compare(reference_snapshot, candidate_snapshot)
+        reference_tails, untouched_elements = _masked_tails_poisoned(
+            torch,
+            reference_inputs["out"],
+            counts,
+        )
+        candidate_tails, candidate_untouched_elements = (
+            _masked_tails_poisoned(
+                torch,
+                candidate_inputs["out"],
+                counts,
+            )
+        )
+        reference_tails_expected = all(
+            count == 0 or count % 128 == 0 for count in counts
+        )
+        if (
+            reference_tails is not reference_tails_expected
+            or not candidate_tails
+            or candidate_untouched_elements != untouched_elements
+        ):
+            raise AssertionError(
+                f"{name}: masked output rows were modified "
+                f"(reference_untouched={reference_tails}, "
+                f"reference_expected={reference_tails_expected}, "
+                f"candidate_untouched={candidate_tails}, "
+                f"reference_elements={untouched_elements}, "
+                f"candidate_elements={candidate_untouched_elements})"
+            )
         zero_mask = sum(counts) == 0
         zero_full_output_poison_preserved = (
             {
@@ -1799,6 +1982,13 @@ def _validate_w2_edge_masks(
                 zero_full_output_poison_preserved
             ),
             "masked_m_unmodified": masked_m_unmodified,
+            "untouched_masked_rows": {
+                "reference": reference_tails,
+                "reference_expected": reference_tails_expected,
+                "candidate": candidate_tails,
+                "candidate_required": True,
+                "elements_checked": untouched_elements,
+            },
             "return_contract": {
                 "reference": "None",
                 "candidate": "None",
@@ -1867,6 +2057,13 @@ def _validate_w2_edge_masks(
                 )
                 first_snapshot = _clone_result(first)
                 _compare(reference_snapshot, first_snapshot)
+                first_tails, first_untouched_elements = (
+                    _masked_tails_poisoned(
+                        torch,
+                        replica_inputs["out"],
+                        counts,
+                    )
+                )
                 first_full_poison = (
                     bool(torch.isnan(replica_inputs["out"]).all().item())
                     if zero_mask
@@ -1881,6 +2078,28 @@ def _validate_w2_edge_masks(
                 second_snapshot = _clone_result(second)
                 _exact_compare(first_snapshot, second_snapshot)
                 _compare(reference_snapshot, second_snapshot)
+                second_tails, second_untouched_elements = (
+                    _masked_tails_poisoned(
+                        torch,
+                        replica_inputs["out"],
+                        counts,
+                    )
+                )
+                replica_tails_expected = (
+                    reference_tails_expected
+                    if replica.implementation == "reference"
+                    else True
+                )
+                if (
+                    first_tails is not replica_tails_expected
+                    or second_tails is not replica_tails_expected
+                    or first_untouched_elements != untouched_elements
+                    or second_untouched_elements != untouched_elements
+                ):
+                    raise AssertionError(
+                        f"{name}: {replica.implementation} graph replay "
+                        "modified masked output rows"
+                    )
                 second_full_poison = (
                     bool(torch.isnan(replica_inputs["out"]).all().item())
                     if zero_mask
@@ -1925,6 +2144,14 @@ def _validate_w2_edge_masks(
                         ),
                         "deterministic_replay": True,
                         "approved_tolerance_passed": True,
+                        "untouched_masked_rows": second_tails,
+                        "untouched_masked_rows_expected": (
+                            replica_tails_expected
+                        ),
+                        "candidate_untouched_rows_required": (
+                            replica.implementation == "candidate"
+                        ),
+                        "untouched_elements_checked": untouched_elements,
                     }
                 )
             graph_record = {
@@ -1941,6 +2168,7 @@ def _validate_w2_edge_masks(
         records.append(
             {
                 "name": name,
+                "input_pattern": value_pattern,
                 "masked_m": list(counts),
                 "active_rows": sum(counts),
                 "empty_experts": [
@@ -1951,9 +2179,14 @@ def _validate_w2_edge_masks(
                 "graph": graph_record,
             }
         )
+        restore_value_pattern()
     return {
         "status": "pass",
-        "scope": "single_B200_leaf_correctness_only",
+        "scope": (
+            "single_B200_leaf_correctness_only"
+            if runtime.workload.family == "moe_grouped_masked"
+            else "single_B200_containing_region_correctness"
+        ),
         "execution_mode": execution_mode,
         "cases": records,
     }
@@ -2263,6 +2496,95 @@ def _render_artifacts(module: ModuleType) -> list[dict[str, Any]]:
     return artifacts
 
 
+def _snapshot_immutable_inputs(
+    inputs: dict[str, Any],
+) -> dict[str, Any]:
+    import torch
+
+    clones: dict[str, Any] = {}
+    pointers: dict[str, int] = {}
+    contracts: dict[str, dict[str, Any]] = {}
+    for name, value in inputs.items():
+        if name in {"out", "observed_out"} or not torch.is_tensor(value):
+            continue
+        clones[name] = value.clone()
+        pointers[name] = int(value.data_ptr())
+        contracts[name] = {
+            "shape": list(value.shape),
+            "stride": list(value.stride()),
+            "dtype": str(value.dtype),
+            "storage_offset": int(value.storage_offset()),
+            "device": str(value.device),
+            "bytes": int(value.numel() * value.element_size()),
+            "format_ue8m0": getattr(value, "format_ue8m0", None),
+        }
+    return {
+        "clones": clones,
+        "pointers": pointers,
+        "contracts": contracts,
+    }
+
+
+def _validate_immutable_inputs(
+    inputs: dict[str, Any],
+    snapshot: dict[str, Any],
+) -> dict[str, Any]:
+    import torch
+
+    unchanged: dict[str, bool] = {}
+    pointer_stable: dict[str, bool] = {}
+    for name, original in snapshot["clones"].items():
+        value = inputs[name]
+        unchanged[name] = bool(torch.equal(value, original))
+        pointer_stable[name] = int(value.data_ptr()) == snapshot["pointers"][name]
+    if not all(unchanged.values()) or not all(pointer_stable.values()):
+        raise AssertionError("candidate/reference execution modified immutable inputs")
+    packed_scale_names = [
+        name
+        for name, contract in snapshot["contracts"].items()
+        if contract["dtype"] == "torch.int32" and "scale" in name
+    ]
+    return {
+        "status": "pass",
+        "byte_exact": unchanged,
+        "pointer_stable": pointer_stable,
+        "tensor_contracts": snapshot["contracts"],
+        "total_bytes_checked": sum(
+            item["bytes"] for item in snapshot["contracts"].values()
+        ),
+        "packed_scale_keys": packed_scale_names,
+        "packed_scale_bytes_unchanged": all(
+            unchanged[name] for name in packed_scale_names
+        ),
+    }
+
+
+def _output_ownership_evidence(inputs: dict[str, Any]) -> dict[str, Any]:
+    out = inputs.get("out")
+    observed = inputs.get("observed_out")
+    if out is None or not isinstance(observed, tuple):
+        return {"status": "not_applicable"}
+    pointer = int(out.data_ptr())
+    storage_pointer = int(out.untyped_storage().data_ptr())
+    views_share_storage = all(
+        int(view.untyped_storage().data_ptr()) == storage_pointer
+        for view in observed
+    )
+    if not views_share_storage:
+        raise AssertionError("observed output does not alias caller-owned out")
+    return {
+        "status": "pass",
+        "caller_owned": True,
+        "out_pointer": pointer,
+        "out_storage_pointer": storage_pointer,
+        "observed_views_share_storage": True,
+        "shape": list(out.shape),
+        "stride": list(out.stride()),
+        "dtype": str(out.dtype),
+        "storage_offset": int(out.storage_offset()),
+    }
+
+
 def _write_result(path: Path, rendered: str) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     temporary = path.with_name(f".{path.name}.tmp-{os.getpid()}")
@@ -2296,7 +2618,18 @@ def run_task(args: argparse.Namespace) -> int:
         started_utc.replace("-", "").replace(":", "").replace(".", "")
         + f"-{uuid.uuid4().hex[:8]}"
     )
-    runtime = Runtime(workload)
+    prepare_process = getattr(candidate_module, "prepare_process", None)
+    cleanup_process = getattr(candidate_module, "cleanup_process", None)
+    process_prepared = False
+    if prepare_process is not None:
+        prepare_process()
+        process_prepared = True
+    try:
+        runtime = Runtime(workload)
+    except BaseException:
+        if process_prepared and cleanup_process is not None:
+            cleanup_process()
+        raise
     runtime._active_inputs = None
     candidate_prepared = False
     try:
@@ -2308,6 +2641,8 @@ def run_task(args: argparse.Namespace) -> int:
         clock_samples = [clock_sample()]
         inputs = runtime.build_inputs()
         runtime._active_inputs = inputs
+        immutable_snapshot = _snapshot_immutable_inputs(inputs)
+        output_ownership = _output_ownership_evidence(inputs)
         eager_reference_fn = lambda: runtime.reference(inputs)
         eager_candidate_fn = lambda: _candidate_result(
             candidate_module,
@@ -2490,6 +2825,14 @@ def run_task(args: argparse.Namespace) -> int:
             ),
         )
         _compare(fresh_reference, fresh_candidate)
+        fresh_inputs_differ = bool(
+            not runtime.torch.equal(
+                inputs["activation_fp8"],
+                fresh_inputs["activation_fp8"],
+            )
+        )
+        if not fresh_inputs_differ:
+            raise AssertionError("fresh correctness reused identical activation bytes")
 
         kernel_profiles = None
         if execution_mode == "eager":
@@ -2506,6 +2849,24 @@ def run_task(args: argparse.Namespace) -> int:
                 ),
             }
 
+        if runtime_evidence_hook is not None:
+            # Timing is complete. Refresh only now so final in-memory provider
+            # and dispatch counters close against the full run.
+            cached_runtime_evidence = runtime_evidence_hook()
+            if (
+                not isinstance(cached_runtime_evidence, dict)
+                or not cached_runtime_evidence
+            ):
+                raise RuntimeError(
+                    "candidate final runtime_evidence() must be non-empty"
+                )
+        input_immutability = _validate_immutable_inputs(
+            inputs,
+            immutable_snapshot,
+        )
+        final_output_ownership = _output_ownership_evidence(inputs)
+        if final_output_ownership != output_ownership:
+            raise AssertionError("caller-owned output identity changed during run")
         clock_samples.append(clock_sample())
         workload_record = as_dict(workload)
         all_raw_samples = [
@@ -2603,7 +2964,19 @@ def run_task(args: argparse.Namespace) -> int:
                 "post_timing_reference": True,
                 "post_timing_candidate": True,
                 "fresh_inputs_post_timing": True,
-                "edge_masks": edge_validation,
+                "fresh_inputs_differ": fresh_inputs_differ,
+                "input_immutability": input_immutability,
+                "output_ownership": output_ownership,
+                "edge_masks": (
+                    edge_validation
+                    if workload.family == "moe_grouped_masked"
+                    else None
+                ),
+                "region_edge_masks": (
+                    edge_validation
+                    if workload.family == "moe_compute_region"
+                    else None
+                ),
                 "graph_validation": (
                     True if execution_mode == "cuda_graph" else None
                 ),
@@ -2675,7 +3048,11 @@ def run_task(args: argparse.Namespace) -> int:
             if candidate_prepared and cleanup_runtime is not None:
                 cleanup_runtime(runtime)
         finally:
-            runtime.close()
+            try:
+                runtime.close()
+            finally:
+                if process_prepared and cleanup_process is not None:
+                    cleanup_process()
 
 
 def parse_args() -> argparse.Namespace:

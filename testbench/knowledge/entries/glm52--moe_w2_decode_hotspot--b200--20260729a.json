@@ -1,0 +1,78 @@
+{
+  "schema_version": 1,
+  "id": "glm52--moe_w2_decode_hotspot--b200--20260729a",
+  "date": "2026-07-29",
+  "model": "glm52",
+  "task": "glm52/moe_w2_decode_hotspot",
+  "op": "MoE W2 down-projection",
+  "family": "serving-native-fp8-grouped-masked-gemm",
+  "phase": "decode",
+  "shapes": {
+    "experts": 32,
+    "slab_m": 1024,
+    "K": 2048,
+    "N": 6144,
+    "expected_m": [
+      4,
+      5,
+      8,
+      9
+    ]
+  },
+  "hardware": {
+    "gpu": "NVIDIA B200",
+    "sm": "sm_100"
+  },
+  "stack": {
+    "sglang_commit": "83d31310",
+    "torch": "2.11.0+cu130",
+    "cuda": "13.0"
+  },
+  "baseline_kernel": "current-source SGLang API-v1 DeepGEMM grouped masked BM128/stage-8",
+  "bottleneck": {
+    "kind": "launch-overhead",
+    "evidence": "The final serving-native result captured a faster single candidate device kernel but a slower complete selected API-v1 interval, so the remaining loss is above device-kernel execution."
+  },
+  "approaches": [
+    {
+      "technique": "bm16-auto",
+      "summary": "Added an exact-descriptor, per-call BM16 auto-stage DeepGEMM specialization with a dedicated infini_kernel symbol.",
+      "outcome": "incorrect",
+      "geomean_speedup": null,
+      "why": "The generic full-tile TMA epilogue overwrote invalid rows in the caller-owned output slab."
+    },
+    {
+      "technique": "masked-tail-restore",
+      "summary": "Preserved invalid output rows by restoring them inside the same kernel before the full-tile store.",
+      "outcome": "slower",
+      "geomean_speedup": null,
+      "why": "The extra read and restage work preserved ownership but overwhelmed the useful small-M work."
+    },
+    {
+      "technique": "vector-valid-row-store",
+      "summary": "Kept TMA for full tiles and used predicated vector stores only for valid rows in partial tiles, then deferred diagnostic counter materialization until after timing.",
+      "outcome": "slower",
+      "geomean_speedup": null,
+      "why": "The device kernel improved, but current SGLang API-v1 selection and enqueue overhead left the complete candidate interval slower than stock."
+    }
+  ],
+  "result": {
+    "status": "no-win",
+    "geomean_speedup": null,
+    "min_speedup_conservative": null,
+    "repeat": null,
+    "integrate": "not-run"
+  },
+  "lesson": "A smaller grouped-GEMM tile can reduce padded output traffic yet still lose at the production callback boundary. Measure the complete selected interval early, and preserve caller-owned partial tiles in the kernel before spending profiling budget on stage or barrier refinements.",
+  "transfers_to": [
+    "small-M grouped masked GEMMs on SM100",
+    "serving callbacks where Python selector overhead is comparable to kernel time",
+    "caller-owned padded output slabs"
+  ],
+  "caveats": [
+    "This was a serving-native hotspot goal, not the generated testbench glm52/moe_down_proj_decode task; structured benchmark numbers are intentionally omitted here and retained in the terminal evidence.",
+    "Only the first required expected-M eager leaf performance lane was run because it failed terminally; graph, containing-region, and TP8 acceptance were not run.",
+    "Production remains default-off."
+  ],
+  "agent": "codex"
+}

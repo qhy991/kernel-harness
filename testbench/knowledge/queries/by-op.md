@@ -6,6 +6,10 @@
 
 - `glm52--o_proj_decode--b200--20260714a` [no-win] Attention O Projection/decode — For small-M B200 FP8 decode GEMMs with SGLang-packed UE8M0 scales, the production DeepGEMM wrapper is already the safe path. Python-wrapper bypasses do not improve CUPTI device-kernel timing, and alternate APIs either need different scale layouts or fail to beat both M=16 and M=32.
 
+## MoE W2 down-projection
+
+- `glm52--moe_w2_decode_hotspot--b200--20260729a` [no-win] MoE W2 down-projection/decode — A smaller grouped-GEMM tile can reduce padded output traffic yet still lose at the production callback boundary. Measure the complete selected interval early, and preserve caller-owned partial tiles in the kernel before spending profiling budget on stage or barrier refinements.
+
 ## Routed Expert Down
 
 - `glm52--routed_down_decode--b200--20260715a` [win] Routed Expert Down/decode — Masked grouped-MoE decode drop-in verification must ignore empty-expert padded slots. A harness WIN that removes device-scalar layout reads is production-safe once active rows match bit-exactly under deep_gemm_wrapper.grouped_gemm_nt_f8f8bf16_masked.

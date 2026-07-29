@@ -2709,7 +2709,7 @@ class ContractV2AuditTest(unittest.TestCase):
         masked_m.tolist.assert_not_called()
         called.assert_called_once()
 
-    def test_graph_mutation_target_is_scoped_to_two_families(self) -> None:
+    def test_graph_mutation_target_is_scoped_to_supported_families(self) -> None:
         packed = object()
         grouped = object()
         runtime = SimpleNamespace(
@@ -2726,12 +2726,19 @@ class ContractV2AuditTest(unittest.TestCase):
             ),
             grouped,
         )
+        runtime.workload.family = "moe_compute_region"
+        self.assertIs(
+            _graph_mutation_target(
+                runtime, {"activation_fp8": grouped}
+            ),
+            grouped,
+        )
         for family in ("bf16_linear", "moe_swiglu_quant", "allgather"):
             with self.subTest(family=family):
                 runtime.workload.family = family
                 with self.assertRaisesRegex(
                     RuntimeError,
-                    "supports only packed_fp8_gemm and moe_grouped_masked",
+                    "supports only packed_fp8_gemm and MoE W2",
                 ):
                     _graph_mutation_target(
                         runtime,

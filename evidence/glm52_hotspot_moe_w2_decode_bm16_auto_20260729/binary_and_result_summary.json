@@ -1,0 +1,134 @@
+{
+  "schema": "glm52-hotspot-terminal-evidence-v1",
+  "disposition": "no-replacement",
+  "production_default": false,
+  "bases": {
+    "kernel_harness": "77c92f6fbb7dfcc48e9a51eb3ef2ab341f3af503",
+    "sglang": "83d313104d089bcd2af26b28453ff880f1e6a80b",
+    "deepgemm": "edcf77b276965de8f03cdc47c23f01b08bf7c7ab",
+    "cutlass": "f3fde58372d33e9a5650ba7b80fc48b3b49d40c8",
+    "fmt": "553ec11ec06fbe0beebfbb45f9dc3c9eabd83d28"
+  },
+  "ready": {
+    "path": "/home/qinhaiyan/glm52-hotspot-goal-runs/cache/moe_w2_decode/identity_v1/ready/17a5e23c0bd3cac16d88a1054047c4488fd9ca46b34fcca25560f83fdca7858b/READY.json",
+    "sha256": "17a5e23c0bd3cac16d88a1054047c4488fd9ca46b34fcca25560f83fdca7858b",
+    "cpu_only": true,
+    "cuda_initialized": false,
+    "material_identities": 2
+  },
+  "runtime": {
+    "dso_sha256": "395655ab609ef5037fe3bb93f4a2d813c047f1265fd5f30554948dd8d0e51780",
+    "package_tree_sha256": "d0d260979de692d86cbc4df8c80283f879c4218e72cc77fefae31bcc5825e2a2",
+    "compiler": "NVCC13.2",
+    "compiler_flags_sha256": "379adddbe3941684d3a77beb42b2037a71e24e34d4f5c57db5ce85dcef341fa0",
+    "target": "sm_100f"
+  },
+  "stock": {
+    "manifest_path": "/home/qinhaiyan/glm52-hotspot-goal-runs/cache/moe_w2_decode/identity_v1/bundles/stock/5cbda917dfc2be33362a3fcf9a0a7a7a240edc03db352b03a6beba20a2df4fb4/manifest.json",
+    "manifest_sha256": "5cbda917dfc2be33362a3fcf9a0a7a7a240edc03db352b03a6beba20a2df4fb4",
+    "source_sha256": "7fcfa79a1176fd7420ffec94d1b2d30b286f8b49a834160ae06c2db35a615c16",
+    "cubin_sha256": "3604eacea8560e1c9ee8ed0ae33e290a54c993881958b965a4674aa5e62e6806",
+    "ptx_sha256": "e1650e5f1735b18a298d1f6cb50b93efe7b0eb2f30582c24d769e85f1aff7e1b",
+    "sass_sha256": "85de8d3f8bb850b68085d0b67f096223d31035774d236882ff6e126b969105f0",
+    "block_m": 128,
+    "block_n": 128,
+    "block_k": 128,
+    "stages": 8,
+    "jit_key": "394687d565c010ed0cc18272659871a9",
+    "resources": {
+      "registers": 36,
+      "stack_bytes": 0,
+      "local_bytes": 0,
+      "spill_load_bytes": 0,
+      "spill_store_bytes": 0,
+      "dynamic_shared_bytes": 213804
+    },
+    "instructions": {
+      "tma_load": 10,
+      "tma_store": 16,
+      "mbarrier_cluster": 11,
+      "two_sm": 25
+    }
+  },
+  "candidate": {
+    "manifest_path": "/home/qinhaiyan/glm52-hotspot-goal-runs/cache/moe_w2_decode/identity_v1/bundles/candidate/4b2eac068b797b3d798c3bc24ecdf1b4c72284868a1ef3a565137bcb6ce32734/manifest.json",
+    "manifest_sha256": "4b2eac068b797b3d798c3bc24ecdf1b4c72284868a1ef3a565137bcb6ce32734",
+    "symbol": "infini_kernel_glm52_moe_w2_decode_bm16_auto",
+    "source_sha256": "e7b87d7de77aa8276b9488f219026076057e2b479fc18350286b464463cca613",
+    "cubin_sha256": "c93f011b9c6d0a8f71a65b81386a995e93c2eba07131e4d3ddc3686e1527d799",
+    "ptx_sha256": "d687e25c543d1c5b6cc9b77e9708902421a30b3944906884c26fc7ca4a1d55ce",
+    "sass_sha256": "9523a815391eda63c29a822718629496821a6252b2ae212f5447ef6e433a5240",
+    "block_m": 16,
+    "block_n": 128,
+    "block_k": 128,
+    "stages": 12,
+    "jit_key": "e8a6deeb7f7a319bbe485bfc6c351cae",
+    "resources": {
+      "registers": 43,
+      "stack_bytes": 0,
+      "local_bytes": 0,
+      "spill_load_bytes": 0,
+      "spill_store_bytes": 0,
+      "dynamic_shared_bytes": 230188
+    },
+    "instructions": {
+      "tma_load": 10,
+      "tma_store": 2,
+      "mbarrier_cluster": 11,
+      "two_sm": 25
+    }
+  },
+  "launch_both_arms": {
+    "grid": [148, 1, 1],
+    "block": [256, 1, 1],
+    "cluster": [2, 1, 1],
+    "pdl": true
+  },
+  "final_result": {
+    "path": "/home/qinhaiyan/glm52-hotspot-goal-runs/cache/moe_w2_decode/results/b2_vector_postrun_counters/leaf_eager_em4.json",
+    "sha256": "0f6506edd485d40dc360e717744c31ace1bcfc964445468148391640635603f0",
+    "run_id": "20260729T170259079757Z-23b59d8b",
+    "workload": "moe_w2_hotspot_decode_em4",
+    "mode": "eager",
+    "series": 3,
+    "pairs_per_series": 50,
+    "threshold": 1.03,
+    "correctness": "pass",
+    "self_audit": "VALID_NON_WIN",
+    "performance_gate": false,
+    "candidate_median_ms": 0.11695999652147293,
+    "stock_median_ms": 0.09375999867916107,
+    "pooled_speedup": 0.8016415994159805,
+    "order_balanced_speedup": 0.8099019480579899,
+    "ab_median_speedup": 0.7955711751263687,
+    "ba_median_speedup": 0.8244908638927712,
+    "candidate_hits": 174,
+    "candidate_fallbacks": 0,
+    "candidate_reference_delegations": 0,
+    "kernel_profile_us": {
+      "stock": 77.6590000000001,
+      "candidate": 68.22299999999996
+    }
+  },
+  "hardware": {
+    "gpu": "NVIDIA B200",
+    "uuid": "GPU-30b619de-87f2-1862-0d07-a595da8fe417",
+    "compute_capability": [10, 0],
+    "multiprocessors": 148,
+    "sm_clock_mhz": 1965,
+    "memory_clock_mhz": 3996,
+    "pstate": "P0",
+    "driver": "610.43.02",
+    "torch": "2.11.0+cu130",
+    "cuda_runtime": "13.0"
+  },
+  "unrun_after_terminal_failure": [
+    "expected-M 5/8/9 eager timing",
+    "all leaf graph lanes",
+    "all containing-region eager lanes",
+    "all containing-region graph lanes",
+    "Nsys promotion trace",
+    "NCU survivor question",
+    "checkpoint-backed TP8/DP8/EP8 acceptance"
+  ]
+}

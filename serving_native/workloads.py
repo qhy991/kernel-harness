@@ -39,7 +39,23 @@ W2_EDGE_MASK_CASES: tuple[tuple[str, tuple[int, ...]], ...] = (
     ("single_expert_one_row", (1,) + (0,) * 31),
     (
         "full_boundary_sweep",
-        (15, 16, 17, 31, 32, 33, 127, 1024) + (0,) * 24,
+        (15, 16, 17, 31, 32, 33, 127, 128, 129, 1024) + (0,) * 22,
+    ),
+    ("deterministic_ramp", tuple(range(32))),
+    (
+        "deterministic_random_sparse",
+        (
+            7, 0, 19, 3, 0, 41, 2, 13,
+            1, 0, 29, 5, 11, 0, 23, 4,
+            17, 2, 0, 31, 6, 1, 37, 0,
+            9, 3, 0, 43, 8, 1, 21, 0,
+        ),
+    ),
+    ("maximum_single_expert", (1024,) + (0,) * 31),
+    (
+        "skewed_boundary_mix",
+        (1024, 129, 128, 127, 33, 32, 31, 17, 16, 15, 1)
+        + (0,) * 21,
     ),
 )
 
@@ -351,6 +367,66 @@ def _add_decode_bucket(m: int) -> None:
 
 for _decode_m in _DECODE_M_BUCKETS:
     _add_decode_bucket(_decode_m)
+
+
+# Dedicated hotspot-goal portfolio. The generated kernel identity is shared by
+# all four host expected-M hints; dispatch keys remain distinct.
+_MOE_W2_HOTSPOT_IDENTITY = "infini_kernel_glm52_moe_w2_decode_bm16_auto"
+for _expected_m in (4, 5, 8, 9):
+    _decode_m = 16 if _expected_m in (4, 5) else 32
+    _hotspot_common = dict(
+        decode_m=_decode_m,
+        experts_per_rank=32,
+        expert_slab=1024,
+        expected_m=_expected_m,
+        valid_assignments=_decode_m * _COMMON["topk"],
+        group_size=128,
+        topk=_COMMON["topk"],
+        candidate_jit_identity=_MOE_W2_HOTSPOT_IDENTITY,
+        hotspot_goal="moe_w2_decode_bm16_auto_v1",
+        stock_w2_direct=True,
+        timed_pairs_per_series=50,
+    )
+    _leaf_name = f"moe_w2_hotspot_decode_em{_expected_m}"
+    WORKLOADS[_leaf_name] = Workload(
+        _leaf_name,
+        "moe_grouped_masked",
+        "decode",
+        1,
+        (
+            "sglang.srt.layers.deep_gemm_wrapper.entrypoint."
+            "grouped_gemm_nt_f8f8bf16_masked"
+        ),
+        dict(_hotspot_common, k=2048, n=6144),
+        (
+            "Dedicated current-source GLM-5.2 W2 leaf: E32/slab1024/"
+            "K2048/N6144, packed int32 UE8M0, PDL, and no overlap."
+        ),
+        ("eager", "cuda_graph"),
+    )
+    _region_name = f"moe_w2_hotspot_region_decode_em{_expected_m}"
+    WORKLOADS[_region_name] = Workload(
+        _region_name,
+        "moe_compute_region",
+        "decode",
+        1,
+        (
+            "stock W13 + "
+            "sglang.srt.layers.moe.moe_runner.deep_gemm."
+            "_varlen_deep_gemm_silu_mul_quant + selected W2"
+        ),
+        dict(
+            _hotspot_common,
+            hidden=6144,
+            gate_up=4096,
+            w2_k=2048,
+        ),
+        (
+            "Containing current-source W13+SwiGLU/packed-UE8M0+W2 "
+            "region; only the W2 node is substituted."
+        ),
+        ("eager", "cuda_graph"),
+    )
 
 
 _STAGE11_JIT_IDENTITY = (
