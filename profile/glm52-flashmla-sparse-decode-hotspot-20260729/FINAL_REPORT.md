@@ -26,6 +26,9 @@ SHA-256
 The final local source commits are SGLang
 `c52f23b567e5061b71c28a8971459224c057ada1` and FlashMLA
 `65293ac6553d5119504be1f0ffcb229a0dc1fe42`.
+The immutable kernel-harness campaign source and raw evidence are committed at
+`db8e1bd755fdc37940c4b1ecf5585ace6f3048fa`; the append-only recipe is
+[`testbench/knowledge/entries/glm52--dsa_flashmla_kv_decode--b200--20260729c.json`](../../testbench/knowledge/entries/glm52--dsa_flashmla_kv_decode--b200--20260729c.json).
 
 ## What changed
 

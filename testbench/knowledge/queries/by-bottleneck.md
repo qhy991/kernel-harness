@@ -28,5 +28,6 @@
 
 ## synchronization
 
+- `glm52--dsa_flashmla_kv_decode--b200--20260729c` [no-win] DSA FlashMLA KV Decode Attention/decode — For short SM100 sparse FlashMLA decode, a large static instruction reduction is not sufficient evidence of a serving win; gate on alternating CUDA Graph replay and the actual containing dispatch region. Preserve the proven one-SM TMA, TMEM, tcgen05, and mbarrier pipeline unless a concrete traffic or synchronization model predicts a benefit.
 - `glm52--sparse_mla_decode--b200--20260715a` [win] Sparse MLA Decode/decode — sparse-mla-decode is intentionally fused-only: agents must NOT invent a drop-in integrate symbol. A harness WIN that keeps the FlashInfer call signature (including device tensor scales) is the production-ready claim.
 - `glm52--routed_gateup_nvfp4_decode--b200--20260714c` [win] Routed Expert Gate+Up NVFP4/decode — For fixed-shape GLM-5.2 NVFP4 MoE decode harness tasks, do not pass small CUDA scalar tensors through .item() in solution.py. If values are fixed by task.json/definition axes, use Python constants or shape-derived Python ints so the timed call contains the real FlashInfer work instead of device-host synchronization. Validate each FlashInfer routing knob with repeat-3 because several correct API choices differ mostly by noise.

@@ -1,5 +1,5 @@
 {
-  "generated_from_entries": 14,
+  "generated_from_entries": 15,
   "mistakes": [
     {
       "class": "other::m16-combine-max-splits-32-specialization",
@@ -82,6 +82,44 @@
       "recurring": true
     },
     {
+      "class": "synchronization::staggered-nope-shared-load-order",
+      "bottleneck": "synchronization",
+      "technique": "staggered-nope-shared-load-order",
+      "count": 1,
+      "distinct_entries": 1,
+      "ops": [
+        "DSA FlashMLA KV Decode Attention"
+      ],
+      "outcomes": [
+        "slower"
+      ],
+      "whys": [
+        "The generated address work increased and the paired graph evidence was neutral or regressive."
+      ],
+      "suggested_owner": "doc|reviewer",
+      "promoted": false,
+      "recurring": false
+    },
+    {
+      "class": "synchronization::sparse-gather-evict-first-cache-hint",
+      "bottleneck": "synchronization",
+      "technique": "sparse-gather-evict-first-cache-hint",
+      "count": 1,
+      "distinct_entries": 1,
+      "ops": [
+        "DSA FlashMLA KV Decode Attention"
+      ],
+      "outcomes": [
+        "abandoned"
+      ],
+      "whys": [
+        "The cache-hint change was visible in generated code but did not create a reproducible graph benefit."
+      ],
+      "suggested_owner": "doc|reviewer",
+      "promoted": false,
+      "recurring": false
+    },
+    {
       "class": "synchronization::routing-method-topk-type-1",
       "bottleneck": "synchronization",
       "technique": "routing-method-topk-type-1",
@@ -95,6 +133,101 @@
       ],
       "whys": [
         "Correctness passed, but repeat-3 regressed/noised out: geomean speedup 1.002 and conservative min speedup 0.8679. Keep routing_method_type=2 for this task."
+      ],
+      "suggested_owner": "doc|reviewer",
+      "promoted": false,
+      "recurring": false
+    },
+    {
+      "class": "synchronization::rope-producer-earlier-warp-slot",
+      "bottleneck": "synchronization",
+      "technique": "rope-producer-earlier-warp-slot",
+      "count": 1,
+      "distinct_entries": 1,
+      "ops": [
+        "DSA FlashMLA KV Decode Attention"
+      ],
+      "outcomes": [
+        "slower"
+      ],
+      "whys": [
+        "Both decode buckets regressed in graph estimators, so producer-slot order was not the missing overlap."
+      ],
+      "suggested_owner": "doc|reviewer",
+      "promoted": false,
+      "recurring": false
+    },
+    {
+      "class": "synchronization::native-packed-fp8-to-bf16-conversion",
+      "bottleneck": "synchronization",
+      "technique": "native-packed-fp8-to-bf16-conversion",
+      "count": 1,
+      "distinct_entries": 1,
+      "ops": [
+        "DSA FlashMLA KV Decode Attention"
+      ],
+      "outcomes": [
+        "abandoned"
+      ],
+      "whys": [
+        "The intended Blackwell SASS lowering was present and exact, but its instruction reduction did not survive every graph and region estimator."
+      ],
+      "suggested_owner": "doc|reviewer",
+      "promoted": false,
+      "recurring": false
+    },
+    {
+      "class": "synchronization::native-conversion-plus-exact-contract-composite",
+      "bottleneck": "synchronization",
+      "technique": "native-conversion-plus-exact-contract-composite",
+      "count": 1,
+      "distinct_entries": 1,
+      "ops": [
+        "DSA FlashMLA KV Decode Attention"
+      ],
+      "outcomes": [
+        "slower"
+      ],
+      "whys": [
+        "The composite passed all leaf, containing, stream, graph-mutation, adversarial, and topology checks, but graph gains were unstable and containing eager regressed."
+      ],
+      "suggested_owner": "doc|reviewer",
+      "promoted": false,
+      "recurring": false
+    },
+    {
+      "class": "synchronization::exact-v32-no-extra-contract-specialization",
+      "bottleneck": "synchronization",
+      "technique": "exact-v32-no-extra-contract-specialization",
+      "count": 1,
+      "distinct_entries": 1,
+      "ops": [
+        "DSA FlashMLA KV Decode Attention"
+      ],
+      "outcomes": [
+        "abandoned"
+      ],
+      "whys": [
+        "Removing generic branches, loads, divisions, and extra-KV code left graph and containing-region performance below the promotion gate."
+      ],
+      "suggested_owner": "doc|reviewer",
+      "promoted": false,
+      "recurring": false
+    },
+    {
+      "class": "synchronization::coordinate-ready-mbarrier-handoff",
+      "bottleneck": "synchronization",
+      "technique": "coordinate-ready-mbarrier-handoff",
+      "count": 1,
+      "distinct_entries": 1,
+      "ops": [
+        "DSA FlashMLA KV Decode Attention"
+      ],
+      "outcomes": [
+        "abandoned"
+      ],
+      "whys": [
+        "Exact correctness held, but the extra handoff did not clear the mandatory graph and containing-region gates in either bucket."
       ],
       "suggested_owner": "doc|reviewer",
       "promoted": false,

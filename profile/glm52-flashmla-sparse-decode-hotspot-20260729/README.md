@@ -13,6 +13,8 @@ The authoritative summaries are:
 - [`evidence/binary_manifest.json`](evidence/binary_manifest.json)
 - [`evidence/preflight.json`](evidence/preflight.json)
 - [`EXTERNAL_ACCEPTANCE.md`](EXTERNAL_ACCEPTANCE.md)
+- [`knowledge_entry_draft.json`](knowledge_entry_draft.json), installed
+  append-only under `testbench/knowledge/entries/`
 
 Raw correctness, paired timing, Nsys, disassembly, and control artifacts are
 under [`evidence/`](evidence/). Scripts under [`harness/`](harness/) refuse to

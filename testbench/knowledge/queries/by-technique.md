@@ -11,6 +11,10 @@
 - `glm52--routed_gateup_nvfp4_decode--b200--20260714b` [no-win] Routed Expert Gate+Up NVFP4/decode — For GLM-5.2 NVFP4 MoE decode on sm_100, enabling FlashInfer PDL may shift median latency by about 1-2%, but it is not stable enough to satisfy the conservative gate on the M=16/32 sweep. The main remaining headroom is likely reducing fixed TRT-LLM runner overhead or exposing a gate-up-only primitive instead of timing the fused MoE path.
 - `glm52--routed_gateup_nvfp4_decode--b200--20260714a` [no-win] Routed Expert Gate+Up NVFP4/decode — For a new SGLang NVFP4 MoE task, first validate the exact FlashInfer TRT-LLM packed tensor and scale contract separately from FP8 DeepGEMM. A pass-through baseline is useful for contract validation but provides no speedup; future work must reduce TRTLLM runner overhead or expose a gate-up-only primitive for the M=16/32 decode regime.
 
+## coordinate-ready-mbarrier-handoff
+
+- `glm52--dsa_flashmla_kv_decode--b200--20260729c` [no-win] DSA FlashMLA KV Decode Attention/decode — For short SM100 sparse FlashMLA decode, a large static instruction reduction is not sufficient evidence of a serving win; gate on alternating CUDA Graph replay and the actual containing dispatch region. Preserve the proven one-SM TMA, TMEM, tcgen05, and mbarrier pipeline unless a concrete traffic or synchronization model predicts a benefit.
+
 ## cuda-direct-expert-token-kernel
 
 - `glm52--routed_swiglu_decode--b200--20260714a` [no-win] Routed Expert SwiGLU+FP8 Quant/decode — For GLM-5.2 masked routed SwiGLU decode on B200, the production SGLang C++ kernel is already close to the small-shape floor despite sparse active rows. Removing the CTA prefix mapping is not enough; a replacement must match the production vectorized bf16x2/fp8x2 instruction quality and beat run-to-run noise on M=16.
@@ -41,6 +45,10 @@
 ## effective-topk-table-slice
 
 - `glm52--sparse_mla_decode--b200--20260714a` [win] Sparse MLA Decode/decode — For FlashInfer TRT-LLM FP8 sparse MLA decode on Blackwell, preserve device tensor scale inputs when the wrapper supports them; converting scalar scale tensors to Python floats can silently select a slower static-scale path. Do not shrink sparse_mla_top_k unless the block-table shape and production semantics also change.
+
+## exact-v32-no-extra-contract-specialization
+
+- `glm52--dsa_flashmla_kv_decode--b200--20260729c` [no-win] DSA FlashMLA KV Decode Attention/decode — For short SM100 sparse FlashMLA decode, a large static instruction reduction is not sufficient evidence of a serving win; gate on alternating CUDA Graph replay and the actual containing dispatch region. Preserve the proven one-SM TMA, TMEM, tcgen05, and mbarrier pipeline unless a concrete traffic or synchronization model predicts a benefit.
 
 ## explicit-deepgemm-recipe
 
@@ -86,6 +94,14 @@
 - `glm52--dsa_flashmla_kv_decode--b200--20260723b` [no-win] DSA FlashMLA KV Decode Attention/decode — Keep an entire alternating reference/candidate campaign and its profiler collection on one dynamically allocated physical GPU, then gate short PDL-overlapped paths on real CUDA Graph replay. Reducing compile-time combine state is not useful when it leaves sparse-gather bytes, a 128-block tail, and long-scoreboard pressure unchanged.
 - `glm52--dsa_flashmla_kv_decode--b200--20260722a` [no-win] DSA FlashMLA KV Decode Attention/decode — For a PDL-overlapped split-KV plus combine path with no measured launch gap, a compile-time combine-resource reduction must be judged on the full captured chain, not one kernel or one favorable eager session. At these fixed decode buckets the M16 max-splits specialization was not repeatably faster, so the safe transferable policy is to fail closed to stock until repeated CUDA-Graph and containing-region measurements clear the production threshold.
 
+## native-conversion-plus-exact-contract-composite
+
+- `glm52--dsa_flashmla_kv_decode--b200--20260729c` [no-win] DSA FlashMLA KV Decode Attention/decode — For short SM100 sparse FlashMLA decode, a large static instruction reduction is not sufficient evidence of a serving win; gate on alternating CUDA Graph replay and the actual containing dispatch region. Preserve the proven one-SM TMA, TMEM, tcgen05, and mbarrier pipeline unless a concrete traffic or synchronization model predicts a benefit.
+
+## native-packed-fp8-to-bf16-conversion
+
+- `glm52--dsa_flashmla_kv_decode--b200--20260729c` [no-win] DSA FlashMLA KV Decode Attention/decode — For short SM100 sparse FlashMLA decode, a large static instruction reduction is not sufficient evidence of a serving win; gate on alternating CUDA Graph replay and the actual containing dispatch region. Preserve the proven one-SM TMA, TMEM, tcgen05, and mbarrier pipeline unless a concrete traffic or synchronization model predicts a benefit.
+
 ## packed-deepgemm-lower-op
 
 - `glm52--o_proj_decode--b200--20260714a` [no-win] Attention O Projection/decode — For small-M B200 FP8 decode GEMMs with SGLang-packed UE8M0 scales, the production DeepGEMM wrapper is already the safe path. Python-wrapper bypasses do not improve CUPTI device-kernel timing, and alternate APIs either need different scale layouts or fail to beat both M=16 and M=32.
@@ -110,6 +126,10 @@
 
 - `glm52--o_proj_decode--b200--20260714a` [no-win] Attention O Projection/decode — For small-M B200 FP8 decode GEMMs with SGLang-packed UE8M0 scales, the production DeepGEMM wrapper is already the safe path. Python-wrapper bypasses do not improve CUPTI device-kernel timing, and alternate APIs either need different scale layouts or fail to beat both M=16 and M=32.
 
+## rope-producer-earlier-warp-slot
+
+- `glm52--dsa_flashmla_kv_decode--b200--20260729c` [no-win] DSA FlashMLA KV Decode Attention/decode — For short SM100 sparse FlashMLA decode, a large static instruction reduction is not sufficient evidence of a serving win; gate on alternating CUDA Graph replay and the actual containing dispatch region. Preserve the proven one-SM TMA, TMEM, tcgen05, and mbarrier pipeline unless a concrete traffic or synchronization model predicts a benefit.
+
 ## routing-method-topk-type-1
 
 - `glm52--routed_gateup_nvfp4_decode--b200--20260714c` [win] Routed Expert Gate+Up NVFP4/decode — For fixed-shape GLM-5.2 NVFP4 MoE decode harness tasks, do not pass small CUDA scalar tensors through .item() in solution.py. If values are fixed by task.json/definition axes, use Python constants or shape-derived Python ints so the timed call contains the real FlashInfer work instead of device-host synchronization. Validate each FlashInfer routing knob with repeat-3 because several correct API choices differ mostly by noise.
@@ -126,6 +146,14 @@
 ## sglang-triton-w8a8-block-fp8
 
 - `glm52--o_proj_decode--b200--20260714a` [no-win] Attention O Projection/decode — For small-M B200 FP8 decode GEMMs with SGLang-packed UE8M0 scales, the production DeepGEMM wrapper is already the safe path. Python-wrapper bypasses do not improve CUPTI device-kernel timing, and alternate APIs either need different scale layouts or fail to beat both M=16 and M=32.
+
+## sparse-gather-evict-first-cache-hint
+
+- `glm52--dsa_flashmla_kv_decode--b200--20260729c` [no-win] DSA FlashMLA KV Decode Attention/decode — For short SM100 sparse FlashMLA decode, a large static instruction reduction is not sufficient evidence of a serving win; gate on alternating CUDA Graph replay and the actual containing dispatch region. Preserve the proven one-SM TMA, TMEM, tcgen05, and mbarrier pipeline unless a concrete traffic or synchronization model predicts a benefit.
+
+## staggered-nope-shared-load-order
+
+- `glm52--dsa_flashmla_kv_decode--b200--20260729c` [no-win] DSA FlashMLA KV Decode Attention/decode — For short SM100 sparse FlashMLA decode, a large static instruction reduction is not sufficient evidence of a serving win; gate on alternating CUDA Graph replay and the actual containing dispatch region. Preserve the proven one-SM TMA, TMEM, tcgen05, and mbarrier pipeline unless a concrete traffic or synchronization model predicts a benefit.
 
 ## triton-direct-active-row-kernel
 

@@ -1,0 +1,134 @@
+{
+  "schema_version": 1,
+  "id": "glm52--dsa_flashmla_kv_decode--b200--20260729c",
+  "date": "2026-07-29",
+  "model": "glm52",
+  "task": "glm52/dsa_flashmla_kv_decode",
+  "op": "DSA FlashMLA KV Decode Attention",
+  "family": "dsa_flashmla_kv",
+  "phase": "decode",
+  "shapes": {
+    "local_M_buckets": [
+      16,
+      32
+    ],
+    "measured_world_size": 1,
+    "q_heads": 64,
+    "q_head_dim": 576,
+    "v_head_dim": 512,
+    "kv_cache_dim": 656,
+    "kv_pages_by_M": {
+      "16": 2049,
+      "32": 4097
+    },
+    "page_size": 64,
+    "sparse_topk": 2048,
+    "softmax_scale": 0.0625,
+    "provider_abi": "SGLang API-v1 flashmla_sparse_decode main plus combine"
+  },
+  "hardware": {
+    "gpu": "NVIDIA B200",
+    "sm": "sm_100",
+    "physical_gpu_indices": [
+      0,
+      1
+    ],
+    "gpu_uuids": [
+      "GPU-30b619de-87f2-1862-0d07-a595da8fe417",
+      "GPU-5b9be10b-5bfc-b658-9b31-f7ae8516dc54"
+    ]
+  },
+  "stack": {
+    "kernel_harness_commit": "db8e1bd755fdc37940c4b1ecf5585ace6f3048fa",
+    "sglang_base_commit": "83d313104d089bcd2af26b28453ff880f1e6a80b",
+    "sglang_commit": "c52f23b567e5061b71c28a8971459224c057ada1",
+    "flashmla_base_commit": "0657fffdfd1c981517647e043e4ef30ffdc1480f",
+    "flashmla_commit": "65293ac6553d5119504be1f0ffcb229a0dc1fe42",
+    "cutlass_commit": "147f5673d0c1c3dcf66f78d677fd647e4a020219",
+    "sgl_kernel": "0.4.4",
+    "sglang": "0.5.15",
+    "torch": "2.11.0+cu130",
+    "cuda": "toolkit 13.2.78; torch wheel cu130",
+    "nsight_systems": "2025.6.3",
+    "scheduler": "with_hotspot_gpu.sh shared lease"
+  },
+  "baseline_kernel": "installed sgl-kernel 0.4.4 FlashMLA SM100 flash_fwd_splitkv_mla_fp8_sparse_kernel plus flash_fwd_mla_combine_kernel",
+  "bottleneck": {
+    "kind": "synchronization",
+    "evidence": "Prior production NCU evidence identified sparse-gather long-scoreboard and barrier pressure with no spill bottleneck. In this campaign, direct FP8 conversion and exact-contract specialization substantially reduced generated main-kernel instructions but did not produce a stable CUDA Graph or containing-region win, so generic instruction count was not the binding limit."
+  },
+  "approaches": [
+    {
+      "technique": "coordinate-ready-mbarrier-handoff",
+      "summary": "Published TMA coordinates before scale and valid-mask preparation so raw and RoPE producer warps could issue earlier.",
+      "outcome": "abandoned",
+      "geomean_speedup": null,
+      "why": "Exact correctness held, but the extra handoff did not clear the mandatory graph and containing-region gates in either bucket."
+    },
+    {
+      "technique": "staggered-nope-shared-load-order",
+      "summary": "Reordered adjacent NoPE shared-memory column visits across eight-lane consumer groups without changing the mathematical layout.",
+      "outcome": "slower",
+      "geomean_speedup": null,
+      "why": "The generated address work increased and the paired graph evidence was neutral or regressive."
+    },
+    {
+      "technique": "native-packed-fp8-to-bf16-conversion",
+      "summary": "Replaced the generic float unpack and repack sequence with direct packed E4M3x2-to-BF16x2 PTX behind a goal-local instantiation macro.",
+      "outcome": "abandoned",
+      "geomean_speedup": null,
+      "why": "The intended Blackwell SASS lowering was present and exact, but its instruction reduction did not survive every graph and region estimator."
+    },
+    {
+      "technique": "sparse-gather-evict-first-cache-hint",
+      "summary": "Changed the one-pass raw and RoPE TMA gather cache hints from evict-last to evict-first.",
+      "outcome": "abandoned",
+      "geomean_speedup": null,
+      "why": "The cache-hint change was visible in generated code but did not create a reproducible graph benefit."
+    },
+    {
+      "technique": "rope-producer-earlier-warp-slot",
+      "summary": "Swapped the raw NoPE and RoPE producer warp assignments while preserving both gather streams.",
+      "outcome": "slower",
+      "geomean_speedup": null,
+      "why": "Both decode buckets regressed in graph estimators, so producer-slot order was not the missing overlap."
+    },
+    {
+      "technique": "exact-v32-no-extra-contract-specialization",
+      "summary": "Specialized top-k, page size, no-extra-KV, and no-attention-sink branches while retaining invalid-index handling and scheduler splits.",
+      "outcome": "abandoned",
+      "geomean_speedup": null,
+      "why": "Removing generic branches, loads, divisions, and extra-KV code left graph and containing-region performance below the promotion gate."
+    },
+    {
+      "technique": "native-conversion-plus-exact-contract-composite",
+      "summary": "Combined the disjoint conversion and exact-contract changes in one prefixed V32 main with the unchanged stock combine.",
+      "outcome": "slower",
+      "geomean_speedup": null,
+      "why": "The composite passed all leaf, containing, stream, graph-mutation, adversarial, and topology checks, but graph gains were unstable and containing eager regressed."
+    }
+  ],
+  "result": {
+    "status": "no-win",
+    "geomean_speedup": null,
+    "min_speedup_conservative": null,
+    "repeat": 100,
+    "integrate": "not-run"
+  },
+  "lesson": "For short SM100 sparse FlashMLA decode, a large static instruction reduction is not sufficient evidence of a serving win; gate on alternating CUDA Graph replay and the actual containing dispatch region. Preserve the proven one-SM TMA, TMEM, tcgen05, and mbarrier pipeline unless a concrete traffic or synchronization model predicts a benefit.",
+  "transfers_to": [
+    "SM100 sparse FP8 FlashMLA decode with split-KV and a fixed combine",
+    "short CUDA Graph serving paths where eager output ownership can mimic a kernel win",
+    "goal-local PTX specializations that need generated-SASS and exact-topology evidence",
+    "provider integrations that must fail closed on an exact shape and layout ABI"
+  ],
+  "caveats": [
+    "This serving-native campaign has no frozen evaluate_task.py result.json or audit_result.py verdict; the committed paired timing JSON and immutable timing audit are the measurement authority, and no frozen-task win is claimed.",
+    "Measurements were captured from dirty dedicated worktrees, but every retained result binds the exact source closure and binary hash and the cited final local commits contain those same bytes.",
+    "Each timing file paired stock and candidate on one leased GPU; the complete campaign used two otherwise identical B200 devices, so no unpaired cross-device ratio was used.",
+    "The host has only four GPUs and no target checkpoint, so checkpoint-backed TP8/DP8/EP8 acceptance remains external; the failed local gates mean this result is not an external-acceptance candidate.",
+    "The broad serving-native selftest and harness verifier retain unrelated base-state contract drift documented in the final report; goal-scoped tests and evidence audits pass.",
+    "No candidate bucket is enabled, and the default-off profile leaves installed stock FlashMLA active."
+  ],
+  "agent": "Codex"
+}
