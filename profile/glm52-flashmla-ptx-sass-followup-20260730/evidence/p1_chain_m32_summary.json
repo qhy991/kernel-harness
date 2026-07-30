@@ -1,0 +1,460 @@
+{
+  "audit": {
+    "candidate_main_prefix_correct": true,
+    "combine_is_unchanged_stock_symbol": true,
+    "graph_replays_per_lane": 5,
+    "one_main_then_one_combine_per_replay": true,
+    "stock_main_is_control_only": true,
+    "unexpected_device_kernels_in_ranges": 0
+  },
+  "lanes": {
+    "candidate_eager": [
+      {
+        "block": [
+          384,
+          1,
+          1
+        ],
+        "duration_ns": 24512,
+        "dynamic_smem_mb": 0.232,
+        "grid": [
+          1,
+          148,
+          1
+        ],
+        "name": "infini_kernel_glm52_flashmla_sparse_decode_p1_consumer_scale_main",
+        "registers_per_thread": 168,
+        "start_ns": 9583637987,
+        "static_smem_mb": 0.0
+      },
+      {
+        "block": [
+          256,
+          1,
+          1
+        ],
+        "duration_ns": 10144,
+        "dynamic_smem_mb": 0.0,
+        "grid": [
+          32,
+          1,
+          8
+        ],
+        "name": "flash_fwd_mla_combine_kernel",
+        "registers_per_thread": 48,
+        "start_ns": 9583658243,
+        "static_smem_mb": 0.005
+      }
+    ],
+    "candidate_graph": [
+      {
+        "block": [
+          384,
+          1,
+          1
+        ],
+        "duration_ns": 24096,
+        "dynamic_smem_mb": 0.232,
+        "grid": [
+          1,
+          148,
+          1
+        ],
+        "name": "infini_kernel_glm52_flashmla_sparse_decode_p1_consumer_scale_main",
+        "registers_per_thread": 168,
+        "start_ns": 9707773945,
+        "static_smem_mb": 0.0
+      },
+      {
+        "block": [
+          256,
+          1,
+          1
+        ],
+        "duration_ns": 9856,
+        "dynamic_smem_mb": 0.0,
+        "grid": [
+          32,
+          1,
+          8
+        ],
+        "name": "flash_fwd_mla_combine_kernel",
+        "registers_per_thread": 48,
+        "start_ns": 9707794041,
+        "static_smem_mb": 0.005
+      },
+      {
+        "block": [
+          384,
+          1,
+          1
+        ],
+        "duration_ns": 23552,
+        "dynamic_smem_mb": 0.232,
+        "grid": [
+          1,
+          148,
+          1
+        ],
+        "name": "infini_kernel_glm52_flashmla_sparse_decode_p1_consumer_scale_main",
+        "registers_per_thread": 168,
+        "start_ns": 9707806681,
+        "static_smem_mb": 0.0
+      },
+      {
+        "block": [
+          256,
+          1,
+          1
+        ],
+        "duration_ns": 9632,
+        "dynamic_smem_mb": 0.0,
+        "grid": [
+          32,
+          1,
+          8
+        ],
+        "name": "flash_fwd_mla_combine_kernel",
+        "registers_per_thread": 48,
+        "start_ns": 9707826457,
+        "static_smem_mb": 0.005
+      },
+      {
+        "block": [
+          384,
+          1,
+          1
+        ],
+        "duration_ns": 23296,
+        "dynamic_smem_mb": 0.232,
+        "grid": [
+          1,
+          148,
+          1
+        ],
+        "name": "infini_kernel_glm52_flashmla_sparse_decode_p1_consumer_scale_main",
+        "registers_per_thread": 168,
+        "start_ns": 9707839193,
+        "static_smem_mb": 0.0
+      },
+      {
+        "block": [
+          256,
+          1,
+          1
+        ],
+        "duration_ns": 9760,
+        "dynamic_smem_mb": 0.0,
+        "grid": [
+          32,
+          1,
+          8
+        ],
+        "name": "flash_fwd_mla_combine_kernel",
+        "registers_per_thread": 48,
+        "start_ns": 9707858585,
+        "static_smem_mb": 0.005
+      },
+      {
+        "block": [
+          384,
+          1,
+          1
+        ],
+        "duration_ns": 23072,
+        "dynamic_smem_mb": 0.232,
+        "grid": [
+          1,
+          148,
+          1
+        ],
+        "name": "infini_kernel_glm52_flashmla_sparse_decode_p1_consumer_scale_main",
+        "registers_per_thread": 168,
+        "start_ns": 9707871993,
+        "static_smem_mb": 0.0
+      },
+      {
+        "block": [
+          256,
+          1,
+          1
+        ],
+        "duration_ns": 9472,
+        "dynamic_smem_mb": 0.0,
+        "grid": [
+          32,
+          1,
+          8
+        ],
+        "name": "flash_fwd_mla_combine_kernel",
+        "registers_per_thread": 48,
+        "start_ns": 9707891417,
+        "static_smem_mb": 0.005
+      },
+      {
+        "block": [
+          384,
+          1,
+          1
+        ],
+        "duration_ns": 22976,
+        "dynamic_smem_mb": 0.232,
+        "grid": [
+          1,
+          148,
+          1
+        ],
+        "name": "infini_kernel_glm52_flashmla_sparse_decode_p1_consumer_scale_main",
+        "registers_per_thread": 168,
+        "start_ns": 9707904761,
+        "static_smem_mb": 0.0
+      },
+      {
+        "block": [
+          256,
+          1,
+          1
+        ],
+        "duration_ns": 9888,
+        "dynamic_smem_mb": 0.0,
+        "grid": [
+          32,
+          1,
+          8
+        ],
+        "name": "flash_fwd_mla_combine_kernel",
+        "registers_per_thread": 48,
+        "start_ns": 9707923865,
+        "static_smem_mb": 0.005
+      }
+    ],
+    "stock_eager": [
+      {
+        "block": [
+          384,
+          1,
+          1
+        ],
+        "duration_ns": 26560,
+        "dynamic_smem_mb": 0.232,
+        "grid": [
+          1,
+          148,
+          1
+        ],
+        "name": "flash_fwd_splitkv_mla_fp8_sparse_kernel",
+        "registers_per_thread": 168,
+        "start_ns": 9583505347,
+        "static_smem_mb": 0.0
+      },
+      {
+        "block": [
+          256,
+          1,
+          1
+        ],
+        "duration_ns": 10016,
+        "dynamic_smem_mb": 0.0,
+        "grid": [
+          32,
+          1,
+          8
+        ],
+        "name": "flash_fwd_mla_combine_kernel",
+        "registers_per_thread": 48,
+        "start_ns": 9583527843,
+        "static_smem_mb": 0.005
+      }
+    ],
+    "stock_graph": [
+      {
+        "block": [
+          384,
+          1,
+          1
+        ],
+        "duration_ns": 26944,
+        "dynamic_smem_mb": 0.232,
+        "grid": [
+          1,
+          148,
+          1
+        ],
+        "name": "flash_fwd_splitkv_mla_fp8_sparse_kernel",
+        "registers_per_thread": 168,
+        "start_ns": 9707553401,
+        "static_smem_mb": 0.0
+      },
+      {
+        "block": [
+          256,
+          1,
+          1
+        ],
+        "duration_ns": 9888,
+        "dynamic_smem_mb": 0.0,
+        "grid": [
+          32,
+          1,
+          8
+        ],
+        "name": "flash_fwd_mla_combine_kernel",
+        "registers_per_thread": 48,
+        "start_ns": 9707576473,
+        "static_smem_mb": 0.005
+      },
+      {
+        "block": [
+          384,
+          1,
+          1
+        ],
+        "duration_ns": 25376,
+        "dynamic_smem_mb": 0.232,
+        "grid": [
+          1,
+          148,
+          1
+        ],
+        "name": "flash_fwd_splitkv_mla_fp8_sparse_kernel",
+        "registers_per_thread": 168,
+        "start_ns": 9707590969,
+        "static_smem_mb": 0.0
+      },
+      {
+        "block": [
+          256,
+          1,
+          1
+        ],
+        "duration_ns": 9952,
+        "dynamic_smem_mb": 0.0,
+        "grid": [
+          32,
+          1,
+          8
+        ],
+        "name": "flash_fwd_mla_combine_kernel",
+        "registers_per_thread": 48,
+        "start_ns": 9707612473,
+        "static_smem_mb": 0.005
+      },
+      {
+        "block": [
+          384,
+          1,
+          1
+        ],
+        "duration_ns": 24480,
+        "dynamic_smem_mb": 0.232,
+        "grid": [
+          1,
+          148,
+          1
+        ],
+        "name": "flash_fwd_splitkv_mla_fp8_sparse_kernel",
+        "registers_per_thread": 168,
+        "start_ns": 9707625817,
+        "static_smem_mb": 0.0
+      },
+      {
+        "block": [
+          256,
+          1,
+          1
+        ],
+        "duration_ns": 9696,
+        "dynamic_smem_mb": 0.0,
+        "grid": [
+          32,
+          1,
+          8
+        ],
+        "name": "flash_fwd_mla_combine_kernel",
+        "registers_per_thread": 48,
+        "start_ns": 9707646585,
+        "static_smem_mb": 0.005
+      },
+      {
+        "block": [
+          384,
+          1,
+          1
+        ],
+        "duration_ns": 24416,
+        "dynamic_smem_mb": 0.232,
+        "grid": [
+          1,
+          148,
+          1
+        ],
+        "name": "flash_fwd_splitkv_mla_fp8_sparse_kernel",
+        "registers_per_thread": 168,
+        "start_ns": 9707660473,
+        "static_smem_mb": 0.0
+      },
+      {
+        "block": [
+          256,
+          1,
+          1
+        ],
+        "duration_ns": 9568,
+        "dynamic_smem_mb": 0.0,
+        "grid": [
+          32,
+          1,
+          8
+        ],
+        "name": "flash_fwd_mla_combine_kernel",
+        "registers_per_thread": 48,
+        "start_ns": 9707681113,
+        "static_smem_mb": 0.005
+      },
+      {
+        "block": [
+          384,
+          1,
+          1
+        ],
+        "duration_ns": 24192,
+        "dynamic_smem_mb": 0.232,
+        "grid": [
+          1,
+          148,
+          1
+        ],
+        "name": "flash_fwd_splitkv_mla_fp8_sparse_kernel",
+        "registers_per_thread": 168,
+        "start_ns": 9707694969,
+        "static_smem_mb": 0.0
+      },
+      {
+        "block": [
+          256,
+          1,
+          1
+        ],
+        "duration_ns": 9696,
+        "dynamic_smem_mb": 0.0,
+        "grid": [
+          32,
+          1,
+          8
+        ],
+        "name": "flash_fwd_mla_combine_kernel",
+        "registers_per_thread": 48,
+        "start_ns": 9707715353,
+        "static_smem_mb": 0.005
+      }
+    ]
+  },
+  "m": 32,
+  "report": {
+    "nsys_version": "NVIDIA Nsight Systems version 2025.6.3.541-256337736014v0",
+    "path": "/home/qinhaiyan/glm52-hotspot-goal-runs/worktrees/flashmla-sparse-decode/kernel-harness/profile/glm52-flashmla-ptx-sass-followup-20260730/evidence/p1_chain_m32.nsys-rep",
+    "sha256": "9bea61765810585cffd8d5847205374814a7b01f30e425294519c5ae8226fe23",
+    "size_bytes": 600170
+  },
+  "schema_version": 1
+}

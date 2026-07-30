@@ -1,0 +1,246 @@
+{
+  "all_main_symbols_prefixed": true,
+  "combine_sass_identical_across_all_variants": true,
+  "combine_sass_sha256": "67d910ba2c13b9f29eb102e6d4d47c20ad2eac06a8cbb4032075a2a17432f155",
+  "entries": [
+    {
+      "builds": [
+        {
+          "build_id_prefix": "554f5288d5507890",
+          "main_resources": {
+            "local_bytes": 0,
+            "registers_per_thread": 168,
+            "stack_bytes": 0,
+            "static_shared_bytes": 1024
+          },
+          "main_sass_sha256": "61e0a60fe8801bdb75dc223b0a58ef25f524d10f15500f530ecd036733d8a8ff",
+          "main_static_instruction_count": 4128,
+          "no_local_or_spill": true,
+          "path": "/home/qinhaiyan/glm52-hotspot-goal-runs/cache/flashmla_ptx_sass_followup/torch_extensions/infini_kernel_glm52_flashmla_sparse_decode_identity_554f5288d5507890/infini_kernel_glm52_flashmla_sparse_decode_identity_554f5288d5507890.so",
+          "selected_opcode_counts": {
+            "BRA": 160,
+            "F2F": 16,
+            "F2FP": 400,
+            "HADD2": 256,
+            "HFMA2": 15,
+            "HMUL2": 128,
+            "IADD3": 65,
+            "IMAD": 256,
+            "LDG": 28,
+            "LDL": 0,
+            "LDS": 83,
+            "LOP3": 107,
+            "STL": 0,
+            "STS": 119,
+            "SYNCS": 100,
+            "UTCCP": 18,
+            "UTCHMMA": 26,
+            "UTMALDG": 57
+          },
+          "so_sha256": "61741f9d77630463c5f2676535fdf2e9657c57b0280e09f669dbefaf7f162fcf"
+        },
+        {
+          "build_id_prefix": "7d956f85e6d4ee68",
+          "main_resources": {
+            "local_bytes": 0,
+            "registers_per_thread": 168,
+            "stack_bytes": 0,
+            "static_shared_bytes": 1024
+          },
+          "main_sass_sha256": "61e0a60fe8801bdb75dc223b0a58ef25f524d10f15500f530ecd036733d8a8ff",
+          "main_static_instruction_count": 4128,
+          "no_local_or_spill": true,
+          "path": "/home/qinhaiyan/glm52-hotspot-goal-runs/cache/flashmla_ptx_sass_followup/torch_extensions/infini_kernel_glm52_flashmla_sparse_decode_identity_7d956f85e6d4ee68/infini_kernel_glm52_flashmla_sparse_decode_identity_7d956f85e6d4ee68.so",
+          "selected_opcode_counts": {
+            "BRA": 160,
+            "F2F": 16,
+            "F2FP": 400,
+            "HADD2": 256,
+            "HFMA2": 15,
+            "HMUL2": 128,
+            "IADD3": 65,
+            "IMAD": 256,
+            "LDG": 28,
+            "LDL": 0,
+            "LDS": 83,
+            "LOP3": 107,
+            "STL": 0,
+            "STS": 119,
+            "SYNCS": 100,
+            "UTCCP": 18,
+            "UTCHMMA": 26,
+            "UTMALDG": 57
+          },
+          "so_sha256": "8f881e7ba7d0f1a252701dcf9b6d51f01b68777e3d5a9ab7058260d3c5fd9611"
+        }
+      ],
+      "generated_main_sass_identical_across_builds": true,
+      "note": "source-identical to upstream V32; never promotable",
+      "role": "control",
+      "variant": "identity"
+    },
+    {
+      "builds": [
+        {
+          "build_id_prefix": "24c522c90bc8583e",
+          "main_resources": {
+            "local_bytes": 0,
+            "registers_per_thread": 168,
+            "stack_bytes": 0,
+            "static_shared_bytes": 1024
+          },
+          "main_sass_sha256": "31e46c6585770e16c38de6d3e38bc728048f09e33b04d22d588f85c7f1dffe74",
+          "main_static_instruction_count": 3336,
+          "no_local_or_spill": true,
+          "path": "/home/qinhaiyan/glm52-hotspot-goal-runs/cache/flashmla_ptx_sass_followup/torch_extensions/infini_kernel_glm52_flashmla_sparse_decode_b3_b5_native_exact_24c522c90bc8583e/infini_kernel_glm52_flashmla_sparse_decode_b3_b5_native_exact_24c522c90bc8583e.so",
+          "selected_opcode_counts": {
+            "BRA": 155,
+            "F2F": 8,
+            "F2FP": 272,
+            "HADD2": 0,
+            "HFMA2": 14,
+            "HMUL2": 128,
+            "IADD3": 47,
+            "IMAD": 194,
+            "LDG": 12,
+            "LDL": 0,
+            "LDS": 83,
+            "LOP3": 90,
+            "STL": 0,
+            "STS": 116,
+            "SYNCS": 96,
+            "UTCCP": 18,
+            "UTCHMMA": 26,
+            "UTMALDG": 57
+          },
+          "so_sha256": "59ca50fa4d990dc2db16d6360a24da2bb255edf88b49584bb0d40bd5c5ed1821"
+        }
+      ],
+      "generated_main_sass_identical_across_builds": true,
+      "note": "prior campaign's composite, rebuilt to bind the terminal result",
+      "role": "prior-rejected",
+      "variant": "b3_b5_native_exact"
+    },
+    {
+      "builds": [
+        {
+          "build_id_prefix": "a1971d6a282e0a7e",
+          "main_resources": {
+            "local_bytes": 0,
+            "registers_per_thread": 168,
+            "stack_bytes": 0,
+            "static_shared_bytes": 1024
+          },
+          "main_sass_sha256": "725c9b8ff2a7e3320c9830057caf567c7d3f0c1a2d4d50d673103b8d35524eb4",
+          "main_static_instruction_count": 3368,
+          "no_local_or_spill": true,
+          "path": "/home/qinhaiyan/glm52-hotspot-goal-runs/cache/flashmla_ptx_sass_followup/torch_extensions/infini_kernel_glm52_flashmla_sparse_decode_p1_consumer_scale_a1971d6a282e0a7e/infini_kernel_glm52_flashmla_sparse_decode_p1_consumer_scale_a1971d6a282e0a7e.so",
+          "selected_opcode_counts": {
+            "BRA": 155,
+            "F2F": 16,
+            "F2FP": 272,
+            "HADD2": 0,
+            "HFMA2": 14,
+            "HMUL2": 128,
+            "IADD3": 49,
+            "IMAD": 191,
+            "LDG": 14,
+            "LDL": 0,
+            "LDS": 83,
+            "LOP3": 94,
+            "STL": 0,
+            "STS": 115,
+            "SYNCS": 96,
+            "UTCCP": 18,
+            "UTCHMMA": 26,
+            "UTMALDG": 57
+          },
+          "so_sha256": "aee8ff971dbb174f86547e5548dc202f220b19f5684a060249e8cc8eabf8e0b2"
+        },
+        {
+          "build_id_prefix": "a39236323dc57a97",
+          "main_resources": {
+            "local_bytes": 0,
+            "registers_per_thread": 168,
+            "stack_bytes": 0,
+            "static_shared_bytes": 1024
+          },
+          "main_sass_sha256": "725c9b8ff2a7e3320c9830057caf567c7d3f0c1a2d4d50d673103b8d35524eb4",
+          "main_static_instruction_count": 3368,
+          "no_local_or_spill": true,
+          "path": "/home/qinhaiyan/glm52-hotspot-goal-runs/cache/flashmla_ptx_sass_followup/torch_extensions/infini_kernel_glm52_flashmla_sparse_decode_p1_consumer_scale_a39236323dc57a97/infini_kernel_glm52_flashmla_sparse_decode_p1_consumer_scale_a39236323dc57a97.so",
+          "selected_opcode_counts": {
+            "BRA": 155,
+            "F2F": 16,
+            "F2FP": 272,
+            "HADD2": 0,
+            "HFMA2": 14,
+            "HMUL2": 128,
+            "IADD3": 49,
+            "IMAD": 191,
+            "LDG": 14,
+            "LDL": 0,
+            "LDS": 83,
+            "LOP3": 94,
+            "STL": 0,
+            "STS": 115,
+            "SYNCS": 96,
+            "UTCCP": 18,
+            "UTCHMMA": 26,
+            "UTMALDG": 57
+          },
+          "so_sha256": "a368b1451733140d9801d4519ba265e5d85252d83ab7ac25e8f570059b68e4e1"
+        }
+      ],
+      "generated_main_sass_identical_across_builds": true,
+      "note": "P1 consumer-side scale gather",
+      "role": "candidate",
+      "variant": "p1_consumer_scale"
+    },
+    {
+      "builds": [
+        {
+          "build_id_prefix": "31bfded03e1f8bd2",
+          "main_resources": {
+            "local_bytes": 0,
+            "registers_per_thread": 168,
+            "stack_bytes": 0,
+            "static_shared_bytes": 1024
+          },
+          "main_sass_sha256": "9b2ea6801e6e4e2e997376b1c6b18436e135b2f7198a57a7bd67a626963223ca",
+          "main_static_instruction_count": 3264,
+          "no_local_or_spill": true,
+          "path": "/home/qinhaiyan/glm52-hotspot-goal-runs/cache/flashmla_ptx_sass_followup/torch_extensions/infini_kernel_glm52_flashmla_sparse_decode_ablate_scale_chain_31bfded03e1f8bd2/infini_kernel_glm52_flashmla_sparse_decode_ablate_scale_chain_31bfded03e1f8bd2.so",
+          "selected_opcode_counts": {
+            "BRA": 155,
+            "F2F": 0,
+            "F2FP": 272,
+            "HADD2": 0,
+            "HFMA2": 14,
+            "HMUL2": 0,
+            "IADD3": 41,
+            "IMAD": 297,
+            "LDG": 10,
+            "LDL": 0,
+            "LDS": 79,
+            "LOP3": 86,
+            "STL": 0,
+            "STS": 115,
+            "SYNCS": 96,
+            "UTCCP": 18,
+            "UTCHMMA": 26,
+            "UTMALDG": 57
+          },
+          "so_sha256": "89852a87767408c12a2ff20cb988de911147685cc19a876d60f44f0d863cf4b2"
+        }
+      ],
+      "generated_main_sass_identical_across_builds": true,
+      "note": "numerically wrong by construction; bounds the scale-chain ceiling",
+      "role": "ablation",
+      "variant": "ablate_scale_chain"
+    }
+  ],
+  "required_main_symbol_prefix": "infini_kernel_glm52_flashmla_sparse_decode",
+  "schema_version": 1,
+  "tool": "cuobjdump: NVIDIA (R) fat binary listing tool\nCopyright (c) 2005-2026 NVIDIA Corporation\nBuilt on Thu_Mar_19_11:12:51_PM_PDT_2026\nCuda compilation tools, release 13.2, V13.2.78\nBuild cuda_13.2.r13.2/compiler.37668154_0"
+}

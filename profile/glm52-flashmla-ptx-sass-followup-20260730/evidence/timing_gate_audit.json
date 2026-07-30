@@ -1,0 +1,1304 @@
+{
+  "files": [
+    {
+      "candidate": "ablate_scale_chain",
+      "comparison": "stock_provider",
+      "file": "ablation_graph_m16.json",
+      "lanes": {
+        "containing_graph": {
+          "max_estimator_over_all_series": 1.0141485504262484,
+          "min_estimator_over_all_series": 0.9964753004318387,
+          "passes_gate_every_series_every_estimator": false,
+          "series": [
+            {
+              "all_estimators_ge_gate": false,
+              "graph_capture_order": "AB",
+              "min_estimator": 1.000503275096378,
+              "pairs": 100,
+              "recomputed_estimators": {
+                "ab_ratio_of_medians": 1.000503275096378,
+                "ba_ratio_of_medians": 1.0141485504262484,
+                "order_balanced_sqrt_ab_ba": 1.0073028075686605,
+                "pooled_ratio_of_medians": 1.0055443971311604
+              },
+              "recomputed_matches_stored": true,
+              "series": 1,
+              "starts_with": "AB"
+            },
+            {
+              "all_estimators_ge_gate": false,
+              "graph_capture_order": "BA",
+              "min_estimator": 0.9964753004318387,
+              "pairs": 100,
+              "recomputed_estimators": {
+                "ab_ratio_of_medians": 0.9964753004318387,
+                "ba_ratio_of_medians": 0.9964841520801564,
+                "order_balanced_sqrt_ab_ba": 0.996479726246169,
+                "pooled_ratio_of_medians": 0.9969803494217316
+              },
+              "recomputed_matches_stored": true,
+              "series": 2,
+              "starts_with": "BA"
+            },
+            {
+              "all_estimators_ge_gate": false,
+              "graph_capture_order": "AB",
+              "min_estimator": 0.9979757519128111,
+              "pairs": 100,
+              "recomputed_estimators": {
+                "ab_ratio_of_medians": 0.9979757519128111,
+                "ba_ratio_of_medians": 1.0040526567609849,
+                "order_balanced_sqrt_ab_ba": 1.0010095929066312,
+                "pooled_ratio_of_medians": 1.001012153500914
+              },
+              "recomputed_matches_stored": true,
+              "series": 3,
+              "starts_with": "AB"
+            }
+          ],
+          "series_count": 3
+        },
+        "leaf_graph": {
+          "max_estimator_over_all_series": 1.0383240191161454,
+          "min_estimator_over_all_series": 0.9964788464342538,
+          "passes_gate_every_series_every_estimator": false,
+          "series": [
+            {
+              "all_estimators_ge_gate": false,
+              "graph_capture_order": "AB",
+              "min_estimator": 0.9964788464342538,
+              "pairs": 100,
+              "recomputed_estimators": {
+                "ab_ratio_of_medians": 0.9964788464342538,
+                "ba_ratio_of_medians": 1.0142566087624934,
+                "order_balanced_sqrt_ab_ba": 1.0053284316520485,
+                "pooled_ratio_of_medians": 1.0035389552872156
+              },
+              "recomputed_matches_stored": true,
+              "series": 1,
+              "starts_with": "AB"
+            },
+            {
+              "all_estimators_ge_gate": false,
+              "graph_capture_order": "BA",
+              "min_estimator": 1.0060667804923697,
+              "pairs": 100,
+              "recomputed_estimators": {
+                "ab_ratio_of_medians": 1.0060667804923697,
+                "ba_ratio_of_medians": 1.0217281940388765,
+                "order_balanced_sqrt_ab_ba": 1.0138672470866072,
+                "pooled_ratio_of_medians": 1.0116221202060298
+              },
+              "recomputed_matches_stored": true,
+              "series": 2,
+              "starts_with": "BA"
+            },
+            {
+              "all_estimators_ge_gate": false,
+              "graph_capture_order": "AB",
+              "min_estimator": 1.0096839508012958,
+              "pairs": 100,
+              "recomputed_estimators": {
+                "ab_ratio_of_medians": 1.0096839508012958,
+                "ba_ratio_of_medians": 1.0383240191161454,
+                "order_balanced_sqrt_ab_ba": 1.0239038518499037,
+                "pooled_ratio_of_medians": 1.020387396006468
+              },
+              "recomputed_matches_stored": true,
+              "series": 3,
+              "starts_with": "AB"
+            }
+          ],
+          "series_count": 3
+        }
+      },
+      "m": 16,
+      "pairs_per_series": 100,
+      "replays_per_observation": 1,
+      "series": 3
+    },
+    {
+      "candidate": "ablate_scale_chain",
+      "comparison": "stock_provider",
+      "file": "ablation_graph_m32.json",
+      "lanes": {
+        "containing_graph": {
+          "max_estimator_over_all_series": 0.9893993154532289,
+          "min_estimator_over_all_series": 0.9561515661107212,
+          "passes_gate_every_series_every_estimator": false,
+          "series": [
+            {
+              "all_estimators_ge_gate": false,
+              "graph_capture_order": "AB",
+              "min_estimator": 0.9561515661107212,
+              "pairs": 100,
+              "recomputed_estimators": {
+                "ab_ratio_of_medians": 0.9561515661107212,
+                "ba_ratio_of_medians": 0.9744809749562032,
+                "order_balanced_sqrt_ab_ba": 0.9652727647403485,
+                "pooled_ratio_of_medians": 0.9615384653653953
+              },
+              "recomputed_matches_stored": true,
+              "series": 1,
+              "starts_with": "AB"
+            },
+            {
+              "all_estimators_ge_gate": false,
+              "graph_capture_order": "BA",
+              "min_estimator": 0.9751958366071976,
+              "pairs": 100,
+              "recomputed_estimators": {
+                "ab_ratio_of_medians": 0.9751958366071976,
+                "ba_ratio_of_medians": 0.9893993154532289,
+                "order_balanced_sqrt_ab_ba": 0.9822719038901602,
+                "pooled_ratio_of_medians": 0.9837505282658127
+              },
+              "recomputed_matches_stored": true,
+              "series": 2,
+              "starts_with": "BA"
+            },
+            {
+              "all_estimators_ge_gate": false,
+              "graph_capture_order": "AB",
+              "min_estimator": 0.961356811805763,
+              "pairs": 100,
+              "recomputed_estimators": {
+                "ab_ratio_of_medians": 0.961356811805763,
+                "ba_ratio_of_medians": 0.9886413431551452,
+                "order_balanced_sqrt_ab_ba": 0.974903630968209,
+                "pooled_ratio_of_medians": 0.9732412568674741
+              },
+              "recomputed_matches_stored": true,
+              "series": 3,
+              "starts_with": "AB"
+            }
+          ],
+          "series_count": 3
+        },
+        "leaf_graph": {
+          "max_estimator_over_all_series": 1.0233995309053638,
+          "min_estimator_over_all_series": 0.9610611437951831,
+          "passes_gate_every_series_every_estimator": false,
+          "series": [
+            {
+              "all_estimators_ge_gate": false,
+              "graph_capture_order": "AB",
+              "min_estimator": 0.9833553109966845,
+              "pairs": 100,
+              "recomputed_estimators": {
+                "ab_ratio_of_medians": 0.9833553109966845,
+                "ba_ratio_of_medians": 0.9964538736270371,
+                "order_balanced_sqrt_ab_ba": 0.9898829268122398,
+                "pooled_ratio_of_medians": 0.9894319393807853
+              },
+              "recomputed_matches_stored": true,
+              "series": 1,
+              "starts_with": "AB"
+            },
+            {
+              "all_estimators_ge_gate": false,
+              "graph_capture_order": "BA",
+              "min_estimator": 0.9610611437951831,
+              "pairs": 100,
+              "recomputed_estimators": {
+                "ab_ratio_of_medians": 0.9610611437951831,
+                "ba_ratio_of_medians": 1.0233995309053638,
+                "order_balanced_sqrt_ab_ba": 0.9917406534630729,
+                "pooled_ratio_of_medians": 0.9796271682163478
+              },
+              "recomputed_matches_stored": true,
+              "series": 2,
+              "starts_with": "BA"
+            },
+            {
+              "all_estimators_ge_gate": false,
+              "graph_capture_order": "AB",
+              "min_estimator": 0.9702585945619593,
+              "pairs": 100,
+              "recomputed_estimators": {
+                "ab_ratio_of_medians": 0.9702585945619593,
+                "ba_ratio_of_medians": 1.001327443748219,
+                "order_balanced_sqrt_ab_ba": 0.9856706134746365,
+                "pooled_ratio_of_medians": 0.9864451229258271
+              },
+              "recomputed_matches_stored": true,
+              "series": 3,
+              "starts_with": "AB"
+            }
+          ],
+          "series_count": 3
+        }
+      },
+      "m": 32,
+      "pairs_per_series": 100,
+      "replays_per_observation": 1,
+      "series": 3
+    },
+    {
+      "candidate": "identity",
+      "comparison": "stock_provider",
+      "file": "identity_eager_k20_m16.json",
+      "lanes": {
+        "containing_eager": {
+          "max_estimator_over_all_series": 0.6961407365845652,
+          "min_estimator_over_all_series": 0.6200391216001735,
+          "passes_gate_every_series_every_estimator": false,
+          "series": [
+            {
+              "all_estimators_ge_gate": false,
+              "graph_capture_order": null,
+              "min_estimator": 0.6286352789745885,
+              "pairs": 100,
+              "recomputed_estimators": {
+                "ab_ratio_of_medians": 0.6286352789745885,
+                "ba_ratio_of_medians": 0.6961407365845652,
+                "order_balanced_sqrt_ab_ba": 0.6615274946277091,
+                "pooled_ratio_of_medians": 0.6538890635578412
+              },
+              "recomputed_matches_stored": true,
+              "series": 1,
+              "starts_with": "AB"
+            },
+            {
+              "all_estimators_ge_gate": false,
+              "graph_capture_order": null,
+              "min_estimator": 0.6257923713157784,
+              "pairs": 100,
+              "recomputed_estimators": {
+                "ab_ratio_of_medians": 0.6257923713157784,
+                "ba_ratio_of_medians": 0.6950232267571937,
+                "order_balanced_sqrt_ab_ba": 0.6594999872569584,
+                "pooled_ratio_of_medians": 0.6547211729226823
+              },
+              "recomputed_matches_stored": true,
+              "series": 2,
+              "starts_with": "BA"
+            },
+            {
+              "all_estimators_ge_gate": false,
+              "graph_capture_order": null,
+              "min_estimator": 0.6200391216001735,
+              "pairs": 100,
+              "recomputed_estimators": {
+                "ab_ratio_of_medians": 0.6200391216001735,
+                "ba_ratio_of_medians": 0.6868377515419107,
+                "order_balanced_sqrt_ab_ba": 0.6525843057780999,
+                "pooled_ratio_of_medians": 0.641144145008622
+              },
+              "recomputed_matches_stored": true,
+              "series": 3,
+              "starts_with": "AB"
+            }
+          ],
+          "series_count": 3
+        },
+        "leaf_eager": {
+          "max_estimator_over_all_series": 1.0289444985269338,
+          "min_estimator_over_all_series": 1.009283397153379,
+          "passes_gate_every_series_every_estimator": false,
+          "series": [
+            {
+              "all_estimators_ge_gate": false,
+              "graph_capture_order": null,
+              "min_estimator": 1.009283397153379,
+              "pairs": 100,
+              "recomputed_estimators": {
+                "ab_ratio_of_medians": 1.009283397153379,
+                "ba_ratio_of_medians": 1.0278020537291688,
+                "order_balanced_sqrt_ab_ba": 1.018500637402351,
+                "pooled_ratio_of_medians": 1.0193472439602487
+              },
+              "recomputed_matches_stored": true,
+              "series": 1,
+              "starts_with": "AB"
+            },
+            {
+              "all_estimators_ge_gate": false,
+              "graph_capture_order": null,
+              "min_estimator": 1.0101881048920334,
+              "pairs": 100,
+              "recomputed_estimators": {
+                "ab_ratio_of_medians": 1.0101881048920334,
+                "ba_ratio_of_medians": 1.028411280666856,
+                "order_balanced_sqrt_ab_ba": 1.0192589674201744,
+                "pooled_ratio_of_medians": 1.0200459659487806
+              },
+              "recomputed_matches_stored": true,
+              "series": 2,
+              "starts_with": "BA"
+            },
+            {
+              "all_estimators_ge_gate": false,
+              "graph_capture_order": null,
+              "min_estimator": 1.010387114165572,
+              "pairs": 100,
+              "recomputed_estimators": {
+                "ab_ratio_of_medians": 1.010387114165572,
+                "ba_ratio_of_medians": 1.0289444985269338,
+                "order_balanced_sqrt_ab_ba": 1.0196235886361056,
+                "pooled_ratio_of_medians": 1.0212598531834363
+              },
+              "recomputed_matches_stored": true,
+              "series": 3,
+              "starts_with": "AB"
+            }
+          ],
+          "series_count": 3
+        }
+      },
+      "m": 16,
+      "pairs_per_series": 100,
+      "replays_per_observation": 20,
+      "series": 3
+    },
+    {
+      "candidate": "installed_sgl_kernel_stock",
+      "comparison": "stock_stock",
+      "file": "null_stock_stock_m16_k1.json",
+      "lanes": {
+        "containing_graph": {
+          "max_estimator_over_all_series": 1.004547786167577,
+          "min_estimator_over_all_series": 0.9894206915480717,
+          "passes_gate_every_series_every_estimator": false,
+          "series": [
+            {
+              "all_estimators_ge_gate": false,
+              "graph_capture_order": "AB",
+              "min_estimator": 0.996972731677949,
+              "pairs": 100,
+              "recomputed_estimators": {
+                "ab_ratio_of_medians": 0.9984871291499744,
+                "ba_ratio_of_medians": 0.9984840712774744,
+                "order_balanced_sqrt_ab_ba": 0.9984856002125538,
+                "pooled_ratio_of_medians": 0.996972731677949
+              },
+              "recomputed_matches_stored": true,
+              "series": 1,
+              "starts_with": "AB"
+            },
+            {
+              "all_estimators_ge_gate": false,
+              "graph_capture_order": "BA",
+              "min_estimator": 1.0040445203282464,
+              "pairs": 100,
+              "recomputed_estimators": {
+                "ab_ratio_of_medians": 1.004547786167577,
+                "ba_ratio_of_medians": 1.0040465661306184,
+                "order_balanced_sqrt_ab_ba": 1.004297144880772,
+                "pooled_ratio_of_medians": 1.0040445203282464
+              },
+              "recomputed_matches_stored": true,
+              "series": 2,
+              "starts_with": "BA"
+            },
+            {
+              "all_estimators_ge_gate": false,
+              "graph_capture_order": "AB",
+              "min_estimator": 0.9894206915480717,
+              "pairs": 100,
+              "recomputed_estimators": {
+                "ab_ratio_of_medians": 0.9909411654421673,
+                "ba_ratio_of_medians": 0.9894206915480717,
+                "order_balanced_sqrt_ab_ba": 0.9901806366493142,
+                "pooled_ratio_of_medians": 0.9899346152494112
+              },
+              "recomputed_matches_stored": true,
+              "series": 3,
+              "starts_with": "AB"
+            }
+          ],
+          "series_count": 3
+        },
+        "leaf_graph": {
+          "max_estimator_over_all_series": 1.0122511228819275,
+          "min_estimator_over_all_series": 0.9939486340132349,
+          "passes_gate_every_series_every_estimator": false,
+          "series": [
+            {
+              "all_estimators_ge_gate": false,
+              "graph_capture_order": "AB",
+              "min_estimator": 0.9939486340132349,
+              "pairs": 100,
+              "recomputed_estimators": {
+                "ab_ratio_of_medians": 0.9939486340132349,
+                "ba_ratio_of_medians": 0.9994957097166581,
+                "order_balanced_sqrt_ab_ba": 0.9967183129525418,
+                "pooled_ratio_of_medians": 0.9974785485832907
+              },
+              "recomputed_matches_stored": true,
+              "series": 1,
+              "starts_with": "AB"
+            },
+            {
+              "all_estimators_ge_gate": false,
+              "graph_capture_order": "BA",
+              "min_estimator": 1.010188445741032,
+              "pairs": 100,
+              "recomputed_estimators": {
+                "ab_ratio_of_medians": 1.0122511228819275,
+                "ba_ratio_of_medians": 1.010188445741032,
+                "order_balanced_sqrt_ab_ba": 1.0112192583825275,
+                "pooled_ratio_of_medians": 1.0117346643009806
+              },
+              "recomputed_matches_stored": true,
+              "series": 2,
+              "starts_with": "BA"
+            },
+            {
+              "all_estimators_ge_gate": false,
+              "graph_capture_order": "AB",
+              "min_estimator": 1.0025392610506751,
+              "pairs": 100,
+              "recomputed_estimators": {
+                "ab_ratio_of_medians": 1.0025392610506751,
+                "ba_ratio_of_medians": 1.005078640349513,
+                "order_balanced_sqrt_ab_ba": 1.0038081477024472,
+                "pooled_ratio_of_medians": 1.0045707644897455
+              },
+              "recomputed_matches_stored": true,
+              "series": 3,
+              "starts_with": "AB"
+            }
+          ],
+          "series_count": 3
+        }
+      },
+      "m": 16,
+      "pairs_per_series": 100,
+      "replays_per_observation": 1,
+      "series": 3
+    },
+    {
+      "candidate": "installed_sgl_kernel_stock",
+      "comparison": "stock_stock",
+      "file": "null_stock_stock_m16_k20.json",
+      "lanes": {
+        "containing_graph": {
+          "max_estimator_over_all_series": 1.0002498311068313,
+          "min_estimator_over_all_series": 0.997258464535879,
+          "passes_gate_every_series_every_estimator": false,
+          "series": [
+            {
+              "all_estimators_ge_gate": false,
+              "graph_capture_order": "AB",
+              "min_estimator": 0.997258464535879,
+              "pairs": 100,
+              "recomputed_estimators": {
+                "ab_ratio_of_medians": 0.9980884342350008,
+                "ba_ratio_of_medians": 0.997258464535879,
+                "order_balanced_sqrt_ab_ba": 0.9976733630784259,
+                "pooled_ratio_of_medians": 0.997839331635454
+              },
+              "recomputed_matches_stored": true,
+              "series": 1,
+              "starts_with": "AB"
+            },
+            {
+              "all_estimators_ge_gate": false,
+              "graph_capture_order": "BA",
+              "min_estimator": 0.998669148127754,
+              "pairs": 100,
+              "recomputed_estimators": {
+                "ab_ratio_of_medians": 0.998669148127754,
+                "ba_ratio_of_medians": 1.0002498311068313,
+                "order_balanced_sqrt_ab_ba": 0.9994591771285053,
+                "pooled_ratio_of_medians": 0.9996116281106633
+              },
+              "recomputed_matches_stored": true,
+              "series": 2,
+              "starts_with": "BA"
+            },
+            {
+              "all_estimators_ge_gate": false,
+              "graph_capture_order": "AB",
+              "min_estimator": 0.9987520381396979,
+              "pairs": 100,
+              "recomputed_estimators": {
+                "ab_ratio_of_medians": 0.9993340312265703,
+                "ba_ratio_of_medians": 0.9987520381396979,
+                "order_balanced_sqrt_ab_ba": 0.9990429923030828,
+                "pooled_ratio_of_medians": 0.9990291510946774
+              },
+              "recomputed_matches_stored": true,
+              "series": 3,
+              "starts_with": "AB"
+            }
+          ],
+          "series_count": 3
+        },
+        "leaf_graph": {
+          "max_estimator_over_all_series": 1.002751186779603,
+          "min_estimator_over_all_series": 0.9998057956933476,
+          "passes_gate_every_series_every_estimator": false,
+          "series": [
+            {
+              "all_estimators_ge_gate": false,
+              "graph_capture_order": "AB",
+              "min_estimator": 0.9998057956933476,
+              "pairs": 100,
+              "recomputed_estimators": {
+                "ab_ratio_of_medians": 0.9998890611789344,
+                "ba_ratio_of_medians": 0.9998057956933476,
+                "order_balanced_sqrt_ab_ba": 0.9998474275693661,
+                "pooled_ratio_of_medians": 0.9998613044761175
+              },
+              "recomputed_matches_stored": true,
+              "series": 1,
+              "starts_with": "AB"
+            },
+            {
+              "all_estimators_ge_gate": false,
+              "graph_capture_order": "BA",
+              "min_estimator": 1.0020004042726214,
+              "pairs": 100,
+              "recomputed_estimators": {
+                "ab_ratio_of_medians": 1.002751186779603,
+                "ba_ratio_of_medians": 1.0020004042726214,
+                "order_balanced_sqrt_ab_ba": 1.0023757252338132,
+                "pooled_ratio_of_medians": 1.0024455338674556
+              },
+              "recomputed_matches_stored": true,
+              "series": 2,
+              "starts_with": "BA"
+            },
+            {
+              "all_estimators_ge_gate": false,
+              "graph_capture_order": "AB",
+              "min_estimator": 1.0008881530954867,
+              "pairs": 100,
+              "recomputed_estimators": {
+                "ab_ratio_of_medians": 1.0008881530954867,
+                "ba_ratio_of_medians": 1.001526586212104,
+                "order_balanced_sqrt_ab_ba": 1.0012073187656294,
+                "pooled_ratio_of_medians": 1.001221255743733
+              },
+              "recomputed_matches_stored": true,
+              "series": 3,
+              "starts_with": "AB"
+            }
+          ],
+          "series_count": 3
+        }
+      },
+      "m": 16,
+      "pairs_per_series": 100,
+      "replays_per_observation": 20,
+      "series": 3
+    },
+    {
+      "candidate": "p1_consumer_scale",
+      "comparison": "stock_provider",
+      "file": "p1_eager_k20_m16.json",
+      "lanes": {
+        "containing_eager": {
+          "max_estimator_over_all_series": 0.7582680280680743,
+          "min_estimator_over_all_series": 0.6683349114254268,
+          "passes_gate_every_series_every_estimator": false,
+          "series": [
+            {
+              "all_estimators_ge_gate": false,
+              "graph_capture_order": null,
+              "min_estimator": 0.6849170028981805,
+              "pairs": 100,
+              "recomputed_estimators": {
+                "ab_ratio_of_medians": 0.6849170028981805,
+                "ba_ratio_of_medians": 0.7582680280680743,
+                "order_balanced_sqrt_ab_ba": 0.7206598817596959,
+                "pooled_ratio_of_medians": 0.7241290159310114
+              },
+              "recomputed_matches_stored": true,
+              "series": 1,
+              "starts_with": "AB"
+            },
+            {
+              "all_estimators_ge_gate": false,
+              "graph_capture_order": null,
+              "min_estimator": 0.6683349114254268,
+              "pairs": 100,
+              "recomputed_estimators": {
+                "ab_ratio_of_medians": 0.6683349114254268,
+                "ba_ratio_of_medians": 0.7112574148305028,
+                "order_balanced_sqrt_ab_ba": 0.6894622261889495,
+                "pooled_ratio_of_medians": 0.6981826206809982
+              },
+              "recomputed_matches_stored": true,
+              "series": 2,
+              "starts_with": "BA"
+            },
+            {
+              "all_estimators_ge_gate": false,
+              "graph_capture_order": null,
+              "min_estimator": 0.67637349283436,
+              "pairs": 100,
+              "recomputed_estimators": {
+                "ab_ratio_of_medians": 0.67637349283436,
+                "ba_ratio_of_medians": 0.7437413641527882,
+                "order_balanced_sqrt_ab_ba": 0.7092580237384791,
+                "pooled_ratio_of_medians": 0.7038480137690699
+              },
+              "recomputed_matches_stored": true,
+              "series": 3,
+              "starts_with": "AB"
+            }
+          ],
+          "series_count": 3
+        },
+        "leaf_eager": {
+          "max_estimator_over_all_series": 1.216348149009808,
+          "min_estimator_over_all_series": 1.1374767866409718,
+          "passes_gate_every_series_every_estimator": true,
+          "series": [
+            {
+              "all_estimators_ge_gate": true,
+              "graph_capture_order": null,
+              "min_estimator": 1.1374767866409718,
+              "pairs": 100,
+              "recomputed_estimators": {
+                "ab_ratio_of_medians": 1.1374767866409718,
+                "ba_ratio_of_medians": 1.2147192782389469,
+                "order_balanced_sqrt_ab_ba": 1.1754637303133082,
+                "pooled_ratio_of_medians": 1.175756485857604
+              },
+              "recomputed_matches_stored": true,
+              "series": 1,
+              "starts_with": "AB"
+            },
+            {
+              "all_estimators_ge_gate": true,
+              "graph_capture_order": null,
+              "min_estimator": 1.189949071170817,
+              "pairs": 100,
+              "recomputed_estimators": {
+                "ab_ratio_of_medians": 1.189949071170817,
+                "ba_ratio_of_medians": 1.216348149009808,
+                "order_balanced_sqrt_ab_ba": 1.2030762029624573,
+                "pooled_ratio_of_medians": 1.20517831360258
+              },
+              "recomputed_matches_stored": true,
+              "series": 2,
+              "starts_with": "BA"
+            },
+            {
+              "all_estimators_ge_gate": true,
+              "graph_capture_order": null,
+              "min_estimator": 1.1583403310215983,
+              "pairs": 100,
+              "recomputed_estimators": {
+                "ab_ratio_of_medians": 1.1583403310215983,
+                "ba_ratio_of_medians": 1.2086329154262536,
+                "order_balanced_sqrt_ab_ba": 1.183219443441683,
+                "pooled_ratio_of_medians": 1.1839699023436165
+              },
+              "recomputed_matches_stored": true,
+              "series": 3,
+              "starts_with": "AB"
+            }
+          ],
+          "series_count": 3
+        }
+      },
+      "m": 16,
+      "pairs_per_series": 100,
+      "replays_per_observation": 20,
+      "series": 3
+    },
+    {
+      "candidate": "p1_consumer_scale",
+      "comparison": "stock_provider",
+      "file": "p1_eager_k20_m32.json",
+      "lanes": {
+        "containing_eager": {
+          "max_estimator_over_all_series": 0.7403287034237443,
+          "min_estimator_over_all_series": 0.663703177541671,
+          "passes_gate_every_series_every_estimator": false,
+          "series": [
+            {
+              "all_estimators_ge_gate": false,
+              "graph_capture_order": null,
+              "min_estimator": 0.6680692690216413,
+              "pairs": 100,
+              "recomputed_estimators": {
+                "ab_ratio_of_medians": 0.6680692690216413,
+                "ba_ratio_of_medians": 0.7327261137691901,
+                "order_balanced_sqrt_ab_ba": 0.6996511982544237,
+                "pooled_ratio_of_medians": 0.7074813109942367
+              },
+              "recomputed_matches_stored": true,
+              "series": 1,
+              "starts_with": "AB"
+            },
+            {
+              "all_estimators_ge_gate": false,
+              "graph_capture_order": null,
+              "min_estimator": 0.663703177541671,
+              "pairs": 100,
+              "recomputed_estimators": {
+                "ab_ratio_of_medians": 0.663703177541671,
+                "ba_ratio_of_medians": 0.7403287034237443,
+                "order_balanced_sqrt_ab_ba": 0.7009696946998811,
+                "pooled_ratio_of_medians": 0.7015742414637256
+              },
+              "recomputed_matches_stored": true,
+              "series": 2,
+              "starts_with": "BA"
+            },
+            {
+              "all_estimators_ge_gate": false,
+              "graph_capture_order": null,
+              "min_estimator": 0.6655554584292053,
+              "pairs": 100,
+              "recomputed_estimators": {
+                "ab_ratio_of_medians": 0.6655554584292053,
+                "ba_ratio_of_medians": 0.7354750850393124,
+                "order_balanced_sqrt_ab_ba": 0.6996423782094666,
+                "pooled_ratio_of_medians": 0.7035476919564132
+              },
+              "recomputed_matches_stored": true,
+              "series": 3,
+              "starts_with": "AB"
+            }
+          ],
+          "series_count": 3
+        },
+        "leaf_eager": {
+          "max_estimator_over_all_series": 1.078347308051482,
+          "min_estimator_over_all_series": 1.0548450654931585,
+          "passes_gate_every_series_every_estimator": true,
+          "series": [
+            {
+              "all_estimators_ge_gate": true,
+              "graph_capture_order": null,
+              "min_estimator": 1.05535155046792,
+              "pairs": 100,
+              "recomputed_estimators": {
+                "ab_ratio_of_medians": 1.05535155046792,
+                "ba_ratio_of_medians": 1.0745962539595233,
+                "order_balanced_sqrt_ab_ba": 1.0649304309405387,
+                "pooled_ratio_of_medians": 1.066292193166695
+              },
+              "recomputed_matches_stored": true,
+              "series": 1,
+              "starts_with": "AB"
+            },
+            {
+              "all_estimators_ge_gate": true,
+              "graph_capture_order": null,
+              "min_estimator": 1.0548450654931585,
+              "pairs": 100,
+              "recomputed_estimators": {
+                "ab_ratio_of_medians": 1.0548450654931585,
+                "ba_ratio_of_medians": 1.078347308051482,
+                "order_balanced_sqrt_ab_ba": 1.0665314513815036,
+                "pooled_ratio_of_medians": 1.066871448830191
+              },
+              "recomputed_matches_stored": true,
+              "series": 2,
+              "starts_with": "BA"
+            },
+            {
+              "all_estimators_ge_gate": true,
+              "graph_capture_order": null,
+              "min_estimator": 1.0558686133278634,
+              "pairs": 100,
+              "recomputed_estimators": {
+                "ab_ratio_of_medians": 1.0558686133278634,
+                "ba_ratio_of_medians": 1.074674186015423,
+                "order_balanced_sqrt_ab_ba": 1.065229901273596,
+                "pooled_ratio_of_medians": 1.0660832518909726
+              },
+              "recomputed_matches_stored": true,
+              "series": 3,
+              "starts_with": "AB"
+            }
+          ],
+          "series_count": 3
+        }
+      },
+      "m": 32,
+      "pairs_per_series": 100,
+      "replays_per_observation": 20,
+      "series": 3
+    },
+    {
+      "candidate": "p1_consumer_scale",
+      "comparison": "stock_provider",
+      "file": "p1_graph_gate_k20_m16.json",
+      "lanes": {
+        "containing_graph": {
+          "max_estimator_over_all_series": 1.0751602177399207,
+          "min_estimator_over_all_series": 1.0613303812952244,
+          "passes_gate_every_series_every_estimator": true,
+          "series": [
+            {
+              "all_estimators_ge_gate": true,
+              "graph_capture_order": "AB",
+              "min_estimator": 1.0613303812952244,
+              "pairs": 100,
+              "recomputed_estimators": {
+                "ab_ratio_of_medians": 1.0613303812952244,
+                "ba_ratio_of_medians": 1.0661977741836437,
+                "order_balanced_sqrt_ab_ba": 1.0637612938109968,
+                "pooled_ratio_of_medians": 1.0644580165653157
+              },
+              "recomputed_matches_stored": true,
+              "series": 1,
+              "starts_with": "AB"
+            },
+            {
+              "all_estimators_ge_gate": true,
+              "graph_capture_order": "BA",
+              "min_estimator": 1.0737826838497597,
+              "pairs": 100,
+              "recomputed_estimators": {
+                "ab_ratio_of_medians": 1.0737826838497597,
+                "ba_ratio_of_medians": 1.0751602177399207,
+                "order_balanced_sqrt_ab_ba": 1.0744712300351573,
+                "pooled_ratio_of_medians": 1.0745023657747552
+              },
+              "recomputed_matches_stored": true,
+              "series": 2,
+              "starts_with": "BA"
+            },
+            {
+              "all_estimators_ge_gate": true,
+              "graph_capture_order": "AB",
+              "min_estimator": 1.0630423094557198,
+              "pairs": 100,
+              "recomputed_estimators": {
+                "ab_ratio_of_medians": 1.0630423094557198,
+                "ba_ratio_of_medians": 1.0675840100108291,
+                "order_balanced_sqrt_ab_ba": 1.065310739427661,
+                "pooled_ratio_of_medians": 1.0659412642722201
+              },
+              "recomputed_matches_stored": true,
+              "series": 3,
+              "starts_with": "AB"
+            }
+          ],
+          "series_count": 3
+        },
+        "leaf_graph": {
+          "max_estimator_over_all_series": 1.0768726023706403,
+          "min_estimator_over_all_series": 1.0739295118775196,
+          "passes_gate_every_series_every_estimator": true,
+          "series": [
+            {
+              "all_estimators_ge_gate": true,
+              "graph_capture_order": "AB",
+              "min_estimator": 1.0739295118775196,
+              "pairs": 100,
+              "recomputed_estimators": {
+                "ab_ratio_of_medians": 1.0739295118775196,
+                "ba_ratio_of_medians": 1.0756871009410838,
+                "order_balanced_sqrt_ab_ba": 1.0748079471452572,
+                "pooled_ratio_of_medians": 1.0750134644035145
+              },
+              "recomputed_matches_stored": true,
+              "series": 1,
+              "starts_with": "AB"
+            },
+            {
+              "all_estimators_ge_gate": true,
+              "graph_capture_order": "BA",
+              "min_estimator": 1.0744129414873185,
+              "pairs": 100,
+              "recomputed_estimators": {
+                "ab_ratio_of_medians": 1.0744129414873185,
+                "ba_ratio_of_medians": 1.0765744547350182,
+                "order_balanced_sqrt_ab_ba": 1.0754931550883795,
+                "pooled_ratio_of_medians": 1.0757146603389185
+              },
+              "recomputed_matches_stored": true,
+              "series": 2,
+              "starts_with": "BA"
+            },
+            {
+              "all_estimators_ge_gate": true,
+              "graph_capture_order": "AB",
+              "min_estimator": 1.0748994787590194,
+              "pairs": 100,
+              "recomputed_estimators": {
+                "ab_ratio_of_medians": 1.0748994787590194,
+                "ba_ratio_of_medians": 1.0768726023706403,
+                "order_balanced_sqrt_ab_ba": 1.0758855882379268,
+                "pooled_ratio_of_medians": 1.075831552656923
+              },
+              "recomputed_matches_stored": true,
+              "series": 3,
+              "starts_with": "AB"
+            }
+          ],
+          "series_count": 3
+        }
+      },
+      "m": 16,
+      "pairs_per_series": 100,
+      "replays_per_observation": 20,
+      "series": 3
+    },
+    {
+      "candidate": "p1_consumer_scale",
+      "comparison": "stock_provider",
+      "file": "p1_graph_gate_k20_m32.json",
+      "lanes": {
+        "containing_graph": {
+          "max_estimator_over_all_series": 1.0655826467184577,
+          "min_estimator_over_all_series": 1.061902512044441,
+          "passes_gate_every_series_every_estimator": true,
+          "series": [
+            {
+              "all_estimators_ge_gate": true,
+              "graph_capture_order": "AB",
+              "min_estimator": 1.063049143414245,
+              "pairs": 100,
+              "recomputed_estimators": {
+                "ab_ratio_of_medians": 1.063049143414245,
+                "ba_ratio_of_medians": 1.0644460398413775,
+                "order_balanced_sqrt_ab_ba": 1.0637473623300138,
+                "pooled_ratio_of_medians": 1.0636097955615904
+              },
+              "recomputed_matches_stored": true,
+              "series": 1,
+              "starts_with": "AB"
+            },
+            {
+              "all_estimators_ge_gate": true,
+              "graph_capture_order": "BA",
+              "min_estimator": 1.061902512044441,
+              "pairs": 100,
+              "recomputed_estimators": {
+                "ab_ratio_of_medians": 1.061902512044441,
+                "ba_ratio_of_medians": 1.0653963683386782,
+                "order_balanced_sqrt_ab_ba": 1.063648005621158,
+                "pooled_ratio_of_medians": 1.0635183887198831
+              },
+              "recomputed_matches_stored": true,
+              "series": 2,
+              "starts_with": "BA"
+            },
+            {
+              "all_estimators_ge_gate": true,
+              "graph_capture_order": "AB",
+              "min_estimator": 1.0630991564360597,
+              "pairs": 100,
+              "recomputed_estimators": {
+                "ab_ratio_of_medians": 1.0630991564360597,
+                "ba_ratio_of_medians": 1.0655826467184577,
+                "order_balanced_sqrt_ab_ba": 1.064340177217461,
+                "pooled_ratio_of_medians": 1.0642301316369038
+              },
+              "recomputed_matches_stored": true,
+              "series": 3,
+              "starts_with": "AB"
+            }
+          ],
+          "series_count": 3
+        },
+        "leaf_graph": {
+          "max_estimator_over_all_series": 1.0686841068206778,
+          "min_estimator_over_all_series": 1.0628198247675305,
+          "passes_gate_every_series_every_estimator": true,
+          "series": [
+            {
+              "all_estimators_ge_gate": true,
+              "graph_capture_order": "AB",
+              "min_estimator": 1.0628198247675305,
+              "pairs": 100,
+              "recomputed_estimators": {
+                "ab_ratio_of_medians": 1.0628198247675305,
+                "ba_ratio_of_medians": 1.065158838647235,
+                "order_balanced_sqrt_ab_ba": 1.0639886889627355,
+                "pooled_ratio_of_medians": 1.0637862995701217
+              },
+              "recomputed_matches_stored": true,
+              "series": 1,
+              "starts_with": "AB"
+            },
+            {
+              "all_estimators_ge_gate": true,
+              "graph_capture_order": "BA",
+              "min_estimator": 1.0638050815133522,
+              "pairs": 100,
+              "recomputed_estimators": {
+                "ab_ratio_of_medians": 1.0638050815133522,
+                "ba_ratio_of_medians": 1.0686841068206778,
+                "order_balanced_sqrt_ab_ba": 1.0662418034237802,
+                "pooled_ratio_of_medians": 1.065480542997585
+              },
+              "recomputed_matches_stored": true,
+              "series": 2,
+              "starts_with": "BA"
+            },
+            {
+              "all_estimators_ge_gate": true,
+              "graph_capture_order": "AB",
+              "min_estimator": 1.0628617224693409,
+              "pairs": 100,
+              "recomputed_estimators": {
+                "ab_ratio_of_medians": 1.0628617224693409,
+                "ba_ratio_of_medians": 1.0678975324738968,
+                "order_balanced_sqrt_ab_ba": 1.065376652074732,
+                "pooled_ratio_of_medians": 1.0651752401579084
+              },
+              "recomputed_matches_stored": true,
+              "series": 3,
+              "starts_with": "AB"
+            }
+          ],
+          "series_count": 3
+        }
+      },
+      "m": 32,
+      "pairs_per_series": 100,
+      "replays_per_observation": 20,
+      "series": 3
+    },
+    {
+      "candidate": "p1_consumer_scale",
+      "comparison": "stock_provider",
+      "file": "p1_graph_gate_m16.json",
+      "lanes": {
+        "containing_graph": {
+          "max_estimator_over_all_series": 1.0514435958585477,
+          "min_estimator_over_all_series": 1.0116988512188554,
+          "passes_gate_every_series_every_estimator": false,
+          "series": [
+            {
+              "all_estimators_ge_gate": false,
+              "graph_capture_order": "AB",
+              "min_estimator": 1.0116988512188554,
+              "pairs": 100,
+              "recomputed_estimators": {
+                "ab_ratio_of_medians": 1.0116988512188554,
+                "ba_ratio_of_medians": 1.0230179591625765,
+                "order_balanced_sqrt_ab_ba": 1.017342663049691,
+                "pooled_ratio_of_medians": 1.0178389566719033
+              },
+              "recomputed_matches_stored": true,
+              "series": 1,
+              "starts_with": "AB"
+            },
+            {
+              "all_estimators_ge_gate": false,
+              "graph_capture_order": "BA",
+              "min_estimator": 1.0235053658718818,
+              "pairs": 100,
+              "recomputed_estimators": {
+                "ab_ratio_of_medians": 1.0235053658718818,
+                "ba_ratio_of_medians": 1.0514435958585477,
+                "order_balanced_sqrt_ab_ba": 1.037380432759771,
+                "pooled_ratio_of_medians": 1.0319423011836517
+              },
+              "recomputed_matches_stored": true,
+              "series": 2,
+              "starts_with": "BA"
+            },
+            {
+              "all_estimators_ge_gate": false,
+              "graph_capture_order": "AB",
+              "min_estimator": 1.0126647374197433,
+              "pairs": 100,
+              "recomputed_estimators": {
+                "ab_ratio_of_medians": 1.0126647374197433,
+                "ba_ratio_of_medians": 1.05104169281464,
+                "order_balanced_sqrt_ab_ba": 1.0316747839660227,
+                "pooled_ratio_of_medians": 1.0281473663088574
+              },
+              "recomputed_matches_stored": true,
+              "series": 3,
+              "starts_with": "AB"
+            }
+          ],
+          "series_count": 3
+        },
+        "leaf_graph": {
+          "max_estimator_over_all_series": 1.0764398244018096,
+          "min_estimator_over_all_series": 1.0162353590464506,
+          "passes_gate_every_series_every_estimator": false,
+          "series": [
+            {
+              "all_estimators_ge_gate": false,
+              "graph_capture_order": "AB",
+              "min_estimator": 1.0162353590464506,
+              "pairs": 100,
+              "recomputed_estimators": {
+                "ab_ratio_of_medians": 1.0162353590464506,
+                "ba_ratio_of_medians": 1.0636842042057055,
+                "order_balanced_sqrt_ab_ba": 1.0396891358348528,
+                "pooled_ratio_of_medians": 1.0313141072358396
+              },
+              "recomputed_matches_stored": true,
+              "series": 1,
+              "starts_with": "AB"
+            },
+            {
+              "all_estimators_ge_gate": false,
+              "graph_capture_order": "BA",
+              "min_estimator": 1.0246406648151372,
+              "pairs": 100,
+              "recomputed_estimators": {
+                "ab_ratio_of_medians": 1.0246406648151372,
+                "ba_ratio_of_medians": 1.0683850286347392,
+                "order_balanced_sqrt_ab_ba": 1.0462842567958472,
+                "pooled_ratio_of_medians": 1.0399169969023507
+              },
+              "recomputed_matches_stored": true,
+              "series": 2,
+              "starts_with": "BA"
+            },
+            {
+              "all_estimators_ge_gate": false,
+              "graph_capture_order": "AB",
+              "min_estimator": 1.024987203813246,
+              "pairs": 100,
+              "recomputed_estimators": {
+                "ab_ratio_of_medians": 1.024987203813246,
+                "ba_ratio_of_medians": 1.0764398244018096,
+                "order_balanced_sqrt_ab_ba": 1.0503985175574233,
+                "pooled_ratio_of_medians": 1.0467625264469465
+              },
+              "recomputed_matches_stored": true,
+              "series": 3,
+              "starts_with": "AB"
+            }
+          ],
+          "series_count": 3
+        }
+      },
+      "m": 16,
+      "pairs_per_series": 100,
+      "replays_per_observation": 1,
+      "series": 3
+    },
+    {
+      "candidate": "p1_consumer_scale",
+      "comparison": "stock_provider",
+      "file": "p1_graph_gate_m32.json",
+      "lanes": {
+        "containing_graph": {
+          "max_estimator_over_all_series": 1.0622368193830152,
+          "min_estimator_over_all_series": 1.005403012981698,
+          "passes_gate_every_series_every_estimator": false,
+          "series": [
+            {
+              "all_estimators_ge_gate": false,
+              "graph_capture_order": "AB",
+              "min_estimator": 1.005403012981698,
+              "pairs": 100,
+              "recomputed_estimators": {
+                "ab_ratio_of_medians": 1.005403012981698,
+                "ba_ratio_of_medians": 1.032579116587887,
+                "order_balanced_sqrt_ab_ba": 1.0189004637153924,
+                "pooled_ratio_of_medians": 1.0194481503232935
+              },
+              "recomputed_matches_stored": true,
+              "series": 1,
+              "starts_with": "AB"
+            },
+            {
+              "all_estimators_ge_gate": false,
+              "graph_capture_order": "BA",
+              "min_estimator": 1.0108597055292956,
+              "pairs": 100,
+              "recomputed_estimators": {
+                "ab_ratio_of_medians": 1.0108597055292956,
+                "ba_ratio_of_medians": 1.0622368193830152,
+                "order_balanced_sqrt_ab_ba": 1.0362298965209844,
+                "pooled_ratio_of_medians": 1.0353697226481218
+              },
+              "recomputed_matches_stored": true,
+              "series": 2,
+              "starts_with": "BA"
+            },
+            {
+              "all_estimators_ge_gate": false,
+              "graph_capture_order": "AB",
+              "min_estimator": 1.0135440154486015,
+              "pairs": 100,
+              "recomputed_estimators": {
+                "ab_ratio_of_medians": 1.0135440154486015,
+                "ba_ratio_of_medians": 1.0422599908621728,
+                "order_balanced_sqrt_ab_ba": 1.027801720313733,
+                "pooled_ratio_of_medians": 1.0194833987112344
+              },
+              "recomputed_matches_stored": true,
+              "series": 3,
+              "starts_with": "AB"
+            }
+          ],
+          "series_count": 3
+        },
+        "leaf_graph": {
+          "max_estimator_over_all_series": 1.0784222768903053,
+          "min_estimator_over_all_series": 1.0063148354445535,
+          "passes_gate_every_series_every_estimator": false,
+          "series": [
+            {
+              "all_estimators_ge_gate": false,
+              "graph_capture_order": "AB",
+              "min_estimator": 1.0063148354445535,
+              "pairs": 100,
+              "recomputed_estimators": {
+                "ab_ratio_of_medians": 1.0063148354445535,
+                "ba_ratio_of_medians": 1.0365572136344596,
+                "order_balanced_sqrt_ab_ba": 1.0213240924737974,
+                "pooled_ratio_of_medians": 1.0168335074443309
+              },
+              "recomputed_matches_stored": true,
+              "series": 1,
+              "starts_with": "AB"
+            },
+            {
+              "all_estimators_ge_gate": false,
+              "graph_capture_order": "BA",
+              "min_estimator": 1.0194217976165463,
+              "pairs": 100,
+              "recomputed_estimators": {
+                "ab_ratio_of_medians": 1.0194217976165463,
+                "ba_ratio_of_medians": 1.0784222768903053,
+                "order_balanced_sqrt_ab_ba": 1.0485071178095282,
+                "pooled_ratio_of_medians": 1.0442316657541362
+              },
+              "recomputed_matches_stored": true,
+              "series": 2,
+              "starts_with": "BA"
+            },
+            {
+              "all_estimators_ge_gate": false,
+              "graph_capture_order": "AB",
+              "min_estimator": 1.0182149692718678,
+              "pairs": 100,
+              "recomputed_estimators": {
+                "ab_ratio_of_medians": 1.0182149692718678,
+                "ba_ratio_of_medians": 1.0773171230288154,
+                "order_balanced_sqrt_ab_ba": 1.047349235604267,
+                "pooled_ratio_of_medians": 1.041360287331841
+              },
+              "recomputed_matches_stored": true,
+              "series": 3,
+              "starts_with": "AB"
+            }
+          ],
+          "series_count": 3
+        }
+      },
+      "m": 32,
+      "pairs_per_series": 100,
+      "replays_per_observation": 1,
+      "series": 3
+    }
+  ],
+  "gate": 1.03,
+  "gate_rule": "every one of pooled, order-balanced sqrt(AB*BA), AB-median and BA-median must be finite and >= 1.03 in every series of every required lane",
+  "non_timing_files_skipped": [
+    "p1_chain_m16.stdout.json",
+    "p1_chain_m32.stdout.json"
+  ],
+  "required_lanes": [
+    "containing_graph",
+    "leaf_graph",
+    "containing_eager",
+    "leaf_eager"
+  ],
+  "schema_version": 1
+}

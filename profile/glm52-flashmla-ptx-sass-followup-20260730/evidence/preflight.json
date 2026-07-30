@@ -1,0 +1,131 @@
+{
+  "captured_utc": "2026-07-30T05:37:59.936787+00:00",
+  "cutlass": {
+    "head": "147f5673d0c1c3dcf66f78d677fd647e4a020219",
+    "path": "/home/qinhaiyan/glm52-hotspot-goal-runs/worktrees/flashmla-sparse-decode/flashmla/csrc/cutlass",
+    "submodule_status": "147f5673d0c1c3dcf66f78d677fd647e4a020219 csrc/cutlass (v4.3.0-56-g147f5673)"
+  },
+  "gpu": {
+    "clock_snapshot": "2026/07/30 05:38:00.130, GPU-30b619de-87f2-1862-0d07-a595da8fe417, P0, 817, 1965, 3996, 34, 147.94, 1000.00",
+    "l2_cache_size": 132644864,
+    "leased_physical_index": 0,
+    "leased_physical_uuid": "GPU-30b619de-87f2-1862-0d07-a595da8fe417",
+    "multi_processor_count": 148,
+    "physical_inventory": [
+      {
+        "compute_capability": "10.0",
+        "driver_version": "610.43.02",
+        "index": 0,
+        "memory_mib": 183359,
+        "name": "NVIDIA B200",
+        "uuid": "GPU-30b619de-87f2-1862-0d07-a595da8fe417"
+      },
+      {
+        "compute_capability": "10.0",
+        "driver_version": "610.43.02",
+        "index": 1,
+        "memory_mib": 183359,
+        "name": "NVIDIA B200",
+        "uuid": "GPU-5b9be10b-5bfc-b658-9b31-f7ae8516dc54"
+      },
+      {
+        "compute_capability": "10.0",
+        "driver_version": "610.43.02",
+        "index": 2,
+        "memory_mib": 183359,
+        "name": "NVIDIA B200",
+        "uuid": "GPU-df8b1d78-b06c-39a2-54f0-66b9fabf3a99"
+      },
+      {
+        "compute_capability": "10.0",
+        "driver_version": "610.43.02",
+        "index": 3,
+        "memory_mib": 183359,
+        "name": "NVIDIA B200",
+        "uuid": "GPU-705cc39e-af1d-c4c0-d97d-4155237646af"
+      }
+    ],
+    "shared_memory_per_block_optin": 232448,
+    "visible_compute_capability": [
+      10,
+      0
+    ],
+    "visible_device_count": 1,
+    "visible_device_name": "NVIDIA B200"
+  },
+  "loaded_extensions": {
+    "installed_flashmla_control": {
+      "path": "/mnt/OS-oKqEXySb/home/qinhaiyan/miniconda3/envs/sglang/lib/python3.12/site-packages/sgl_kernel/flashmla_ops.abi3.so",
+      "sha256": "d8d97150bd86381c73406603cb7d6b682767535e0526053f04e3acefadb13316",
+      "size_bytes": 14628528
+    },
+    "prior_campaign_rejected_candidate": {
+      "path": "/home/qinhaiyan/glm52-hotspot-goal-runs/cache/flashmla_sparse_decode/torch_extensions/infini_kernel_glm52_flashmla_sparse_decode_b3_b5_native_exact_24c522c90bc8583e/infini_kernel_glm52_flashmla_sparse_decode_b3_b5_native_exact_24c522c90bc8583e.so",
+      "role": "read-only prior evidence; rejected no-replacement",
+      "sha256": "8929f9c76419e06b9349cc6ee858dfd32b3072fb42e4c5cdbc6e8c57b2b36862",
+      "size_bytes": 1153928
+    }
+  },
+  "repositories": {
+    "flashmla": {
+      "branch": "goal/glm52-hotspot-flashmla-main",
+      "head": "65293ac6553d5119504be1f0ffcb229a0dc1fe42",
+      "head_is_at_or_after_required_base": true,
+      "path": "/home/qinhaiyan/glm52-hotspot-goal-runs/worktrees/flashmla-sparse-decode/flashmla",
+      "required_base": "65293ac",
+      "status": []
+    },
+    "kernel_harness": {
+      "branch": "goal/glm52-hotspot-flashmla-sparse-decode",
+      "head": "c93b3429860ce4efc85e026aa7f64ddf30d2aded",
+      "head_is_at_or_after_required_base": true,
+      "path": "/home/qinhaiyan/glm52-hotspot-goal-runs/worktrees/flashmla-sparse-decode/kernel-harness",
+      "required_base": "c93b342",
+      "status": [
+        "?? profile/glm52-flashmla-ptx-sass-followup-20260730/"
+      ]
+    },
+    "sglang": {
+      "branch": "goal/glm52-hotspot-flashmla-sparse-decode",
+      "head": "c52f23b567e5061b71c28a8971459224c057ada1",
+      "head_is_at_or_after_required_base": true,
+      "path": "/home/qinhaiyan/glm52-hotspot-goal-runs/worktrees/flashmla-sparse-decode/sglang",
+      "required_base": "c52f23b56",
+      "status": []
+    }
+  },
+  "root_filesystem": {
+    "free_bytes": 14313107456,
+    "free_gib": 13.330120086669922,
+    "stop_expansion_below_gib": 8,
+    "threshold_satisfied": true,
+    "total_bytes": 518934663168,
+    "used_bytes": 450918432768
+  },
+  "schema_version": 1,
+  "stack": {
+    "compiler": "g++ (Ubuntu 13.3.0-6ubuntu2~24.04.1) 13.3.0",
+    "ncu": "NVIDIA (R) Nsight Compute Command Line Profiler\nCopyright (c) 2018-2026 NVIDIA Corporation\nVersion 2026.1.1.0 (build 37634170) (public-release)",
+    "nsys": "NVIDIA Nsight Systems version 2025.6.3.541-256337736014v0",
+    "nvcc": "nvcc: NVIDIA (R) Cuda compiler driver\nCopyright (c) 2005-2026 NVIDIA Corporation\nBuilt on Thu_Mar_19_11:12:51_PM_PDT_2026\nCuda compilation tools, release 13.2, V13.2.78\nBuild cuda_13.2.r13.2/compiler.37668154_0",
+    "sgl_kernel": "0.4.4",
+    "sglang": "0.5.15",
+    "torch": "2.11.0+cu130",
+    "torch_cuda": "13.0",
+    "triton": "3.6.0"
+  },
+  "stage": "P0_gpu_preflight",
+  "task": "flashmla_ptx_sass_followup",
+  "task_local_cache_environment": {
+    "CMAKE_BUILD_PARALLEL_LEVEL": "4",
+    "CUDA_CACHE_PATH": "/home/qinhaiyan/glm52-hotspot-goal-runs/cache/flashmla_ptx_sass_followup/cuda",
+    "DG_JIT_CACHE_DIR": "/home/qinhaiyan/glm52-hotspot-goal-runs/cache/flashmla_ptx_sass_followup/deepgemm",
+    "GLM52_TASK_BUILD_DIR": "/home/qinhaiyan/glm52-hotspot-goal-runs/cache/flashmla_ptx_sass_followup/build",
+    "MAX_JOBS": "4",
+    "NVCC_THREADS": null,
+    "SGLANG_DG_CACHE_DIR": "/home/qinhaiyan/glm52-hotspot-goal-runs/cache/flashmla_ptx_sass_followup/deepgemm",
+    "TORCH_EXTENSIONS_DIR": "/home/qinhaiyan/glm52-hotspot-goal-runs/cache/flashmla_ptx_sass_followup/torch_extensions",
+    "TRITON_CACHE_DIR": "/home/qinhaiyan/glm52-hotspot-goal-runs/cache/flashmla_ptx_sass_followup/triton",
+    "XDG_CACHE_HOME": "/home/qinhaiyan/glm52-hotspot-goal-runs/cache/flashmla_ptx_sass_followup/xdg"
+  }
+}

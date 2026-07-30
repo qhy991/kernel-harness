@@ -1,0 +1,119 @@
+{
+  "label": "stock-identical identity main, M16",
+  "mechanism_test": {
+    "barrier_share_pct": 23.156726095747455,
+    "long_scoreboard_plus_barrier_share_pct": 56.34849279496292,
+    "long_scoreboard_share_pct": 33.191766699215464,
+    "shared_memory_stall_share_pct": 10.685981288993316,
+    "stated_mechanism_confirmed": true
+  },
+  "purpose": "test the plan's stated critical-path mechanism: dominant long-scoreboard / barrier stalls and low L2 reuse",
+  "report": "profile/glm52-flashmla-ptx-sass-followup-20260730/evidence/ncu/p0_stock_main_m16.ncu-rep",
+  "scalars": {
+    "active_warps_per_scheduler": 2.960038,
+    "barrier_count": 16.0,
+    "block_size": 384.0,
+    "device_shared_optin_bytes": 232448.0,
+    "dram_throughput_pct": 13.705463,
+    "duration_us": 21.984,
+    "dynamic_shared_kbytes": 231.632,
+    "elapsed_cycles": 43035.0,
+    "eligible_warps_per_scheduler": 0.212667,
+    "grid_size": 148.0,
+    "l1tex_hit_rate_pct": 0.945347,
+    "l2_hit_rate_pct": 14.223811,
+    "registers_per_thread": 168.0,
+    "sm_active_cycles_avg": 29446.506757,
+    "sm_active_cycles_max": 34531.0,
+    "sm_active_cycles_min": 6892.0,
+    "warp_cycles_per_issued_inst": 15.894607,
+    "waves_per_sm": 1.0
+  },
+  "schema_version": 1,
+  "shared_memory": {
+    "device_limit_bytes": 232448,
+    "extra_index_buffer_fits": true,
+    "extra_kv_buffer_fits": false,
+    "headroom_bytes": 816,
+    "launch_configured_bytes": 231632,
+    "one_extra_index_buffer_bytes": 792,
+    "one_extra_kv_buffer_bytes": 106496
+  },
+  "sm_utilisation": {
+    "average_sm_active_cycles": 29446.506757,
+    "average_sm_active_fraction_of_elapsed": 0.6842455386778203,
+    "elapsed_cycles": 43035.0,
+    "note": "the gap is tail imbalance across the 148 fixed scheduler partitions; tile_scheduler_metadata and num_splits are frozen caller inputs, so it is not addressable inside this boundary"
+  },
+  "stall_cycles_per_issued_instruction": {
+    "barrier": {
+      "cycles_per_issued_instruction": 3.722525,
+      "share_of_total_pct": 23.156726095747455
+    },
+    "branch_resolving": {
+      "cycles_per_issued_instruction": 0.204804,
+      "share_of_total_pct": 1.2740250586130282
+    },
+    "dispatch_stall": {
+      "cycles_per_issued_instruction": 0.03343,
+      "share_of_total_pct": 0.20795813416453549
+    },
+    "drain": {
+      "cycles_per_issued_instruction": 0.001049,
+      "share_of_total_pct": 0.006525518478570079
+    },
+    "lg_throttle": {
+      "cycles_per_issued_instruction": 0.0,
+      "share_of_total_pct": 0.0
+    },
+    "long_scoreboard": {
+      "cycles_per_issued_instruction": 5.335693,
+      "share_of_total_pct": 33.191766699215464
+    },
+    "math_pipe_throttle": {
+      "cycles_per_issued_instruction": 0.062866,
+      "share_of_total_pct": 0.39107077661943435
+    },
+    "membar": {
+      "cycles_per_issued_instruction": 0.0,
+      "share_of_total_pct": 0.0
+    },
+    "mio_throttle": {
+      "cycles_per_issued_instruction": 0.800886,
+      "share_of_total_pct": 4.982074730436679
+    },
+    "misc": {
+      "cycles_per_issued_instruction": 0.009229,
+      "share_of_total_pct": 0.05741087706265324
+    },
+    "no_instruction": {
+      "cycles_per_issued_instruction": 1.517056,
+      "share_of_total_pct": 9.437156302216977
+    },
+    "not_selected": {
+      "cycles_per_issued_instruction": 0.146401,
+      "share_of_total_pct": 0.9107172838714377
+    },
+    "selected": {
+      "cycles_per_issued_instruction": 0.995801,
+      "share_of_total_pct": 6.19458324735802
+    },
+    "short_scoreboard": {
+      "cycles_per_issued_instruction": 0.916923,
+      "share_of_total_pct": 5.703906558556637
+    },
+    "sleeping": {
+      "cycles_per_issued_instruction": 1.018215,
+      "share_of_total_pct": 6.334014106441596
+    },
+    "tex_throttle": {
+      "cycles_per_issued_instruction": 0.0,
+      "share_of_total_pct": 0.0
+    },
+    "wait": {
+      "cycles_per_issued_instruction": 1.310473,
+      "share_of_total_pct": 8.15206461121751
+    }
+  },
+  "total_stall_cycles_per_issued_instruction": 16.075351
+}

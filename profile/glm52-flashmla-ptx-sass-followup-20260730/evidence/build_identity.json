@@ -1,0 +1,35 @@
+{
+  "build_dir": "/home/qinhaiyan/glm52-hotspot-goal-runs/cache/flashmla_ptx_sass_followup/torch_extensions/infini_kernel_glm52_flashmla_sparse_decode_identity_554f5288d5507890",
+  "cuda_context_created": false,
+  "extension": {
+    "path": "/home/qinhaiyan/glm52-hotspot-goal-runs/cache/flashmla_ptx_sass_followup/torch_extensions/infini_kernel_glm52_flashmla_sparse_decode_identity_554f5288d5507890/infini_kernel_glm52_flashmla_sparse_decode_identity_554f5288d5507890.so",
+    "sha256": "61741f9d77630463c5f2676535fdf2e9657c57b0280e09f669dbefaf7f162fcf",
+    "size_bytes": 1239800
+  },
+  "ninja_rebuild_was_noop": true,
+  "provider_info": {
+    "build_id": "554f5288d55078901a5a5970247744fc58d4db66d724bb8d9b7ab871c2a731b4",
+    "combine_source": "/home/qinhaiyan/glm52-hotspot-goal-runs/worktrees/flashmla-sparse-decode/flashmla/csrc/smxx/decode/combine/combine.cu",
+    "git_commit": "65293ac6553d5119504be1f0ffcb229a0dc1fe42",
+    "main_symbol_prefix": "infini_kernel_glm52_flashmla_sparse_decode",
+    "module_name": "infini_kernel_glm52_flashmla_sparse_decode_identity_554f5288d5507890",
+    "name": "glm52_flashmla_sparse_decode_control_identity",
+    "role": "control",
+    "source_sha256": {
+      "csrc/glm52_hotspot/api.cpp": "6c5ef0d7a92d18873b245dfe0175c353b232388bccf68733998a64c64a339610",
+      "csrc/glm52_hotspot/v32_identity.cu": "1abdd32fcb4b9ec7c31bfdcdc382c2c3ce245acb7aac849b268bca8d44bc54e6",
+      "csrc/kerutils/include/kerutils/device/sm100/intrinsics.cuh": "032f5cbeb060a37f95316a4efca1ea80a0890daf00db148b7ddad09cd9a0c738",
+      "csrc/params.h": "a4cc4ccf965ee012ec619401eb8ec0aaa182f2625888b6b1326e345ede218f1b",
+      "csrc/sm100/decode/head64/config.h": "694d5e6d9a88ff4f0aaddfb2abbbfeff76d900b48337adf0b0742f87d59ab3a5",
+      "csrc/sm100/decode/head64/kernel.cuh": "b1f48b0a23b8666bbb4308814bc10a6f40d8826a6a9b1b01b5b6a4da638a093e",
+      "csrc/sm100/decode/head64/kernel.h": "953548cea84d9c7190a6f41dc6ba127281783208dedb7cded12bdeac8bdc422d",
+      "csrc/sm100/helpers.h": "7e3c6e42ef778f7120c90f607082cf6dc3817540b5c24442e52e91fd15c7e791",
+      "csrc/smxx/decode/combine/combine.cu": "1c86f47a8b8bd0adc52123f0a3e51dced9641a00200e93091725d3114eb1fa37",
+      "csrc/smxx/decode/combine/combine.h": "90f38d69986474005f74b911e701a4cce1d069de9cdabf7ba55ec1d3a8e83fd9"
+    },
+    "variant": "identity"
+  },
+  "ptxas_resource_lines": [],
+  "schema_version": 1,
+  "variant": "identity"
+}

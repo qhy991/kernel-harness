@@ -1,0 +1,377 @@
+{
+  "attempts": [
+    {
+      "correctness": {
+        "adversarial_gates_per_bucket": 103,
+        "boolean_gates_per_bucket": 29,
+        "covered": [
+          "leaf eager and non-default stream",
+          "independently captured leaf graphs before and after Q/index mutation",
+          "deterministic repeated graph replay with poisoned outputs",
+          "containing DeepseekSparseAttnBackend._forward_flashmla_kv eager and graph",
+          "output and LSE value, shape, stride, storage-ownership and poison checks",
+          "input immutability",
+          "exact provider hit count, zero fallback after selection, wrong-page zero-launch rejection",
+          "random, zero, signed ramp, extreme finite, exponent-boundary values",
+          "duplicate, interleaved, sorted, reverse, boundary-page, -1 and beyond-valid-length indices",
+          "minimum, mixed-edge and maximum scheduler/split cases"
+        ],
+        "evidence": [
+          "p1_correctness_m16.json",
+          "p1_correctness_m32.json",
+          "p1_matrix_m16.json",
+          "p1_matrix_m32.json"
+        ],
+        "verdict": "bitwise exact at every required boundary for M16 and M32"
+      },
+      "device_chain": {
+        "evidence": [
+          "p1_chain_m16_summary.json",
+          "p1_chain_m32_summary.json"
+        ],
+        "graph_main_device_median_ns": {
+          "m16": {
+            "candidate": 16192,
+            "ratio": 1.0593,
+            "stock": 17152
+          },
+          "m32": {
+            "candidate": 23296,
+            "ratio": 1.0508,
+            "stock": 24480
+          }
+        },
+        "graph_replays_audited_per_lane": 5,
+        "one_main_then_one_combine_per_replay": true,
+        "unexpected_device_kernels_in_ranges": 0
+      },
+      "exact_delta": "coord*TMA_K_STRIDE equals block*stride_kv_block + idx_in_block*stride_kv_row under the frozen V32 contract (stride_kv_row == TMA_K_STRIDE == 656, stride_kv_block == 64*656, both enforced host-side in api.cpp), so the consumer recovers each scale address from plan.tma_coord with one multiply.",
+      "failure_is_not_attributable_to_this_kernel": {
+        "constant_host_tax_us": 17.39,
+        "control": "identity_eager_k20_m16.json",
+        "control_containing_eager": {
+          "max": 0.6961,
+          "min": 0.62
+        },
+        "control_kernel": "source-identical to upstream stock V32",
+        "evidence": [
+          "dispatch_stage_times_before.json",
+          "identity_eager_k20_m16.json"
+        ],
+        "stage_attribution_us": {
+          "abi_guard": 4.82,
+          "config_is_enabled": 0.29,
+          "current_phase": 0.13,
+          "nvtx_range_context_manager_even_when_disabled": 1.73,
+          "profiler_range_name": 0.13,
+          "record_hit": 0.49,
+          "registry_lookup": 2.96
+        },
+        "structural_ceiling": "candidate containing-eager cannot be faster than candidate leaf-eager plus the stock wrapper cost, which caps the identity control at 1.0179 even with a zero-cost guard; the lane is therefore unreachable for any Python-provider candidate and is an API-v1 integration property, not a kernel property"
+      },
+      "generated_binary": {
+        "barriers": 16,
+        "build_id_reproduced_from_clean_committed_tree": "a39236323dc57a97fbfc28fa479c5cd56ce94c065824912fbd95a98a15160649",
+        "combine_sass_identical_to_control": true,
+        "control_ldg_note": "two scattered scale LDG removed from the index warp, four added to the dequant consumer, matching the predicted +2",
+        "control_static_main_instructions": 4128,
+        "f2fp": 272,
+        "generated_main_sass_identical_across_both_source_hash_generations": true,
+        "ldg": 14,
+        "local_bytes": 0,
+        "main_sass_sha256": "725c9b8ff2a7e332",
+        "registers_per_thread": 168,
+        "spill_bytes": 0,
+        "stack_bytes": 0,
+        "static_main_instructions": 3368
+      },
+      "hypothesis": "The index warp published TMA coordinates only after completing its own 64 scattered FP32 scale loads, so every block serialized a full scattered-load round trip in front of the raw-NoPE and RoPE TMA gather issue. Deriving the scale address from the already-published coordinate and gathering it in the 128-thread dequant consumer, issued before the raw-NoPE wait, removes that round trip from the critical path.",
+      "id": "P1",
+      "macros": [
+        "GLM52_NATIVE_FP8_TO_BF16",
+        "GLM52_EXACT_V32_NO_EXTRA",
+        "GLM52_CONSUMER_SCALE_GATHER"
+      ],
+      "outcome": "rejected",
+      "performance_k1_superseded": {
+        "containing_graph": {
+          "m16": [
+            1.0117,
+            1.0514
+          ],
+          "m32": [
+            1.0054,
+            1.0622
+          ]
+        },
+        "leaf_graph": {
+          "m16": [
+            1.0162,
+            1.0764
+          ],
+          "m32": [
+            1.0063,
+            1.0784
+          ]
+        },
+        "note": "recorded for completeness; the K=1 instrument's same-binary null spread is +/-1.23%, comparable to the effect, so these runs cannot resolve the gate"
+      },
+      "performance_k20": {
+        "containing_eager": {
+          "m16": {
+            "max": 0.7583,
+            "min": 0.6683,
+            "pass": false
+          },
+          "m32": {
+            "max": 0.7403,
+            "min": 0.6637,
+            "pass": false
+          }
+        },
+        "containing_graph": {
+          "m16": {
+            "max": 1.0752,
+            "min": 1.0613,
+            "pass": true
+          },
+          "m32": {
+            "max": 1.0656,
+            "min": 1.0619,
+            "pass": true
+          }
+        },
+        "instrument": "K=20 replays per observation, null-validated to +/-0.28%",
+        "leaf_eager": {
+          "m16": {
+            "max": 1.2163,
+            "min": 1.1375,
+            "pass": true
+          },
+          "m32": {
+            "max": 1.0783,
+            "min": 1.0548,
+            "pass": true
+          }
+        },
+        "leaf_graph": {
+          "m16": {
+            "max": 1.0769,
+            "min": 1.0739,
+            "pass": true
+          },
+          "m32": {
+            "max": 1.0687,
+            "min": 1.0628,
+            "pass": true
+          }
+        }
+      },
+      "preserved": [
+        "two-buffer topology and NUM_INDEX_BUFS",
+        "TMA gather count, coordinates and cache hint",
+        "shared-memory footprint byte-identical (plan.scales stays allocated, unused for V32)",
+        "16 allocated barriers and every arrive/wait count",
+        "output math including invalid-token zeroing",
+        "unchanged stock combine"
+      ],
+      "rollback": "delete csrc/glm52_hotspot/v32_p1_consumer_scale.cu, remove the GLM52_CONSUMER_SCALE_GATHER branches from csrc/sm100/decode/head64/kernel.cuh, and drop the provider variant entry; no default instantiation is affected",
+      "source": "csrc/glm52_hotspot/v32_p1_consumer_scale.cu",
+      "variant": "p1_consumer_scale",
+      "why": "Both mandatory CUDA Graph lanes and the eager leaf pass at both buckets, but the eager containing SGLang DSA region measures 0.664..0.758, so a lane enumerated by plan section 6 fails and no bucket may promote.",
+      "why_not_a_rerun_of_the_rejected_b1": "B1 kept the scale load on the index warp and only moved a barrier, so the index warp still serialized one round trip per block before it could accept the next block. P1 removes the load from that warp entirely and re-issues it from the consumer where it overlaps the TMA gather it no longer blocks."
+    }
+  ],
+  "diagnostic_ablations": [
+    {
+      "consequence": "this also explains the prior campaign's B1 result: publishing coordinates early while leaving the loads on the index warp cannot recover the round trip, and the K=1 instrument could not have resolved a 6% effect anyway",
+      "id": "ABLATE-SCALE-CHAIN",
+      "interpretation": "Deleting the whole chain is worth about 1.00x while relocating the same loads is worth about 1.06x. The chain's cost is its position in the dependency graph, not its instruction count or its memory traffic. Deleting it also removes an accidental L2 prefetch: the four FP32 scales at token byte offset [512,528) share 128-byte sectors with the RoPE bytes at [528,656) that the RoPE gather then reads, so the two effects cancel. P1 keeps the prefetch and removes only the serialization.",
+      "promotable": false,
+      "purpose": "bound what the scattered-scale chain is worth by deleting it entirely",
+      "result_k1_superseded": {
+        "containing_graph": {
+          "m16": [
+            0.9965,
+            1.0141
+          ],
+          "m32": [
+            0.9562,
+            0.9894
+          ]
+        },
+        "leaf_graph": {
+          "m16": [
+            0.9965,
+            1.0383
+          ],
+          "m32": [
+            0.9611,
+            1.0234
+          ]
+        }
+      },
+      "result_k20": {
+        "containing_graph": {
+          "m16": 0.9988,
+          "m32": 0.997
+        },
+        "leaf_graph": {
+          "m16": 1.0082,
+          "m32": 0.9992
+        }
+      },
+      "static_main_instructions": 3264,
+      "variant": "ablate_scale_chain",
+      "why_not_promotable": "substitutes a constant scale, so the output is numerically wrong by construction; never used for a correctness or promotion run"
+    }
+  ],
+  "evidence_gated_non_attempts": [
+    {
+      "decision": "not built",
+      "evidence": [
+        "p0_mechanism_m16.json",
+        "cpu_audit.json"
+      ],
+      "id": "P2",
+      "technique": "conflict-free dequant consumer mapping",
+      "why": "The new NCU capture puts short_scoreboard plus mio_throttle, the stalls that shared-memory bank conflicts produce, at 10.7% of stall cycles against 56.3% for long-scoreboard plus barrier. The prior campaign's B2 already implemented exactly this remap and was rejected because the added address arithmetic (+32 static instructions) outweighed any bank benefit. Spending an identity here would rerun a conclusively rejected variant against a mechanism the current profile shows is not the limiter, which the shared contract forbids."
+    },
+    {
+      "decision": "not built",
+      "evidence": [
+        "binary_manifest.json",
+        "ablation_graph_k20_m16.json",
+        "ablation_graph_k20_m32.json"
+      ],
+      "id": "P3",
+      "technique": "narrowly scoped inline PTX or compiler-constraint scheduling refinement",
+      "why": "The plan allows exactly three predeclared changes: earlier eligible TMA issue, a shorter FP8-to-BF16 scale dependency chain, or reduced register live range. P1 already delivers the first at the source level and its binary confirms it. The ablation bounds the second: with the entire scale chain deleted the graph lanes sit at 1.00, so no further shortening of that chain is available. Registers, barriers, stack, local and spills are already at 168/16/0/0/0 and unchanged, leaving no live-range headroom to recover. P1 is also already past 1.03 on both mandatory graph lanes, so the plan's 'near the threshold' precondition for a rescue refinement does not apply."
+    },
+    {
+      "decision": "not built",
+      "evidence": [
+        "p0_mechanism_m16.json"
+      ],
+      "id": "TWO-SM",
+      "technique": "two-SM cooperative rewrite",
+      "why": "The plan requires proof that one-SM occupancy is the remaining limiter. The capture shows the opposite: one CTA per SM already fills all 148 SMs in a single wave, DRAM throughput is 13.7% of peak, and the binding costs are memory latency on a two-deep pipeline plus a 31.6% tail from the frozen scheduler partitioning. Shared memory also has 816 free bytes against the 106496 a third KV buffer needs, so the cooperative variant could not be staged."
+    },
+    {
+      "decision": "not attempted; reported instead",
+      "evidence": [
+        "dispatch_stage_times_before.json",
+        "identity_eager_k20_m16.json"
+      ],
+      "id": "SGLANG-DISPATCH-OPTIMISATION",
+      "technique": "reduce the +17.4 us API-v1 host tax that fails the eager containing lane",
+      "why": "The arithmetic shows the lane is unreachable even with a zero-cost guard, so the change could not alter the disposition, while editing a fail-closed safety guard at the end of a campaign carries real risk. The measured, actionable findings are handed to the integration owner instead: skip the NVTX context manager and its range-name construction entirely when NVTX is disabled (1.73 us plus 0.13 us), cache the resolved KernelSpec per (op, phase, m) alongside the existing load_manifest cache (2.96 us), and precompute the guard's expected shape and stride tuples per spec instead of per call (part of 4.82 us). Unblocking the lane needs an integration change such as a C++-side guard or graph-only selection, not a kernel change."
+    },
+    {
+      "decision": "not invoked",
+      "evidence": [
+        "p0_mechanism_m16.json",
+        "p1_chain_m16_summary.json"
+      ],
+      "id": "NCU-SURVIVOR-CAPTURE",
+      "technique": "second NCU capture on the surviving candidate",
+      "why": "The one permitted capture already answered the stated critical-path question, and the surviving candidate's mechanism was confirmed directly by the generated binary, the Nsys device spans and the ablation. No further concrete mechanism question remained that a second capture would settle."
+    }
+  ],
+  "final_local_commits": {
+    "flashmla": "b5af443ea7c1e9b2d85793e7afe4e61c5b1df19e",
+    "kernel_harness": "recorded by the commit that adds this ledger",
+    "sglang": "c52f23b567e5061b71c28a8971459224c057ada1 (unmodified by this campaign)"
+  },
+  "instrument_validation": {
+    "change": "one CUDA-event-delimited observation now spans K consecutive calls and reports per-call microseconds; both arms are treated identically and the 1.03 gate is unchanged",
+    "conclusion": "at K=1 the same-binary null spread is the same size as the effect under test, so K=1 cannot resolve the gate; K=20 tightens the null to +/-0.28% and is used for every decision",
+    "id": "INSTRUMENT",
+    "method": "stock-vs-stock, identical installed binary in both arms, three series of 100 alternating pairs, graph lanes",
+    "null_spread_k1": {
+      "evidence": "null_stock_stock_m16_k1.json",
+      "halfwidth_pct": 1.23,
+      "max": 1.0123,
+      "min": 0.9894
+    },
+    "null_spread_k20": {
+      "evidence": "null_stock_stock_m16_k20.json",
+      "halfwidth_pct": 0.28,
+      "max": 1.0028,
+      "min": 0.9973
+    },
+    "prior_campaign_null_spread": {
+      "max": 1.0291,
+      "min": 0.9673,
+      "source": "../glm52-flashmla-sparse-decode-hotspot-20260729/evidence/a0_stock_stock_m16*.json"
+    },
+    "removed_per_observation_overhead_us": 2.86,
+    "why": "the mandatory gate compares four estimators against 1.03, so the instrument's own null spread bounds what the gate can resolve"
+  },
+  "material_candidate_budget": {
+    "allowed": 3,
+    "excluded_from_budget": [
+      "P0 identity rebuild is a control, not a candidate",
+      "prior b3_b5 rebuild only rebinds the prior terminal result",
+      "ablate_scale_chain is numerically wrong by construction and can never be promoted"
+    ],
+    "used": 1
+  },
+  "p0": {
+    "baseline_reproduced": {
+      "identity_barriers": 16,
+      "identity_registers_per_thread": 168,
+      "identity_spill_bytes": 0,
+      "identity_static_instructions": 4128,
+      "note": "the recorded prior build id recomputes exactly from the committed source closure, so the prior no-replacement result is bound to these bytes",
+      "prior_composite_build_id": "24c522c90bc8583e2aa98a1e926d0bf853d1ed0eb01b59dd735f642fb68fa331",
+      "prior_composite_build_id_reproduced_from_current_source": true,
+      "prior_composite_static_instructions": 3336
+    },
+    "cpu_only_audit": {
+      "all_gates_pass": true,
+      "evidence": "cpu_audit.json",
+      "toolchain": "CUDA 13.2.78, NCU 2026.1.1, Nsys 2025.6.3, g++ 13.3.0, torch 2.11.0+cu130",
+      "worktree_heads": {
+        "flashmla": "65293ac65",
+        "kernel_harness": "c93b34298",
+        "sglang": "c52f23b56"
+      }
+    },
+    "id": "P0",
+    "mechanism_test": {
+      "authority": "plan section 6 permits NCU to test a stated critical-path mechanism",
+      "average_sm_active_fraction_of_elapsed": 0.6842,
+      "barrier_share_pct": 23.16,
+      "conclusions": [
+        "the plan's stated long-scoreboard/barrier mechanism is confirmed at 56.3% of stall cycles",
+        "shared-memory stalls are only 10.7%, so P2's bank-conflict premise is not the limiter",
+        "816 bytes of shared headroom out of 232448 makes deepening the two-deep KV pipeline impossible",
+        "average SM active is 68.4% of elapsed with a 6892..34531 cycle spread, which is tail imbalance across the frozen 148-partition schedule and is not addressable inside this boundary"
+      ],
+      "elapsed_cycles": 43035,
+      "evidence": "p0_mechanism_m16.json",
+      "extra_kv_buffer_would_need_bytes": 106496,
+      "long_scoreboard_plus_barrier_share_pct": 56.35,
+      "long_scoreboard_share_pct": 33.19,
+      "shared_memory_headroom_bytes": 816,
+      "shared_memory_limit_bytes": 232448,
+      "shared_memory_stall_share_pct": 10.69,
+      "sm_active_cycles_min_max": [
+        6892,
+        34531
+      ],
+      "stated_mechanism_confirmed": true,
+      "tool": "one NCU capture of the lineinfo-enabled identity main, which is source-identical to stock"
+    },
+    "purpose": "reproduce the terminal baseline and bind source, binary, graph nodes and stock combine"
+  },
+  "plan": "/home/qinhaiyan/glm52-hotspot-goal-runs/tasks/flashmla_ptx_sass_followup/plan.md",
+  "production_default": "off",
+  "registration_ceiling": "L1 explicit diagnostic, unchanged",
+  "remote_state_modified": false,
+  "schema_version": 1,
+  "stock_fallback": "active for every bucket",
+  "task": "GLM-5.2 flashmla_kv sparse-index FP8 decode PTX/SASS follow-up, M16 and M32",
+  "terminal_disposition": "no-replacement"
+}

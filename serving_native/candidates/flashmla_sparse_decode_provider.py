@@ -36,6 +36,11 @@ _VARIANT_SOURCES = {
     "b4_rope_early_warp": "v32_b4_rope_early_warp.cu",
     "b5_exact_no_extra": "v32_b5_exact_no_extra.cu",
     "b3_b5_native_exact": "v32_b3_b5_native_exact.cu",
+    "p1_consumer_scale": "v32_p1_consumer_scale.cu",
+    # Diagnostic ablation with deliberately wrong numerics. It is
+    # registered only so the build/timing harness can reach it; it must
+    # never be used for a correctness or promotion run.
+    "ablate_scale_chain": "v32_ablate_scale_chain.cu",
 }
 if _VARIANT not in _VARIANT_SOURCES:
     raise RuntimeError(

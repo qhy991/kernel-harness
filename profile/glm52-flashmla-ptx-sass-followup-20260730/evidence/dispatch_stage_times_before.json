@@ -1,0 +1,23 @@
+{
+  "derived": {
+    "dispatch_overhead_over_provider_callback": 5.042489999999997,
+    "sum_of_named_guard_stages": 10.551192
+  },
+  "iters_per_sample": 500,
+  "label": "before",
+  "m": 16,
+  "schema_version": 1,
+  "stages": {
+    "abi_guard": 4.816394,
+    "config_is_enabled": 0.291966,
+    "current_phase": 0.133108,
+    "emit_nvtx_config_read": 0.023764,
+    "full_try_dispatch_including_launch": 31.876383999999998,
+    "nvtx_range_ctx_enter_exit": 1.7310699999999999,
+    "profiler_range_name": 0.12721,
+    "provider_callback_including_launch": 26.833894,
+    "record_hit": 0.48674,
+    "registry_lookup": 2.9647040000000002
+  },
+  "unit": "median host microseconds per call"
+}

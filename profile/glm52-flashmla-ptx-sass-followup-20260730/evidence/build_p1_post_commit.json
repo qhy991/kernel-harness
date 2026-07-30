@@ -1,0 +1,35 @@
+{
+  "build_dir": "/home/qinhaiyan/glm52-hotspot-goal-runs/cache/flashmla_ptx_sass_followup/torch_extensions/infini_kernel_glm52_flashmla_sparse_decode_p1_consumer_scale_a39236323dc57a97",
+  "cuda_context_created": false,
+  "extension": {
+    "path": "/home/qinhaiyan/glm52-hotspot-goal-runs/cache/flashmla_ptx_sass_followup/torch_extensions/infini_kernel_glm52_flashmla_sparse_decode_p1_consumer_scale_a39236323dc57a97/infini_kernel_glm52_flashmla_sparse_decode_p1_consumer_scale_a39236323dc57a97.so",
+    "sha256": "a368b1451733140d9801d4519ba265e5d85252d83ab7ac25e8f570059b68e4e1",
+    "size_bytes": 1158008
+  },
+  "ninja_rebuild_was_noop": true,
+  "provider_info": {
+    "build_id": "a39236323dc57a97fbfc28fa479c5cd56ce94c065824912fbd95a98a15160649",
+    "combine_source": "/home/qinhaiyan/glm52-hotspot-goal-runs/worktrees/flashmla-sparse-decode/flashmla/csrc/smxx/decode/combine/combine.cu",
+    "git_commit": "b5af443ea7c1e9b2d85793e7afe4e61c5b1df19e",
+    "main_symbol_prefix": "infini_kernel_glm52_flashmla_sparse_decode",
+    "module_name": "infini_kernel_glm52_flashmla_sparse_decode_p1_consumer_scale_a39236323dc57a97",
+    "name": "glm52_flashmla_sparse_decode_p1_consumer_scale",
+    "role": "experimental",
+    "source_sha256": {
+      "csrc/glm52_hotspot/api.cpp": "6c5ef0d7a92d18873b245dfe0175c353b232388bccf68733998a64c64a339610",
+      "csrc/glm52_hotspot/v32_p1_consumer_scale.cu": "58299603d7343c1daffa086c6c601bc57bb864213b0cb839470bdbc5dedbf565",
+      "csrc/kerutils/include/kerutils/device/sm100/intrinsics.cuh": "032f5cbeb060a37f95316a4efca1ea80a0890daf00db148b7ddad09cd9a0c738",
+      "csrc/params.h": "a4cc4ccf965ee012ec619401eb8ec0aaa182f2625888b6b1326e345ede218f1b",
+      "csrc/sm100/decode/head64/config.h": "694d5e6d9a88ff4f0aaddfb2abbbfeff76d900b48337adf0b0742f87d59ab3a5",
+      "csrc/sm100/decode/head64/kernel.cuh": "3a7b549fb156c973a646b697ba1c375d027368902d8ac58c865df49a882b329c",
+      "csrc/sm100/decode/head64/kernel.h": "953548cea84d9c7190a6f41dc6ba127281783208dedb7cded12bdeac8bdc422d",
+      "csrc/sm100/helpers.h": "7e3c6e42ef778f7120c90f607082cf6dc3817540b5c24442e52e91fd15c7e791",
+      "csrc/smxx/decode/combine/combine.cu": "1c86f47a8b8bd0adc52123f0a3e51dced9641a00200e93091725d3114eb1fa37",
+      "csrc/smxx/decode/combine/combine.h": "90f38d69986474005f74b911e701a4cce1d069de9cdabf7ba55ec1d3a8e83fd9"
+    },
+    "variant": "p1_consumer_scale"
+  },
+  "ptxas_resource_lines": [],
+  "schema_version": 1,
+  "variant": "p1_consumer_scale"
+}

@@ -1,0 +1,380 @@
+{
+  "all_gates_pass": true,
+  "captured_utc": "2026-07-30T05:36:45.321896+00:00",
+  "cpu_toolchain": {
+    "all_cache_paths_task_local": true,
+    "cache_environment": {
+      "CMAKE_BUILD_PARALLEL_LEVEL": "4",
+      "CUDA_CACHE_PATH": "/home/qinhaiyan/glm52-hotspot-goal-runs/cache/flashmla_ptx_sass_followup/cuda",
+      "DG_JIT_CACHE_DIR": "/home/qinhaiyan/glm52-hotspot-goal-runs/cache/flashmla_ptx_sass_followup/deepgemm",
+      "GLM52_TASK_BUILD_DIR": "/home/qinhaiyan/glm52-hotspot-goal-runs/cache/flashmla_ptx_sass_followup/build",
+      "MAX_JOBS": "4",
+      "NVCC_THREADS": null,
+      "SGLANG_DG_CACHE_DIR": "/home/qinhaiyan/glm52-hotspot-goal-runs/cache/flashmla_ptx_sass_followup/deepgemm",
+      "TORCH_EXTENSIONS_DIR": "/home/qinhaiyan/glm52-hotspot-goal-runs/cache/flashmla_ptx_sass_followup/torch_extensions",
+      "TRITON_CACHE_DIR": "/home/qinhaiyan/glm52-hotspot-goal-runs/cache/flashmla_ptx_sass_followup/triton",
+      "XDG_CACHE_HOME": "/home/qinhaiyan/glm52-hotspot-goal-runs/cache/flashmla_ptx_sass_followup/xdg"
+    },
+    "disk_threshold_satisfied": true,
+    "gxx": "g++ (Ubuntu 13.3.0-6ubuntu2~24.04.1) 13.3.0",
+    "ncu": [
+      "Version 2026.1.1.0 (build 37634170) (public-release)"
+    ],
+    "nsys": [
+      "NVIDIA Nsight Systems version 2025.6.3.541-256337736014v0"
+    ],
+    "nvcc": "Build cuda_13.2.r13.2/compiler.37668154_0",
+    "nvcc_release": [
+      "Cuda compilation tools, release 13.2, V13.2.78"
+    ],
+    "root_free_gib": 13.33041000366211,
+    "stop_expansion_below_gib": 8,
+    "task_cache_prefix": "/home/qinhaiyan/glm52-hotspot-goal-runs/cache/flashmla_ptx_sass_followup"
+  },
+  "cuda_initialized": false,
+  "flashmla_source": {
+    "all_variants_prefixed": true,
+    "config_h_sha256": "694d5e6d9a88ff4f0aaddfb2abbbfeff76d900b48337adf0b0742f87d59ab3a5",
+    "default_instantiations": [
+      "model1.cu",
+      "v32.cu"
+    ],
+    "kernel_cuh_sha256": "b1f48b0a23b8666bbb4308814bc10a6f40d8826a6a9b1b01b5b6a4da638a093e",
+    "macro_gates_in_kernel": [
+      "GLM52_COORD_READY_HANDOFF",
+      "GLM52_EXACT_V32_NO_EXTRA",
+      "GLM52_GATHER_EVICT_FIRST",
+      "GLM52_ROPE_GATHER_EARLY_WARP",
+      "GLM52_STAGGER_NOPE_CONSUMERS"
+    ],
+    "variant_sources": {
+      "v32_b1_coord_ready.cu": {
+        "goal_macros": [
+          "GLM52_COORD_READY_HANDOFF"
+        ],
+        "renames_global_symbol": true,
+        "sha256": "b4bc4b293024ce1af26e2b25b71b5b0cbc3a822a454e35ecf330bfa4384cd320",
+        "symbol_prefix_ok": true
+      },
+      "v32_b2_stagger_nope.cu": {
+        "goal_macros": [
+          "GLM52_STAGGER_NOPE_CONSUMERS"
+        ],
+        "renames_global_symbol": true,
+        "sha256": "2bb5103c4adab48b59c286a8bda072c8ab78f7ec6398afbf14fb79c21196864f",
+        "symbol_prefix_ok": true
+      },
+      "v32_b3_b5_native_exact.cu": {
+        "goal_macros": [
+          "GLM52_EXACT_V32_NO_EXTRA",
+          "GLM52_NATIVE_FP8_TO_BF16"
+        ],
+        "renames_global_symbol": true,
+        "sha256": "0f731ed17163221baa889ffb0c5def2f2eb284a8573b78bcae59a92bf92b70e6",
+        "symbol_prefix_ok": true
+      },
+      "v32_b3_native_fp8_bf16.cu": {
+        "goal_macros": [
+          "GLM52_NATIVE_FP8_TO_BF16"
+        ],
+        "renames_global_symbol": true,
+        "sha256": "82dd6d44f8396dcd4bcc092144b70f9ab416e1bea44cda5d3b35bd7e1b650e67",
+        "symbol_prefix_ok": true
+      },
+      "v32_b4_evict_first.cu": {
+        "goal_macros": [
+          "GLM52_GATHER_EVICT_FIRST"
+        ],
+        "renames_global_symbol": true,
+        "sha256": "0631ab2ad29b44a233901b1a97206ae1b97a00e689f373820382e33717295e58",
+        "symbol_prefix_ok": true
+      },
+      "v32_b4_rope_early_warp.cu": {
+        "goal_macros": [
+          "GLM52_ROPE_GATHER_EARLY_WARP"
+        ],
+        "renames_global_symbol": true,
+        "sha256": "ec2eb81e7d8c071e0ab03834e7baa64d9d1e23023e0f3251f4136cd6da8fdbaf",
+        "symbol_prefix_ok": true
+      },
+      "v32_b5_exact_no_extra.cu": {
+        "goal_macros": [
+          "GLM52_EXACT_V32_NO_EXTRA"
+        ],
+        "renames_global_symbol": true,
+        "sha256": "2660829213dd2bcf3ce1c9a838a4288bd075b4f2f1f4a7c6cdffe581ab5f879d",
+        "symbol_prefix_ok": true
+      },
+      "v32_identity.cu": {
+        "goal_macros": [],
+        "renames_global_symbol": true,
+        "sha256": "1abdd32fcb4b9ec7c31bfdcdc382c2c3ce245acb7aac849b268bca8d44bc54e6",
+        "symbol_prefix_ok": true
+      }
+    }
+  },
+  "frozen_abi_from_plan_section_0_2": {
+    "candidate_symbol_prefix": "infini_kernel_glm52_flashmla_sparse_decode",
+    "per_bucket": {
+      "16": {
+        "block_table_shape": [
+          16,
+          0
+        ],
+        "cache_seqlens_shape": [
+          16
+        ],
+        "indices_shape": [
+          16,
+          1,
+          2048
+        ],
+        "kv_shape": [
+          2049,
+          64,
+          1,
+          656
+        ],
+        "lse_shape": [
+          16,
+          64,
+          1
+        ],
+        "num_splits_shape": [
+          17
+        ],
+        "out_shape": [
+          16,
+          1,
+          64,
+          512
+        ],
+        "q_shape": [
+          16,
+          1,
+          64,
+          576
+        ],
+        "tile_scheduler_metadata_shape": [
+          148,
+          8
+        ]
+      },
+      "32": {
+        "block_table_shape": [
+          32,
+          0
+        ],
+        "cache_seqlens_shape": [
+          32
+        ],
+        "indices_shape": [
+          32,
+          1,
+          2048
+        ],
+        "kv_shape": [
+          4097,
+          64,
+          1,
+          656
+        ],
+        "lse_shape": [
+          32,
+          64,
+          1
+        ],
+        "num_splits_shape": [
+          33
+        ],
+        "out_shape": [
+          32,
+          1,
+          64,
+          512
+        ],
+        "q_shape": [
+          32,
+          1,
+          64,
+          576
+        ],
+        "tile_scheduler_metadata_shape": [
+          148,
+          8
+        ]
+      }
+    },
+    "scalars": {
+      "causal": false,
+      "head_dim_v": 512,
+      "is_fp8_kvcache": true,
+      "kv_bytes_per_token": 656,
+      "num_sm_parts": 148,
+      "page_size": 64,
+      "softmax_scale": 0.0625,
+      "topk": 2048
+    }
+  },
+  "gates": {
+    "all_variants_prefixed": true,
+    "all_worktrees_at_or_after_required_base": true,
+    "cache_paths_task_local": true,
+    "disk_threshold_satisfied": true,
+    "no_unexpected_worktree_edits": true,
+    "prior_disposition_is_no_replacement": true,
+    "sglang_guard_complete": true,
+    "source_worktrees_clean": true
+  },
+  "prior_negative_evidence": {
+    "binary_manifest_keys": [
+      "all_main_symbols_prefixed",
+      "combine_sass_identical_across_all_variants",
+      "combine_sass_sha256",
+      "entries",
+      "main_symbol_prefix_required",
+      "schema_version",
+      "tool"
+    ],
+    "binary_manifest_sha256": "3cb493ebb62fc18fcf1fecc50d1f665523a80d2b049373020ae189a1767e0c97",
+    "closed_attempts": {
+      "B1": {
+        "generated_binary": "168 registers, 16 allocated barriers, zero spills, 4128 static main instructions; unchanged combine SASS.",
+        "hypothesis": "Let raw and RoPE gather warps consume TMA coordinates before the index warp finishes scale/valid-mask publication, increasing producer overlap without changing bytes.",
+        "outcome": "rejected",
+        "variant": "b1_coord_ready",
+        "why_rejected": "Mandatory graph estimators remained below 1.03 at both buckets; the extra handoff did not expose useful overlap."
+      },
+      "B2": {
+        "generated_binary": "168 registers, 16 allocated barriers, zero spills, 4160 static main instructions, 32 more than control; unchanged combine SASS.",
+        "hypothesis": "Stagger odd eight-lane NoPE groups across adjacent columns to reduce simultaneous shared-memory bank pressure.",
+        "outcome": "rejected",
+        "variant": "b2_stagger_nope",
+        "why_rejected": "The added address instructions outweighed any bank benefit and graph estimators regressed below 1.03 in both buckets."
+      },
+      "B3": {
+        "generated_binary": "168 registers, 16 allocated barriers, zero spills, 3744 static main instructions versus 4128 control; F2FP count fell from 400 to 272; unchanged combine SASS.",
+        "hypothesis": "PTX ISA 9.2 direct packed E4M3x2-to-BF16x2 conversion can remove the float unpack/repack sequence while preserving BF16 scaling.",
+        "outcome": "rejected",
+        "variant": "b3_native_fp8_bf16",
+        "why_rejected": "The concrete SASS reduction did not clear 1.03 in leaf graph or containing lanes in every series."
+      },
+      "B3+B5": {
+        "generated_binary": "168 registers, 16 allocated barriers, zero spills, 3336 static main instructions, 792 fewer than control; unchanged combine SASS.",
+        "hypothesis": "The conversion and exact-contract specializations remove disjoint instruction classes and may combine into a stable graph win.",
+        "outcome": "rejected",
+        "variant": "b3_b5_native_exact",
+        "why_rejected": "M16 leaf graph ranged from 1.0056 to 1.0633 and M32 from 1.0082 to 1.0578 across required estimators, so multiple series missed 1.03; containing graph also missed, and containing eager regressed."
+      },
+      "B4a": {
+        "generated_binary": "168 registers, 16 allocated barriers, zero spills, 4128 static main instructions; unchanged combine SASS.",
+        "hypothesis": "One-pass sparse KV gathers should use EVICT_FIRST instead of EVICT_LAST to avoid retaining lines with little temporal reuse.",
+        "outcome": "rejected",
+        "variant": "b4_evict_first",
+        "why_rejected": "Cache-hint code generation was visible, but graph measurements were flat or regressive and failed the per-estimator gate."
+      },
+      "B4b": {
+        "generated_binary": "168 registers, 16 allocated barriers, zero spills, 4128 static main instructions; unchanged combine SASS.",
+        "hypothesis": "Assign the shorter RoPE producer to the earlier warp slot and raw NoPE to the later slot to improve producer timing.",
+        "outcome": "rejected",
+        "variant": "b4_rope_early_warp",
+        "why_rejected": "Both buckets regressed in graph estimators, closing the plan's bounded second cache/producer variant."
+      },
+      "B5": {
+        "generated_binary": "168 registers, 16 allocated barriers, zero spills, 3712 static main instructions; LDG fell from 28 to 12; unchanged combine SASS.",
+        "hypothesis": "Specializing the exact V32/top-k-2048/page-64/no-extra/no-sink ABI can remove generic branches, pointer loads, divisions, and extra-KV paths.",
+        "outcome": "rejected",
+        "variant": "b5_exact_no_extra",
+        "why_rejected": "Despite removing 416 static instructions, leaf and containing graph estimators remained near neutral and below 1.03."
+      }
+    },
+    "evidence_gated_non_attempts": [
+      {
+        "decision": "not built",
+        "id": "B6",
+        "technique": "two-SM cooperative prototype",
+        "why": "Prior NCU showed a one-CTA-per-SM 148-partition wave already filling the B200; no static traffic model predicted a gain without duplicating sparse gathers, so the plan's prerequisite was not met."
+      },
+      {
+        "decision": "not built",
+        "id": "B7",
+        "technique": "additional handwritten PTX/SASS scheduling",
+        "why": "B3 was the only concrete compiler-lowering defect identified in final disassembly, and its direct instruction sequence failed fair graph/region timing; no second specific missing transaction or schedule was proven."
+      },
+      {
+        "decision": "not invoked",
+        "id": "NCU",
+        "technique": "new Nsight Compute capture",
+        "why": "No candidate survived the fair timing gate and therefore no concrete survivor mechanism question existed; the plan explicitly restricted NCU to such a question."
+      }
+    ],
+    "ledger_path": "/home/qinhaiyan/glm52-hotspot-goal-runs/worktrees/flashmla-sparse-decode/kernel-harness/profile/glm52-flashmla-sparse-decode-hotspot-20260729/evidence/attempt_ledger.json",
+    "ledger_sha256": "bb607597427439d4fd947f79e14447a33a0987558d62ff83428b4a3f848fe84c",
+    "material_candidates_used": 7,
+    "terminal_disposition": "no-replacement",
+    "timing_gate_audit_keys": [
+      "bucket_count",
+      "candidate_count",
+      "candidates",
+      "gate",
+      "promotable_bucket_count",
+      "schema_version",
+      "terminal_disposition"
+    ],
+    "timing_gate_audit_sha256": "4f83454d8ba8d293e62d842d1f4ea4c819fcd8e95bc6c13192c012f2b7756739"
+  },
+  "schema_version": 1,
+  "sglang_abi_guard": {
+    "all_present": true,
+    "checks": {
+      "exact_page_counts": true,
+      "exact_softmax_scale": true,
+      "fp8_e4m3_kv_dtype": true,
+      "kv_contiguous_zero_offset": true,
+      "metadata_shape_148_8": true,
+      "rejects_non_decode": true,
+      "requires_fp8_kvcache": true,
+      "single_device": true
+    },
+    "path": "python/sglang/srt/layers/glm52_opt/dispatch.py",
+    "sha256": "7325269057c092e3bab6651f8f818cad0a5c9b4b879d3ac8a5d80b557434826d"
+  },
+  "stage": "P0_cpu_only_audit",
+  "worktrees": {
+    "flashmla": {
+      "branch": "goal/glm52-hotspot-flashmla-main",
+      "clean": true,
+      "dirty_entries": [],
+      "head": "65293ac6553d5119504be1f0ffcb229a0dc1fe42",
+      "head_is_at_or_after_required_base": true,
+      "only_dirt_is_this_campaign_output_dir": true,
+      "path": "/home/qinhaiyan/glm52-hotspot-goal-runs/worktrees/flashmla-sparse-decode/flashmla",
+      "required_base": "65293ac",
+      "unexpected_dirty_entries": []
+    },
+    "kernel_harness": {
+      "branch": "goal/glm52-hotspot-flashmla-sparse-decode",
+      "clean": false,
+      "dirty_entries": [
+        "?? profile/glm52-flashmla-ptx-sass-followup-20260730/"
+      ],
+      "head": "c93b3429860ce4efc85e026aa7f64ddf30d2aded",
+      "head_is_at_or_after_required_base": true,
+      "only_dirt_is_this_campaign_output_dir": true,
+      "path": "/home/qinhaiyan/glm52-hotspot-goal-runs/worktrees/flashmla-sparse-decode/kernel-harness",
+      "required_base": "c93b342",
+      "unexpected_dirty_entries": []
+    },
+    "sglang": {
+      "branch": "goal/glm52-hotspot-flashmla-sparse-decode",
+      "clean": true,
+      "dirty_entries": [],
+      "head": "c52f23b567e5061b71c28a8971459224c057ada1",
+      "head_is_at_or_after_required_base": true,
+      "only_dirt_is_this_campaign_output_dir": true,
+      "path": "/home/qinhaiyan/glm52-hotspot-goal-runs/worktrees/flashmla-sparse-decode/sglang",
+      "required_base": "c52f23b56",
+      "unexpected_dirty_entries": []
+    }
+  }
+}
