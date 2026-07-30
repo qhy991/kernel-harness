@@ -1,0 +1,29 @@
+{
+  "after_sass": {
+    "path": "/home/qinhaiyan/glm52-hotspot-goal-runs/worktrees/flashmla-sparse-decode/kernel-harness/profile/glm52-flashmla-combine-ptx-r1-20260730/evidence/sass/combine_candidate.sass",
+    "sha256": "5bf102b56afafbc0e86c953b1953ffb6c261f8255afb7d04f820856ea475c852"
+  },
+  "before_sass": {
+    "path": "/home/qinhaiyan/glm52-hotspot-goal-runs/worktrees/flashmla-sparse-decode/kernel-harness/profile/glm52-flashmla-combine-ptx-r1-20260730/evidence/sass_pre_refactor/combine_candidate.sass",
+    "sha256": "45fe47a9869b2b3af48160c6ef6f160ee7824033171e5ff070172b6f080d0320"
+  },
+  "delta": {
+    "differences": [
+      {
+        "identity": "/*0360*/                   IMAD.MOV.U32 R0, RZ, RZ, 0x94",
+        "immediate_is_source_line_of_device_assert": true,
+        "instruction_index": 54,
+        "stock": "/*0360*/                   IMAD.MOV.U32 R0, RZ, RZ, 0x5f"
+      }
+    ],
+    "differing_instructions": 1,
+    "every_difference_is_dead_assert_line_metadata": true,
+    "identity_device_assert_source_line": 148,
+    "instructions": 728,
+    "stock_device_assert_source_line": 95
+  },
+  "label": "combine_c1_stage8 across the STAGES-template revision of combine.cuh",
+  "measurements_bind_to_committed_source": true,
+  "reason": "the only differing instruction is the dead device-assert __LINE__ immediate, which moved because the assert moved within combine.cuh",
+  "schema_version": 1
+}

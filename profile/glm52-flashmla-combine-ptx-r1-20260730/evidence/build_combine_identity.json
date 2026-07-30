@@ -1,0 +1,38 @@
+{
+  "build_dir": "/home/qinhaiyan/glm52-hotspot-goal-runs/cache/flashmla_combine_ptx_r1/torch_extensions/infini_kernel_glm52_flashmla_sparse_decode_combine_identity_264037f2c6872c7f",
+  "cuda_context_created": false,
+  "extension": {
+    "path": "/home/qinhaiyan/glm52-hotspot-goal-runs/cache/flashmla_combine_ptx_r1/torch_extensions/infini_kernel_glm52_flashmla_sparse_decode_combine_identity_264037f2c6872c7f/infini_kernel_glm52_flashmla_sparse_decode_combine_identity_264037f2c6872c7f.so",
+    "sha256": "a46f3ad970be59bcd4ca2170bdf1126730247810a1659fa3dfd80265502b1c0b",
+    "size_bytes": 1007216
+  },
+  "ninja_rebuild_was_noop": true,
+  "provider_info": {
+    "build_id": "264037f2c6872c7ffa1a8ae6ae8012e44e0d0bd3c7adfea8cb7fff4b2915ff17",
+    "combine_symbol_prefix": "infini_kernel_glm52_flashmla_sparse_decode_combine",
+    "git_commit": "daef3d0c5890e688b3e6ecac7392a832cdf537ad-dirty",
+    "main_symbol_prefix": "infini_kernel_glm52_flashmla_sparse_decode",
+    "main_variant": "p1_consumer_scale",
+    "module_name": "infini_kernel_glm52_flashmla_sparse_decode_combine_identity_264037f2c6872c7f",
+    "name": "glm52_flashmla_combine_control_identity",
+    "role": "control",
+    "source_sha256": {
+      "csrc/glm52_hotspot/api_combine.cpp": "a6031c9d499736bb16c2125328dbc04e6ed1cd9a3a5a7fa80142cadd4295d381",
+      "csrc/glm52_hotspot/combine.cuh": "51331c4a4ca2f416e6590826a6fc4c354ffefd4d36bbbef3f701bfef7dd0efa8",
+      "csrc/glm52_hotspot/combine.h": "f750bf3c556058540df86610952fe475e5a6c6d92388eda45074657aa161e28c",
+      "csrc/glm52_hotspot/v32_combine_identity.cu": "5481301e8caa9a071a2a6709dcb61d06e94199fd7824f1e2fdd1e0d7c3c14977",
+      "csrc/glm52_hotspot/v32_p1_consumer_scale.cu": "58299603d7343c1daffa086c6c601bc57bb864213b0cb839470bdbc5dedbf565",
+      "csrc/kerutils/include/kerutils/device/sm100/intrinsics.cuh": "032f5cbeb060a37f95316a4efca1ea80a0890daf00db148b7ddad09cd9a0c738",
+      "csrc/params.h": "a4cc4ccf965ee012ec619401eb8ec0aaa182f2625888b6b1326e345ede218f1b",
+      "csrc/sm100/decode/head64/config.h": "694d5e6d9a88ff4f0aaddfb2abbbfeff76d900b48337adf0b0742f87d59ab3a5",
+      "csrc/sm100/decode/head64/kernel.cuh": "afd656a9eae63c557027d4de71a29784a4ad526df6f5ef5ca062645263126617",
+      "csrc/sm100/decode/head64/kernel.h": "953548cea84d9c7190a6f41dc6ba127281783208dedb7cded12bdeac8bdc422d",
+      "csrc/sm100/helpers.h": "7e3c6e42ef778f7120c90f607082cf6dc3817540b5c24442e52e91fd15c7e791"
+    },
+    "stock_combine_translation_unit_linked": false,
+    "variant": "combine_identity"
+  },
+  "ptxas_resource_lines": [],
+  "schema_version": 1,
+  "variant": "combine_identity"
+}

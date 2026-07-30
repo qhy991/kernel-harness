@@ -1,0 +1,151 @@
+{
+  "schema_version": 1,
+  "campaign": "glm52-flashmla-combine-ptx-r1",
+  "plan": "/home/qinhaiyan/glm52-hotspot-goal-runs/tasks/flashmla_combine_ptx_r1/plan.md",
+  "identity_budget": {
+    "allowed": 2,
+    "spent": 2,
+    "spent_on": ["combine_c1_stage8", "combine_c2_bucket_stages"],
+    "note": "combine_identity is a control, not a material candidate: its SASS is the stock combine's instruction stream and it exists to supply the P1-relative denominator through the candidate's own mechanism."
+  },
+  "target": {
+    "kernel": "smxx::decode::flash_fwd_mla_combine_kernel<bfloat16_t,512,8,160,256>",
+    "role": "stock BF16 split-combine after the sparse FP8 MLA decode main",
+    "main_kernel_held_at": "P1 p1_consumer_scale, FlashMLA b5af443, unchanged in every arm",
+    "grid": "(M, 1, h_q/8) = 128 CTAs at M16 and 256 CTAs at M32, 256 threads",
+    "splits_per_request": {"m16": 8, "m32": 4},
+    "o_accum_read_bytes": 16777216,
+    "note": "both buckets move the same 16.8 MB, so the two buckets differ only in how that traffic is distributed across CTAs and split iterations"
+  },
+  "attempts": [
+    {
+      "id": "P0",
+      "name": "reproduce the terminal baseline and bind the shared worktree",
+      "kind": "control",
+      "hypothesis": "the concurrent round-3 goal's in-flight edit to sm100/decode/head64/kernel.cuh is fully macro-guarded, so this campaign's P1 main is byte-identical to round 2's measured P1 despite a different source hash.",
+      "delta": "none; new provider (flashmla_combine_decode_provider.py) and new api_combine.cpp that link a renamed combine instead of the stock combine translation unit.",
+      "generated_binary": "main SASS instruction stream identical to the round-2 reference P1 extension; 168 registers, 16 barriers, zero spill. combine_identity SASS differs from the stock combine in exactly one instruction, the __LINE__ immediate passed to __assertfail on the never-taken my_num_splits > MAX_SPLITS branch (0x2b = combine.cu:43 versus 0x94 = combine.cuh:148).",
+      "measurement": "combine_identity versus installed stock reproduces round 2's P1 numbers on both graph lanes at both buckets, confirming the provider is a faithful P1 carrier.",
+      "decision": "accepted as the baseline and as the P1-relative denominator",
+      "rollback": "none required",
+      "evidence": [
+        "evidence/combine_binary_audit_combine_c1.json",
+        "evidence/combine_binary_audit_combine_c2.json",
+        "evidence/final_combine_identity_graph_gate_k20_m16.json",
+        "evidence/final_combine_identity_graph_gate_k20_m32.json"
+      ]
+    },
+    {
+      "id": "I0",
+      "name": "instrument revalidation",
+      "kind": "control",
+      "hypothesis": "the round-2 K=20 instrument still resolves a 1.03 gate on this host today, and the new provider-versus-provider harness has a comparable null.",
+      "delta": "none",
+      "measurement": "two same-binary nulls: installed stock in both arms, and combine_identity in both provider arms.",
+      "decision": "accepted; both nulls are far inside the gate",
+      "evidence": [
+        "evidence/final_null_stock_stock_k20_m16.json",
+        "evidence/final_null_stock_stock_k20_m32.json",
+        "evidence/final_pair_null_identity_identity_k20_m16.json",
+        "evidence/final_pair_null_identity_identity_k20_m32.json"
+      ]
+    },
+    {
+      "id": "C1",
+      "name": "combine_c1_stage8 -- eight-stage register-batched o_accum gather",
+      "kind": "material_identity",
+      "hypothesis": "the accumulation loop keeps one split of o_accum in registers and reloads split s+1 inside the body that consumes split s, so it is a chain of my_num_splits fully exposed memory latencies with only eight warps resident per SM to hide them. Issuing a whole group of eight splits' loads before consuming any of them, and hoisting the first group above the LSE reduction, should cut the exposed chain to ceil(my_num_splits/8) with eight-way memory-level parallelism.",
+      "predeclared_machine_code_change": "LDG.E.128 count rises 8x (four per stage, prologue plus refill); registers rise about 16 per stage with zero spill, zero local and unchanged shared memory; FFMA order unchanged.",
+      "delta": "csrc/glm52_hotspot/combine.cuh under GLM52_COMBINE_BATCHED_ACCUM with GLM52_COMBINE_STAGES=8",
+      "generated_binary": "LDG.E.128 8 -> 64 exactly as predicted; 48 -> 184 registers; 0 spill stores, 0 spill loads, LOCAL 0, STACK 24 unchanged, SHARED 6144 unchanged; dynamic FFMA count unchanged (static 17 -> 129 is the unrolling of the same eight iterations).",
+      "correctness": "bitwise exact against installed stock at both buckets on every boundary (max_abs 0.0), all 17 adversarial matrix cases, exactly one provider launch, wrong-page rejected before launch, graph-only contract holds.",
+      "measurement": "M16 graph containing and leaf pass against both denominators. M32 gains nothing over P1: the Nsys chain shows the M32 combine unchanged at 9.44 us against stock's 9.50 us.",
+      "why_m32_failed": "the combine grid is 256 CTAs at M32 against 148 SMs. At 48 registers the stock kernel has capacity for 5 CTAs per SM and resides in a single wave; at 184 registers only one CTA per SM fits (65536 registers per SM, 256 threads, 8-register granularity), so the grid becomes two waves of 148 and 108. Only four of the eight stages are ever used at M32, capping the possible gain at 4x, and the second wave cancels it. At M16 the grid is 128 CTAs, below the SM count, so occupancy is grid-limited to one CTA per SM in the stock build too and the register increase is free.",
+      "decision": "superseded by C2 at both buckets; retained as the measured intermediate result and as the evidence that motivated C2",
+      "rollback": "GLM52_FLASHMLA_COMBINE_VARIANT=combine_identity restores P1 plus the stock combine; unsetting SGLANG_GLM52_OPT restores installed stock",
+      "evidence": [
+        "evidence/combine_c1_stage8_graph_gate_k20_m16.json",
+        "evidence/combine_c1_stage8_graph_gate_k20_m32.json",
+        "evidence/combine_c1_stage8_correctness_m16.json",
+        "evidence/combine_c1_stage8_correctness_m32.json",
+        "evidence/combine_c1_stage8_matrix_m16.json",
+        "evidence/combine_c1_stage8_matrix_m32.json",
+        "evidence/combine_c1_stage8_chain_m16_summary.json",
+        "evidence/combine_c1_stage8_chain_m32_summary.json",
+        "evidence/combine_binary_audit_combine_c1.json",
+        "evidence/c1_sass_rebinding.json"
+      ]
+    },
+    {
+      "id": "C2",
+      "name": "combine_c2_bucket_stages -- bucket-specialized stage depth",
+      "kind": "material_identity",
+      "hypothesis": "C1's M32 result is an occupancy trade, not an absence of headroom. Choosing the shallowest depth that still covers the bucket's production split count in one group, and asking ptxas to keep two resident CTAs per SM at that depth, should collect the memory-level-parallelism win at M32 without giving up a wave, while leaving M16 -- where occupancy is grid-limited anyway -- at the deep depth.",
+      "predeclared_machine_code_change": "two production instantiations per MAX_SPLITS: the shallow one at most 128 registers (the exact sm_100 threshold for two 256-thread CTAs per SM) with zero spill and zero local, the deep one unchanged in resources from C1.",
+      "delta": "STAGES becomes a kernel template parameter; GLM52_COMBINE_BUCKET_STAGES selects 8 when params.b <= 16 and 4 otherwise, with __launch_bounds__(NUM_THREADS, STAGES <= 4 ? 2 : 1). params.b is host metadata the ABI guard has already validated, so no device read and no synchronization is introduced.",
+      "generated_binary": "STAGES=4 -> 112 registers (2 CTAs per SM), STAGES=8 -> 186 registers (1 CTA per SM); both 0 spill stores, 0 spill loads, LOCAL 0, STACK 24 unchanged, SHARED 6144 unchanged.",
+      "correctness": "bitwise exact against installed stock at both buckets on every boundary (max_abs 0.0), all 17 adversarial matrix cases, exactly one provider launch, wrong-page rejected before launch, graph-only contract holds.",
+      "measurement": "Nsys graph lane: combine 11.81 -> 7.97 us at M16 and 9.57 -> 7.97 us at M32. Both buckets pass both graph lanes against installed stock and against P1 plus the stock combine.",
+      "decision": "selected candidate for both buckets",
+      "rollback": "GLM52_FLASHMLA_COMBINE_VARIANT=combine_identity restores P1 plus the stock combine; unsetting SGLANG_GLM52_OPT restores installed stock",
+      "evidence": [
+        "evidence/final_combine_c2_bucket_stages_graph_gate_k20_m16.json",
+        "evidence/final_combine_c2_bucket_stages_graph_gate_k20_m32.json",
+        "evidence/final_pair_identity_vs_combine_c2_bucket_stages_k20_m16.json",
+        "evidence/final_pair_identity_vs_combine_c2_bucket_stages_k20_m32.json",
+        "evidence/combine_c2_bucket_stages_correctness_m16.json",
+        "evidence/combine_c2_bucket_stages_correctness_m32.json",
+        "evidence/combine_c2_bucket_stages_matrix_m16.json",
+        "evidence/combine_c2_bucket_stages_matrix_m32.json",
+        "evidence/combine_c2_bucket_stages_chain_m16_summary.json",
+        "evidence/combine_c2_bucket_stages_chain_m32_summary.json",
+        "evidence/combine_binary_audit_combine_c2.json"
+      ]
+    }
+  ],
+  "not_attempted": [
+    {
+      "name": "loading o_accum before cudaGridDependencySynchronize()",
+      "reason": "documented as illegal, not merely unwise. griddepcontrol.wait is the acquire that makes the prerequisite grid's memory operations visible, and CUTLASS states plainly that issuing it 'enforces no global memory access prior to this instruction'. The ~3.8-4.0 us prologue overlap Nsys reports is therefore a hard bound for producer-written data, and the only PDL prologue work upstream does with real memory traffic (CUTLASS example 63) prefetches weights, which no prior kernel writes.",
+      "evidence": "csrc/cutlass/include/cutlass/arch/grid_dependency_control.h; PTX ISA griddepcontrol semantics"
+    },
+    {
+      "name": "ld.global.nc / __ldg on o_accum",
+      "reason": "the upstream comment in combine.cu is well founded. The non-coherent read-only path is valid only for data no prerequisite grid writes during the consumer's lifetime, and under PDL the consumer's lifetime begins before the producer's stores land. FlashMLA's own uses of __ldg in this kernel are on num_splits_ptr and attn_sink, neither of which the main kernel writes.",
+      "evidence": "csrc/smxx/decode/combine/combine.cu:68"
+    },
+    {
+      "name": "ld.global.L1::no_allocate / evict-first cache policy on o_accum",
+      "reason": "not built. The 16.8 MB of o_accum was written by the immediately preceding kernel and fits inside this device's 126.5 MB L2, so these reads are L2 hits rather than DRAM traffic and there is nothing for L1 to protect: the combine touches essentially nothing else. Documented sm_100 wins for this qualifier are on GEMV operand streams that displace reused data. Spending the campaign's remaining identity here would have been a guess against the measured picture, in which C2 already reached the same 7.97 us at both buckets.",
+      "evidence": "KernelWiki cache-policy guidance; DeepEP issue 136 on L1::no_allocate and stale lines"
+    },
+    {
+      "name": "reducing num_sm_parts to shorten the reduction",
+      "reason": "out of scope. num_sm_parts, tile_scheduler_metadata and num_splits are frozen caller inputs in plan section 0.2; changing them is a host-metadata rewrite that alters the production ABI, which the plan's bounded hypotheses explicitly exclude. Recorded as the upstream-favoured lever for whoever owns that ABI.",
+      "evidence": "csrc/api/sparse_decode.h; FlashInfer PR 1200"
+    },
+    {
+      "name": "changing BLOCK_SIZE_M or splitting head_dim_v across more warps",
+      "reason": "not built. Both change the combine's grid and block topology, which the campaign deliberately preserved so that a graph-node comparison shows only the intended kernel substitution. C2 reached equal combine time at both buckets without touching topology, leaving no measured gap this would close."
+    },
+    {
+      "name": "a second NCU capture",
+      "reason": "not invoked. The concrete survivor question -- why C1 gained nothing at M32 -- was answered by the Nsys per-kernel durations plus the ptxas register counts and the documented sm_100 occupancy arithmetic, and the answer predicted C2's register target and its result in advance. No further device-code hypothesis remained open."
+    }
+  ],
+  "measurement_hazards_disclosed": [
+    {
+      "hazard": "cross-GPU comparison",
+      "detail": "the first two leases were served different physical B200s. The installed-stock M16 graph leaf median is about 28.86 us on one and 26.85 us on the other, while the candidate arm is unchanged, so a stock-relative ratio is not portable between them. Every ratio quoted in the final report was regenerated inside one lease on one physical GPU.",
+      "evidence": "evidence/final_*.json all carry the same GPU uuid"
+    },
+    {
+      "hazard": "workspace placement asymmetry against installed stock",
+      "detail": "the provider reduces into workspaces preallocated once by initialize(), while the installed stock path takes o_accum from the caching allocator, so the stock arm carries a per-process buffer-placement term the candidate arm does not. This is why the plan's P1-relative condition is measured as a directly paired provider-versus-provider comparison: both arms then use identically shaped workspaces allocated by the same code in the same process and the placement term cancels."
+    },
+    {
+      "hazard": "shared root volume below the plan's 8 GiB floor",
+      "detail": "reported rather than worked around; see evidence/disk_pressure_disclosure.json. All measurements completed before the volume filled, and this campaign's total footprint is about 34 MiB."
+    }
+  ]
+}

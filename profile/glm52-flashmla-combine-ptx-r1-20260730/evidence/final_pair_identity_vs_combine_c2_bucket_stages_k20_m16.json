@@ -1,0 +1,4633 @@
+{
+  "a": "combine_identity",
+  "arms": {
+    "combine_c2_bucket_stages": {
+      "build_id": "ea8c72aac9631a9134540d9d970b627737b55acc9623e30ae49f26b4a96d84c9",
+      "combine_symbol_prefix": "infini_kernel_glm52_flashmla_sparse_decode_combine",
+      "extension_file": "/home/qinhaiyan/glm52-hotspot-goal-runs/cache/flashmla_combine_ptx_r1/torch_extensions/infini_kernel_glm52_flashmla_sparse_decode_combine_c2_bucket_stages_ea8c72aac9631a91/infini_kernel_glm52_flashmla_sparse_decode_combine_c2_bucket_stages_ea8c72aac9631a91.so",
+      "extension_sha256": "e509dff9cfb2ecf19febf4ba979608608588b173e8d14e71a448e74cd324180f",
+      "git_commit": "daef3d0c5890e688b3e6ecac7392a832cdf537ad-dirty",
+      "launch_count": 1,
+      "main_symbol_prefix": "infini_kernel_glm52_flashmla_sparse_decode",
+      "main_variant": "p1_consumer_scale",
+      "module_name": "infini_kernel_glm52_flashmla_sparse_decode_combine_c2_bucket_stages_ea8c72aac9631a91",
+      "name": "glm52_flashmla_combine_c2_bucket_stages",
+      "role": "experimental",
+      "source_sha256": {
+        "csrc/glm52_hotspot/api_combine.cpp": "a6031c9d499736bb16c2125328dbc04e6ed1cd9a3a5a7fa80142cadd4295d381",
+        "csrc/glm52_hotspot/combine.cuh": "51331c4a4ca2f416e6590826a6fc4c354ffefd4d36bbbef3f701bfef7dd0efa8",
+        "csrc/glm52_hotspot/combine.h": "f750bf3c556058540df86610952fe475e5a6c6d92388eda45074657aa161e28c",
+        "csrc/glm52_hotspot/v32_combine_c2_bucket_stages.cu": "f842e1281e2cbbeb45b422ee963ec7717e9ba7515f5c7ed32fb4d2a59eaebed3",
+        "csrc/glm52_hotspot/v32_p1_consumer_scale.cu": "58299603d7343c1daffa086c6c601bc57bb864213b0cb839470bdbc5dedbf565",
+        "csrc/kerutils/include/kerutils/device/sm100/intrinsics.cuh": "032f5cbeb060a37f95316a4efca1ea80a0890daf00db148b7ddad09cd9a0c738",
+        "csrc/params.h": "a4cc4ccf965ee012ec619401eb8ec0aaa182f2625888b6b1326e345ede218f1b",
+        "csrc/sm100/decode/head64/config.h": "694d5e6d9a88ff4f0aaddfb2abbbfeff76d900b48337adf0b0742f87d59ab3a5",
+        "csrc/sm100/decode/head64/kernel.cuh": "afd656a9eae63c557027d4de71a29784a4ad526df6f5ef5ca062645263126617",
+        "csrc/sm100/decode/head64/kernel.h": "953548cea84d9c7190a6f41dc6ba127281783208dedb7cded12bdeac8bdc422d",
+        "csrc/sm100/helpers.h": "7e3c6e42ef778f7120c90f607082cf6dc3817540b5c24442e52e91fd15c7e791"
+      },
+      "stock_combine_translation_unit_linked": false,
+      "variant": "combine_c2_bucket_stages",
+      "workspace_pointers": {
+        "16": {
+          "lse_accum": 123117750039040,
+          "lse_base": 123117750034944,
+          "lse_stride": [
+            64,
+            1,
+            64
+          ],
+          "lse_view": 123117750034944,
+          "o_accum": 123117574857728,
+          "out": 123117764608000
+        },
+        "32": {
+          "lse_accum": 123117750089216,
+          "lse_base": 123117750081024,
+          "lse_stride": [
+            64,
+            1,
+            64
+          ],
+          "lse_view": 123117750081024,
+          "o_accum": 123117596835840,
+          "out": 123118412890112
+        }
+      }
+    },
+    "combine_identity": {
+      "build_id": "264037f2c6872c7ffa1a8ae6ae8012e44e0d0bd3c7adfea8cb7fff4b2915ff17",
+      "combine_symbol_prefix": "infini_kernel_glm52_flashmla_sparse_decode_combine",
+      "extension_file": "/home/qinhaiyan/glm52-hotspot-goal-runs/cache/flashmla_combine_ptx_r1/torch_extensions/infini_kernel_glm52_flashmla_sparse_decode_combine_identity_264037f2c6872c7f/infini_kernel_glm52_flashmla_sparse_decode_combine_identity_264037f2c6872c7f.so",
+      "extension_sha256": "a46f3ad970be59bcd4ca2170bdf1126730247810a1659fa3dfd80265502b1c0b",
+      "git_commit": "daef3d0c5890e688b3e6ecac7392a832cdf537ad-dirty",
+      "launch_count": 1,
+      "main_symbol_prefix": "infini_kernel_glm52_flashmla_sparse_decode",
+      "main_variant": "p1_consumer_scale",
+      "module_name": "infini_kernel_glm52_flashmla_sparse_decode_combine_identity_264037f2c6872c7f",
+      "name": "glm52_flashmla_combine_control_identity",
+      "role": "control",
+      "source_sha256": {
+        "csrc/glm52_hotspot/api_combine.cpp": "a6031c9d499736bb16c2125328dbc04e6ed1cd9a3a5a7fa80142cadd4295d381",
+        "csrc/glm52_hotspot/combine.cuh": "51331c4a4ca2f416e6590826a6fc4c354ffefd4d36bbbef3f701bfef7dd0efa8",
+        "csrc/glm52_hotspot/combine.h": "f750bf3c556058540df86610952fe475e5a6c6d92388eda45074657aa161e28c",
+        "csrc/glm52_hotspot/v32_combine_identity.cu": "5481301e8caa9a071a2a6709dcb61d06e94199fd7824f1e2fdd1e0d7c3c14977",
+        "csrc/glm52_hotspot/v32_p1_consumer_scale.cu": "58299603d7343c1daffa086c6c601bc57bb864213b0cb839470bdbc5dedbf565",
+        "csrc/kerutils/include/kerutils/device/sm100/intrinsics.cuh": "032f5cbeb060a37f95316a4efca1ea80a0890daf00db148b7ddad09cd9a0c738",
+        "csrc/params.h": "a4cc4ccf965ee012ec619401eb8ec0aaa182f2625888b6b1326e345ede218f1b",
+        "csrc/sm100/decode/head64/config.h": "694d5e6d9a88ff4f0aaddfb2abbbfeff76d900b48337adf0b0742f87d59ab3a5",
+        "csrc/sm100/decode/head64/kernel.cuh": "afd656a9eae63c557027d4de71a29784a4ad526df6f5ef5ca062645263126617",
+        "csrc/sm100/decode/head64/kernel.h": "953548cea84d9c7190a6f41dc6ba127281783208dedb7cded12bdeac8bdc422d",
+        "csrc/sm100/helpers.h": "7e3c6e42ef778f7120c90f607082cf6dc3817540b5c24442e52e91fd15c7e791"
+      },
+      "stock_combine_translation_unit_linked": false,
+      "variant": "combine_identity",
+      "workspace_pointers": {
+        "16": {
+          "lse_accum": 123117749938688,
+          "lse_base": 123117749934592,
+          "lse_stride": [
+            64,
+            1,
+            64
+          ],
+          "lse_view": 123117749934592,
+          "o_accum": 123117529768960,
+          "out": 123117750370304
+        },
+        "32": {
+          "lse_accum": 123117749988864,
+          "lse_base": 123117749980672,
+          "lse_stride": [
+            64,
+            1,
+            64
+          ],
+          "lse_view": 123117749980672,
+          "o_accum": 123117551264768,
+          "out": 123118410792960
+        }
+      }
+    }
+  },
+  "b": "combine_c2_bucket_stages",
+  "comparison": "provider_provider",
+  "gpu": {
+    "clock_snapshot": "2026/07/30 08:59:29.737, GPU-30b619de-87f2-1862-0d07-a595da8fe417, P0, 1965, 3996, 39, 357.31",
+    "compute_capability": [
+      10,
+      0
+    ],
+    "logical_index": 0,
+    "name": "NVIDIA B200",
+    "physical_index": 0,
+    "uuid": "GPU-30b619de-87f2-1862-0d07-a595da8fe417"
+  },
+  "graph_only_selection_probe": {
+    "capture_provider_launches": 1,
+    "graph_selects_candidate": true,
+    "replay_does_not_reenter_host_launch": true,
+    "replay_host_launches": 0
+  },
+  "is_null_control": false,
+  "lane_order": [
+    "containing_graph",
+    "leaf_graph"
+  ],
+  "lanes": {
+    "containing_graph": {
+      "passes_every_series_every_estimator_1_03": true,
+      "series": [
+        {
+          "graph_capture_order": "AB",
+          "raw_pairs": [
+            {
+              "a_us": 27.302399277687073,
+              "b_us": 22.809599339962006,
+              "order": "AB",
+              "pair": 0,
+              "paired_speedup": 1.1969696999391726
+            },
+            {
+              "a_us": 27.511999011039734,
+              "b_us": 22.71679937839508,
+              "order": "BA",
+              "pair": 1,
+              "paired_speedup": 1.211086058065255
+            },
+            {
+              "a_us": 27.14720070362091,
+              "b_us": 22.791999578475952,
+              "order": "AB",
+              "pair": 2,
+              "paired_speedup": 1.1910846439843688
+            },
+            {
+              "a_us": 27.303999662399292,
+              "b_us": 22.729599475860596,
+              "order": "BA",
+              "pair": 3,
+              "paired_speedup": 1.2012530045413614
+            },
+            {
+              "a_us": 26.976001262664795,
+              "b_us": 22.788800299167633,
+              "order": "AB",
+              "pair": 4,
+              "paired_speedup": 1.1837394206157532
+            },
+            {
+              "a_us": 27.329599857330322,
+              "b_us": 22.729599475860596,
+              "order": "BA",
+              "pair": 5,
+              "paired_speedup": 1.2023792978118706
+            },
+            {
+              "a_us": 27.20640003681183,
+              "b_us": 22.830399870872498,
+              "order": "AB",
+              "pair": 6,
+              "paired_speedup": 1.191674267235342
+            },
+            {
+              "a_us": 27.220800518989563,
+              "b_us": 22.79359996318817,
+              "order": "BA",
+              "pair": 7,
+              "paired_speedup": 1.194229983984599
+            },
+            {
+              "a_us": 27.510398626327515,
+              "b_us": 22.836799919605255,
+              "order": "AB",
+              "pair": 8,
+              "paired_speedup": 1.2046520844941153
+            },
+            {
+              "a_us": 27.347201108932495,
+              "b_us": 22.780799865722656,
+              "order": "BA",
+              "pair": 9,
+              "paired_speedup": 1.2004495570886744
+            },
+            {
+              "a_us": 27.481600642204285,
+              "b_us": 22.780799865722656,
+              "order": "AB",
+              "pair": 10,
+              "paired_speedup": 1.2063492416504098
+            },
+            {
+              "a_us": 27.136000990867615,
+              "b_us": 22.763200104236603,
+              "order": "BA",
+              "pair": 11,
+              "paired_speedup": 1.19209956713499
+            },
+            {
+              "a_us": 27.185600996017456,
+              "b_us": 22.72000014781952,
+              "order": "AB",
+              "pair": 12,
+              "paired_speedup": 1.1965493318285259
+            },
+            {
+              "a_us": 27.537599205970764,
+              "b_us": 22.76799976825714,
+              "order": "BA",
+              "pair": 13,
+              "paired_speedup": 1.2094869767331664
+            },
+            {
+              "a_us": 27.59999930858612,
+              "b_us": 22.814400494098663,
+              "order": "AB",
+              "pair": 14,
+              "paired_speedup": 1.2097621989113996
+            },
+            {
+              "a_us": 27.054399251937866,
+              "b_us": 22.8192001581192,
+              "order": "BA",
+              "pair": 15,
+              "paired_speedup": 1.185598051836701
+            },
+            {
+              "a_us": 27.07200050354004,
+              "b_us": 22.76960015296936,
+              "order": "AB",
+              "pair": 16,
+              "paired_speedup": 1.1889537067698401
+            },
+            {
+              "a_us": 27.001601457595825,
+              "b_us": 22.77279943227768,
+              "order": "BA",
+              "pair": 17,
+              "paired_speedup": 1.1856953089098186
+            },
+            {
+              "a_us": 27.340799570083618,
+              "b_us": 22.77120053768158,
+              "order": "AB",
+              "pair": 18,
+              "paired_speedup": 1.2006744890257457
+            },
+            {
+              "a_us": 27.43839919567108,
+              "b_us": 22.729599475860596,
+              "order": "BA",
+              "pair": 19,
+              "paired_speedup": 1.2071659786531368
+            },
+            {
+              "a_us": 27.062401175498962,
+              "b_us": 22.8192001581192,
+              "order": "AB",
+              "pair": 20,
+              "paired_speedup": 1.1859487180960637
+            },
+            {
+              "a_us": 27.324798703193665,
+              "b_us": 22.681599855422974,
+              "order": "BA",
+              "pair": 21,
+              "paired_speedup": 1.204712140120951
+            },
+            {
+              "a_us": 27.41760015487671,
+              "b_us": 22.790400683879852,
+              "order": "AB",
+              "pair": 22,
+              "paired_speedup": 1.203032826635197
+            },
+            {
+              "a_us": 27.0687997341156,
+              "b_us": 22.779199481010437,
+              "order": "BA",
+              "pair": 23,
+              "paired_speedup": 1.188312159814094
+            },
+            {
+              "a_us": 27.09600031375885,
+              "b_us": 22.947199642658234,
+              "order": "AB",
+              "pair": 24,
+              "paired_speedup": 1.1807976892913812
+            },
+            {
+              "a_us": 27.38560140132904,
+              "b_us": 22.737599909305573,
+              "order": "BA",
+              "pair": 25,
+              "paired_speedup": 1.2044191783901181
+            },
+            {
+              "a_us": 27.535998821258545,
+              "b_us": 22.80000001192093,
+              "order": "AB",
+              "pair": 26,
+              "paired_speedup": 1.2077192459149741
+            },
+            {
+              "a_us": 27.209600806236267,
+              "b_us": 22.7183997631073,
+              "order": "BA",
+              "pair": 27,
+              "paired_speedup": 1.1976900261444596
+            },
+            {
+              "a_us": 27.184000611305237,
+              "b_us": 22.79520034790039,
+              "order": "AB",
+              "pair": 28,
+              "paired_speedup": 1.1925317696893631
+            },
+            {
+              "a_us": 27.289599180221558,
+              "b_us": 22.7183997631073,
+              "order": "BA",
+              "pair": 29,
+              "paired_speedup": 1.2012113293532887
+            },
+            {
+              "a_us": 27.116799354553223,
+              "b_us": 22.82399982213974,
+              "order": "AB",
+              "pair": 30,
+              "paired_speedup": 1.1880827009229724
+            },
+            {
+              "a_us": 27.47040092945099,
+              "b_us": 22.812800109386444,
+              "order": "BA",
+              "pair": 31,
+              "paired_speedup": 1.2041661171680609
+            },
+            {
+              "a_us": 27.408000826835632,
+              "b_us": 22.723199427127838,
+              "order": "AB",
+              "pair": 32,
+              "paired_speedup": 1.2061682121275095
+            },
+            {
+              "a_us": 27.28320062160492,
+              "b_us": 22.76960015296936,
+              "order": "BA",
+              "pair": 33,
+              "paired_speedup": 1.198229237154476
+            },
+            {
+              "a_us": 27.12160050868988,
+              "b_us": 22.780799865722656,
+              "order": "AB",
+              "pair": 34,
+              "paired_speedup": 1.1905464544069257
+            },
+            {
+              "a_us": 27.406400442123413,
+              "b_us": 22.755199670791626,
+              "order": "BA",
+              "pair": 35,
+              "paired_speedup": 1.2044016681295935
+            },
+            {
+              "a_us": 27.475199103355408,
+              "b_us": 22.753599286079407,
+              "order": "AB",
+              "pair": 36,
+              "paired_speedup": 1.2075100188726917
+            },
+            {
+              "a_us": 27.36319899559021,
+              "b_us": 22.74560034275055,
+              "order": "BA",
+              "pair": 37,
+              "paired_speedup": 1.2030106298913925
+            },
+            {
+              "a_us": 27.09600031375885,
+              "b_us": 22.79520034790039,
+              "order": "AB",
+              "pair": 38,
+              "paired_speedup": 1.1886712948436355
+            },
+            {
+              "a_us": 27.47359871864319,
+              "b_us": 22.726400196552277,
+              "order": "BA",
+              "pair": 39,
+              "paired_speedup": 1.2088847543400687
+            },
+            {
+              "a_us": 27.022400498390198,
+              "b_us": 22.92640060186386,
+              "order": "AB",
+              "pair": 40,
+              "paired_speedup": 1.178658655043886
+            },
+            {
+              "a_us": 27.396801114082336,
+              "b_us": 22.832000255584717,
+              "order": "BA",
+              "pair": 41,
+              "paired_speedup": 1.1999299582777934
+            },
+            {
+              "a_us": 27.532801032066345,
+              "b_us": 22.755199670791626,
+              "order": "AB",
+              "pair": 42,
+              "paired_speedup": 1.209956468428937
+            },
+            {
+              "a_us": 27.055999636650085,
+              "b_us": 22.77279943227768,
+              "order": "BA",
+              "pair": 43,
+              "paired_speedup": 1.188084043734276
+            },
+            {
+              "a_us": 27.140799164772034,
+              "b_us": 22.7743998169899,
+              "order": "AB",
+              "pair": 44,
+              "paired_speedup": 1.1917240139309737
+            },
+            {
+              "a_us": 27.33759880065918,
+              "b_us": 22.788800299167633,
+              "order": "BA",
+              "pair": 45,
+              "paired_speedup": 1.1996067560282098
+            },
+            {
+              "a_us": 27.137601375579834,
+              "b_us": 22.74239957332611,
+              "order": "AB",
+              "pair": 46,
+              "paired_speedup": 1.1932602489056927
+            },
+            {
+              "a_us": 27.17919945716858,
+              "b_us": 22.82080054283142,
+              "order": "BA",
+              "pair": 47,
+              "paired_speedup": 1.190983611909541
+            },
+            {
+              "a_us": 27.079999446868896,
+              "b_us": 22.910399734973907,
+              "order": "AB",
+              "pair": 48,
+              "paired_speedup": 1.1819959389678338
+            },
+            {
+              "a_us": 27.348798513412476,
+              "b_us": 22.69279956817627,
+              "order": "BA",
+              "pair": 49,
+              "paired_speedup": 1.2051751671823536
+            },
+            {
+              "a_us": 27.41279900074005,
+              "b_us": 22.72160053253174,
+              "order": "AB",
+              "pair": 50,
+              "paired_speedup": 1.206464261243026
+            },
+            {
+              "a_us": 27.318400144577026,
+              "b_us": 22.761599719524384,
+              "order": "BA",
+              "pair": 51,
+              "paired_speedup": 1.2001968438599648
+            },
+            {
+              "a_us": 27.136000990867615,
+              "b_us": 22.804799675941467,
+              "order": "AB",
+              "pair": 52,
+              "paired_speedup": 1.1899249884442293
+            },
+            {
+              "a_us": 27.369600534439087,
+              "b_us": 22.788800299167633,
+              "order": "BA",
+              "pair": 53,
+              "paired_speedup": 1.2010110306438013
+            },
+            {
+              "a_us": 27.182400226593018,
+              "b_us": 22.871999442577362,
+              "order": "AB",
+              "pair": 54,
+              "paired_speedup": 1.1884575414946728
+            },
+            {
+              "a_us": 27.321600914001465,
+              "b_us": 22.752000391483307,
+              "order": "BA",
+              "pair": 55,
+              "paired_speedup": 1.2008439013665226
+            },
+            {
+              "a_us": 27.184000611305237,
+              "b_us": 22.787199914455414,
+              "order": "AB",
+              "pair": 56,
+              "paired_speedup": 1.1929504596157356
+            },
+            {
+              "a_us": 27.303999662399292,
+              "b_us": 22.752000391483307,
+              "order": "BA",
+              "pair": 57,
+              "paired_speedup": 1.2000702880006948
+            },
+            {
+              "a_us": 27.286401391029358,
+              "b_us": 23.030400276184082,
+              "order": "AB",
+              "pair": 58,
+              "paired_speedup": 1.1847992680894235
+            },
+            {
+              "a_us": 27.40960121154785,
+              "b_us": 22.85120040178299,
+              "order": "BA",
+              "pair": 59,
+              "paired_speedup": 1.1994818972139945
+            },
+            {
+              "a_us": 27.033600211143494,
+              "b_us": 22.790400683879852,
+              "order": "AB",
+              "pair": 60,
+              "paired_speedup": 1.1861836299466622
+            },
+            {
+              "a_us": 27.17759907245636,
+              "b_us": 23.37920069694519,
+              "order": "BA",
+              "pair": 61,
+              "paired_speedup": 1.162469129066824
+            },
+            {
+              "a_us": 27.302399277687073,
+              "b_us": 22.766399383544922,
+              "order": "AB",
+              "pair": 62,
+              "paired_speedup": 1.1992409874624566
+            },
+            {
+              "a_us": 27.116799354553223,
+              "b_us": 22.71520048379898,
+              "order": "BA",
+              "pair": 63,
+              "paired_speedup": 1.1937732785538726
+            },
+            {
+              "a_us": 26.958400011062622,
+              "b_us": 22.791999578475952,
+              "order": "AB",
+              "pair": 64,
+              "paired_speedup": 1.1828010051615343
+            },
+            {
+              "a_us": 27.20640003681183,
+              "b_us": 22.74080067873001,
+              "order": "BA",
+              "pair": 65,
+              "paired_speedup": 1.1963694867726709
+            },
+            {
+              "a_us": 27.12480127811432,
+              "b_us": 22.787199914455414,
+              "order": "AB",
+              "pair": 66,
+              "paired_speedup": 1.1903525391422611
+            },
+            {
+              "a_us": 27.190399169921875,
+              "b_us": 22.79680073261261,
+              "order": "BA",
+              "pair": 67,
+              "paired_speedup": 1.1927287293003301
+            },
+            {
+              "a_us": 27.215999364852905,
+              "b_us": 22.752000391483307,
+              "order": "AB",
+              "pair": 68,
+              "paired_speedup": 1.1962024831469587
+            },
+            {
+              "a_us": 27.289599180221558,
+              "b_us": 22.835199534893036,
+              "order": "BA",
+              "pair": 69,
+              "paired_speedup": 1.19506725301533
+            },
+            {
+              "a_us": 27.25760042667389,
+              "b_us": 22.734400629997253,
+              "order": "AB",
+              "pair": 70,
+              "paired_speedup": 1.1989583921868796
+            },
+            {
+              "a_us": 28.756800293922424,
+              "b_us": 22.8192001581192,
+              "order": "BA",
+              "pair": 71,
+              "paired_speedup": 1.2602019393607269
+            },
+            {
+              "a_us": 27.241599559783936,
+              "b_us": 22.835199534893036,
+              "order": "AB",
+              "pair": 72,
+              "paired_speedup": 1.1929652516571074
+            },
+            {
+              "a_us": 27.476799488067627,
+              "b_us": 22.734400629997253,
+              "order": "BA",
+              "pair": 73,
+              "paired_speedup": 1.2086001269729074
+            },
+            {
+              "a_us": 27.36159861087799,
+              "b_us": 22.830399870872498,
+              "order": "AB",
+              "pair": 74,
+              "paired_speedup": 1.1984721584218283
+            },
+            {
+              "a_us": 27.291199564933777,
+              "b_us": 22.763200104236603,
+              "order": "BA",
+              "pair": 75,
+              "paired_speedup": 1.1989175265324157
+            },
+            {
+              "a_us": 27.268800139427185,
+              "b_us": 22.756800055503845,
+              "order": "AB",
+              "pair": 76,
+              "paired_speedup": 1.1982704102913666
+            },
+            {
+              "a_us": 27.212798595428467,
+              "b_us": 22.686399519443512,
+              "order": "BA",
+              "pair": 77,
+              "paired_speedup": 1.1995203810153117
+            },
+            {
+              "a_us": 27.369600534439087,
+              "b_us": 22.811199724674225,
+              "order": "AB",
+              "pair": 78,
+              "paired_speedup": 1.1998316995503822
+            },
+            {
+              "a_us": 27.262398600578308,
+              "b_us": 22.670400142669678,
+              "order": "BA",
+              "pair": 79,
+              "paired_speedup": 1.2025548040180236
+            },
+            {
+              "a_us": 27.12480127811432,
+              "b_us": 22.87359982728958,
+              "order": "AB",
+              "pair": 80,
+              "paired_speedup": 1.1858562483790942
+            },
+            {
+              "a_us": 27.24960148334503,
+              "b_us": 22.868800163269043,
+              "order": "BA",
+              "pair": 81,
+              "paired_speedup": 1.191562359581604
+            },
+            {
+              "a_us": 27.030399441719055,
+              "b_us": 23.01439940929413,
+              "order": "AB",
+              "pair": 82,
+              "paired_speedup": 1.1744994497142127
+            },
+            {
+              "a_us": 27.262398600578308,
+              "b_us": 22.90239930152893,
+              "order": "BA",
+              "pair": 83,
+              "paired_speedup": 1.1903730365385041
+            },
+            {
+              "a_us": 27.215999364852905,
+              "b_us": 22.74399995803833,
+              "order": "AB",
+              "pair": 84,
+              "paired_speedup": 1.1966232595438453
+            },
+            {
+              "a_us": 27.302399277687073,
+              "b_us": 22.72160053253174,
+              "order": "BA",
+              "pair": 85,
+              "paired_speedup": 1.2016054607859494
+            },
+            {
+              "a_us": 27.251198887825012,
+              "b_us": 22.79680073261261,
+              "order": "AB",
+              "pair": 86,
+              "paired_speedup": 1.1953957578284236
+            },
+            {
+              "a_us": 27.559998631477356,
+              "b_us": 22.942399978637695,
+              "order": "BA",
+              "pair": 87,
+              "paired_speedup": 1.2012692071073312
+            },
+            {
+              "a_us": 27.60159969329834,
+              "b_us": 22.812800109386444,
+              "order": "AB",
+              "pair": 88,
+              "paired_speedup": 1.2099172201987392
+            },
+            {
+              "a_us": 27.38719880580902,
+              "b_us": 22.77279943227768,
+              "order": "BA",
+              "pair": 89,
+              "paired_speedup": 1.2026276737409363
+            },
+            {
+              "a_us": 27.156800031661987,
+              "b_us": 22.79520034790039,
+              "order": "AB",
+              "pair": 90,
+              "paired_speedup": 1.1913385106160443
+            },
+            {
+              "a_us": 27.644801139831543,
+              "b_us": 22.758400440216064,
+              "order": "BA",
+              "pair": 91,
+              "paired_speedup": 1.2147075631458168
+            },
+            {
+              "a_us": 27.1232008934021,
+              "b_us": 24.318400025367737,
+              "order": "AB",
+              "pair": 92,
+              "paired_speedup": 1.1153365708726124
+            },
+            {
+              "a_us": 27.12799906730652,
+              "b_us": 22.759999334812164,
+              "order": "BA",
+              "pair": 93,
+              "paired_speedup": 1.1919156353319114
+            },
+            {
+              "a_us": 27.2271990776062,
+              "b_us": 22.806400060653687,
+              "order": "AB",
+              "pair": 94,
+              "paired_speedup": 1.193840281903123
+            },
+            {
+              "a_us": 27.396801114082336,
+              "b_us": 22.74720072746277,
+              "order": "BA",
+              "pair": 95,
+              "paired_speedup": 1.2044031897518752
+            },
+            {
+              "a_us": 27.190399169921875,
+              "b_us": 22.80000001192093,
+              "order": "AB",
+              "pair": 96,
+              "paired_speedup": 1.1925613664783086
+            },
+            {
+              "a_us": 27.31359899044037,
+              "b_us": 22.782400250434875,
+              "order": "BA",
+              "pair": 97,
+              "paired_speedup": 1.1988903140229485
+            },
+            {
+              "a_us": 27.065598964691162,
+              "b_us": 22.784000635147095,
+              "order": "AB",
+              "pair": 98,
+              "paired_speedup": 1.1879212697588843
+            },
+            {
+              "a_us": 27.04479992389679,
+              "b_us": 22.759999334812164,
+              "order": "BA",
+              "pair": 99,
+              "paired_speedup": 1.188260136832732
+            }
+          ],
+          "series": 1,
+          "starts_with": "AB",
+          "summary": {
+            "a_median_us": 27.262398600578308,
+            "ab_pairs": 50,
+            "all_estimators_finite": true,
+            "all_estimators_ge_1_03": true,
+            "b_median_us": 22.781600058078766,
+            "ba_pairs": 50,
+            "estimators": {
+              "ab_ratio_of_medians": 1.192707222047903,
+              "ba_ratio_of_medians": 1.1997328678935306,
+              "order_balanced_sqrt_ab_ba": 1.1962148870770906,
+              "pooled_ratio_of_medians": 1.196684979592141
+            },
+            "pairs": 100
+          }
+        },
+        {
+          "graph_capture_order": "BA",
+          "raw_pairs": [
+            {
+              "a_us": 26.94079875946045,
+              "b_us": 22.815999388694763,
+              "order": "BA",
+              "pair": 0,
+              "paired_speedup": 1.1807853910098502
+            },
+            {
+              "a_us": 26.85920000076294,
+              "b_us": 22.71360009908676,
+              "order": "AB",
+              "pair": 1,
+              "paired_speedup": 1.1825161966219022
+            },
+            {
+              "a_us": 26.83520019054413,
+              "b_us": 22.686399519443512,
+              "order": "BA",
+              "pair": 2,
+              "paired_speedup": 1.18287611780551
+            },
+            {
+              "a_us": 26.99039876461029,
+              "b_us": 22.780799865722656,
+              "order": "AB",
+              "pair": 3,
+              "paired_speedup": 1.1847871419660574
+            },
+            {
+              "a_us": 26.916798949241638,
+              "b_us": 22.79680073261261,
+              "order": "BA",
+              "pair": 4,
+              "paired_speedup": 1.180727035558768
+            },
+            {
+              "a_us": 26.96639895439148,
+              "b_us": 22.881600260734558,
+              "order": "AB",
+              "pair": 5,
+              "paired_speedup": 1.1785189255607504
+            },
+            {
+              "a_us": 26.96160078048706,
+              "b_us": 22.76960015296936,
+              "order": "BA",
+              "pair": 6,
+              "paired_speedup": 1.1841051489422412
+            },
+            {
+              "a_us": 26.85759961605072,
+              "b_us": 22.804799675941467,
+              "order": "AB",
+              "pair": 7,
+              "paired_speedup": 1.1777169717647142
+            },
+            {
+              "a_us": 26.916798949241638,
+              "b_us": 22.72000014781952,
+              "order": "BA",
+              "pair": 8,
+              "paired_speedup": 1.1847182559030438
+            },
+            {
+              "a_us": 26.94239914417267,
+              "b_us": 22.92640060186386,
+              "order": "AB",
+              "pair": 9,
+              "paired_speedup": 1.1751691690313706
+            },
+            {
+              "a_us": 27.02080011367798,
+              "b_us": 22.74560034275055,
+              "order": "BA",
+              "pair": 10,
+              "paired_speedup": 1.1879572183853135
+            },
+            {
+              "a_us": 27.006399631500244,
+              "b_us": 22.776000201702118,
+              "order": "AB",
+              "pair": 11,
+              "paired_speedup": 1.1857393481003735
+            },
+            {
+              "a_us": 26.916798949241638,
+              "b_us": 22.700800001621246,
+              "order": "BA",
+              "pair": 12,
+              "paired_speedup": 1.1857202806649674
+            },
+            {
+              "a_us": 26.93440020084381,
+              "b_us": 22.711999714374542,
+              "order": "AB",
+              "pair": 13,
+              "paired_speedup": 1.185910555634469
+            },
+            {
+              "a_us": 26.870399713516235,
+              "b_us": 22.76799976825714,
+              "order": "BA",
+              "pair": 14,
+              "paired_speedup": 1.180182712008747
+            },
+            {
+              "a_us": 26.903998851776123,
+              "b_us": 22.723199427127838,
+              "order": "AB",
+              "pair": 15,
+              "paired_speedup": 1.1839881499986786
+            },
+            {
+              "a_us": 26.953598856925964,
+              "b_us": 22.787199914455414,
+              "order": "BA",
+              "pair": 16,
+              "paired_speedup": 1.1828394431133038
+            },
+            {
+              "a_us": 26.820799708366394,
+              "b_us": 22.71679937839508,
+              "order": "AB",
+              "pair": 17,
+              "paired_speedup": 1.180659267250229
+            },
+            {
+              "a_us": 27.01280117034912,
+              "b_us": 22.804799675941467,
+              "order": "BA",
+              "pair": 18,
+              "paired_speedup": 1.184522624807224
+            },
+            {
+              "a_us": 27.039998769760132,
+              "b_us": 22.835199534893036,
+              "order": "AB",
+              "pair": 19,
+              "paired_speedup": 1.1841367415442114
+            },
+            {
+              "a_us": 26.889601349830627,
+              "b_us": 22.79680073261261,
+              "order": "BA",
+              "pair": 20,
+              "paired_speedup": 1.179533990985101
+            },
+            {
+              "a_us": 26.848000288009644,
+              "b_us": 22.7183997631073,
+              "order": "AB",
+              "pair": 21,
+              "paired_speedup": 1.181773389321569
+            },
+            {
+              "a_us": 26.926401257514954,
+              "b_us": 22.80000001192093,
+              "order": "BA",
+              "pair": 22,
+              "paired_speedup": 1.1809825106770415
+            },
+            {
+              "a_us": 26.848000288009644,
+              "b_us": 22.697600722312927,
+              "order": "AB",
+              "pair": 23,
+              "paired_speedup": 1.1828563122804718
+            },
+            {
+              "a_us": 27.024000883102417,
+              "b_us": 22.73920029401779,
+              "order": "BA",
+              "pair": 24,
+              "paired_speedup": 1.1884323341930307
+            },
+            {
+              "a_us": 26.91200077533722,
+              "b_us": 22.729599475860596,
+              "order": "AB",
+              "pair": 25,
+              "paired_speedup": 1.1840068191222832
+            },
+            {
+              "a_us": 26.90880000591278,
+              "b_us": 22.806400060653687,
+              "order": "BA",
+              "pair": 26,
+              "paired_speedup": 1.1798793292386676
+            },
+            {
+              "a_us": 26.916798949241638,
+              "b_us": 22.79359996318817,
+              "order": "AB",
+              "pair": 27,
+              "paired_speedup": 1.1808928380208683
+            },
+            {
+              "a_us": 26.980799436569214,
+              "b_us": 22.72160053253174,
+              "order": "BA",
+              "pair": 28,
+              "paired_speedup": 1.1874515352886057
+            },
+            {
+              "a_us": 26.85920000076294,
+              "b_us": 22.72160053253174,
+              "order": "AB",
+              "pair": 29,
+              "paired_speedup": 1.1820998244515029
+            },
+            {
+              "a_us": 26.849600672721863,
+              "b_us": 22.69120067358017,
+              "order": "BA",
+              "pair": 30,
+              "paired_speedup": 1.1832604655417553
+            },
+            {
+              "a_us": 26.822400093078613,
+              "b_us": 22.697600722312927,
+              "order": "AB",
+              "pair": 31,
+              "paired_speedup": 1.181728431177785
+            },
+            {
+              "a_us": 26.870399713516235,
+              "b_us": 22.700800001621246,
+              "order": "BA",
+              "pair": 32,
+              "paired_speedup": 1.1836763335035418
+            },
+            {
+              "a_us": 26.844799518585205,
+              "b_us": 22.710399329662323,
+              "order": "AB",
+              "pair": 33,
+              "paired_speedup": 1.1820487666864974
+            },
+            {
+              "a_us": 26.93440020084381,
+              "b_us": 22.66719937324524,
+              "order": "BA",
+              "pair": 34,
+              "paired_speedup": 1.1882544357303917
+            },
+            {
+              "a_us": 26.85920000076294,
+              "b_us": 22.69439995288849,
+              "order": "AB",
+              "pair": 35,
+              "paired_speedup": 1.183516640956368
+            },
+            {
+              "a_us": 27.20319926738739,
+              "b_us": 22.649599611759186,
+              "order": "BA",
+              "pair": 36,
+              "paired_speedup": 1.2010454813189755
+            },
+            {
+              "a_us": 26.948800683021545,
+              "b_us": 22.7743998169899,
+              "order": "AB",
+              "pair": 37,
+              "paired_speedup": 1.1832935620510845
+            },
+            {
+              "a_us": 26.94239914417267,
+              "b_us": 22.755199670791626,
+              "order": "BA",
+              "pair": 38,
+              "paired_speedup": 1.1840106671863528
+            },
+            {
+              "a_us": 26.796799898147583,
+              "b_us": 22.79359996318817,
+              "order": "AB",
+              "pair": 39,
+              "paired_speedup": 1.175628243955523
+            },
+            {
+              "a_us": 26.96479856967926,
+              "b_us": 22.71360009908676,
+              "order": "BA",
+              "pair": 40,
+              "paired_speedup": 1.187165330552924
+            },
+            {
+              "a_us": 26.848000288009644,
+              "b_us": 22.708800435066223,
+              "order": "AB",
+              "pair": 41,
+              "paired_speedup": 1.182272941487116
+            },
+            {
+              "a_us": 26.96160078048706,
+              "b_us": 22.776000201702118,
+              "order": "BA",
+              "pair": 42,
+              "paired_speedup": 1.1837724157761529
+            },
+            {
+              "a_us": 26.948800683021545,
+              "b_us": 22.76799976825714,
+              "order": "AB",
+              "pair": 43,
+              "paired_speedup": 1.1836261840002837
+            },
+            {
+              "a_us": 27.030399441719055,
+              "b_us": 22.74720072746277,
+              "order": "BA",
+              "pair": 44,
+              "paired_speedup": 1.1882956397832796
+            },
+            {
+              "a_us": 26.905599236488342,
+              "b_us": 22.766399383544922,
+              "order": "AB",
+              "pair": 45,
+              "paired_speedup": 1.1818117912811081
+            },
+            {
+              "a_us": 26.814401149749756,
+              "b_us": 22.79359996318817,
+              "order": "BA",
+              "pair": 46,
+              "paired_speedup": 1.1764004454344732
+            },
+            {
+              "a_us": 26.900801062583923,
+              "b_us": 22.72000014781952,
+              "order": "AB",
+              "pair": 47,
+              "paired_speedup": 1.1840141235723383
+            },
+            {
+              "a_us": 26.814401149749756,
+              "b_us": 22.73920029401779,
+              "order": "BA",
+              "pair": 48,
+              "paired_speedup": 1.1792147834154072
+            },
+            {
+              "a_us": 26.873600482940674,
+              "b_us": 22.732800245285034,
+              "order": "AB",
+              "pair": 49,
+              "paired_speedup": 1.1821509093898133
+            },
+            {
+              "a_us": 26.80799961090088,
+              "b_us": 22.731199860572815,
+              "order": "BA",
+              "pair": 50,
+              "paired_speedup": 1.1793481987459562
+            },
+            {
+              "a_us": 26.950401067733765,
+              "b_us": 22.752000391483307,
+              "order": "AB",
+              "pair": 51,
+              "paired_speedup": 1.1845288591776761
+            },
+            {
+              "a_us": 27.164798974990845,
+              "b_us": 22.6623997092247,
+              "order": "BA",
+              "pair": 52,
+              "paired_speedup": 1.1986726614804808
+            },
+            {
+              "a_us": 26.950401067733765,
+              "b_us": 22.791999578475952,
+              "order": "AB",
+              "pair": 53,
+              "paired_speedup": 1.182450051165536
+            },
+            {
+              "a_us": 26.952001452445984,
+              "b_us": 22.755199670791626,
+              "order": "BA",
+              "pair": 54,
+              "paired_speedup": 1.1844326502237348
+            },
+            {
+              "a_us": 26.931199431419373,
+              "b_us": 22.737599909305573,
+              "order": "AB",
+              "pair": 55,
+              "paired_speedup": 1.1844345726391963
+            },
+            {
+              "a_us": 26.875200867652893,
+              "b_us": 22.74399995803833,
+              "order": "BA",
+              "pair": 56,
+              "paired_speedup": 1.1816391539411029
+            },
+            {
+              "a_us": 26.945599913597107,
+              "b_us": 22.892799973487854,
+              "order": "AB",
+              "pair": 57,
+              "paired_speedup": 1.1770338248184058
+            },
+            {
+              "a_us": 26.984000205993652,
+              "b_us": 22.790400683879852,
+              "order": "BA",
+              "pair": 58,
+              "paired_speedup": 1.1840072748295305
+            },
+            {
+              "a_us": 26.814401149749756,
+              "b_us": 22.708800435066223,
+              "order": "AB",
+              "pair": 59,
+              "paired_speedup": 1.1807933768418604
+            },
+            {
+              "a_us": 27.01599895954132,
+              "b_us": 22.702400386333466,
+              "order": "BA",
+              "pair": 60,
+              "paired_speedup": 1.1900062768606876
+            },
+            {
+              "a_us": 26.879999041557312,
+              "b_us": 22.764800488948822,
+              "order": "AB",
+              "pair": 61,
+              "paired_speedup": 1.180770244597848
+            },
+            {
+              "a_us": 26.86080038547516,
+              "b_us": 22.761599719524384,
+              "order": "BA",
+              "pair": 62,
+              "paired_speedup": 1.1800928193300304
+            },
+            {
+              "a_us": 26.873600482940674,
+              "b_us": 22.784000635147095,
+              "order": "AB",
+              "pair": 63,
+              "paired_speedup": 1.1794943703383187
+            },
+            {
+              "a_us": 26.948800683021545,
+              "b_us": 22.766399383544922,
+              "order": "BA",
+              "pair": 64,
+              "paired_speedup": 1.1837093880773952
+            },
+            {
+              "a_us": 26.910400390625,
+              "b_us": 22.74399995803833,
+              "order": "AB",
+              "pair": 65,
+              "paired_speedup": 1.1831867938917293
+            },
+            {
+              "a_us": 26.892799139022827,
+              "b_us": 22.726400196552277,
+              "order": "BA",
+              "pair": 66,
+              "paired_speedup": 1.183328591701145
+            },
+            {
+              "a_us": 26.88159942626953,
+              "b_us": 22.862400114536285,
+              "order": "AB",
+              "pair": 67,
+              "paired_speedup": 1.1757995351143284
+            },
+            {
+              "a_us": 26.953598856925964,
+              "b_us": 22.74080067873001,
+              "order": "BA",
+              "pair": 68,
+              "paired_speedup": 1.1852528518108107
+            },
+            {
+              "a_us": 26.947200298309326,
+              "b_us": 22.734400629997253,
+              "order": "AB",
+              "pair": 69,
+              "paired_speedup": 1.1853050685995843
+            },
+            {
+              "a_us": 26.809599995613098,
+              "b_us": 22.686399519443512,
+              "order": "BA",
+              "pair": 70,
+              "paired_speedup": 1.1817476798218145
+            },
+            {
+              "a_us": 26.90719962120056,
+              "b_us": 22.697600722312927,
+              "order": "AB",
+              "pair": 71,
+              "paired_speedup": 1.1854644880923197
+            },
+            {
+              "a_us": 26.921600103378296,
+              "b_us": 22.750400006771088,
+              "order": "BA",
+              "pair": 72,
+              "paired_speedup": 1.183346231071355
+            },
+            {
+              "a_us": 26.88640058040619,
+              "b_us": 22.723199427127838,
+              "order": "AB",
+              "pair": 73,
+              "paired_speedup": 1.1832136872551564
+            },
+            {
+              "a_us": 26.764801144599915,
+              "b_us": 22.755199670791626,
+              "order": "BA",
+              "pair": 74,
+              "paired_speedup": 1.1762059455340652
+            },
+            {
+              "a_us": 26.83359980583191,
+              "b_us": 22.761599719524384,
+              "order": "AB",
+              "pair": 75,
+              "paired_speedup": 1.1788977987700335
+            },
+            {
+              "a_us": 27.28799879550934,
+              "b_us": 22.77120053768158,
+              "order": "BA",
+              "pair": 76,
+              "paired_speedup": 1.1983557366838609
+            },
+            {
+              "a_us": 26.88159942626953,
+              "b_us": 22.755199670791626,
+              "order": "AB",
+              "pair": 77,
+              "paired_speedup": 1.1813387627960266
+            },
+            {
+              "a_us": 26.94239914417267,
+              "b_us": 22.732800245285034,
+              "order": "BA",
+              "pair": 78,
+              "paired_speedup": 1.1851773144296527
+            },
+            {
+              "a_us": 26.864001154899597,
+              "b_us": 22.737599909305573,
+              "order": "AB",
+              "pair": 79,
+              "paired_speedup": 1.181479191385774
+            },
+            {
+              "a_us": 26.900801062583923,
+              "b_us": 22.729599475860596,
+              "order": "BA",
+              "pair": 80,
+              "paired_speedup": 1.1835140822060348
+            },
+            {
+              "a_us": 26.864001154899597,
+              "b_us": 22.732800245285034,
+              "order": "AB",
+              "pair": 81,
+              "paired_speedup": 1.1817286416560762
+            },
+            {
+              "a_us": 26.876801252365112,
+              "b_us": 22.71520048379898,
+              "order": "BA",
+              "pair": 82,
+              "paired_speedup": 1.1832077498736708
+            },
+            {
+              "a_us": 26.82879865169525,
+              "b_us": 22.804799675941467,
+              "order": "AB",
+              "pair": 83,
+              "paired_speedup": 1.176454037436646
+            },
+            {
+              "a_us": 26.969599723815918,
+              "b_us": 22.735999524593353,
+              "order": "BA",
+              "pair": 84,
+              "paired_speedup": 1.1862069092077132
+            },
+            {
+              "a_us": 26.91360116004944,
+              "b_us": 22.776000201702118,
+              "order": "AB",
+              "pair": 85,
+              "paired_speedup": 1.1816649509002948
+            },
+            {
+              "a_us": 26.93920135498047,
+              "b_us": 22.830399870872498,
+              "order": "BA",
+              "pair": 86,
+              "paired_speedup": 1.1799706315853917
+            },
+            {
+              "a_us": 26.82879865169525,
+              "b_us": 22.804799675941467,
+              "order": "AB",
+              "pair": 87,
+              "paired_speedup": 1.176454037436646
+            },
+            {
+              "a_us": 26.96320116519928,
+              "b_us": 22.71520048379898,
+              "order": "BA",
+              "pair": 88,
+              "paired_speedup": 1.1870113664385253
+            },
+            {
+              "a_us": 26.8559992313385,
+              "b_us": 22.734400629997253,
+              "order": "AB",
+              "pair": 89,
+              "paired_speedup": 1.1812934797983168
+            },
+            {
+              "a_us": 26.918399333953857,
+              "b_us": 22.74399995803833,
+              "order": "BA",
+              "pair": 90,
+              "paired_speedup": 1.1835384885515787
+            },
+            {
+              "a_us": 26.848000288009644,
+              "b_us": 22.724799811840057,
+              "order": "AB",
+              "pair": 91,
+              "paired_speedup": 1.1814405631868898
+            },
+            {
+              "a_us": 27.036800980567932,
+              "b_us": 23.318399488925934,
+              "order": "BA",
+              "pair": 92,
+              "paired_speedup": 1.1594621231790756
+            },
+            {
+              "a_us": 26.982399821281433,
+              "b_us": 22.734400629997253,
+              "order": "AB",
+              "pair": 93,
+              "paired_speedup": 1.186853362022621
+            },
+            {
+              "a_us": 26.929599046707153,
+              "b_us": 22.803199291229248,
+              "order": "BA",
+              "pair": 94,
+              "paired_speedup": 1.1809570535598062
+            },
+            {
+              "a_us": 26.8528014421463,
+              "b_us": 22.766399383544922,
+              "order": "AB",
+              "pair": 95,
+              "paired_speedup": 1.179492680847677
+            },
+            {
+              "a_us": 26.902401447296143,
+              "b_us": 22.755199670791626,
+              "order": "BA",
+              "pair": 96,
+              "paired_speedup": 1.1822529284077357
+            },
+            {
+              "a_us": 26.879999041557312,
+              "b_us": 22.74239957332611,
+              "order": "AB",
+              "pair": 97,
+              "paired_speedup": 1.1819332852230804
+            },
+            {
+              "a_us": 26.952001452445984,
+              "b_us": 22.750400006771088,
+              "order": "BA",
+              "pair": 98,
+              "paired_speedup": 1.1846825306115232
+            },
+            {
+              "a_us": 26.870399713516235,
+              "b_us": 22.752000391483307,
+              "order": "AB",
+              "pair": 99,
+              "paired_speedup": 1.1810126253151154
+            }
+          ],
+          "series": 2,
+          "starts_with": "BA",
+          "summary": {
+            "a_median_us": 26.91120058298111,
+            "ab_pairs": 50,
+            "all_estimators_finite": true,
+            "all_estimators_ge_1_03": true,
+            "b_median_us": 22.74480015039444,
+            "ba_pairs": 50,
+            "estimators": {
+              "ab_ratio_of_medians": 1.1819268841174464,
+              "ba_ratio_of_medians": 1.1842225646355802,
+              "order_balanced_sqrt_ab_ba": 1.183074167548807,
+              "pooled_ratio_of_medians": 1.18318034913639
+            },
+            "pairs": 100
+          }
+        },
+        {
+          "graph_capture_order": "AB",
+          "raw_pairs": [
+            {
+              "a_us": 27.75999903678894,
+              "b_us": 22.80000001192093,
+              "order": "AB",
+              "pair": 0,
+              "paired_speedup": 1.2175438167664336
+            },
+            {
+              "a_us": 27.614399790763855,
+              "b_us": 22.644799947738647,
+              "order": "BA",
+              "pair": 1,
+              "paired_speedup": 1.2194587655662412
+            },
+            {
+              "a_us": 27.793601155281067,
+              "b_us": 22.74720072746277,
+              "order": "AB",
+              "pair": 2,
+              "paired_speedup": 1.2218470961891044
+            },
+            {
+              "a_us": 27.534401416778564,
+              "b_us": 22.761599719524384,
+              "order": "BA",
+              "pair": 3,
+              "paired_speedup": 1.2096865666766023
+            },
+            {
+              "a_us": 27.6528000831604,
+              "b_us": 22.857600450515747,
+              "order": "AB",
+              "pair": 4,
+              "paired_speedup": 1.2097857840776307
+            },
+            {
+              "a_us": 28.035199642181396,
+              "b_us": 22.840000689029694,
+              "order": "BA",
+              "pair": 5,
+              "paired_speedup": 1.2274605427506406
+            },
+            {
+              "a_us": 27.65919864177704,
+              "b_us": 22.66079932451248,
+              "order": "AB",
+              "pair": 6,
+              "paired_speedup": 1.2205747134373024
+            },
+            {
+              "a_us": 27.52639949321747,
+              "b_us": 22.77120053768158,
+              "order": "BA",
+              "pair": 7,
+              "paired_speedup": 1.2088251318882826
+            },
+            {
+              "a_us": 27.315199375152588,
+              "b_us": 22.69279956817627,
+              "order": "AB",
+              "pair": 8,
+              "paired_speedup": 1.2036945592847275
+            },
+            {
+              "a_us": 27.94719934463501,
+              "b_us": 22.683200240135193,
+              "order": "BA",
+              "pair": 9,
+              "paired_speedup": 1.2320659804953713
+            },
+            {
+              "a_us": 27.52319872379303,
+              "b_us": 22.865599393844604,
+              "order": "AB",
+              "pair": 10,
+              "paired_speedup": 1.2036946090817215
+            },
+            {
+              "a_us": 27.54879891872406,
+              "b_us": 22.85439968109131,
+              "order": "BA",
+              "pair": 11,
+              "paired_speedup": 1.2054046180664586
+            },
+            {
+              "a_us": 27.372801303863525,
+              "b_us": 22.809599339962006,
+              "order": "AB",
+              "pair": 12,
+              "paired_speedup": 1.2000562086115591
+            },
+            {
+              "a_us": 27.774399518966675,
+              "b_us": 22.74720072746277,
+              "order": "BA",
+              "pair": 13,
+              "paired_speedup": 1.2210029643530842
+            },
+            {
+              "a_us": 27.480000257492065,
+              "b_us": 22.758400440216064,
+              "order": "AB",
+              "pair": 14,
+              "paired_speedup": 1.2074662421763405
+            },
+            {
+              "a_us": 27.769601345062256,
+              "b_us": 22.735999524593353,
+              "order": "BA",
+              "pair": 15,
+              "paired_speedup": 1.221393469639375
+            },
+            {
+              "a_us": 27.460798621177673,
+              "b_us": 22.759999334812164,
+              "order": "AB",
+              "pair": 16,
+              "paired_speedup": 1.2065377602702951
+            },
+            {
+              "a_us": 27.612799406051636,
+              "b_us": 22.708800435066223,
+              "order": "BA",
+              "pair": 17,
+              "paired_speedup": 1.215951475949069
+            },
+            {
+              "a_us": 27.880001068115234,
+              "b_us": 22.87839949131012,
+              "order": "AB",
+              "pair": 18,
+              "paired_speedup": 1.2186167602635345
+            },
+            {
+              "a_us": 27.828800678253174,
+              "b_us": 22.82399982213974,
+              "order": "BA",
+              "pair": 19,
+              "paired_speedup": 1.219277992250012
+            },
+            {
+              "a_us": 27.873599529266357,
+              "b_us": 22.752000391483307,
+              "order": "AB",
+              "pair": 20,
+              "paired_speedup": 1.225105443462466
+            },
+            {
+              "a_us": 27.686399221420288,
+              "b_us": 22.74879962205887,
+              "order": "BA",
+              "pair": 21,
+              "paired_speedup": 1.217048797360436
+            },
+            {
+              "a_us": 27.639999985694885,
+              "b_us": 22.696000337600708,
+              "order": "AB",
+              "pair": 22,
+              "paired_speedup": 1.2178357232354902
+            },
+            {
+              "a_us": 27.590399980545044,
+              "b_us": 22.79839962720871,
+              "order": "BA",
+              "pair": 23,
+              "paired_speedup": 1.2101902077204283
+            },
+            {
+              "a_us": 27.878400683403015,
+              "b_us": 22.723199427127838,
+              "order": "AB",
+              "pair": 24,
+              "paired_speedup": 1.2268695160119352
+            },
+            {
+              "a_us": 27.375999093055725,
+              "b_us": 22.724799811840057,
+              "order": "BA",
+              "pair": 25,
+              "paired_speedup": 1.2046750387122136
+            },
+            {
+              "a_us": 27.801600098609924,
+              "b_us": 22.787199914455414,
+              "order": "AB",
+              "pair": 26,
+              "paired_speedup": 1.220053372199256
+            },
+            {
+              "a_us": 27.614399790763855,
+              "b_us": 22.764800488948822,
+              "order": "BA",
+              "pair": 27,
+              "paired_speedup": 1.213030608555927
+            },
+            {
+              "a_us": 27.580800652503967,
+              "b_us": 22.761599719524384,
+              "order": "AB",
+              "pair": 28,
+              "paired_speedup": 1.2117250541422087
+            },
+            {
+              "a_us": 27.878400683403015,
+              "b_us": 22.77120053768158,
+              "order": "BA",
+              "pair": 29,
+              "paired_speedup": 1.2242833063311742
+            },
+            {
+              "a_us": 27.248001098632812,
+              "b_us": 22.763200104236603,
+              "order": "AB",
+              "pair": 30,
+              "paired_speedup": 1.1970197939595284
+            },
+            {
+              "a_us": 27.38400101661682,
+              "b_us": 22.734400629997253,
+              "order": "BA",
+              "pair": 31,
+              "paired_speedup": 1.2045182744111838
+            },
+            {
+              "a_us": 27.38400101661682,
+              "b_us": 22.73920029401779,
+              "order": "AB",
+              "pair": 32,
+              "paired_speedup": 1.2042640313881654
+            },
+            {
+              "a_us": 27.718400955200195,
+              "b_us": 22.731199860572815,
+              "order": "BA",
+              "pair": 33,
+              "paired_speedup": 1.2193989373731944
+            },
+            {
+              "a_us": 27.928000688552856,
+              "b_us": 22.764800488948822,
+              "order": "AB",
+              "pair": 34,
+              "paired_speedup": 1.2268063013383539
+            },
+            {
+              "a_us": 27.457600831985474,
+              "b_us": 22.711999714374542,
+              "order": "BA",
+              "pair": 35,
+              "paired_speedup": 1.2089468640934957
+            },
+            {
+              "a_us": 27.43839919567108,
+              "b_us": 22.803199291229248,
+              "order": "AB",
+              "pair": 36,
+              "paired_speedup": 1.2032697186584982
+            },
+            {
+              "a_us": 27.78399884700775,
+              "b_us": 22.74560034275055,
+              "order": "BA",
+              "pair": 37,
+              "paired_speedup": 1.2215109044533543
+            },
+            {
+              "a_us": 27.457600831985474,
+              "b_us": 22.74879962205887,
+              "order": "AB",
+              "pair": 38,
+              "paired_speedup": 1.2069911946193685
+            },
+            {
+              "a_us": 27.715200185775757,
+              "b_us": 22.77279943227768,
+              "order": "BA",
+              "pair": 39,
+              "paired_speedup": 1.2170308823118525
+            },
+            {
+              "a_us": 28.188800811767578,
+              "b_us": 22.705599665641785,
+              "order": "AB",
+              "pair": 40,
+              "paired_speedup": 1.2414911399333355
+            },
+            {
+              "a_us": 27.57279872894287,
+              "b_us": 22.808000445365906,
+              "order": "BA",
+              "pair": 41,
+              "paired_speedup": 1.2089090753479474
+            },
+            {
+              "a_us": 27.091199159622192,
+              "b_us": 22.750400006771088,
+              "order": "AB",
+              "pair": 42,
+              "paired_speedup": 1.1908010035673735
+            },
+            {
+              "a_us": 27.65919864177704,
+              "b_us": 22.969600558280945,
+              "order": "BA",
+              "pair": 43,
+              "paired_speedup": 1.204165417313076
+            },
+            {
+              "a_us": 27.214398980140686,
+              "b_us": 22.724799811840057,
+              "order": "AB",
+              "pair": 44,
+              "paired_speedup": 1.197563859988833
+            },
+            {
+              "a_us": 27.404800057411194,
+              "b_us": 22.790400683879852,
+              "order": "BA",
+              "pair": 45,
+              "paired_speedup": 1.2024711823866794
+            },
+            {
+              "a_us": 27.559998631477356,
+              "b_us": 22.755199670791626,
+              "order": "AB",
+              "pair": 46,
+              "paired_speedup": 1.2111516941269966
+            },
+            {
+              "a_us": 27.76319980621338,
+              "b_us": 22.728000581264496,
+              "order": "BA",
+              "pair": 47,
+              "paired_speedup": 1.2215416708982125
+            },
+            {
+              "a_us": 27.217599749565125,
+              "b_us": 22.729599475860596,
+              "order": "AB",
+              "pair": 48,
+              "paired_speedup": 1.1974517975325918
+            },
+            {
+              "a_us": 27.700799703598022,
+              "b_us": 22.696000337600708,
+              "order": "BA",
+              "pair": 49,
+              "paired_speedup": 1.220514596913616
+            },
+            {
+              "a_us": 27.592000365257263,
+              "b_us": 22.753599286079407,
+              "order": "AB",
+              "pair": 50,
+              "paired_speedup": 1.2126433281321771
+            },
+            {
+              "a_us": 27.859199047088623,
+              "b_us": 22.708800435066223,
+              "order": "BA",
+              "pair": 51,
+              "paired_speedup": 1.2268018791547137
+            },
+            {
+              "a_us": 27.65119969844818,
+              "b_us": 22.841599583625793,
+              "order": "AB",
+              "pair": 52,
+              "paired_speedup": 1.210563191829621
+            },
+            {
+              "a_us": 27.4944007396698,
+              "b_us": 22.728000581264496,
+              "order": "BA",
+              "pair": 53,
+              "paired_speedup": 1.209714890729738
+            },
+            {
+              "a_us": 27.795198559761047,
+              "b_us": 22.790400683879852,
+              "order": "AB",
+              "pair": 54,
+              "paired_speedup": 1.2196011358159753
+            },
+            {
+              "a_us": 27.55039930343628,
+              "b_us": 22.777600586414337,
+              "order": "BA",
+              "pair": 55,
+              "paired_speedup": 1.2095391346825473
+            },
+            {
+              "a_us": 27.57120132446289,
+              "b_us": 22.808000445365906,
+              "order": "AB",
+              "pair": 56,
+              "paired_speedup": 1.2088390383237109
+            },
+            {
+              "a_us": 27.774399518966675,
+              "b_us": 22.84640073776245,
+              "order": "BA",
+              "pair": 57,
+              "paired_speedup": 1.215701319335558
+            },
+            {
+              "a_us": 27.620801329612732,
+              "b_us": 22.752000391483307,
+              "order": "AB",
+              "pair": 58,
+              "paired_speedup": 1.2139944116716854
+            },
+            {
+              "a_us": 27.620801329612732,
+              "b_us": 22.87680059671402,
+              "order": "BA",
+              "pair": 59,
+              "paired_speedup": 1.2073716869998041
+            },
+            {
+              "a_us": 27.987200021743774,
+              "b_us": 22.654399275779724,
+              "order": "AB",
+              "pair": 60,
+              "paired_speedup": 1.2353980205365875
+            },
+            {
+              "a_us": 27.94559895992279,
+              "b_us": 22.74879962205887,
+              "order": "BA",
+              "pair": 61,
+              "paired_speedup": 1.2284427936507354
+            },
+            {
+              "a_us": 27.456000447273254,
+              "b_us": 22.755199670791626,
+              "order": "AB",
+              "pair": 62,
+              "paired_speedup": 1.2065813899455928
+            },
+            {
+              "a_us": 27.54400074481964,
+              "b_us": 22.750400006771088,
+              "order": "BA",
+              "pair": 63,
+              "paired_speedup": 1.2107040200006092
+            },
+            {
+              "a_us": 27.57279872894287,
+              "b_us": 22.76960015296936,
+              "order": "AB",
+              "pair": 64,
+              "paired_speedup": 1.2109478666162317
+            },
+            {
+              "a_us": 27.62719988822937,
+              "b_us": 22.74239957332611,
+              "order": "BA",
+              "pair": 65,
+              "paired_speedup": 1.2147882548256912
+            },
+            {
+              "a_us": 27.745598554611206,
+              "b_us": 22.759999334812164,
+              "order": "AB",
+              "pair": 66,
+              "paired_speedup": 1.2190509387306265
+            },
+            {
+              "a_us": 28.05599868297577,
+              "b_us": 22.752000391483307,
+              "order": "BA",
+              "pair": 67,
+              "paired_speedup": 1.2331222837653384
+            },
+            {
+              "a_us": 27.539199590682983,
+              "b_us": 22.80000001192093,
+              "order": "AB",
+              "pair": 68,
+              "paired_speedup": 1.2078596305387796
+            },
+            {
+              "a_us": 27.699199318885803,
+              "b_us": 22.648000717163086,
+              "order": "BA",
+              "pair": 69,
+              "paired_speedup": 1.2230306623884386
+            },
+            {
+              "a_us": 27.65119969844818,
+              "b_us": 22.7743998169899,
+              "order": "AB",
+              "pair": 70,
+              "paired_speedup": 1.2141351658286137
+            },
+            {
+              "a_us": 27.91520059108734,
+              "b_us": 22.817599773406982,
+              "order": "BA",
+              "pair": 71,
+              "paired_speedup": 1.2234065312873712
+            },
+            {
+              "a_us": 27.97279953956604,
+              "b_us": 22.703999280929565,
+              "order": "AB",
+              "pair": 72,
+              "paired_speedup": 1.232064853131935
+            },
+            {
+              "a_us": 27.752000093460083,
+              "b_us": 22.729599475860596,
+              "order": "BA",
+              "pair": 73,
+              "paired_speedup": 1.2209630056584764
+            },
+            {
+              "a_us": 27.3391991853714,
+              "b_us": 22.71360009908676,
+              "order": "AB",
+              "pair": 74,
+              "paired_speedup": 1.2036488740712934
+            },
+            {
+              "a_us": 27.94080078601837,
+              "b_us": 22.787199914455414,
+              "order": "BA",
+              "pair": 75,
+              "paired_speedup": 1.2261620949879712
+            },
+            {
+              "a_us": 27.73759961128235,
+              "b_us": 22.777600586414337,
+              "order": "AB",
+              "pair": 76,
+              "paired_speedup": 1.2177577487167983
+            },
+            {
+              "a_us": 27.70400047302246,
+              "b_us": 22.804799675941467,
+              "order": "BA",
+              "pair": 77,
+              "paired_speedup": 1.2148320032054276
+            },
+            {
+              "a_us": 27.748799324035645,
+              "b_us": 22.753599286079407,
+              "order": "AB",
+              "pair": 78,
+              "paired_speedup": 1.219534499801633
+            },
+            {
+              "a_us": 27.427199482917786,
+              "b_us": 22.734400629997253,
+              "order": "BA",
+              "pair": 79,
+              "paired_speedup": 1.2064184109929226
+            },
+            {
+              "a_us": 27.219200134277344,
+              "b_us": 22.7743998169899,
+              "order": "AB",
+              "pair": 80,
+              "paired_speedup": 1.1951665182399926
+            },
+            {
+              "a_us": 27.65919864177704,
+              "b_us": 22.82239943742752,
+              "order": "BA",
+              "pair": 81,
+              "paired_speedup": 1.2119321072094384
+            },
+            {
+              "a_us": 27.452799677848816,
+              "b_us": 22.74560034275055,
+              "order": "AB",
+              "pair": 82,
+              "paired_speedup": 1.2069498832374648
+            },
+            {
+              "a_us": 27.89759933948517,
+              "b_us": 22.758400440216064,
+              "order": "BA",
+              "pair": 83,
+              "paired_speedup": 1.2258154703257482
+            },
+            {
+              "a_us": 27.46880054473877,
+              "b_us": 22.782400250434875,
+              "order": "AB",
+              "pair": 84,
+              "paired_speedup": 1.205702658314698
+            },
+            {
+              "a_us": 27.462399005889893,
+              "b_us": 22.702400386333466,
+              "order": "BA",
+              "pair": 85,
+              "paired_speedup": 1.2096693978854272
+            },
+            {
+              "a_us": 27.395200729370117,
+              "b_us": 22.756800055503845,
+              "order": "AB",
+              "pair": 86,
+              "paired_speedup": 1.203824819946267
+            },
+            {
+              "a_us": 28.112000226974487,
+              "b_us": 22.675199806690216,
+              "order": "BA",
+              "pair": 87,
+              "paired_speedup": 1.2397685782984884
+            },
+            {
+              "a_us": 27.60480046272278,
+              "b_us": 22.79680073261261,
+              "order": "AB",
+              "pair": 88,
+              "paired_speedup": 1.2109067753192204
+            },
+            {
+              "a_us": 27.632001042366028,
+              "b_us": 22.857600450515747,
+              "order": "BA",
+              "pair": 89,
+              "paired_speedup": 1.2088758442596084
+            },
+            {
+              "a_us": 27.961599826812744,
+              "b_us": 22.841599583625793,
+              "order": "AB",
+              "pair": 90,
+              "paired_speedup": 1.224152438380772
+            },
+            {
+              "a_us": 27.585598826408386,
+              "b_us": 22.8192001581192,
+              "order": "BA",
+              "pair": 91,
+              "paired_speedup": 1.2088766755741556
+            },
+            {
+              "a_us": 27.59999930858612,
+              "b_us": 22.812800109386444,
+              "order": "AB",
+              "pair": 92,
+              "paired_speedup": 1.209847067271236
+            },
+            {
+              "a_us": 27.65600085258484,
+              "b_us": 22.785599529743195,
+              "order": "BA",
+              "pair": 93,
+              "paired_speedup": 1.2137490969453784
+            },
+            {
+              "a_us": 27.497598528862,
+              "b_us": 22.644799947738647,
+              "order": "AB",
+              "pair": 94,
+              "paired_speedup": 1.2143007927790486
+            },
+            {
+              "a_us": 27.559998631477356,
+              "b_us": 22.73920029401779,
+              "order": "BA",
+              "pair": 95,
+              "paired_speedup": 1.212003864477495
+            },
+            {
+              "a_us": 27.723199129104614,
+              "b_us": 22.763200104236603,
+              "order": "AB",
+              "pair": 96,
+              "paired_speedup": 1.2178955068775623
+            },
+            {
+              "a_us": 27.46559977531433,
+              "b_us": 22.788800299167633,
+              "order": "BA",
+              "pair": 97,
+              "paired_speedup": 1.2052235929382171
+            },
+            {
+              "a_us": 27.775999903678894,
+              "b_us": 22.74560034275055,
+              "order": "AB",
+              "pair": 98,
+              "paired_speedup": 1.2211592345388074
+            },
+            {
+              "a_us": 27.76159942150116,
+              "b_us": 22.77279943227768,
+              "order": "BA",
+              "pair": 99,
+              "paired_speedup": 1.2190683672448483
+            }
+          ],
+          "series": 3,
+          "starts_with": "AB",
+          "summary": {
+            "a_median_us": 27.6296004652977,
+            "ab_pairs": 50,
+            "all_estimators_finite": true,
+            "all_estimators_ge_1_03": true,
+            "b_median_us": 22.758400440216064,
+            "ba_pairs": 50,
+            "estimators": {
+              "ab_ratio_of_medians": 1.2125206498169159,
+              "ba_ratio_of_medians": 1.21551109796034,
+              "order_balanced_sqrt_ab_ba": 1.2140149531033564,
+              "pooled_ratio_of_medians": 1.2140396482554987
+            },
+            "pairs": 100
+          }
+        }
+      ]
+    },
+    "leaf_graph": {
+      "passes_every_series_every_estimator_1_03": true,
+      "series": [
+        {
+          "graph_capture_order": "AB",
+          "raw_pairs": [
+            {
+              "a_us": 27.0143985748291,
+              "b_us": 22.734400629997253,
+              "order": "AB",
+              "pair": 0,
+              "paired_speedup": 1.1882608657465348
+            },
+            {
+              "a_us": 26.888000965118408,
+              "b_us": 22.74560034275055,
+              "order": "BA",
+              "pair": 1,
+              "paired_speedup": 1.1821187640663053
+            },
+            {
+              "a_us": 26.82560086250305,
+              "b_us": 22.804799675941467,
+              "order": "AB",
+              "pair": 2,
+              "paired_speedup": 1.176313813043639
+            },
+            {
+              "a_us": 27.09920108318329,
+              "b_us": 22.74720072746277,
+              "order": "BA",
+              "pair": 3,
+              "paired_speedup": 1.1913202599239534
+            },
+            {
+              "a_us": 26.822400093078613,
+              "b_us": 22.74399995803833,
+              "order": "AB",
+              "pair": 4,
+              "paired_speedup": 1.1793176284982743
+            },
+            {
+              "a_us": 26.892799139022827,
+              "b_us": 22.811199724674225,
+              "order": "BA",
+              "pair": 5,
+              "paired_speedup": 1.1789296250794583
+            },
+            {
+              "a_us": 26.865598559379578,
+              "b_us": 23.240000009536743,
+              "order": "AB",
+              "pair": 6,
+              "paired_speedup": 1.156006822218375
+            },
+            {
+              "a_us": 26.90719962120056,
+              "b_us": 22.777600586414337,
+              "order": "BA",
+              "pair": 7,
+              "paired_speedup": 1.1813008801835483
+            },
+            {
+              "a_us": 26.948800683021545,
+              "b_us": 22.74399995803833,
+              "order": "AB",
+              "pair": 8,
+              "paired_speedup": 1.1848751641198068
+            },
+            {
+              "a_us": 26.977598667144775,
+              "b_us": 22.723199427127838,
+              "order": "BA",
+              "pair": 9,
+              "paired_speedup": 1.187227122380393
+            },
+            {
+              "a_us": 26.873600482940674,
+              "b_us": 22.737599909305573,
+              "order": "AB",
+              "pair": 10,
+              "paired_speedup": 1.1819013699833114
+            },
+            {
+              "a_us": 26.969599723815918,
+              "b_us": 22.72000014781952,
+              "order": "BA",
+              "pair": 11,
+              "paired_speedup": 1.1870422336420734
+            },
+            {
+              "a_us": 26.910400390625,
+              "b_us": 22.801600396633148,
+              "order": "AB",
+              "pair": 12,
+              "paired_speedup": 1.180197877452433
+            },
+            {
+              "a_us": 27.055999636650085,
+              "b_us": 22.71679937839508,
+              "order": "BA",
+              "pair": 13,
+              "paired_speedup": 1.1910128353020462
+            },
+            {
+              "a_us": 26.916798949241638,
+              "b_us": 22.735999524593353,
+              "order": "AB",
+              "pair": 14,
+              "paired_speedup": 1.183884566857329
+            },
+            {
+              "a_us": 26.879999041557312,
+              "b_us": 22.729599475860596,
+              "order": "BA",
+              "pair": 15,
+              "paired_speedup": 1.182598886975749
+            },
+            {
+              "a_us": 26.894399523735046,
+              "b_us": 22.74080067873001,
+              "order": "AB",
+              "pair": 16,
+              "paired_speedup": 1.1826496306653789
+            },
+            {
+              "a_us": 27.027198672294617,
+              "b_us": 22.79839962720871,
+              "order": "BA",
+              "pair": 17,
+              "paired_speedup": 1.1854866619689854
+            },
+            {
+              "a_us": 27.006399631500244,
+              "b_us": 22.72000014781952,
+              "order": "AB",
+              "pair": 18,
+              "paired_speedup": 1.1886619478782046
+            },
+            {
+              "a_us": 26.955199241638184,
+              "b_us": 22.788800299167633,
+              "order": "BA",
+              "pair": 19,
+              "paired_speedup": 1.1828266028827648
+            },
+            {
+              "a_us": 26.870399713516235,
+              "b_us": 22.782400250434875,
+              "order": "AB",
+              "pair": 20,
+              "paired_speedup": 1.1794367326596031
+            },
+            {
+              "a_us": 26.876801252365112,
+              "b_us": 22.683200240135193,
+              "order": "BA",
+              "pair": 21,
+              "paired_speedup": 1.1848769559777481
+            },
+            {
+              "a_us": 26.91200077533722,
+              "b_us": 22.750400006771088,
+              "order": "AB",
+              "pair": 22,
+              "paired_speedup": 1.1829242900049026
+            },
+            {
+              "a_us": 26.873600482940674,
+              "b_us": 22.729599475860596,
+              "order": "BA",
+              "pair": 23,
+              "paired_speedup": 1.1823173792165194
+            },
+            {
+              "a_us": 26.85920000076294,
+              "b_us": 22.73920029401779,
+              "order": "AB",
+              "pair": 24,
+              "paired_speedup": 1.1811848989178848
+            },
+            {
+              "a_us": 27.03840136528015,
+              "b_us": 22.766399383544922,
+              "order": "BA",
+              "pair": 25,
+              "paired_speedup": 1.1876450425807317
+            },
+            {
+              "a_us": 26.984000205993652,
+              "b_us": 22.79359996318817,
+              "order": "AB",
+              "pair": 26,
+              "paired_speedup": 1.1838410891466467
+            },
+            {
+              "a_us": 26.846399903297424,
+              "b_us": 22.753599286079407,
+              "order": "BA",
+              "pair": 27,
+              "paired_speedup": 1.1798748657634128
+            },
+            {
+              "a_us": 26.879999041557312,
+              "b_us": 22.728000581264496,
+              "order": "AB",
+              "pair": 28,
+              "paired_speedup": 1.182682081754057
+            },
+            {
+              "a_us": 26.945599913597107,
+              "b_us": 22.683200240135193,
+              "order": "BA",
+              "pair": 29,
+              "paired_speedup": 1.1879099786775285
+            },
+            {
+              "a_us": 26.976001262664795,
+              "b_us": 22.776000201702118,
+              "order": "AB",
+              "pair": 30,
+              "paired_speedup": 1.1844046814088454
+            },
+            {
+              "a_us": 26.971200108528137,
+              "b_us": 22.737599909305573,
+              "order": "BA",
+              "pair": 31,
+              "paired_speedup": 1.186193803044706
+            },
+            {
+              "a_us": 26.8528014421463,
+              "b_us": 22.71520048379898,
+              "order": "AB",
+              "pair": 32,
+              "paired_speedup": 1.1821511970056506
+            },
+            {
+              "a_us": 27.027198672294617,
+              "b_us": 22.752000391483307,
+              "order": "BA",
+              "pair": 33,
+              "paired_speedup": 1.1879042812609846
+            },
+            {
+              "a_us": 26.873600482940674,
+              "b_us": 22.830399870872498,
+              "order": "AB",
+              "pair": 34,
+              "paired_speedup": 1.1770972315393642
+            },
+            {
+              "a_us": 26.958400011062622,
+              "b_us": 22.776000201702118,
+              "order": "BA",
+              "pair": 35,
+              "paired_speedup": 1.1836318832245154
+            },
+            {
+              "a_us": 26.876801252365112,
+              "b_us": 22.724799811840057,
+              "order": "AB",
+              "pair": 36,
+              "paired_speedup": 1.1827079435200034
+            },
+            {
+              "a_us": 27.40960121154785,
+              "b_us": 22.761599719524384,
+              "order": "BA",
+              "pair": 37,
+              "paired_speedup": 1.2042036389927602
+            },
+            {
+              "a_us": 26.82879865169525,
+              "b_us": 22.753599286079407,
+              "order": "AB",
+              "pair": 38,
+              "paired_speedup": 1.179101306759368
+            },
+            {
+              "a_us": 26.974400877952576,
+              "b_us": 22.708800435066223,
+              "order": "BA",
+              "pair": 39,
+              "paired_speedup": 1.1878390915047872
+            },
+            {
+              "a_us": 26.793599128723145,
+              "b_us": 22.753599286079407,
+              "order": "AB",
+              "pair": 40,
+              "paired_speedup": 1.1775543197297755
+            },
+            {
+              "a_us": 27.008000016212463,
+              "b_us": 22.644799947738647,
+              "order": "BA",
+              "pair": 41,
+              "paired_speedup": 1.192680000642246
+            },
+            {
+              "a_us": 26.892799139022827,
+              "b_us": 22.801600396633148,
+              "order": "AB",
+              "pair": 42,
+              "paired_speedup": 1.179425946917032
+            },
+            {
+              "a_us": 26.984000205993652,
+              "b_us": 22.74399995803833,
+              "order": "BA",
+              "pair": 43,
+              "paired_speedup": 1.1864228040704332
+            },
+            {
+              "a_us": 27.057600021362305,
+              "b_us": 22.85120040178299,
+              "order": "AB",
+              "pair": 44,
+              "paired_speedup": 1.184077840359367
+            },
+            {
+              "a_us": 26.93600058555603,
+              "b_us": 22.758400440216064,
+              "order": "BA",
+              "pair": 45,
+              "paired_speedup": 1.1835629949615345
+            },
+            {
+              "a_us": 26.905599236488342,
+              "b_us": 22.72160053253174,
+              "order": "AB",
+              "pair": 46,
+              "paired_speedup": 1.184141900477748
+            },
+            {
+              "a_us": 26.875200867652893,
+              "b_us": 22.74879962205887,
+              "order": "BA",
+              "pair": 47,
+              "paired_speedup": 1.1813898453610172
+            },
+            {
+              "a_us": 27.188798785209656,
+              "b_us": 22.66400009393692,
+              "order": "AB",
+              "pair": 48,
+              "paired_speedup": 1.199646958723902
+            },
+            {
+              "a_us": 27.000001072883606,
+              "b_us": 22.707200050354004,
+              "order": "BA",
+              "pair": 49,
+              "paired_speedup": 1.189050213721206
+            },
+            {
+              "a_us": 27.003198862075806,
+              "b_us": 22.66079932451248,
+              "order": "AB",
+              "pair": 50,
+              "paired_speedup": 1.1916260532286738
+            },
+            {
+              "a_us": 26.899200677871704,
+              "b_us": 22.711999714374542,
+              "order": "BA",
+              "pair": 51,
+              "paired_speedup": 1.1843607351248362
+            },
+            {
+              "a_us": 26.840001344680786,
+              "b_us": 22.766399383544922,
+              "order": "AB",
+              "pair": 52,
+              "paired_speedup": 1.1789304444900575
+            },
+            {
+              "a_us": 26.91200077533722,
+              "b_us": 22.77279943227768,
+              "order": "BA",
+              "pair": 53,
+              "paired_speedup": 1.1817607604795712
+            },
+            {
+              "a_us": 26.943999528884888,
+              "b_us": 22.72160053253174,
+              "order": "AB",
+              "pair": 54,
+              "paired_speedup": 1.1858319351362467
+            },
+            {
+              "a_us": 26.953598856925964,
+              "b_us": 22.74080067873001,
+              "order": "BA",
+              "pair": 55,
+              "paired_speedup": 1.1852528518108107
+            },
+            {
+              "a_us": 26.903998851776123,
+              "b_us": 22.74399995803833,
+              "order": "AB",
+              "pair": 56,
+              "paired_speedup": 1.1829053333368276
+            },
+            {
+              "a_us": 27.008000016212463,
+              "b_us": 22.74239957332611,
+              "order": "BA",
+              "pair": 57,
+              "paired_speedup": 1.1875615820192231
+            },
+            {
+              "a_us": 27.084800601005554,
+              "b_us": 22.790400683879852,
+              "order": "AB",
+              "pair": 58,
+              "paired_speedup": 1.1884302069407329
+            },
+            {
+              "a_us": 26.956799626350403,
+              "b_us": 22.679999470710754,
+              "order": "BA",
+              "pair": 59,
+              "paired_speedup": 1.1885714398345892
+            },
+            {
+              "a_us": 26.85920000076294,
+              "b_us": 22.764800488948822,
+              "order": "AB",
+              "pair": 60,
+              "paired_speedup": 1.179856595440041
+            },
+            {
+              "a_us": 26.93600058555603,
+              "b_us": 22.673599421977997,
+              "order": "BA",
+              "pair": 61,
+              "paired_speedup": 1.1879896122468494
+            },
+            {
+              "a_us": 26.862400770187378,
+              "b_us": 22.764800488948822,
+              "order": "AB",
+              "pair": 62,
+              "paired_speedup": 1.1799971971301808
+            },
+            {
+              "a_us": 26.94239914417267,
+              "b_us": 22.700800001621246,
+              "order": "BA",
+              "pair": 63,
+              "paired_speedup": 1.1868480028126098
+            },
+            {
+              "a_us": 26.783999800682068,
+              "b_us": 22.728000581264496,
+              "order": "AB",
+              "pair": 64,
+              "paired_speedup": 1.178458250426176
+            },
+            {
+              "a_us": 27.008000016212463,
+              "b_us": 22.74399995803833,
+              "order": "BA",
+              "pair": 65,
+              "paired_speedup": 1.1874780190837595
+            },
+            {
+              "a_us": 26.916798949241638,
+              "b_us": 22.7743998169899,
+              "order": "AB",
+              "pair": 66,
+              "paired_speedup": 1.1818883994985225
+            },
+            {
+              "a_us": 26.96320116519928,
+              "b_us": 22.835199534893036,
+              "order": "BA",
+              "pair": 67,
+              "paired_speedup": 1.1807736176773276
+            },
+            {
+              "a_us": 26.93920135498047,
+              "b_us": 22.777600586414337,
+              "order": "AB",
+              "pair": 68,
+              "paired_speedup": 1.1827058452789059
+            },
+            {
+              "a_us": 27.024000883102417,
+              "b_us": 22.72160053253174,
+              "order": "BA",
+              "pair": 69,
+              "paired_speedup": 1.1893528734655245
+            },
+            {
+              "a_us": 26.969599723815918,
+              "b_us": 22.737599909305573,
+              "order": "AB",
+              "pair": 70,
+              "paired_speedup": 1.1861234181000062
+            },
+            {
+              "a_us": 26.8528014421463,
+              "b_us": 22.731199860572815,
+              "order": "BA",
+              "pair": 71,
+              "paired_speedup": 1.1813191387544126
+            },
+            {
+              "a_us": 26.903998851776123,
+              "b_us": 22.651199996471405,
+              "order": "AB",
+              "pair": 72,
+              "paired_speedup": 1.187751591790599
+            },
+            {
+              "a_us": 26.870399713516235,
+              "b_us": 22.728000581264496,
+              "order": "BA",
+              "pair": 73,
+              "paired_speedup": 1.1822597248464728
+            },
+            {
+              "a_us": 26.927998661994934,
+              "b_us": 22.71520048379898,
+              "order": "AB",
+              "pair": 74,
+              "paired_speedup": 1.1854616331121806
+            },
+            {
+              "a_us": 26.96479856967926,
+              "b_us": 22.766399383544922,
+              "order": "BA",
+              "pair": 75,
+              "paired_speedup": 1.1844120853457774
+            },
+            {
+              "a_us": 26.96160078048706,
+              "b_us": 22.758400440216064,
+              "order": "AB",
+              "pair": 76,
+              "paired_speedup": 1.1846878628975865
+            },
+            {
+              "a_us": 26.90719962120056,
+              "b_us": 22.700800001621246,
+              "order": "BA",
+              "pair": 77,
+              "paired_speedup": 1.1852974176803859
+            },
+            {
+              "a_us": 26.849600672721863,
+              "b_us": 22.76960015296936,
+              "order": "AB",
+              "pair": 78,
+              "paired_speedup": 1.1791863050884728
+            },
+            {
+              "a_us": 26.956799626350403,
+              "b_us": 22.729599475860596,
+              "order": "BA",
+              "pair": 79,
+              "paired_speedup": 1.1859777667872766
+            },
+            {
+              "a_us": 26.91200077533722,
+              "b_us": 22.777600586414337,
+              "order": "AB",
+              "pair": 80,
+              "paired_speedup": 1.1815116641999965
+            },
+            {
+              "a_us": 26.93600058555603,
+              "b_us": 22.707200050354004,
+              "order": "BA",
+              "pair": 81,
+              "paired_speedup": 1.1862317029763474
+            },
+            {
+              "a_us": 26.91200077533722,
+              "b_us": 22.74399995803833,
+              "order": "AB",
+              "pair": 82,
+              "paired_speedup": 1.1832571590304548
+            },
+            {
+              "a_us": 26.955199241638184,
+              "b_us": 22.723199427127838,
+              "order": "BA",
+              "pair": 83,
+              "paired_speedup": 1.1862413709866058
+            },
+            {
+              "a_us": 26.809599995613098,
+              "b_us": 22.76960015296936,
+              "order": "AB",
+              "pair": 84,
+              "paired_speedup": 1.177429547093601
+            },
+            {
+              "a_us": 26.862400770187378,
+              "b_us": 22.753599286079407,
+              "order": "BA",
+              "pair": 85,
+              "paired_speedup": 1.1805780893144993
+            },
+            {
+              "a_us": 26.872000098228455,
+              "b_us": 22.71679937839508,
+              "order": "AB",
+              "pair": 86,
+              "paired_speedup": 1.1829131230425531
+            },
+            {
+              "a_us": 26.93760097026825,
+              "b_us": 22.723199427127838,
+              "order": "BA",
+              "pair": 87,
+              "paired_speedup": 1.1854669082430838
+            },
+            {
+              "a_us": 26.798400282859802,
+              "b_us": 22.896000742912292,
+              "order": "AB",
+              "pair": 88,
+              "paired_speedup": 1.170440225948872
+            },
+            {
+              "a_us": 26.99039876461029,
+              "b_us": 22.763200104236603,
+              "order": "BA",
+              "pair": 89,
+              "paired_speedup": 1.1857031806168121
+            },
+            {
+              "a_us": 26.88480019569397,
+              "b_us": 22.817599773406982,
+              "order": "AB",
+              "pair": 90,
+              "paired_speedup": 1.1782483899567364
+            },
+            {
+              "a_us": 26.96160078048706,
+              "b_us": 22.729599475860596,
+              "order": "BA",
+              "pair": 91,
+              "paired_speedup": 1.1861889959442953
+            },
+            {
+              "a_us": 26.892799139022827,
+              "b_us": 22.782400250434875,
+              "order": "AB",
+              "pair": 92,
+              "paired_speedup": 1.1804199225456717
+            },
+            {
+              "a_us": 26.972800493240356,
+              "b_us": 22.74080067873001,
+              "order": "BA",
+              "pair": 93,
+              "paired_speedup": 1.1860972212147582
+            },
+            {
+              "a_us": 26.85920000076294,
+              "b_us": 22.676800191402435,
+              "order": "AB",
+              "pair": 94,
+              "paired_speedup": 1.1844351837145966
+            },
+            {
+              "a_us": 26.8559992313385,
+              "b_us": 23.132799565792084,
+              "order": "BA",
+              "pair": 95,
+              "paired_speedup": 1.1609489441585854
+            },
+            {
+              "a_us": 26.93760097026825,
+              "b_us": 22.702400386333466,
+              "order": "AB",
+              "pair": 96,
+              "paired_speedup": 1.1865529861099762
+            },
+            {
+              "a_us": 26.88159942626953,
+              "b_us": 22.761599719524384,
+              "order": "BA",
+              "pair": 97,
+              "paired_speedup": 1.1810065969665176
+            },
+            {
+              "a_us": 26.899200677871704,
+              "b_us": 22.6623997092247,
+              "order": "AB",
+              "pair": 98,
+              "paired_speedup": 1.1869528833225202
+            },
+            {
+              "a_us": 26.943999528884888,
+              "b_us": 22.735999524593353,
+              "order": "BA",
+              "pair": 99,
+              "paired_speedup": 1.1850809329820655
+            }
+          ],
+          "series": 1,
+          "starts_with": "AB",
+          "summary": {
+            "a_median_us": 26.916798949241638,
+            "ab_pairs": 50,
+            "all_estimators_finite": true,
+            "all_estimators_ge_1_03": true,
+            "b_median_us": 22.74399995803833,
+            "ba_pairs": 50,
+            "estimators": {
+              "ab_ratio_of_medians": 1.1824224573401756,
+              "ba_ratio_of_medians": 1.185406649886871,
+              "order_balanced_sqrt_ab_ba": 1.1839136133631623,
+              "pooled_ratio_of_medians": 1.1834681234128535
+            },
+            "pairs": 100
+          }
+        },
+        {
+          "graph_capture_order": "BA",
+          "raw_pairs": [
+            {
+              "a_us": 27.432000637054443,
+              "b_us": 23.044799268245697,
+              "order": "BA",
+              "pair": 0,
+              "paired_speedup": 1.1903770702335446
+            },
+            {
+              "a_us": 27.744001150131226,
+              "b_us": 22.791999578475952,
+              "order": "AB",
+              "pair": 1,
+              "paired_speedup": 1.2172692902439235
+            },
+            {
+              "a_us": 27.694401144981384,
+              "b_us": 22.702400386333466,
+              "order": "BA",
+              "pair": 2,
+              "paired_speedup": 1.2198886758094987
+            },
+            {
+              "a_us": 27.40960121154785,
+              "b_us": 22.724799811840057,
+              "order": "AB",
+              "pair": 3,
+              "paired_speedup": 1.2061536928156755
+            },
+            {
+              "a_us": 27.500799298286438,
+              "b_us": 22.76799976825714,
+              "order": "BA",
+              "pair": 4,
+              "paired_speedup": 1.2078706771873613
+            },
+            {
+              "a_us": 27.47359871864319,
+              "b_us": 22.756800055503845,
+              "order": "AB",
+              "pair": 5,
+              "paired_speedup": 1.2072698556754495
+            },
+            {
+              "a_us": 27.484801411628723,
+              "b_us": 22.79359996318817,
+              "order": "BA",
+              "pair": 6,
+              "paired_speedup": 1.2058122216770004
+            },
+            {
+              "a_us": 27.374398708343506,
+              "b_us": 22.910399734973907,
+              "order": "AB",
+              "pair": 7,
+              "paired_speedup": 1.1948459662427922
+            },
+            {
+              "a_us": 27.167999744415283,
+              "b_us": 22.82879948616028,
+              "order": "BA",
+              "pair": 8,
+              "paired_speedup": 1.1900757094513708
+            },
+            {
+              "a_us": 28.095999360084534,
+              "b_us": 22.90239930152893,
+              "order": "AB",
+              "pair": 9,
+              "paired_speedup": 1.2267710029057473
+            },
+            {
+              "a_us": 27.56960093975067,
+              "b_us": 22.750400006771088,
+              "order": "BA",
+              "pair": 10,
+              "paired_speedup": 1.211829283509093
+            },
+            {
+              "a_us": 27.377599477767944,
+              "b_us": 22.731199860572815,
+              "order": "AB",
+              "pair": 11,
+              "paired_speedup": 1.2044062630083285
+            },
+            {
+              "a_us": 27.612799406051636,
+              "b_us": 22.74720072746277,
+              "order": "BA",
+              "pair": 12,
+              "paired_speedup": 1.2138987885535566
+            },
+            {
+              "a_us": 27.695998549461365,
+              "b_us": 22.782400250434875,
+              "order": "AB",
+              "pair": 13,
+              "paired_speedup": 1.215675181061429
+            },
+            {
+              "a_us": 27.273601293563843,
+              "b_us": 22.814400494098663,
+              "order": "BA",
+              "pair": 14,
+              "paired_speedup": 1.1954555325974323
+            },
+            {
+              "a_us": 27.164798974990845,
+              "b_us": 22.74080067873001,
+              "order": "AB",
+              "pair": 15,
+              "paired_speedup": 1.1945401289409612
+            },
+            {
+              "a_us": 27.403199672698975,
+              "b_us": 22.750400006771088,
+              "order": "BA",
+              "pair": 16,
+              "paired_speedup": 1.204515070703948
+            },
+            {
+              "a_us": 27.35840082168579,
+              "b_us": 22.856000065803528,
+              "order": "AB",
+              "pair": 17,
+              "paired_speedup": 1.1969898819968339
+            },
+            {
+              "a_us": 27.54719853401184,
+              "b_us": 22.7183997631073,
+              "order": "BA",
+              "pair": 18,
+              "paired_speedup": 1.2125501277051252
+            },
+            {
+              "a_us": 27.268800139427185,
+              "b_us": 22.77120053768158,
+              "order": "AB",
+              "pair": 19,
+              "paired_speedup": 1.1975126254016786
+            },
+            {
+              "a_us": 27.457600831985474,
+              "b_us": 22.710399329662323,
+              "order": "BA",
+              "pair": 20,
+              "paired_speedup": 1.2090320576672016
+            },
+            {
+              "a_us": 27.694401144981384,
+              "b_us": 22.77120053768158,
+              "order": "AB",
+              "pair": 21,
+              "paired_speedup": 1.2162029445550284
+            },
+            {
+              "a_us": 27.292799949645996,
+              "b_us": 22.731199860572815,
+              "order": "BA",
+              "pair": 22,
+              "paired_speedup": 1.2006757283844598
+            },
+            {
+              "a_us": 27.611199021339417,
+              "b_us": 22.74879962205887,
+              "order": "AB",
+              "pair": 23,
+              "paired_speedup": 1.2137431196398432
+            },
+            {
+              "a_us": 27.830401062965393,
+              "b_us": 22.82399982213974,
+              "order": "BA",
+              "pair": 24,
+              "paired_speedup": 1.2193481107535473
+            },
+            {
+              "a_us": 27.17440128326416,
+              "b_us": 22.764800488948822,
+              "order": "AB",
+              "pair": 25,
+              "paired_speedup": 1.193702589067538
+            },
+            {
+              "a_us": 27.04479992389679,
+              "b_us": 22.812800109386444,
+              "order": "BA",
+              "pair": 26,
+              "paired_speedup": 1.1855098801645603
+            },
+            {
+              "a_us": 27.267199754714966,
+              "b_us": 22.73920029401779,
+              "order": "AB",
+              "pair": 27,
+              "paired_speedup": 1.1991274715975124
+            },
+            {
+              "a_us": 27.585598826408386,
+              "b_us": 22.71520048379898,
+              "order": "BA",
+              "pair": 28,
+              "paired_speedup": 1.2144114178557697
+            },
+            {
+              "a_us": 27.265599370002747,
+              "b_us": 22.74239957332611,
+              "order": "AB",
+              "pair": 29,
+              "paired_speedup": 1.1988884146588368
+            },
+            {
+              "a_us": 27.582401037216187,
+              "b_us": 22.791999578475952,
+              "order": "BA",
+              "pair": 30,
+              "paired_speedup": 1.210179078068435
+            },
+            {
+              "a_us": 27.510398626327515,
+              "b_us": 22.788800299167633,
+              "order": "AB",
+              "pair": 31,
+              "paired_speedup": 1.20718942046863
+            },
+            {
+              "a_us": 27.579200267791748,
+              "b_us": 22.790400683879852,
+              "order": "BA",
+              "pair": 32,
+              "paired_speedup": 1.2101235362351097
+            },
+            {
+              "a_us": 27.481600642204285,
+              "b_us": 22.726400196552277,
+              "order": "AB",
+              "pair": 33,
+              "paired_speedup": 1.209236852494281
+            },
+            {
+              "a_us": 27.52000093460083,
+              "b_us": 22.699199616909027,
+              "order": "BA",
+              "pair": 34,
+              "paired_speedup": 1.2123775903578866
+            },
+            {
+              "a_us": 27.484801411628723,
+              "b_us": 22.788800299167633,
+              "order": "AB",
+              "pair": 35,
+              "paired_speedup": 1.206066183862808
+            },
+            {
+              "a_us": 27.270400524139404,
+              "b_us": 22.699199616909027,
+              "order": "BA",
+              "pair": 36,
+              "paired_speedup": 1.201381589852411
+            },
+            {
+              "a_us": 27.30880081653595,
+              "b_us": 22.753599286079407,
+              "order": "AB",
+              "pair": 37,
+              "paired_speedup": 1.2001969654639828
+            },
+            {
+              "a_us": 27.587199211120605,
+              "b_us": 22.76799976825714,
+              "order": "BA",
+              "pair": 38,
+              "paired_speedup": 1.211665473116454
+            },
+            {
+              "a_us": 27.686399221420288,
+              "b_us": 22.71520048379898,
+              "order": "AB",
+              "pair": 39,
+              "paired_speedup": 1.218848992381418
+            },
+            {
+              "a_us": 27.36000120639801,
+              "b_us": 22.812800109386444,
+              "order": "BA",
+              "pair": 40,
+              "paired_speedup": 1.199326740917727
+            },
+            {
+              "a_us": 27.355200052261353,
+              "b_us": 22.723199427127838,
+              "order": "AB",
+              "pair": 41,
+              "paired_speedup": 1.203844561589494
+            },
+            {
+              "a_us": 27.65919864177704,
+              "b_us": 22.77279943227768,
+              "order": "BA",
+              "pair": 42,
+              "paired_speedup": 1.2145717404674228
+            },
+            {
+              "a_us": 27.592000365257263,
+              "b_us": 22.76799976825714,
+              "order": "AB",
+              "pair": 43,
+              "paired_speedup": 1.2118763460163806
+            },
+            {
+              "a_us": 27.647998929023743,
+              "b_us": 22.8192001581192,
+              "order": "BA",
+              "pair": 44,
+              "paired_speedup": 1.2116112193873907
+            },
+            {
+              "a_us": 27.265599370002747,
+              "b_us": 22.705599665641785,
+              "order": "AB",
+              "pair": 45,
+              "paired_speedup": 1.200831502867602
+            },
+            {
+              "a_us": 27.507200837135315,
+              "b_us": 22.735999524593353,
+              "order": "BA",
+              "pair": 46,
+              "paired_speedup": 1.209852278866429
+            },
+            {
+              "a_us": 28.043198585510254,
+              "b_us": 22.777600586414337,
+              "order": "AB",
+              "pair": 47,
+              "paired_speedup": 1.231174393418619
+            },
+            {
+              "a_us": 27.404800057411194,
+              "b_us": 22.87999987602234,
+              "order": "BA",
+              "pair": 48,
+              "paired_speedup": 1.1977622467616678
+            },
+            {
+              "a_us": 27.700799703598022,
+              "b_us": 22.76799976825714,
+              "order": "AB",
+              "pair": 49,
+              "paired_speedup": 1.2166549536871538
+            },
+            {
+              "a_us": 27.33120024204254,
+              "b_us": 22.77279943227768,
+              "order": "BA",
+              "pair": 50,
+              "paired_speedup": 1.2001686627645736
+            },
+            {
+              "a_us": 27.462399005889893,
+              "b_us": 23.188799619674683,
+              "order": "AB",
+              "pair": 51,
+              "paired_speedup": 1.1842958435239248
+            },
+            {
+              "a_us": 27.559998631477356,
+              "b_us": 22.708800435066223,
+              "order": "BA",
+              "pair": 52,
+              "paired_speedup": 1.2136263520516066
+            },
+            {
+              "a_us": 27.46880054473877,
+              "b_us": 22.737599909305573,
+              "order": "AB",
+              "pair": 53,
+              "paired_speedup": 1.2080782780198762
+            },
+            {
+              "a_us": 27.372801303863525,
+              "b_us": 22.732800245285034,
+              "order": "BA",
+              "pair": 54,
+              "paired_speedup": 1.2041104047241546
+            },
+            {
+              "a_us": 27.51680016517639,
+              "b_us": 22.73920029401779,
+              "order": "AB",
+              "pair": 55,
+              "paired_speedup": 1.2101041289660255
+            },
+            {
+              "a_us": 27.27999985218048,
+              "b_us": 22.779199481010437,
+              "order": "BA",
+              "pair": 56,
+              "paired_speedup": 1.1975837814196268
+            },
+            {
+              "a_us": 27.268800139427185,
+              "b_us": 22.77279943227768,
+              "order": "AB",
+              "pair": 57,
+              "paired_speedup": 1.197428547180588
+            },
+            {
+              "a_us": 27.27839946746826,
+              "b_us": 22.74720072746277,
+              "order": "BA",
+              "pair": 58,
+              "paired_speedup": 1.199198081306548
+            },
+            {
+              "a_us": 27.670401334762573,
+              "b_us": 22.734400629997253,
+              "order": "AB",
+              "pair": 59,
+              "paired_speedup": 1.2171159374332674
+            },
+            {
+              "a_us": 27.81600058078766,
+              "b_us": 22.735999524593353,
+              "order": "BA",
+              "pair": 60,
+              "paired_speedup": 1.223434252393404
+            },
+            {
+              "a_us": 27.79040038585663,
+              "b_us": 22.69120067358017,
+              "order": "AB",
+              "pair": 61,
+              "paired_speedup": 1.2247214585790325
+            },
+            {
+              "a_us": 27.427199482917786,
+              "b_us": 22.791999578475952,
+              "order": "BA",
+              "pair": 62,
+              "paired_speedup": 1.2033696029381806
+            },
+            {
+              "a_us": 27.38560140132904,
+              "b_us": 22.69279956817627,
+              "order": "AB",
+              "pair": 63,
+              "paired_speedup": 1.2067969542080572
+            },
+            {
+              "a_us": 27.419200539588928,
+              "b_us": 22.838400304317474,
+              "order": "BA",
+              "pair": 64,
+              "paired_speedup": 1.2005744786952297
+            },
+            {
+              "a_us": 27.38400101661682,
+              "b_us": 22.776000201702118,
+              "order": "AB",
+              "pair": 65,
+              "paired_speedup": 1.202318263703314
+            },
+            {
+              "a_us": 27.5952011346817,
+              "b_us": 22.731199860572815,
+              "order": "BA",
+              "pair": 66,
+              "paired_speedup": 1.2139790817881762
+            },
+            {
+              "a_us": 27.875199913978577,
+              "b_us": 22.73920029401779,
+              "order": "AB",
+              "pair": 67,
+              "paired_speedup": 1.2258654461701521
+            },
+            {
+              "a_us": 27.327999472618103,
+              "b_us": 22.74080067873001,
+              "order": "BA",
+              "pair": 68,
+              "paired_speedup": 1.201716679139561
+            },
+            {
+              "a_us": 27.356800436973572,
+              "b_us": 22.735999524593353,
+              "order": "AB",
+              "pair": 69,
+              "paired_speedup": 1.2032372013107202
+            },
+            {
+              "a_us": 27.452799677848816,
+              "b_us": 22.672000527381897,
+              "order": "BA",
+              "pair": 70,
+              "paired_speedup": 1.2108679886758538
+            },
+            {
+              "a_us": 27.324798703193665,
+              "b_us": 22.759999334812164,
+              "order": "AB",
+              "pair": 71,
+              "paired_speedup": 1.2005623682685918
+            },
+            {
+              "a_us": 27.329599857330322,
+              "b_us": 22.809599339962006,
+              "order": "BA",
+              "pair": 72,
+              "paired_speedup": 1.1981622057450767
+            },
+            {
+              "a_us": 27.25279927253723,
+              "b_us": 22.752000391483307,
+              "order": "AB",
+              "pair": 73,
+              "paired_speedup": 1.197819919286688
+            },
+            {
+              "a_us": 27.662399411201477,
+              "b_us": 22.732800245285034,
+              "order": "BA",
+              "pair": 74,
+              "paired_speedup": 1.2168496231316193
+            },
+            {
+              "a_us": 27.296000719070435,
+              "b_us": 22.776000201702118,
+              "order": "AB",
+              "pair": 75,
+              "paired_speedup": 1.1984545344810158
+            },
+            {
+              "a_us": 27.49600112438202,
+              "b_us": 22.728000581264496,
+              "order": "BA",
+              "pair": 76,
+              "paired_speedup": 1.2097853054020051
+            },
+            {
+              "a_us": 27.89280116558075,
+              "b_us": 22.776000201702118,
+              "order": "AB",
+              "pair": 77,
+              "paired_speedup": 1.2246575745769548
+            },
+            {
+              "a_us": 27.460798621177673,
+              "b_us": 22.755199670791626,
+              "order": "BA",
+              "pair": 78,
+              "paired_speedup": 1.2067922504949984
+            },
+            {
+              "a_us": 27.511999011039734,
+              "b_us": 22.87839949131012,
+              "order": "AB",
+              "pair": 79,
+              "paired_speedup": 1.2025316290805041
+            },
+            {
+              "a_us": 27.91680097579956,
+              "b_us": 22.868800163269043,
+              "order": "BA",
+              "pair": 80,
+              "paired_speedup": 1.2207374578679653
+            },
+            {
+              "a_us": 27.59999930858612,
+              "b_us": 22.707200050354004,
+              "order": "AB",
+              "pair": 81,
+              "paired_speedup": 1.2154734730562184
+            },
+            {
+              "a_us": 27.41439938545227,
+              "b_us": 22.7743998169899,
+              "order": "BA",
+              "pair": 82,
+              "paired_speedup": 1.203737512546912
+            },
+            {
+              "a_us": 27.345600724220276,
+              "b_us": 22.74399995803833,
+              "order": "AB",
+              "pair": 83,
+              "paired_speedup": 1.2023215254428286
+            },
+            {
+              "a_us": 27.224001288414,
+              "b_us": 22.71360009908676,
+              "order": "BA",
+              "pair": 84,
+              "paired_speedup": 1.1985771154572977
+            },
+            {
+              "a_us": 27.299201488494873,
+              "b_us": 22.753599286079407,
+              "order": "AB",
+              "pair": 85,
+              "paired_speedup": 1.1997750837247299
+            },
+            {
+              "a_us": 27.641600370407104,
+              "b_us": 22.735999524593353,
+              "order": "BA",
+              "pair": 86,
+              "paired_speedup": 1.2157635885111364
+            },
+            {
+              "a_us": 27.368000149726868,
+              "b_us": 22.734400629997253,
+              "order": "AB",
+              "pair": 87,
+              "paired_speedup": 1.2038144570046743
+            },
+            {
+              "a_us": 27.76319980621338,
+              "b_us": 22.835199534893036,
+              "order": "BA",
+              "pair": 88,
+              "paired_speedup": 1.215807191165121
+            },
+            {
+              "a_us": 27.463999390602112,
+              "b_us": 22.728000581264496,
+              "order": "AB",
+              "pair": 89,
+              "paired_speedup": 1.2083772742086987
+            },
+            {
+              "a_us": 28.097599744796753,
+              "b_us": 22.707200050354004,
+              "order": "BA",
+              "pair": 90,
+              "paired_speedup": 1.2373872464455922
+            },
+            {
+              "a_us": 27.76319980621338,
+              "b_us": 22.758400440216064,
+              "order": "AB",
+              "pair": 91,
+              "paired_speedup": 1.2199099791369081
+            },
+            {
+              "a_us": 27.880001068115234,
+              "b_us": 22.74399995803833,
+              "order": "BA",
+              "pair": 92,
+              "paired_speedup": 1.2258178473246835
+            },
+            {
+              "a_us": 27.713599801063538,
+              "b_us": 22.776000201702118,
+              "order": "AB",
+              "pair": 93,
+              "paired_speedup": 1.216789583580721
+            },
+            {
+              "a_us": 27.542400360107422,
+              "b_us": 22.779199481010437,
+              "order": "BA",
+              "pair": 94,
+              "paired_speedup": 1.2091030847272646
+            },
+            {
+              "a_us": 27.182400226593018,
+              "b_us": 22.784000635147095,
+              "order": "AB",
+              "pair": 95,
+              "paired_speedup": 1.1930477294957962
+            },
+            {
+              "a_us": 27.508801221847534,
+              "b_us": 22.82399982213974,
+              "order": "BA",
+              "pair": 96,
+              "paired_speedup": 1.205257686479801
+            },
+            {
+              "a_us": 27.73120105266571,
+              "b_us": 22.764800488948822,
+              "order": "AB",
+              "pair": 97,
+              "paired_speedup": 1.218161392019571
+            },
+            {
+              "a_us": 27.167999744415283,
+              "b_us": 22.750400006771088,
+              "order": "BA",
+              "pair": 98,
+              "paired_speedup": 1.1941767940928252
+            },
+            {
+              "a_us": 27.57759988307953,
+              "b_us": 22.700800001621246,
+              "order": "AB",
+              "pair": 99,
+              "paired_speedup": 1.214829428086675
+            }
+          ],
+          "series": 2,
+          "starts_with": "BA",
+          "summary": {
+            "a_median_us": 27.477599680423737,
+            "ab_pairs": 50,
+            "all_estimators_finite": true,
+            "all_estimators_ge_1_03": true,
+            "b_median_us": 22.754399478435516,
+            "ba_pairs": 50,
+            "estimators": {
+              "ab_ratio_of_medians": 1.2070384072668046,
+              "ba_ratio_of_medians": 1.2085721496333897,
+              "order_balanced_sqrt_ab_ba": 1.2078050349955098,
+              "pooled_ratio_of_medians": 1.2075730544532466
+            },
+            "pairs": 100
+          }
+        },
+        {
+          "graph_capture_order": "AB",
+          "raw_pairs": [
+            {
+              "a_us": 27.09760069847107,
+              "b_us": 22.82239943742752,
+              "order": "AB",
+              "pair": 0,
+              "paired_speedup": 1.1873247934672655
+            },
+            {
+              "a_us": 27.027198672294617,
+              "b_us": 22.832000255584717,
+              "order": "BA",
+              "pair": 1,
+              "paired_speedup": 1.183742044925904
+            },
+            {
+              "a_us": 26.926401257514954,
+              "b_us": 22.700800001621246,
+              "order": "AB",
+              "pair": 2,
+              "paired_speedup": 1.1861432749326861
+            },
+            {
+              "a_us": 26.849600672721863,
+              "b_us": 22.7743998169899,
+              "order": "BA",
+              "pair": 3,
+              "paired_speedup": 1.1789377936841097
+            },
+            {
+              "a_us": 26.798400282859802,
+              "b_us": 22.777600586414337,
+              "order": "AB",
+              "pair": 4,
+              "paired_speedup": 1.176524286708393
+            },
+            {
+              "a_us": 27.076798677444458,
+              "b_us": 22.72160053253174,
+              "order": "BA",
+              "pair": 5,
+              "paired_speedup": 1.191676556353376
+            },
+            {
+              "a_us": 26.98880136013031,
+              "b_us": 22.752000391483307,
+              "order": "AB",
+              "pair": 6,
+              "paired_speedup": 1.1862166357131811
+            },
+            {
+              "a_us": 27.0143985748291,
+              "b_us": 22.710399329662323,
+              "order": "BA",
+              "pair": 7,
+              "paired_speedup": 1.1895166695525814
+            },
+            {
+              "a_us": 26.929599046707153,
+              "b_us": 22.782400250434875,
+              "order": "AB",
+              "pair": 8,
+              "paired_speedup": 1.1820352004479033
+            },
+            {
+              "a_us": 26.969599723815918,
+              "b_us": 23.230400681495667,
+              "order": "BA",
+              "pair": 9,
+              "paired_speedup": 1.1609614527785022
+            },
+            {
+              "a_us": 26.9679993391037,
+              "b_us": 22.779199481010437,
+              "order": "AB",
+              "pair": 10,
+              "paired_speedup": 1.1838870528169876
+            },
+            {
+              "a_us": 27.083200216293335,
+              "b_us": 22.79839962720871,
+              "order": "BA",
+              "pair": 11,
+              "paired_speedup": 1.1879430424568458
+            },
+            {
+              "a_us": 26.897600293159485,
+              "b_us": 22.74560034275055,
+              "order": "AB",
+              "pair": 12,
+              "paired_speedup": 1.1825407941686734
+            },
+            {
+              "a_us": 26.772800087928772,
+              "b_us": 22.753599286079407,
+              "order": "BA",
+              "pair": 13,
+              "paired_speedup": 1.1766402207983113
+            },
+            {
+              "a_us": 27.04640030860901,
+              "b_us": 22.752000391483307,
+              "order": "AB",
+              "pair": 14,
+              "paired_speedup": 1.1887482350225878
+            },
+            {
+              "a_us": 26.848000288009644,
+              "b_us": 22.702400386333466,
+              "order": "BA",
+              "pair": 15,
+              "paired_speedup": 1.1826062368352808
+            },
+            {
+              "a_us": 27.006399631500244,
+              "b_us": 22.724799811840057,
+              "order": "AB",
+              "pair": 16,
+              "paired_speedup": 1.188410892730038
+            },
+            {
+              "a_us": 27.060800790786743,
+              "b_us": 22.804799675941467,
+              "order": "BA",
+              "pair": 17,
+              "paired_speedup": 1.1866274282310516
+            },
+            {
+              "a_us": 27.161601185798645,
+              "b_us": 22.731199860572815,
+              "order": "AB",
+              "pair": 18,
+              "paired_speedup": 1.1949039800978718
+            },
+            {
+              "a_us": 27.001601457595825,
+              "b_us": 22.777600586414337,
+              "order": "BA",
+              "pair": 19,
+              "paired_speedup": 1.185445383290323
+            },
+            {
+              "a_us": 26.873600482940674,
+              "b_us": 22.737599909305573,
+              "order": "AB",
+              "pair": 20,
+              "paired_speedup": 1.1819013699833114
+            },
+            {
+              "a_us": 26.996800303459167,
+              "b_us": 22.73920029401779,
+              "order": "BA",
+              "pair": 21,
+              "paired_speedup": 1.1872361364687685
+            },
+            {
+              "a_us": 26.952001452445984,
+              "b_us": 22.711999714374542,
+              "order": "AB",
+              "pair": 22,
+              "paired_speedup": 1.1866855314984845
+            },
+            {
+              "a_us": 26.923200488090515,
+              "b_us": 22.74080067873001,
+              "order": "BA",
+              "pair": 23,
+              "paired_speedup": 1.1839161192451944
+            },
+            {
+              "a_us": 26.894399523735046,
+              "b_us": 22.76799976825714,
+              "order": "AB",
+              "pair": 24,
+              "paired_speedup": 1.1812368147170698
+            },
+            {
+              "a_us": 27.025601267814636,
+              "b_us": 22.686399519443512,
+              "order": "BA",
+              "pair": 25,
+              "paired_speedup": 1.1912688588884361
+            },
+            {
+              "a_us": 26.873600482940674,
+              "b_us": 22.862400114536285,
+              "order": "AB",
+              "pair": 26,
+              "paired_speedup": 1.1754496618163026
+            },
+            {
+              "a_us": 27.009600400924683,
+              "b_us": 22.85279929637909,
+              "order": "BA",
+              "pair": 27,
+              "paired_speedup": 1.181894613899848
+            },
+            {
+              "a_us": 26.894399523735046,
+              "b_us": 22.74239957332611,
+              "order": "AB",
+              "pair": 28,
+              "paired_speedup": 1.1825664849930213
+            },
+            {
+              "a_us": 27.04479992389679,
+              "b_us": 22.673599421977997,
+              "order": "BA",
+              "pair": 29,
+              "paired_speedup": 1.1927881154009317
+            },
+            {
+              "a_us": 26.82560086250305,
+              "b_us": 22.779199481010437,
+              "order": "AB",
+              "pair": 30,
+              "paired_speedup": 1.1776358025603946
+            },
+            {
+              "a_us": 26.96320116519928,
+              "b_us": 22.673599421977997,
+              "order": "BA",
+              "pair": 31,
+              "paired_speedup": 1.189189270895528
+            },
+            {
+              "a_us": 26.91200077533722,
+              "b_us": 22.72160053253174,
+              "order": "AB",
+              "pair": 32,
+              "paired_speedup": 1.184423638502308
+            },
+            {
+              "a_us": 26.958400011062622,
+              "b_us": 22.764800488948822,
+              "order": "BA",
+              "pair": 33,
+              "paired_speedup": 1.1842142005219674
+            },
+            {
+              "a_us": 27.01919972896576,
+              "b_us": 22.815999388694763,
+              "order": "AB",
+              "pair": 34,
+              "paired_speedup": 1.1842216187274999
+            },
+            {
+              "a_us": 26.9679993391037,
+              "b_us": 22.809599339962006,
+              "order": "BA",
+              "pair": 35,
+              "paired_speedup": 1.1823092083803617
+            },
+            {
+              "a_us": 26.894399523735046,
+              "b_us": 22.683200240135193,
+              "order": "AB",
+              "pair": 36,
+              "paired_speedup": 1.1856527843962972
+            },
+            {
+              "a_us": 26.88159942626953,
+              "b_us": 22.72000014781952,
+              "order": "BA",
+              "pair": 37,
+              "paired_speedup": 1.1831689811344217
+            },
+            {
+              "a_us": 27.20159888267517,
+              "b_us": 22.723199427127838,
+              "order": "AB",
+              "pair": 38,
+              "paired_speedup": 1.1970848986257123
+            },
+            {
+              "a_us": 27.01919972896576,
+              "b_us": 22.723199427127838,
+              "order": "BA",
+              "pair": 39,
+              "paired_speedup": 1.189057897221515
+            },
+            {
+              "a_us": 26.94239914417267,
+              "b_us": 22.72160053253174,
+              "order": "AB",
+              "pair": 40,
+              "paired_speedup": 1.1857615006301068
+            },
+            {
+              "a_us": 27.075201272964478,
+              "b_us": 22.752000391483307,
+              "order": "BA",
+              "pair": 41,
+              "paired_speedup": 1.190014100171142
+            },
+            {
+              "a_us": 26.891198754310608,
+              "b_us": 22.710399329662323,
+              "order": "AB",
+              "pair": 42,
+              "paired_speedup": 1.184091849903656
+            },
+            {
+              "a_us": 26.8528014421463,
+              "b_us": 22.76799976825714,
+              "order": "BA",
+              "pair": 43,
+              "paired_speedup": 1.1794097731669928
+            },
+            {
+              "a_us": 27.04159915447235,
+              "b_us": 22.871999442577362,
+              "order": "AB",
+              "pair": 44,
+              "paired_speedup": 1.1823014958689213
+            },
+            {
+              "a_us": 26.93920135498047,
+              "b_us": 22.753599286079407,
+              "order": "BA",
+              "pair": 45,
+              "paired_speedup": 1.1839534051855174
+            },
+            {
+              "a_us": 26.86080038547516,
+              "b_us": 22.753599286079407,
+              "order": "AB",
+              "pair": 46,
+              "paired_speedup": 1.1805077538615407
+            },
+            {
+              "a_us": 26.927998661994934,
+              "b_us": 22.735999524593353,
+              "order": "BA",
+              "pair": 47,
+              "paired_speedup": 1.184377165071064
+            },
+            {
+              "a_us": 26.86080038547516,
+              "b_us": 23.212799429893494,
+              "order": "AB",
+              "pair": 48,
+              "paired_speedup": 1.157154718309579
+            },
+            {
+              "a_us": 26.943999528884888,
+              "b_us": 22.71520048379898,
+              "order": "BA",
+              "pair": 49,
+              "paired_speedup": 1.1861660454241638
+            },
+            {
+              "a_us": 26.796799898147583,
+              "b_us": 22.815999388694763,
+              "order": "AB",
+              "pair": 50,
+              "paired_speedup": 1.1744740802993399
+            },
+            {
+              "a_us": 27.006399631500244,
+              "b_us": 22.752000391483307,
+              "order": "BA",
+              "pair": 51,
+              "paired_speedup": 1.1869901180913074
+            },
+            {
+              "a_us": 26.868799328804016,
+              "b_us": 22.79359996318817,
+              "order": "AB",
+              "pair": 52,
+              "paired_speedup": 1.17878700039473
+            },
+            {
+              "a_us": 26.96000039577484,
+              "b_us": 22.7743998169899,
+              "order": "BA",
+              "pair": 53,
+              "paired_speedup": 1.1837853296868202
+            },
+            {
+              "a_us": 27.003198862075806,
+              "b_us": 22.699199616909027,
+              "order": "AB",
+              "pair": 54,
+              "paired_speedup": 1.189610176473388
+            },
+            {
+              "a_us": 26.843199133872986,
+              "b_us": 22.758400440216064,
+              "order": "BA",
+              "pair": 55,
+              "paired_speedup": 1.1794853159556296
+            },
+            {
+              "a_us": 26.929599046707153,
+              "b_us": 22.74720072746277,
+              "order": "AB",
+              "pair": 56,
+              "paired_speedup": 1.183864307936359
+            },
+            {
+              "a_us": 26.98560059070587,
+              "b_us": 22.66719937324524,
+              "order": "BA",
+              "pair": 57,
+              "paired_speedup": 1.1905132233741134
+            },
+            {
+              "a_us": 26.846399903297424,
+              "b_us": 22.766399383544922,
+              "order": "AB",
+              "pair": 58,
+              "paired_speedup": 1.1792114972164391
+            },
+            {
+              "a_us": 27.0687997341156,
+              "b_us": 22.72000014781952,
+              "order": "BA",
+              "pair": 59,
+              "paired_speedup": 1.1914084312500959
+            },
+            {
+              "a_us": 27.039998769760132,
+              "b_us": 22.835199534893036,
+              "order": "AB",
+              "pair": 60,
+              "paired_speedup": 1.1841367415442114
+            },
+            {
+              "a_us": 26.851201057434082,
+              "b_us": 22.82560020685196,
+              "order": "BA",
+              "pair": 61,
+              "paired_speedup": 1.1763634171325619
+            },
+            {
+              "a_us": 26.931199431419373,
+              "b_us": 22.708800435066223,
+              "order": "AB",
+              "pair": 62,
+              "paired_speedup": 1.1859366816149854
+            },
+            {
+              "a_us": 26.85920000076294,
+              "b_us": 22.756800055503845,
+              "order": "BA",
+              "pair": 63,
+              "paired_speedup": 1.1802713885631257
+            },
+            {
+              "a_us": 26.971200108528137,
+              "b_us": 22.74239957332611,
+              "order": "AB",
+              "pair": 64,
+              "paired_speedup": 1.185943463070707
+            },
+            {
+              "a_us": 27.105599641799927,
+              "b_us": 22.737599909305573,
+              "order": "BA",
+              "pair": 65,
+              "paired_speedup": 1.1921046966222109
+            },
+            {
+              "a_us": 26.923200488090515,
+              "b_us": 22.74080067873001,
+              "order": "AB",
+              "pair": 66,
+              "paired_speedup": 1.1839161192451944
+            },
+            {
+              "a_us": 26.931199431419373,
+              "b_us": 22.708800435066223,
+              "order": "BA",
+              "pair": 67,
+              "paired_speedup": 1.1859366816149854
+            },
+            {
+              "a_us": 26.96639895439148,
+              "b_us": 22.74879962205887,
+              "order": "AB",
+              "pair": 68,
+              "paired_speedup": 1.1853987639964494
+            },
+            {
+              "a_us": 27.140799164772034,
+              "b_us": 22.735999524593353,
+              "order": "BA",
+              "pair": 69,
+              "paired_speedup": 1.1937367932918033
+            },
+            {
+              "a_us": 26.931199431419373,
+              "b_us": 22.806400060653687,
+              "order": "AB",
+              "pair": 70,
+              "paired_speedup": 1.1808614844866252
+            },
+            {
+              "a_us": 26.958400011062622,
+              "b_us": 22.726400196552277,
+              "order": "BA",
+              "pair": 71,
+              "paired_speedup": 1.1862151408894208
+            },
+            {
+              "a_us": 26.945599913597107,
+              "b_us": 22.753599286079407,
+              "order": "AB",
+              "pair": 72,
+              "paired_speedup": 1.1842346160188535
+            },
+            {
+              "a_us": 27.299201488494873,
+              "b_us": 22.705599665641785,
+              "order": "BA",
+              "pair": 73,
+              "paired_speedup": 1.2023114073399324
+            },
+            {
+              "a_us": 26.83520019054413,
+              "b_us": 22.777600586414337,
+              "order": "AB",
+              "pair": 74,
+              "paired_speedup": 1.1781399049797168
+            },
+            {
+              "a_us": 27.079999446868896,
+              "b_us": 22.703999280929565,
+              "order": "BA",
+              "pair": 75,
+              "paired_speedup": 1.1927413805732012
+            },
+            {
+              "a_us": 26.862400770187378,
+              "b_us": 22.85279929637909,
+              "order": "AB",
+              "pair": 76,
+              "paired_speedup": 1.1754534060273127
+            },
+            {
+              "a_us": 26.952001452445984,
+              "b_us": 22.753599286079407,
+              "order": "BA",
+              "pair": 77,
+              "paired_speedup": 1.184515957830687
+            },
+            {
+              "a_us": 26.919999718666077,
+              "b_us": 22.98080027103424,
+              "order": "AB",
+              "pair": 78,
+              "paired_speedup": 1.1714126314650988
+            },
+            {
+              "a_us": 26.96000039577484,
+              "b_us": 22.72160053253174,
+              "order": "BA",
+              "pair": 79,
+              "paired_speedup": 1.186536149034693
+            },
+            {
+              "a_us": 26.945599913597107,
+              "b_us": 22.734400629997253,
+              "order": "AB",
+              "pair": 80,
+              "paired_speedup": 1.1852346737500228
+            },
+            {
+              "a_us": 26.952001452445984,
+              "b_us": 22.73920029401779,
+              "order": "BA",
+              "pair": 81,
+              "paired_speedup": 1.185266020966291
+            },
+            {
+              "a_us": 26.91519856452942,
+              "b_us": 22.724799811840057,
+              "order": "AB",
+              "pair": 82,
+              "paired_speedup": 1.1843976091048372
+            },
+            {
+              "a_us": 26.905599236488342,
+              "b_us": 22.766399383544922,
+              "order": "BA",
+              "pair": 83,
+              "paired_speedup": 1.1818117912811081
+            },
+            {
+              "a_us": 27.324798703193665,
+              "b_us": 22.657600045204163,
+              "order": "AB",
+              "pair": 84,
+              "paired_speedup": 1.2059882180230024
+            },
+            {
+              "a_us": 27.031999826431274,
+              "b_us": 22.735999524593353,
+              "order": "BA",
+              "pair": 85,
+              "paired_speedup": 1.1889514598727438
+            },
+            {
+              "a_us": 26.9679993391037,
+              "b_us": 22.731199860572815,
+              "order": "AB",
+              "pair": 86,
+              "paired_speedup": 1.1863869705302974
+            },
+            {
+              "a_us": 26.873600482940674,
+              "b_us": 22.804799675941467,
+              "order": "BA",
+              "pair": 87,
+              "paired_speedup": 1.1784186164674666
+            },
+            {
+              "a_us": 26.864001154899597,
+              "b_us": 22.728000581264496,
+              "order": "AB",
+              "pair": 88,
+              "paired_speedup": 1.181978197283423
+            },
+            {
+              "a_us": 26.88640058040619,
+              "b_us": 22.71520048379898,
+              "order": "BA",
+              "pair": 89,
+              "paired_speedup": 1.1836303447808971
+            },
+            {
+              "a_us": 26.91360116004944,
+              "b_us": 22.763200104236603,
+              "order": "AB",
+              "pair": 90,
+              "paired_speedup": 1.1823294192735396
+            },
+            {
+              "a_us": 26.93600058555603,
+              "b_us": 22.785599529743195,
+              "order": "BA",
+              "pair": 91,
+              "paired_speedup": 1.1821501800027296
+            },
+            {
+              "a_us": 26.93440020084381,
+              "b_us": 22.7743998169899,
+              "order": "AB",
+              "pair": 92,
+              "paired_speedup": 1.1826612519883188
+            },
+            {
+              "a_us": 27.03840136528015,
+              "b_us": 22.731199860572815,
+              "order": "BA",
+              "pair": 93,
+              "paired_speedup": 1.1894841245128533
+            },
+            {
+              "a_us": 26.956799626350403,
+              "b_us": 22.710399329662323,
+              "order": "AB",
+              "pair": 94,
+              "paired_speedup": 1.186980432842579
+            },
+            {
+              "a_us": 26.952001452445984,
+              "b_us": 22.77120053768158,
+              "order": "BA",
+              "pair": 95,
+              "paired_speedup": 1.183600373104881
+            },
+            {
+              "a_us": 26.892799139022827,
+              "b_us": 22.74399995803833,
+              "order": "AB",
+              "pair": 96,
+              "paired_speedup": 1.1824129083995272
+            },
+            {
+              "a_us": 26.952001452445984,
+              "b_us": 22.676800191402435,
+              "order": "BA",
+              "pair": 97,
+              "paired_speedup": 1.1885275358498077
+            },
+            {
+              "a_us": 26.88640058040619,
+              "b_us": 22.73920029401779,
+              "order": "AB",
+              "pair": 98,
+              "paired_speedup": 1.182381096642147
+            },
+            {
+              "a_us": 26.982399821281433,
+              "b_us": 22.710399329662323,
+              "order": "BA",
+              "pair": 99,
+              "paired_speedup": 1.1881076783198348
+            }
+          ],
+          "series": 3,
+          "starts_with": "AB",
+          "summary": {
+            "a_median_us": 26.948800683021545,
+            "ab_pairs": 50,
+            "all_estimators_finite": true,
+            "all_estimators_ge_1_03": true,
+            "b_median_us": 22.74480015039444,
+            "ba_pairs": 50,
+            "estimators": {
+              "ab_ratio_of_medians": 1.183752415387617,
+              "ba_ratio_of_medians": 1.1856881698509025,
+              "order_balanced_sqrt_ab_ba": 1.1847198972573767,
+              "pooled_ratio_of_medians": 1.1848334786337615
+            },
+            "pairs": 100
+          }
+        }
+      ]
+    }
+  },
+  "m": 16,
+  "num_splits": [
+    0,
+    8,
+    16,
+    24,
+    32,
+    40,
+    48,
+    56,
+    64,
+    72,
+    80,
+    88,
+    96,
+    104,
+    112,
+    120,
+    128
+  ],
+  "runtime": {
+    "cache_seqlens": [
+      2048,
+      2048,
+      2048,
+      2048,
+      2048,
+      2048,
+      2048,
+      2048,
+      2048,
+      2048,
+      2048,
+      2048,
+      2048,
+      2048,
+      2048,
+      2048
+    ],
+    "combine_kernel_pattern": "flash_fwd_mla_combine_kernel*",
+    "indices": {
+      "dtype": "torch.int32",
+      "shape": [
+        16,
+        1,
+        2048
+      ],
+      "stride": [
+        2048,
+        2048,
+        1
+      ]
+    },
+    "kv_cache": {
+      "bytes_per_token": 656,
+      "dtype": "torch.float8_e4m3fn",
+      "shape": [
+        2049,
+        64,
+        1,
+        656
+      ],
+      "stride": [
+        41984,
+        656,
+        656,
+        1
+      ]
+    },
+    "main_kernel_pattern": "flash_fwd_splitkv_mla_fp8_sparse_kernel*",
+    "num_splits_prefix": [
+      0,
+      8,
+      16,
+      24,
+      32,
+      40,
+      48,
+      56,
+      64,
+      72,
+      80,
+      88,
+      96,
+      104,
+      112,
+      120,
+      128
+    ],
+    "python_symbol": "sgl_kernel.flash_mla.flash_mla_with_kvcache",
+    "q": {
+      "dtype": "torch.bfloat16",
+      "shape": [
+        16,
+        1,
+        64,
+        576
+      ],
+      "stride": [
+        36864,
+        36864,
+        576,
+        1
+      ]
+    },
+    "selected_backend": "flashmla_kv",
+    "sm100_instantiation": "csrc/sm100/decode/head64/instantiations/v32.cu",
+    "softmax_scale": 0.0625,
+    "splits_per_request": [
+      8,
+      8,
+      8,
+      8,
+      8,
+      8,
+      8,
+      8,
+      8,
+      8,
+      8,
+      8,
+      8,
+      8,
+      8,
+      8
+    ],
+    "stream": "torch current CUDA stream",
+    "tile_scheduler_metadata_shape": [
+      148,
+      8
+    ],
+    "torch_op": "sgl_kernel::fwd_kvcache_mla"
+  },
+  "schema_version": 1,
+  "stage": "provider_pair_fair_measurement",
+  "task": "dsa_flashmla_kv_decode_m16",
+  "timing": {
+    "ab_pairs_per_series": 50,
+    "ba_pairs_per_series": 50,
+    "method": "CUDA events; one synchronization per observation",
+    "observation_unit": "microseconds per single call",
+    "pairs_per_series": 100,
+    "replays_per_observation": 20,
+    "series": 3,
+    "series_start_order": [
+      "AB",
+      "BA",
+      "AB"
+    ],
+    "unit": "microseconds",
+    "warmup_per_boundary": 20
+  }
+}

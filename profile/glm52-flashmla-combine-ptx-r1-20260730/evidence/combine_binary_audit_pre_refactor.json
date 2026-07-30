@@ -1,0 +1,255 @@
+{
+  "all_device_symbols_prefixed": true,
+  "combine_kernel": {
+    "candidate_combine_sass_sha256": "45fe47a9869b2b3af48160c6ef6f160ee7824033171e5ff070172b6f080d0320",
+    "candidate_instructions": 728,
+    "candidate_symbol": "_ZN5glm527combine60infini_kernel_glm52_flashmla_sparse_decode_combine_c1_stage8IN7cutlass10bfloat16_tELi512ELi8ELi160ELi256EEEv13CombineParams",
+    "identity_instructions": 344,
+    "identity_is_faithful_copy_of_stock": true,
+    "identity_symbol": "_ZN5glm527combine59infini_kernel_glm52_flashmla_sparse_decode_combine_identityIN7cutlass10bfloat16_tELi512ELi8ELi160ELi256EEEv13CombineParams",
+    "identity_vs_stock_delta": {
+      "differences": [
+        {
+          "identity": "/*0380*/                   IMAD.MOV.U32 R0, RZ, RZ, 0x5f",
+          "immediate_is_source_line_of_device_assert": true,
+          "instruction_index": 56,
+          "stock": "/*0380*/                   IMAD.MOV.U32 R0, RZ, RZ, 0x2b"
+        }
+      ],
+      "differing_instructions": 1,
+      "every_difference_is_dead_assert_line_metadata": true,
+      "identity_device_assert_source_line": 95,
+      "instructions": 344,
+      "stock_device_assert_source_line": 43
+    },
+    "opcode_delta": {
+      "BRA": {
+        "candidate": 10,
+        "delta": 5,
+        "identity": 5
+      },
+      "CS2R": {
+        "candidate": 6,
+        "delta": -1,
+        "identity": 7
+      },
+      "FFMA.FTZ": {
+        "candidate": 129,
+        "delta": 112,
+        "identity": 17
+      },
+      "IADD3": {
+        "candidate": 31,
+        "delta": 17,
+        "identity": 14
+      },
+      "IMAD": {
+        "candidate": 25,
+        "delta": 14,
+        "identity": 11
+      },
+      "IMAD.MOV": {
+        "candidate": 1,
+        "delta": -1,
+        "identity": 2
+      },
+      "IMAD.SHL.U32": {
+        "candidate": 5,
+        "delta": 3,
+        "identity": 2
+      },
+      "IMAD.U32": {
+        "candidate": 1,
+        "delta": -1,
+        "identity": 2
+      },
+      "IMAD.WIDE": {
+        "candidate": 24,
+        "delta": 10,
+        "identity": 14
+      },
+      "IMAD.WIDE.U32": {
+        "candidate": 17,
+        "delta": 11,
+        "identity": 6
+      },
+      "ISETP.GE.AND": {
+        "candidate": 37,
+        "delta": 28,
+        "identity": 9
+      },
+      "ISETP.NE.U32.AND": {
+        "candidate": 1,
+        "delta": -3,
+        "identity": 4
+      },
+      "LDC": {
+        "candidate": 13,
+        "delta": 9,
+        "identity": 4
+      },
+      "LDC.64": {
+        "candidate": 11,
+        "delta": 1,
+        "identity": 10
+      },
+      "LDCU": {
+        "candidate": 5,
+        "delta": -2,
+        "identity": 7
+      },
+      "LDCU.128": {
+        "candidate": 0,
+        "delta": -1,
+        "identity": 1
+      },
+      "LDCU.64": {
+        "candidate": 8,
+        "delta": 1,
+        "identity": 7
+      },
+      "LDG.E.128": {
+        "candidate": 64,
+        "delta": 56,
+        "identity": 8
+      },
+      "LDS": {
+        "candidate": 8,
+        "delta": 7,
+        "identity": 1
+      },
+      "LEA": {
+        "candidate": 44,
+        "delta": 35,
+        "identity": 9
+      },
+      "LEA.HI.X": {
+        "candidate": 23,
+        "delta": 15,
+        "identity": 8
+      },
+      "LOP3.LUT": {
+        "candidate": 34,
+        "delta": 17,
+        "identity": 17
+      },
+      "MOV": {
+        "candidate": 16,
+        "delta": 12,
+        "identity": 4
+      },
+      "S2R": {
+        "candidate": 33,
+        "delta": 29,
+        "identity": 4
+      },
+      "S2UR": {
+        "candidate": 2,
+        "delta": 1,
+        "identity": 1
+      },
+      "SHF.L.U32": {
+        "candidate": 2,
+        "delta": 2,
+        "identity": 0
+      },
+      "SHF.R.S32.HI": {
+        "candidate": 1,
+        "delta": 1,
+        "identity": 0
+      },
+      "SHF.R.U32.HI": {
+        "candidate": 10,
+        "delta": 9,
+        "identity": 1
+      },
+      "UIADD3": {
+        "candidate": 0,
+        "delta": -1,
+        "identity": 1
+      },
+      "VIADD": {
+        "candidate": 4,
+        "delta": -1,
+        "identity": 5
+      },
+      "VIADDMNMX": {
+        "candidate": 0,
+        "delta": -1,
+        "identity": 1
+      },
+      "VIMNMX": {
+        "candidate": 1,
+        "delta": 1,
+        "identity": 0
+      }
+    },
+    "reference_stock_symbol": "_ZN4smxx6decode28flash_fwd_mla_combine_kernelIN7cutlass10bfloat16_tELi512ELi8ELi160ELi256EEEv13CombineParams",
+    "resources": {
+      "candidate": {
+        "CONSTANT[0]": 1032,
+        "LOCAL": 0,
+        "REG": 184,
+        "SAMPLER": 0,
+        "SHARED": 6144,
+        "STACK": 24,
+        "SURFACE": 0,
+        "TEXTURE": 0
+      },
+      "identity": {
+        "CONSTANT[0]": 1032,
+        "LOCAL": 0,
+        "REG": 48,
+        "SAMPLER": 0,
+        "SHARED": 6144,
+        "STACK": 24,
+        "SURFACE": 0,
+        "TEXTURE": 0
+      }
+    },
+    "stock_combine_sass_sha256": "205737f3b43deec358500aead9c16bbedb4a8c7d00f4469b032344ef5806a86e"
+  },
+  "extensions": {
+    "candidate": {
+      "path": "/home/qinhaiyan/glm52-hotspot-goal-runs/cache/flashmla_combine_ptx_r1/torch_extensions/infini_kernel_glm52_flashmla_sparse_decode_combine_c1_stage8_2092a5f0372a7abc/infini_kernel_glm52_flashmla_sparse_decode_combine_c1_stage8_2092a5f0372a7abc.so",
+      "sha256": "9bffd5541e4677057a2745e384d79807ee87f64ce84425cbc663716ab9155ba0"
+    },
+    "identity": {
+      "path": "/home/qinhaiyan/glm52-hotspot-goal-runs/cache/flashmla_combine_ptx_r1/torch_extensions/infini_kernel_glm52_flashmla_sparse_decode_combine_identity_ae83b2e93d1f60f3/infini_kernel_glm52_flashmla_sparse_decode_combine_identity_ae83b2e93d1f60f3.so",
+      "sha256": "89e8e7dc3b236f4961125684cac06f4739acab7e9480851087c12d0fd8c6a7c5"
+    },
+    "reference_p1": {
+      "path": "/home/qinhaiyan/glm52-hotspot-goal-runs/cache/flashmla_ptx_sass_followup/torch_extensions/infini_kernel_glm52_flashmla_sparse_decode_p1_consumer_scale_a39236323dc57a97/infini_kernel_glm52_flashmla_sparse_decode_p1_consumer_scale_a39236323dc57a97.so",
+      "role": "round-2 P1 build: reference main and stock combine",
+      "sha256": "a368b1451733140d9801d4519ba265e5d85252d83ab7ac25e8f570059b68e4e1"
+    }
+  },
+  "main_kernel": {
+    "candidate_matches_reference_p1": true,
+    "identity_matches_reference_p1": true,
+    "note": "the shared FlashMLA worktree carries the round-3 goal's macro-guarded kernel.cuh edit; it changes the source hash but not one main instruction because the macro is undefined here",
+    "ptx3_inflight_edit_is_inert": true,
+    "sass_sha256": "2d811b9189072860c514c6d3ccd55c1ae4419bf225ae9f431ef1a352494a45b2",
+    "symbol": "_ZN5sm1006decode6head6465infini_kernel_glm52_flashmla_sparse_decode_p1_consumer_scale_mainINS1_14KernelTemplateIL9ModelType0EEENS5_9TmaParamsIN4cute5tupleIJiiiiEEENS7_9TiledCopyINS7_9Copy_AtomIJNS7_11Copy_TraitsINS7_13SM90_TMA_LOADEJNS7_1CILi65536EEENS7_12AuxTmaParamsINS8_IJNS7_11ScaledBasisINSE_ILi1EEEJLi1EEEENSH_ISI_JLi0EEEENSH_ISI_JLi2EEEENSH_ISI_JLi3EEEEEEERKNS7_6LayoutINS8_IJNSE_ILi64EEESP_SI_SI_EEESN_EERKNS7_7SwizzleILi3ELi4ELi3EEEEEEEEN7cutlass10bfloat16_tEEEENSO_INS8_IJSI_NS8_IJNS8_IJNS8_IJSP_SP_EEENSE_ILi8EEEEEEEEEEEENS8_IJNSE_ILi0EEENS8_IJNS8_IJNS8_IJSP_SI_EEENSE_ILi4096EEEEEEEEEEEEEENS8_IJSP_NSE_ILi512EEEEEEEES9_NSA_INSB_IJNSC_INS7_14SM90_TMA_STOREEJSF_SY_EEES11_EEENSO_INS8_IJSI_NS8_IJNS8_IJS13_SI_EEEEEEEEENS8_IJS18_NS8_IJNS8_IJS19_S18_EEEEEEEEEEES13_EEEEEEv22SparseAttnDecodeParamsT0_"
+  },
+  "retained_sass": {
+    "combine_candidate.sass": {
+      "path": "/home/qinhaiyan/glm52-hotspot-goal-runs/worktrees/flashmla-sparse-decode/kernel-harness/profile/glm52-flashmla-combine-ptx-r1-20260730/evidence/sass/combine_candidate.sass",
+      "sha256": "45fe47a9869b2b3af48160c6ef6f160ee7824033171e5ff070172b6f080d0320"
+    },
+    "combine_identity.sass": {
+      "path": "/home/qinhaiyan/glm52-hotspot-goal-runs/worktrees/flashmla-sparse-decode/kernel-harness/profile/glm52-flashmla-combine-ptx-r1-20260730/evidence/sass/combine_identity.sass",
+      "sha256": "b7cd67014a4fa7d19638d1aa8aa41b4e0a5ffcf220e5db134843d8868d28b9ad"
+    },
+    "reference_p1_main.sass": {
+      "path": "/home/qinhaiyan/glm52-hotspot-goal-runs/worktrees/flashmla-sparse-decode/kernel-harness/profile/glm52-flashmla-combine-ptx-r1-20260730/evidence/sass/reference_p1_main.sass",
+      "sha256": "2d811b9189072860c514c6d3ccd55c1ae4419bf225ae9f431ef1a352494a45b2"
+    },
+    "reference_stock_combine.sass": {
+      "path": "/home/qinhaiyan/glm52-hotspot-goal-runs/worktrees/flashmla-sparse-decode/kernel-harness/profile/glm52-flashmla-combine-ptx-r1-20260730/evidence/sass/reference_stock_combine.sass",
+      "sha256": "205737f3b43deec358500aead9c16bbedb4a8c7d00f4469b032344ef5806a86e"
+    }
+  },
+  "schema_version": 1,
+  "tool": "cuobjdump: NVIDIA (R) fat binary listing tool\nCopyright (c) 2005-2026 NVIDIA Corporation\nBuilt on Thu_Mar_19_11:12:51_PM_PDT_2026\nCuda compilation tools, release 13.2, V13.2.78\nBuild cuda_13.2.r13.2/compiler.37668154_0"
+}

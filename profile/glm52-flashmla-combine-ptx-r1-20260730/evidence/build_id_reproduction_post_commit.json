@@ -1,0 +1,27 @@
+{
+  "all_reproduced": true,
+  "flashmla_dirty": false,
+  "flashmla_head": "a168813371a5f0652d8148fc8d23eddc921927df",
+  "method": "the provider's build id is sha256 over (relative path, bytes) of every build and hash input in order; recomputing it from the committed tree without compiling proves the committed bytes are the measured bytes",
+  "schema_version": 1,
+  "variants": {
+    "combine_c1_stage8": {
+      "recomputed_from_committed_tree": "430fa79702e17a68a9a097b324508ad304e5bf3918e8ed379617e5d25a899641",
+      "recorded_build_id_at_measurement": "430fa79702e17a68a9a097b324508ad304e5bf3918e8ed379617e5d25a899641",
+      "recorded_git_commit_at_measurement": "daef3d0c5890e688b3e6ecac7392a832cdf537ad-dirty",
+      "reproduced": true
+    },
+    "combine_c2_bucket_stages": {
+      "recomputed_from_committed_tree": "ea8c72aac9631a9134540d9d970b627737b55acc9623e30ae49f26b4a96d84c9",
+      "recorded_build_id_at_measurement": "ea8c72aac9631a9134540d9d970b627737b55acc9623e30ae49f26b4a96d84c9",
+      "recorded_git_commit_at_measurement": "daef3d0c5890e688b3e6ecac7392a832cdf537ad-dirty",
+      "reproduced": true
+    },
+    "combine_identity": {
+      "recomputed_from_committed_tree": "264037f2c6872c7ffa1a8ae6ae8012e44e0d0bd3c7adfea8cb7fff4b2915ff17",
+      "recorded_build_id_at_measurement": "264037f2c6872c7ffa1a8ae6ae8012e44e0d0bd3c7adfea8cb7fff4b2915ff17",
+      "recorded_git_commit_at_measurement": "daef3d0c5890e688b3e6ecac7392a832cdf537ad-dirty",
+      "reproduced": true
+    }
+  }
+}

@@ -1,0 +1,18 @@
+{
+  "action_taken": "no further cache expansion: the plan's two-identity budget is already spent, both candidate binaries and both correctness runs are complete, and no additional variant was built after this was observed. Only small JSON and SASS artifacts were written afterwards.",
+  "attribution": "free space on the shared root volume fell from about 13 GiB at campaign start to under 200 MiB while three other GLM-5.2 hotspot goals were building and profiling concurrently on the same host. This campaign's own footprint is about 34 MiB in total, so the shortfall is not attributable to it. Nothing belonging to another goal was deleted.",
+  "disclosure": "the plan's 8 GiB floor is NOT satisfied and this is reported rather than worked around; it constrains any future round on this host, not the measurements already taken, which completed before the volume filled.",
+  "observed_utc": "2026-07-30T08:59:21Z",
+  "root_filesystem": {
+    "free_mib": 163.1,
+    "threshold_gib": 8,
+    "threshold_satisfied": false,
+    "total_gib": 483.3
+  },
+  "schema_version": 1,
+  "this_campaign_footprint_mib": {
+    "evidence": 21,
+    "harness": 1,
+    "torch_extensions_cache": 13
+  }
+}

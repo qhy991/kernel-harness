@@ -1,0 +1,1240 @@
+{
+  "audits": [
+    {
+      "all_gated_lanes_pass": true,
+      "candidate": "combine_c1_stage8",
+      "comparison": "stock_provider",
+      "gated_lanes_present": [
+        "containing_graph",
+        "leaf_graph"
+      ],
+      "gpu_uuid": "GPU-30b619de-87f2-1862-0d07-a595da8fe417",
+      "lanes": {
+        "containing_graph": {
+          "estimator_count": 12,
+          "failed_observations": [],
+          "maximum_estimator": 1.274611975244219,
+          "meets_1_03_everywhere": true,
+          "minimum_estimator": 1.265112531843942,
+          "provider_launches_during_lane": 3,
+          "recomputed_from_raw_pairs": true
+        },
+        "leaf_graph": {
+          "estimator_count": 12,
+          "failed_observations": [],
+          "maximum_estimator": 1.2740905573105141,
+          "meets_1_03_everywhere": true,
+          "minimum_estimator": 1.2696487547846669,
+          "provider_launches_during_lane": 3,
+          "recomputed_from_raw_pairs": true
+        }
+      },
+      "m": 16,
+      "pairs_per_series": 100,
+      "path": "/home/qinhaiyan/glm52-hotspot-goal-runs/worktrees/flashmla-sparse-decode/kernel-harness/profile/glm52-flashmla-combine-ptx-r1-20260730/evidence/final_combine_c1_stage8_graph_gate_k20_m16.json",
+      "reference": "installed_sgl_kernel_stock",
+      "replays_per_observation": 20,
+      "series": 3,
+      "sha256": "ec598afaf6c70b65e7ef96580fbbe76cfb4f8bd2fdbd309dfa8843ab4e734d7e"
+    },
+    {
+      "all_gated_lanes_pass": true,
+      "candidate": "combine_c1_stage8",
+      "comparison": "stock_provider",
+      "gated_lanes_present": [
+        "containing_graph",
+        "leaf_graph"
+      ],
+      "gpu_uuid": "GPU-30b619de-87f2-1862-0d07-a595da8fe417",
+      "lanes": {
+        "containing_graph": {
+          "estimator_count": 12,
+          "failed_observations": [],
+          "maximum_estimator": 1.0678804669251691,
+          "meets_1_03_everywhere": true,
+          "minimum_estimator": 1.0628102803061303,
+          "provider_launches_during_lane": 3,
+          "recomputed_from_raw_pairs": true
+        },
+        "leaf_graph": {
+          "estimator_count": 12,
+          "failed_observations": [],
+          "maximum_estimator": 1.0675731571849618,
+          "meets_1_03_everywhere": true,
+          "minimum_estimator": 1.062706821427278,
+          "provider_launches_during_lane": 3,
+          "recomputed_from_raw_pairs": true
+        }
+      },
+      "m": 32,
+      "pairs_per_series": 100,
+      "path": "/home/qinhaiyan/glm52-hotspot-goal-runs/worktrees/flashmla-sparse-decode/kernel-harness/profile/glm52-flashmla-combine-ptx-r1-20260730/evidence/final_combine_c1_stage8_graph_gate_k20_m32.json",
+      "reference": "installed_sgl_kernel_stock",
+      "replays_per_observation": 20,
+      "series": 3,
+      "sha256": "926eb8cb730c25c983da8c8b6fd2a407719ece4cf2afe82693c9e0f79b989350"
+    },
+    {
+      "all_gated_lanes_pass": true,
+      "candidate": "combine_c2_bucket_stages",
+      "comparison": "stock_provider",
+      "gated_lanes_present": [
+        "containing_graph",
+        "leaf_graph"
+      ],
+      "gpu_uuid": "GPU-30b619de-87f2-1862-0d07-a595da8fe417",
+      "lanes": {
+        "containing_graph": {
+          "estimator_count": 12,
+          "failed_observations": [],
+          "maximum_estimator": 1.2753362216201232,
+          "meets_1_03_everywhere": true,
+          "minimum_estimator": 1.2705239575791356,
+          "provider_launches_during_lane": 3,
+          "recomputed_from_raw_pairs": true
+        },
+        "leaf_graph": {
+          "estimator_count": 12,
+          "failed_observations": [],
+          "maximum_estimator": 1.2747748821527587,
+          "meets_1_03_everywhere": true,
+          "minimum_estimator": 1.270242569520095,
+          "provider_launches_during_lane": 3,
+          "recomputed_from_raw_pairs": true
+        }
+      },
+      "m": 16,
+      "pairs_per_series": 100,
+      "path": "/home/qinhaiyan/glm52-hotspot-goal-runs/worktrees/flashmla-sparse-decode/kernel-harness/profile/glm52-flashmla-combine-ptx-r1-20260730/evidence/final_combine_c2_bucket_stages_graph_gate_k20_m16.json",
+      "reference": "installed_sgl_kernel_stock",
+      "replays_per_observation": 20,
+      "series": 3,
+      "sha256": "df8014dd811cd2666a16192f2a8d7bcde106228e4ac045f542beaa4567b702ed"
+    },
+    {
+      "all_gated_lanes_pass": true,
+      "candidate": "combine_c2_bucket_stages",
+      "comparison": "stock_provider",
+      "gated_lanes_present": [
+        "containing_graph",
+        "leaf_graph"
+      ],
+      "gpu_uuid": "GPU-30b619de-87f2-1862-0d07-a595da8fe417",
+      "lanes": {
+        "containing_graph": {
+          "estimator_count": 12,
+          "failed_observations": [],
+          "maximum_estimator": 1.1425529271528665,
+          "meets_1_03_everywhere": true,
+          "minimum_estimator": 1.1375797913769488,
+          "provider_launches_during_lane": 3,
+          "recomputed_from_raw_pairs": true
+        },
+        "leaf_graph": {
+          "estimator_count": 12,
+          "failed_observations": [],
+          "maximum_estimator": 1.1425254745014066,
+          "meets_1_03_everywhere": true,
+          "minimum_estimator": 1.135223734024461,
+          "provider_launches_during_lane": 3,
+          "recomputed_from_raw_pairs": true
+        }
+      },
+      "m": 32,
+      "pairs_per_series": 100,
+      "path": "/home/qinhaiyan/glm52-hotspot-goal-runs/worktrees/flashmla-sparse-decode/kernel-harness/profile/glm52-flashmla-combine-ptx-r1-20260730/evidence/final_combine_c2_bucket_stages_graph_gate_k20_m32.json",
+      "reference": "installed_sgl_kernel_stock",
+      "replays_per_observation": 20,
+      "series": 3,
+      "sha256": "8a0c2cba6c8b47b0266de99cab87e1d320c3086cc707bde789f6962c4cb995aa"
+    },
+    {
+      "all_gated_lanes_pass": true,
+      "candidate": "combine_identity",
+      "comparison": "stock_provider",
+      "gated_lanes_present": [
+        "containing_graph",
+        "leaf_graph"
+      ],
+      "gpu_uuid": "GPU-30b619de-87f2-1862-0d07-a595da8fe417",
+      "lanes": {
+        "containing_graph": {
+          "estimator_count": 12,
+          "failed_observations": [],
+          "maximum_estimator": 1.0768542024743872,
+          "meets_1_03_everywhere": true,
+          "minimum_estimator": 1.074379922524535,
+          "provider_launches_during_lane": 3,
+          "recomputed_from_raw_pairs": true
+        },
+        "leaf_graph": {
+          "estimator_count": 12,
+          "failed_observations": [],
+          "maximum_estimator": 1.0765672594528004,
+          "meets_1_03_everywhere": true,
+          "minimum_estimator": 1.0660360285013888,
+          "provider_launches_during_lane": 3,
+          "recomputed_from_raw_pairs": true
+        }
+      },
+      "m": 16,
+      "pairs_per_series": 100,
+      "path": "/home/qinhaiyan/glm52-hotspot-goal-runs/worktrees/flashmla-sparse-decode/kernel-harness/profile/glm52-flashmla-combine-ptx-r1-20260730/evidence/final_combine_identity_graph_gate_k20_m16.json",
+      "reference": "installed_sgl_kernel_stock",
+      "replays_per_observation": 20,
+      "series": 3,
+      "sha256": "04b9845c9186dce69828136a4d617b225d7754b06891ac74010e904aa4d1dcf3"
+    },
+    {
+      "all_gated_lanes_pass": true,
+      "candidate": "combine_identity",
+      "comparison": "stock_provider",
+      "gated_lanes_present": [
+        "containing_graph",
+        "leaf_graph"
+      ],
+      "gpu_uuid": "GPU-30b619de-87f2-1862-0d07-a595da8fe417",
+      "lanes": {
+        "containing_graph": {
+          "estimator_count": 12,
+          "failed_observations": [],
+          "maximum_estimator": 1.0674480247681886,
+          "meets_1_03_everywhere": true,
+          "minimum_estimator": 1.0604432550920353,
+          "provider_launches_during_lane": 3,
+          "recomputed_from_raw_pairs": true
+        },
+        "leaf_graph": {
+          "estimator_count": 12,
+          "failed_observations": [],
+          "maximum_estimator": 1.0664701721065049,
+          "meets_1_03_everywhere": true,
+          "minimum_estimator": 1.060555935172175,
+          "provider_launches_during_lane": 3,
+          "recomputed_from_raw_pairs": true
+        }
+      },
+      "m": 32,
+      "pairs_per_series": 100,
+      "path": "/home/qinhaiyan/glm52-hotspot-goal-runs/worktrees/flashmla-sparse-decode/kernel-harness/profile/glm52-flashmla-combine-ptx-r1-20260730/evidence/final_combine_identity_graph_gate_k20_m32.json",
+      "reference": "installed_sgl_kernel_stock",
+      "replays_per_observation": 20,
+      "series": 3,
+      "sha256": "a10af5a46c565930cad001bcb2234e482cb854158b87688b2fdc3aadda85a8d8"
+    },
+    {
+      "all_gated_lanes_pass": false,
+      "candidate": "installed_sgl_kernel_stock",
+      "comparison": "stock_stock",
+      "gated_lanes_present": [
+        "containing_graph",
+        "leaf_graph"
+      ],
+      "gpu_uuid": "GPU-30b619de-87f2-1862-0d07-a595da8fe417",
+      "lanes": {
+        "containing_graph": {
+          "estimator_count": 12,
+          "failed_observations": [
+            {
+              "estimator": "pooled_ratio_of_medians",
+              "series": 1,
+              "value": 0.9975348740362009
+            },
+            {
+              "estimator": "ab_ratio_of_medians",
+              "series": 1,
+              "value": 0.9973404789171033
+            },
+            {
+              "estimator": "ba_ratio_of_medians",
+              "series": 1,
+              "value": 0.997756695736525
+            },
+            {
+              "estimator": "order_balanced_sqrt_ab_ba",
+              "series": 1,
+              "value": 0.9975485656190441
+            },
+            {
+              "estimator": "pooled_ratio_of_medians",
+              "series": 2,
+              "value": 0.9995560454617717
+            },
+            {
+              "estimator": "ab_ratio_of_medians",
+              "series": 2,
+              "value": 1.000027699629967
+            },
+            {
+              "estimator": "ba_ratio_of_medians",
+              "series": 2,
+              "value": 0.9997780251287547
+            },
+            {
+              "estimator": "order_balanced_sqrt_ab_ba",
+              "series": 2,
+              "value": 0.9999028545864342
+            },
+            {
+              "estimator": "pooled_ratio_of_medians",
+              "series": 3,
+              "value": 0.9993897286736784
+            },
+            {
+              "estimator": "ab_ratio_of_medians",
+              "series": 3,
+              "value": 0.9989738922866349
+            },
+            {
+              "estimator": "ba_ratio_of_medians",
+              "series": 3,
+              "value": 0.9997780312905579
+            },
+            {
+              "estimator": "order_balanced_sqrt_ab_ba",
+              "series": 3,
+              "value": 0.9993758809081784
+            }
+          ],
+          "maximum_estimator": 1.000027699629967,
+          "meets_1_03_everywhere": false,
+          "minimum_estimator": 0.9973404789171033,
+          "provider_launches_during_lane": null,
+          "recomputed_from_raw_pairs": true
+        },
+        "leaf_graph": {
+          "estimator_count": 12,
+          "failed_observations": [
+            {
+              "estimator": "pooled_ratio_of_medians",
+              "series": 1,
+              "value": 1.0000833047764974
+            },
+            {
+              "estimator": "ab_ratio_of_medians",
+              "series": 1,
+              "value": 0.9998611587058378
+            },
+            {
+              "estimator": "ba_ratio_of_medians",
+              "series": 1,
+              "value": 1.0004719445610457
+            },
+            {
+              "estimator": "order_balanced_sqrt_ab_ba",
+              "series": 1,
+              "value": 1.000166505008786
+            },
+            {
+              "estimator": "pooled_ratio_of_medians",
+              "series": 2,
+              "value": 1.0023859261672383
+            },
+            {
+              "estimator": "ab_ratio_of_medians",
+              "series": 2,
+              "value": 1.002024486204814
+            },
+            {
+              "estimator": "ba_ratio_of_medians",
+              "series": 2,
+              "value": 1.0029147813608907
+            },
+            {
+              "estimator": "order_balanced_sqrt_ab_ba",
+              "series": 2,
+              "value": 1.0024695349487485
+            },
+            {
+              "estimator": "pooled_ratio_of_medians",
+              "series": 3,
+              "value": 1.0009700147231613
+            },
+            {
+              "estimator": "ab_ratio_of_medians",
+              "series": 3,
+              "value": 1.0010251747916827
+            },
+            {
+              "estimator": "ba_ratio_of_medians",
+              "series": 3,
+              "value": 1.001358886838913
+            },
+            {
+              "estimator": "order_balanced_sqrt_ab_ba",
+              "series": 3,
+              "value": 1.0011920169114052
+            }
+          ],
+          "maximum_estimator": 1.0029147813608907,
+          "meets_1_03_everywhere": false,
+          "minimum_estimator": 0.9998611587058378,
+          "provider_launches_during_lane": null,
+          "recomputed_from_raw_pairs": true
+        }
+      },
+      "m": 16,
+      "pairs_per_series": 100,
+      "path": "/home/qinhaiyan/glm52-hotspot-goal-runs/worktrees/flashmla-sparse-decode/kernel-harness/profile/glm52-flashmla-combine-ptx-r1-20260730/evidence/final_null_stock_stock_k20_m16.json",
+      "reference": "installed_sgl_kernel_stock",
+      "replays_per_observation": 20,
+      "series": 3,
+      "sha256": "48316e1fd05588978a575256d427afd8e876821787c2601a12d45b998eb846aa"
+    },
+    {
+      "all_gated_lanes_pass": false,
+      "candidate": "installed_sgl_kernel_stock",
+      "comparison": "stock_stock",
+      "gated_lanes_present": [
+        "containing_graph",
+        "leaf_graph"
+      ],
+      "gpu_uuid": "GPU-30b619de-87f2-1862-0d07-a595da8fe417",
+      "lanes": {
+        "containing_graph": {
+          "estimator_count": 12,
+          "failed_observations": [
+            {
+              "estimator": "pooled_ratio_of_medians",
+              "series": 1,
+              "value": 0.999614983721969
+            },
+            {
+              "estimator": "ab_ratio_of_medians",
+              "series": 1,
+              "value": 0.9983885805908607
+            },
+            {
+              "estimator": "ba_ratio_of_medians",
+              "series": 1,
+              "value": 1.000649763055672
+            },
+            {
+              "estimator": "order_balanced_sqrt_ab_ba",
+              "series": 1,
+              "value": 0.9995185323973406
+            },
+            {
+              "estimator": "pooled_ratio_of_medians",
+              "series": 2,
+              "value": 0.9996627444009492
+            },
+            {
+              "estimator": "ab_ratio_of_medians",
+              "series": 2,
+              "value": 0.997088378874867
+            },
+            {
+              "estimator": "ba_ratio_of_medians",
+              "series": 2,
+              "value": 1.0024117715366665
+            },
+            {
+              "estimator": "order_balanced_sqrt_ab_ba",
+              "series": 2,
+              "value": 0.9997465320002757
+            },
+            {
+              "estimator": "pooled_ratio_of_medians",
+              "series": 3,
+              "value": 0.9998068551188093
+            },
+            {
+              "estimator": "ab_ratio_of_medians",
+              "series": 3,
+              "value": 1.0000482944671645
+            },
+            {
+              "estimator": "ba_ratio_of_medians",
+              "series": 3,
+              "value": 0.999589784731829
+            },
+            {
+              "estimator": "order_balanced_sqrt_ab_ba",
+              "series": 3,
+              "value": 0.9998190133158429
+            }
+          ],
+          "maximum_estimator": 1.0024117715366665,
+          "meets_1_03_everywhere": false,
+          "minimum_estimator": 0.997088378874867,
+          "provider_launches_during_lane": null,
+          "recomputed_from_raw_pairs": true
+        },
+        "leaf_graph": {
+          "estimator_count": 12,
+          "failed_observations": [
+            {
+              "estimator": "pooled_ratio_of_medians",
+              "series": 1,
+              "value": 0.9938570089296672
+            },
+            {
+              "estimator": "ab_ratio_of_medians",
+              "series": 1,
+              "value": 0.9854783271634772
+            },
+            {
+              "estimator": "ba_ratio_of_medians",
+              "series": 1,
+              "value": 1.001377326776246
+            },
+            {
+              "estimator": "order_balanced_sqrt_ab_ba",
+              "series": 1,
+              "value": 0.9933960201505186
+            },
+            {
+              "estimator": "pooled_ratio_of_medians",
+              "series": 2,
+              "value": 1.0010136792528956
+            },
+            {
+              "estimator": "ab_ratio_of_medians",
+              "series": 2,
+              "value": 1.000265398851649
+            },
+            {
+              "estimator": "ba_ratio_of_medians",
+              "series": 2,
+              "value": 1.0015212674064984
+            },
+            {
+              "estimator": "order_balanced_sqrt_ab_ba",
+              "series": 2,
+              "value": 1.0008931361542899
+            },
+            {
+              "estimator": "pooled_ratio_of_medians",
+              "series": 3,
+              "value": 1.0047239001324169
+            },
+            {
+              "estimator": "ab_ratio_of_medians",
+              "series": 3,
+              "value": 1.0009334401616619
+            },
+            {
+              "estimator": "ba_ratio_of_medians",
+              "series": 3,
+              "value": 1.0067955575074305
+            },
+            {
+              "estimator": "order_balanced_sqrt_ab_ba",
+              "series": 3,
+              "value": 1.0038602198092077
+            }
+          ],
+          "maximum_estimator": 1.0067955575074305,
+          "meets_1_03_everywhere": false,
+          "minimum_estimator": 0.9854783271634772,
+          "provider_launches_during_lane": null,
+          "recomputed_from_raw_pairs": true
+        }
+      },
+      "m": 32,
+      "pairs_per_series": 100,
+      "path": "/home/qinhaiyan/glm52-hotspot-goal-runs/worktrees/flashmla-sparse-decode/kernel-harness/profile/glm52-flashmla-combine-ptx-r1-20260730/evidence/final_null_stock_stock_k20_m32.json",
+      "reference": "installed_sgl_kernel_stock",
+      "replays_per_observation": 20,
+      "series": 3,
+      "sha256": "7a0ff30e673f259ea4fcdba40fc91e27c5f559baf93cc2eb66ff60a3533ee278"
+    },
+    {
+      "all_gated_lanes_pass": true,
+      "candidate": "combine_c1_stage8",
+      "comparison": "provider_provider",
+      "gated_lanes_present": [
+        "containing_graph",
+        "leaf_graph"
+      ],
+      "gpu_uuid": "GPU-30b619de-87f2-1862-0d07-a595da8fe417",
+      "lanes": {
+        "containing_graph": {
+          "estimator_count": 12,
+          "failed_observations": [],
+          "maximum_estimator": 1.2118775618883988,
+          "meets_1_03_everywhere": true,
+          "minimum_estimator": 1.1810688008445058,
+          "provider_launches_during_lane": null,
+          "recomputed_from_raw_pairs": true
+        },
+        "leaf_graph": {
+          "estimator_count": 12,
+          "failed_observations": [],
+          "maximum_estimator": 1.2079385826341882,
+          "meets_1_03_everywhere": true,
+          "minimum_estimator": 1.1817509205443557,
+          "provider_launches_during_lane": null,
+          "recomputed_from_raw_pairs": true
+        }
+      },
+      "m": 16,
+      "pairs_per_series": 100,
+      "path": "/home/qinhaiyan/glm52-hotspot-goal-runs/worktrees/flashmla-sparse-decode/kernel-harness/profile/glm52-flashmla-combine-ptx-r1-20260730/evidence/final_pair_identity_vs_combine_c1_stage8_k20_m16.json",
+      "reference": "combine_identity",
+      "replays_per_observation": 20,
+      "series": 3,
+      "sha256": "4da4b5fb043c0e7ff79aba7da2fa300ba423339f31e6ca6e9cce01ffc2cd59b8"
+    },
+    {
+      "all_gated_lanes_pass": false,
+      "candidate": "combine_c1_stage8",
+      "comparison": "provider_provider",
+      "gated_lanes_present": [
+        "containing_graph",
+        "leaf_graph"
+      ],
+      "gpu_uuid": "GPU-30b619de-87f2-1862-0d07-a595da8fe417",
+      "lanes": {
+        "containing_graph": {
+          "estimator_count": 12,
+          "failed_observations": [
+            {
+              "estimator": "pooled_ratio_of_medians",
+              "series": 1,
+              "value": 1.0004658782281857
+            },
+            {
+              "estimator": "ab_ratio_of_medians",
+              "series": 1,
+              "value": 0.9998707092069838
+            },
+            {
+              "estimator": "ba_ratio_of_medians",
+              "series": 1,
+              "value": 1.001294553817299
+            },
+            {
+              "estimator": "order_balanced_sqrt_ab_ba",
+              "series": 1,
+              "value": 1.0005823782429877
+            },
+            {
+              "estimator": "pooled_ratio_of_medians",
+              "series": 2,
+              "value": 0.9998190058415298
+            },
+            {
+              "estimator": "ab_ratio_of_medians",
+              "series": 2,
+              "value": 0.9990176836209338
+            },
+            {
+              "estimator": "ba_ratio_of_medians",
+              "series": 2,
+              "value": 1.0006209459735562
+            },
+            {
+              "estimator": "order_balanced_sqrt_ab_ba",
+              "series": 2,
+              "value": 0.9998189934328562
+            },
+            {
+              "estimator": "pooled_ratio_of_medians",
+              "series": 3,
+              "value": 1.0004656612650218
+            },
+            {
+              "estimator": "ab_ratio_of_medians",
+              "series": 3,
+              "value": 0.9998965277468533
+            },
+            {
+              "estimator": "ba_ratio_of_medians",
+              "series": 3,
+              "value": 1.0008278957990626
+            },
+            {
+              "estimator": "order_balanced_sqrt_ab_ba",
+              "series": 3,
+              "value": 1.0003621033814067
+            }
+          ],
+          "maximum_estimator": 1.001294553817299,
+          "meets_1_03_everywhere": false,
+          "minimum_estimator": 0.9990176836209338,
+          "provider_launches_during_lane": null,
+          "recomputed_from_raw_pairs": true
+        },
+        "leaf_graph": {
+          "estimator_count": 12,
+          "failed_observations": [
+            {
+              "estimator": "pooled_ratio_of_medians",
+              "series": 1,
+              "value": 0.9999482478101089
+            },
+            {
+              "estimator": "ab_ratio_of_medians",
+              "series": 1,
+              "value": 0.9994569773663657
+            },
+            {
+              "estimator": "ba_ratio_of_medians",
+              "series": 1,
+              "value": 1.0006211227431094
+            },
+            {
+              "estimator": "order_balanced_sqrt_ab_ba",
+              "series": 1,
+              "value": 1.0000388806570308
+            },
+            {
+              "estimator": "pooled_ratio_of_medians",
+              "series": 2,
+              "value": 1.00007760018046
+            },
+            {
+              "estimator": "ab_ratio_of_medians",
+              "series": 2,
+              "value": 0.9993537791331368
+            },
+            {
+              "estimator": "ba_ratio_of_medians",
+              "series": 2,
+              "value": 1.0007244690680819
+            },
+            {
+              "estimator": "order_balanced_sqrt_ab_ba",
+              "series": 2,
+              "value": 1.0000388892609076
+            },
+            {
+              "estimator": "pooled_ratio_of_medians",
+              "series": 3,
+              "value": 0.9998447474476567
+            },
+            {
+              "estimator": "ab_ratio_of_medians",
+              "series": 3,
+              "value": 0.999482668179574
+            },
+            {
+              "estimator": "ba_ratio_of_medians",
+              "series": 3,
+              "value": 1.0003363450650724
+            },
+            {
+              "estimator": "order_balanced_sqrt_ab_ba",
+              "series": 3,
+              "value": 0.9999094155185466
+            }
+          ],
+          "maximum_estimator": 1.0007244690680819,
+          "meets_1_03_everywhere": false,
+          "minimum_estimator": 0.9993537791331368,
+          "provider_launches_during_lane": null,
+          "recomputed_from_raw_pairs": true
+        }
+      },
+      "m": 32,
+      "pairs_per_series": 100,
+      "path": "/home/qinhaiyan/glm52-hotspot-goal-runs/worktrees/flashmla-sparse-decode/kernel-harness/profile/glm52-flashmla-combine-ptx-r1-20260730/evidence/final_pair_identity_vs_combine_c1_stage8_k20_m32.json",
+      "reference": "combine_identity",
+      "replays_per_observation": 20,
+      "series": 3,
+      "sha256": "5c498ea98ccc37186230efd70c19889c8108b53c52d1c1c075c0b751f7a63dc6"
+    },
+    {
+      "all_gated_lanes_pass": true,
+      "candidate": "combine_c2_bucket_stages",
+      "comparison": "provider_provider",
+      "gated_lanes_present": [
+        "containing_graph",
+        "leaf_graph"
+      ],
+      "gpu_uuid": "GPU-30b619de-87f2-1862-0d07-a595da8fe417",
+      "lanes": {
+        "containing_graph": {
+          "estimator_count": 12,
+          "failed_observations": [],
+          "maximum_estimator": 1.21551109796034,
+          "meets_1_03_everywhere": true,
+          "minimum_estimator": 1.1819268841174464,
+          "provider_launches_during_lane": null,
+          "recomputed_from_raw_pairs": true
+        },
+        "leaf_graph": {
+          "estimator_count": 12,
+          "failed_observations": [],
+          "maximum_estimator": 1.2085721496333897,
+          "meets_1_03_everywhere": true,
+          "minimum_estimator": 1.1824224573401756,
+          "provider_launches_during_lane": null,
+          "recomputed_from_raw_pairs": true
+        }
+      },
+      "m": 16,
+      "pairs_per_series": 100,
+      "path": "/home/qinhaiyan/glm52-hotspot-goal-runs/worktrees/flashmla-sparse-decode/kernel-harness/profile/glm52-flashmla-combine-ptx-r1-20260730/evidence/final_pair_identity_vs_combine_c2_bucket_stages_k20_m16.json",
+      "reference": "combine_identity",
+      "replays_per_observation": 20,
+      "series": 3,
+      "sha256": "45a03b00b198600a0fc296e4923cb8a928b16cbdcee09648ca4289459118d2c8"
+    },
+    {
+      "all_gated_lanes_pass": true,
+      "candidate": "combine_c2_bucket_stages",
+      "comparison": "provider_provider",
+      "gated_lanes_present": [
+        "containing_graph",
+        "leaf_graph"
+      ],
+      "gpu_uuid": "GPU-30b619de-87f2-1862-0d07-a595da8fe417",
+      "lanes": {
+        "containing_graph": {
+          "estimator_count": 12,
+          "failed_observations": [],
+          "maximum_estimator": 1.071533522840303,
+          "meets_1_03_everywhere": true,
+          "minimum_estimator": 1.069785543408502,
+          "provider_launches_during_lane": null,
+          "recomputed_from_raw_pairs": true
+        },
+        "leaf_graph": {
+          "estimator_count": 12,
+          "failed_observations": [],
+          "maximum_estimator": 1.0715195742383918,
+          "meets_1_03_everywhere": true,
+          "minimum_estimator": 1.0640517139590355,
+          "provider_launches_during_lane": null,
+          "recomputed_from_raw_pairs": true
+        }
+      },
+      "m": 32,
+      "pairs_per_series": 100,
+      "path": "/home/qinhaiyan/glm52-hotspot-goal-runs/worktrees/flashmla-sparse-decode/kernel-harness/profile/glm52-flashmla-combine-ptx-r1-20260730/evidence/final_pair_identity_vs_combine_c2_bucket_stages_k20_m32.json",
+      "reference": "combine_identity",
+      "replays_per_observation": 20,
+      "series": 3,
+      "sha256": "7a41ab646a06e3a9ec91c12ebc9a59a8365577f28b8476b165b0fade163083ef"
+    },
+    {
+      "all_gated_lanes_pass": false,
+      "candidate": "combine_identity",
+      "comparison": "provider_provider",
+      "gated_lanes_present": [
+        "containing_graph",
+        "leaf_graph"
+      ],
+      "gpu_uuid": "GPU-30b619de-87f2-1862-0d07-a595da8fe417",
+      "lanes": {
+        "containing_graph": {
+          "estimator_count": 12,
+          "failed_observations": [
+            {
+              "estimator": "pooled_ratio_of_medians",
+              "series": 1,
+              "value": 1.0138184638585896
+            },
+            {
+              "estimator": "ab_ratio_of_medians",
+              "series": 1,
+              "value": 1.013820056987977
+            },
+            {
+              "estimator": "ba_ratio_of_medians",
+              "series": 1,
+              "value": 1.0142060676972893
+            },
+            {
+              "estimator": "order_balanced_sqrt_ab_ba",
+              "series": 1,
+              "value": 1.0140130439744934
+            },
+            {
+              "estimator": "pooled_ratio_of_medians",
+              "series": 2,
+              "value": 0.9995825488536145
+            },
+            {
+              "estimator": "ab_ratio_of_medians",
+              "series": 2,
+              "value": 0.9998210981177434
+            },
+            {
+              "estimator": "ba_ratio_of_medians",
+              "series": 2,
+              "value": 0.9991650173078531
+            },
+            {
+              "estimator": "order_balanced_sqrt_ab_ba",
+              "series": 2,
+              "value": 0.9994930038802532
+            },
+            {
+              "estimator": "pooled_ratio_of_medians",
+              "series": 3,
+              "value": 1.024284070737843
+            },
+            {
+              "estimator": "ab_ratio_of_medians",
+              "series": 3,
+              "value": 1.0229693275013456
+            },
+            {
+              "estimator": "ba_ratio_of_medians",
+              "series": 3,
+              "value": 1.0263440519615623
+            },
+            {
+              "estimator": "order_balanced_sqrt_ab_ba",
+              "series": 3,
+              "value": 1.0246553003913685
+            }
+          ],
+          "maximum_estimator": 1.0263440519615623,
+          "meets_1_03_everywhere": false,
+          "minimum_estimator": 0.9991650173078531,
+          "provider_launches_during_lane": null,
+          "recomputed_from_raw_pairs": true
+        },
+        "leaf_graph": {
+          "estimator_count": 12,
+          "failed_observations": [
+            {
+              "estimator": "pooled_ratio_of_medians",
+              "series": 1,
+              "value": 1.0001193461962012
+            },
+            {
+              "estimator": "ab_ratio_of_medians",
+              "series": 1,
+              "value": 1.0003579830270597
+            },
+            {
+              "estimator": "ba_ratio_of_medians",
+              "series": 1,
+              "value": 0.9999104876821104
+            },
+            {
+              "estimator": "order_balanced_sqrt_ab_ba",
+              "series": 1,
+              "value": 1.000134210326434
+            },
+            {
+              "estimator": "pooled_ratio_of_medians",
+              "series": 2,
+              "value": 1.0143328862391734
+            },
+            {
+              "estimator": "ab_ratio_of_medians",
+              "series": 2,
+              "value": 1.0139633089743434
+            },
+            {
+              "estimator": "ba_ratio_of_medians",
+              "series": 2,
+              "value": 1.0168328507508355
+            },
+            {
+              "estimator": "order_balanced_sqrt_ab_ba",
+              "series": 2,
+              "value": 1.0153970661869827
+            },
+            {
+              "estimator": "pooled_ratio_of_medians",
+              "series": 3,
+              "value": 1.000477216707718
+            },
+            {
+              "estimator": "ab_ratio_of_medians",
+              "series": 3,
+              "value": 1.0006563125381198
+            },
+            {
+              "estimator": "ba_ratio_of_medians",
+              "series": 3,
+              "value": 1.0002385727804177
+            },
+            {
+              "estimator": "order_balanced_sqrt_ab_ba",
+              "series": 3,
+              "value": 1.0004474208557113
+            }
+          ],
+          "maximum_estimator": 1.0168328507508355,
+          "meets_1_03_everywhere": false,
+          "minimum_estimator": 0.9999104876821104,
+          "provider_launches_during_lane": null,
+          "recomputed_from_raw_pairs": true
+        }
+      },
+      "m": 16,
+      "pairs_per_series": 100,
+      "path": "/home/qinhaiyan/glm52-hotspot-goal-runs/worktrees/flashmla-sparse-decode/kernel-harness/profile/glm52-flashmla-combine-ptx-r1-20260730/evidence/final_pair_null_identity_identity_k20_m16.json",
+      "reference": "combine_identity",
+      "replays_per_observation": 20,
+      "series": 3,
+      "sha256": "ededb187d3df829e982af18aef5bae6067a75c851f390f942ffb9433ac261bb0"
+    },
+    {
+      "all_gated_lanes_pass": false,
+      "candidate": "combine_identity",
+      "comparison": "provider_provider",
+      "gated_lanes_present": [
+        "containing_graph",
+        "leaf_graph"
+      ],
+      "gpu_uuid": "GPU-30b619de-87f2-1862-0d07-a595da8fe417",
+      "lanes": {
+        "containing_graph": {
+          "estimator_count": 12,
+          "failed_observations": [
+            {
+              "estimator": "pooled_ratio_of_medians",
+              "series": 1,
+              "value": 1.0005178408169482
+            },
+            {
+              "estimator": "ab_ratio_of_medians",
+              "series": 1,
+              "value": 1.0004659988186082
+            },
+            {
+              "estimator": "ba_ratio_of_medians",
+              "series": 1,
+              "value": 1.000517894464317
+            },
+            {
+              "estimator": "order_balanced_sqrt_ab_ba",
+              "series": 1,
+              "value": 1.0004919463049833
+            },
+            {
+              "estimator": "pooled_ratio_of_medians",
+              "series": 2,
+              "value": 0.9999482116379155
+            },
+            {
+              "estimator": "ab_ratio_of_medians",
+              "series": 2,
+              "value": 0.9999741051484318
+            },
+            {
+              "estimator": "ba_ratio_of_medians",
+              "series": 2,
+              "value": 0.9999223194683469
+            },
+            {
+              "estimator": "order_balanced_sqrt_ab_ba",
+              "series": 2,
+              "value": 0.9999482119731524
+            },
+            {
+              "estimator": "pooled_ratio_of_medians",
+              "series": 3,
+              "value": 1.0006214926492072
+            },
+            {
+              "estimator": "ab_ratio_of_medians",
+              "series": 3,
+              "value": 1.0004142962794265
+            },
+            {
+              "estimator": "ba_ratio_of_medians",
+              "series": 3,
+              "value": 1.000854536369284
+            },
+            {
+              "estimator": "order_balanced_sqrt_ab_ba",
+              "series": 3,
+              "value": 1.0006343921132976
+            }
+          ],
+          "maximum_estimator": 1.000854536369284,
+          "meets_1_03_everywhere": false,
+          "minimum_estimator": 0.9999223194683469,
+          "provider_launches_during_lane": null,
+          "recomputed_from_raw_pairs": true
+        },
+        "leaf_graph": {
+          "estimator_count": 12,
+          "failed_observations": [
+            {
+              "estimator": "pooled_ratio_of_medians",
+              "series": 1,
+              "value": 0.999844715318164
+            },
+            {
+              "estimator": "ab_ratio_of_medians",
+              "series": 1,
+              "value": 0.9999741125198122
+            },
+            {
+              "estimator": "ba_ratio_of_medians",
+              "series": 1,
+              "value": 0.9998188860814652
+            },
+            {
+              "estimator": "order_balanced_sqrt_ab_ba",
+              "series": 1,
+              "value": 0.999896496288421
+            },
+            {
+              "estimator": "pooled_ratio_of_medians",
+              "series": 2,
+              "value": 1.0000776564095775
+            },
+            {
+              "estimator": "ab_ratio_of_medians",
+              "series": 2,
+              "value": 1.0004141139881775
+            },
+            {
+              "estimator": "ba_ratio_of_medians",
+              "series": 2,
+              "value": 0.9997411854986187
+            },
+            {
+              "estimator": "order_balanced_sqrt_ab_ba",
+              "series": 2,
+              "value": 1.0000775931436974
+            },
+            {
+              "estimator": "pooled_ratio_of_medians",
+              "series": 3,
+              "value": 0.9996117741621893
+            },
+            {
+              "estimator": "ab_ratio_of_medians",
+              "series": 3,
+              "value": 0.9998447032327473
+            },
+            {
+              "estimator": "ba_ratio_of_medians",
+              "series": 3,
+              "value": 0.9993530266500676
+            },
+            {
+              "estimator": "order_balanced_sqrt_ab_ba",
+              "series": 3,
+              "value": 0.9995988347110478
+            }
+          ],
+          "maximum_estimator": 1.0004141139881775,
+          "meets_1_03_everywhere": false,
+          "minimum_estimator": 0.9993530266500676,
+          "provider_launches_during_lane": null,
+          "recomputed_from_raw_pairs": true
+        }
+      },
+      "m": 32,
+      "pairs_per_series": 100,
+      "path": "/home/qinhaiyan/glm52-hotspot-goal-runs/worktrees/flashmla-sparse-decode/kernel-harness/profile/glm52-flashmla-combine-ptx-r1-20260730/evidence/final_pair_null_identity_identity_k20_m32.json",
+      "reference": "combine_identity",
+      "replays_per_observation": 20,
+      "series": 3,
+      "sha256": "73634bb3cf46830b8a47258fc960e26b9003893f5241068e61b4af06b39b0580"
+    }
+  ],
+  "buckets_passing_vs_installed_stock": {
+    "combine_c1_stage8": [
+      16,
+      32
+    ],
+    "combine_c2_bucket_stages": [
+      16,
+      32
+    ],
+    "combine_identity": [
+      16,
+      32
+    ]
+  },
+  "buckets_passing_vs_p1_stock_combine": {
+    "combine_c1_stage8": [
+      16
+    ],
+    "combine_c2_bucket_stages": [
+      16,
+      32
+    ]
+  },
+  "gpu_uuids": [
+    "GPU-30b619de-87f2-1862-0d07-a595da8fe417"
+  ],
+  "instrument_null_by_bucket": {
+    "provider_pair_m16": {
+      "files": [
+        "/home/qinhaiyan/glm52-hotspot-goal-runs/worktrees/flashmla-sparse-decode/kernel-harness/profile/glm52-flashmla-combine-ptx-r1-20260730/evidence/final_pair_null_identity_identity_k20_m16.json"
+      ],
+      "halfwidth_pct": 2.634405196156231,
+      "max": 1.0263440519615623,
+      "min": 0.9991650173078531,
+      "note": "the identical binary in both arms; anything inside this band is instrument noise and cannot support a claim of either presence or absence of an effect"
+    },
+    "provider_pair_m32": {
+      "files": [
+        "/home/qinhaiyan/glm52-hotspot-goal-runs/worktrees/flashmla-sparse-decode/kernel-harness/profile/glm52-flashmla-combine-ptx-r1-20260730/evidence/final_pair_null_identity_identity_k20_m32.json"
+      ],
+      "halfwidth_pct": 0.08545363692840091,
+      "max": 1.000854536369284,
+      "min": 0.9993530266500676,
+      "note": "the identical binary in both arms; anything inside this band is instrument noise and cannot support a claim of either presence or absence of an effect"
+    },
+    "stock_vs_stock_m16": {
+      "files": [
+        "/home/qinhaiyan/glm52-hotspot-goal-runs/worktrees/flashmla-sparse-decode/kernel-harness/profile/glm52-flashmla-combine-ptx-r1-20260730/evidence/final_null_stock_stock_k20_m16.json"
+      ],
+      "halfwidth_pct": 0.2914781360890739,
+      "max": 1.0029147813608907,
+      "min": 0.9973404789171033,
+      "note": "the identical binary in both arms; anything inside this band is instrument noise and cannot support a claim of either presence or absence of an effect"
+    },
+    "stock_vs_stock_m32": {
+      "files": [
+        "/home/qinhaiyan/glm52-hotspot-goal-runs/worktrees/flashmla-sparse-decode/kernel-harness/profile/glm52-flashmla-combine-ptx-r1-20260730/evidence/final_null_stock_stock_k20_m32.json"
+      ],
+      "halfwidth_pct": 1.4521672836522836,
+      "max": 1.0067955575074305,
+      "min": 0.9854783271634772,
+      "note": "the identical binary in both arms; anything inside this band is instrument noise and cannot support a claim of either presence or absence of an effect"
+    }
+  },
+  "instrument_null_provider_pair": {
+    "files": [
+      "/home/qinhaiyan/glm52-hotspot-goal-runs/worktrees/flashmla-sparse-decode/kernel-harness/profile/glm52-flashmla-combine-ptx-r1-20260730/evidence/final_pair_null_identity_identity_k20_m16.json",
+      "/home/qinhaiyan/glm52-hotspot-goal-runs/worktrees/flashmla-sparse-decode/kernel-harness/profile/glm52-flashmla-combine-ptx-r1-20260730/evidence/final_pair_null_identity_identity_k20_m32.json"
+    ],
+    "halfwidth_pct": 2.634405196156231,
+    "max": 1.0263440519615623,
+    "min": 0.9991650173078531,
+    "note": "the identical binary in both arms; anything inside this band is instrument noise and cannot support a claim of either presence or absence of an effect"
+  },
+  "instrument_null_stock_vs_stock": {
+    "files": [
+      "/home/qinhaiyan/glm52-hotspot-goal-runs/worktrees/flashmla-sparse-decode/kernel-harness/profile/glm52-flashmla-combine-ptx-r1-20260730/evidence/final_null_stock_stock_k20_m16.json",
+      "/home/qinhaiyan/glm52-hotspot-goal-runs/worktrees/flashmla-sparse-decode/kernel-harness/profile/glm52-flashmla-combine-ptx-r1-20260730/evidence/final_null_stock_stock_k20_m32.json"
+    ],
+    "halfwidth_pct": 1.4521672836522836,
+    "max": 1.0067955575074305,
+    "min": 0.9854783271634772,
+    "note": "the identical binary in both arms; anything inside this band is instrument noise and cannot support a claim of either presence or absence of an effect"
+  },
+  "policy": {
+    "containing_eager": "stock fallback required (zero provider launches); the graph-only policy does not require a speedup on this lane",
+    "gate": 1.03,
+    "gated_lanes": [
+      "containing_graph",
+      "leaf_graph"
+    ],
+    "leaf_eager": "diagnostic only",
+    "requirement": "every estimator in every one of three independent 50-AB/50-BA series must be finite and >= 1.03 against installed stock",
+    "second_denominator": "plan hypothesis 1: the same two graph lanes must also clear 1.03 in the directly paired comparison against P1 plus the stock combine, so a combine candidate cannot bank round 2's main-kernel win"
+  },
+  "promotable_bucket_count": 3,
+  "promotable_buckets_by_candidate": {
+    "combine_c1_stage8": [
+      16
+    ],
+    "combine_c2_bucket_stages": [
+      16,
+      32
+    ]
+  },
+  "schema_version": 1,
+  "single_physical_gpu": true,
+  "terminal_disposition": "external-acceptance-candidate"
+}
