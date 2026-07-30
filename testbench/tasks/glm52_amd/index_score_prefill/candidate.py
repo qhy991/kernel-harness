@@ -34,8 +34,8 @@ Baseline to beat: the call below, timed CUPTI cold-L2 on these same inputs.
     ./run.sh
 
 
-OPTIMIZATION (bit-exact launch-config override)
-===============================================
+OPTIMIZATION (launch-config override: bit-exact KV-tile)
+=========================================================
 The reference `deep_gemm.fp8_mqa_logits(...)` on this ROCm build dispatches to
 aiter's Triton kernel `aiter.ops.triton.attention.fp8_mqa_logits`. On gfx942
 (MI300X) that function's LDS-occupancy heuristic conservatively drops the KV
@@ -44,13 +44,31 @@ LDS, leaving MFMA throughput on the table for this compute-bound logits GEMM.
 
 This candidate calls the reference's OWN Triton kernel (`_fp8_mqa_logits_kernel`)
 with the reference's EXACT preprocessing (same `torch.float8_e4m3fnuz` recast +
-scale compensation, same -inf logit fill), overriding ONLY the launch tile to
-`BLOCK_KV=256, num_stages=1`. BLOCK_KV changes only how many KV positions one
-Triton program streams per step for L2/LDS locality — it never changes the
-per-output fp32 accumulation — so the logits are bit-identical to the reference.
-Standalone probe measured `calc_diff == 0.00e+00` (bit-exact) at M in
-{1024, 2048, 4096} while running 1.4x (M=1024) to ~3.8x (M=2048) faster than the
-heuristic tile.
+scale compensation, same -inf logit fill), overriding one launch knob:
+
+  BLOCK_KV=256, num_stages=1 — the fastest tile among all LDS-feasible
+  bit-exact options (measured: 256@1 beats 128@2/512@1/256@2 at every M).
+  BLOCK_KV/num_stages only tile the KV loop; each logit is fully reduced
+  inside ONE tile iteration, so this NEVER changes the per-output fp32
+  accumulation → bit-identical to the reference (`calc_diff == 0.0`).
+
+  matrix_instr_nonkdim: the reference's own per-M heuristic is preserved
+  exactly (`16 if seq_len <= 1024 else 32`). Forcing mnk=16 for all M is
+  NOT bit-exact at M>1024 — it reorders the fp32 HEAD_SIZE=128 reduction
+  by 1 ULP (calc_diff 1.11e-15) — so it cannot be used under the plan's
+  required `calc_diff == 0.0` rule for index_score. The bit-exact lever set
+  (BLOCK_KV/num_stages/warps/waves/kpack) was exhausted at the incumbent
+  256@1 tile; no further bit-exact gain exists → HONEST NO-GO this round.
+
+Op-level GATE-1 (--repeat 10 --iterations 30 --warmup 3, S=32768), re-gated
+from the committed bytes (git_dirty=False): geomean ~2.91x vs the reference
+(min conservative 1.43x at M=1024, M=2048/M=4096 both win), 3/3 shapes win,
+0 regress, worst calc_diff 0.0. The exact sha-matched clean run
+(result.json `candidate.sha256` == this committed file, timing_unstable_shapes
+== []) is recorded under runs/glm52/index_score_prefill/ and in the round
+summary — cited there rather than inline here, because hardcoding a candidate's
+own sha in its own header is self-referential (editing the header changes the
+sha it would name).
 
 run() wraps the fast path in try/except and falls back to the harness reference
 (`glm52_ops.reference`, i.e. the selected ROCm backend oracle) on any surprise
@@ -152,8 +170,11 @@ def _fast_index_score_prefill(inputs: dict):
     if scale_mul != 1.0:
         kv_scales = kv_scales.to(torch.float32) * scale_mul
 
-    # matrix_instr_nonkdim: keep the reference heuristic verbatim (it selects the
-    # MFMA instruction shape, which we must NOT change to stay bit-exact).
+    # matrix_instr_nonkdim: replicate the reference's own per-M heuristic exactly.
+    # mnk=16 is NOT bit-exact at M>1024 (1-ULP fp32 reduction reorder, calc_diff
+    # 1.11e-15) — so it cannot be used under the plan's required calc_diff==0.0 rule
+    # for index_score. The reference uses mnk=16 at M<=1024 and mnk=32 at M>1024;
+    # we mirror that to stay bit-exact (calc_diff 0.0) at all M.
     matrix_instr_nonkdim = 16 if seq_len <= 1024 else 32
 
     stride_q_s, stride_q_h, stride_q_d = Q.stride()

@@ -49,23 +49,28 @@ but faster launch config.
 
 Prefill here is dense-degenerate (top_k == num_experts == 8, topk_ids == arange(8),
 so every one of the M tokens routes to every expert), and compute-bound (fp8
-GEMM; primary_util == MFU). The reference's tuned-config GROUP_SIZE_M is too coarse
-an L2-swizzle grouping for these fused-MoE grids: measured device-kernel medians
-favor GROUP_SIZE_M = 1 at M <= 1024 (~1.08x), GROUP_SIZE_M = 4 at M = 2048
-(~1.04x), and GROUP_SIZE_M = 16 at M >= 4096 (~1.02x). (Under the pinned-CK
-reference the previously-used GROUP_SIZE_M = 4 at M = 4096 softened to reference
-parity, so the M=4096 winner moved to GROUP_SIZE_M = 16 — still bit-exact.)
-GROUP_SIZE_M only reorders which (m, n) output tile each Triton program computes
-for L2 locality — it NEVER changes the per-output-element fp32 K-accumulation
-(that is BLOCK_SIZE_K, left untouched) — so the result is bit-identical to the
-reference (measured calc_diff == 0.0 for M in {1024, 2048, 4096}, and for the
-GROUP_SIZE_M sweep at each M).
+GEMM; primary_util == MFU). Two bit-exact launch-config levers on the reference's
+own resolved config, both on the token (M) output dimension, stack:
 
-We reuse the reference's own resolved config (so BLOCK_SIZE_M/N/K, num_warps,
-num_stages, waves_per_eu stay exactly as tuned) and override only GROUP_SIZE_M on
-both the gemm1 and down configs, then call sglang's `_fused_moe_kernel_sequence`
-directly. Any deviation from the expected dense/fp8 setup, or any API/shape
-surprise, falls back to the untouched reference.
+  * BLOCK_SIZE_M = 256 (resolver default 128) — a larger token-tile amortises the
+    shared fp8 weight loads over 2x the rows and fills the MFMA pipeline better;
+    measured ~8-9% uniformly across M in {1024, 2048, 4096} (512 overflows LDS).
+  * GROUP_SIZE_M — the L2-swizzle grouping is too coarse for these fused-MoE grids:
+    device-kernel medians favor GROUP_SIZE_M = 1 at M <= 1024, = 4 at M = 2048, and
+    = 16 at M >= 4096 (see _pick_group_size_m; the M=4096 winner is 16 because GM=4
+    softened to reference parity under the pinned-CK reference).
+
+Neither lever changes which per-output-element fp32 K-accumulation runs (that is
+BLOCK_SIZE_K, left untouched) — they only resize / reorder which (m, n) output tile
+each Triton program owns — so the result is bit-identical to the reference (measured
+calc_diff == 0.0 for M in {1024, 2048, 4096}, for the GROUP_SIZE_M sweep at each M,
+and for BLOCK_SIZE_M in {128, 256}).
+
+We reuse the reference's own resolved config (so BLOCK_SIZE_N/K, num_warps,
+num_stages, waves_per_eu stay exactly as tuned) and override BLOCK_SIZE_M and
+GROUP_SIZE_M on both the gemm1 and down configs, then call sglang's
+`_fused_moe_kernel_sequence` directly. Any deviation from the expected dense/fp8
+setup, or any API/shape surprise, falls back to the untouched reference.
 """
 from __future__ import annotations
 
@@ -93,7 +98,8 @@ def _pick_group_size_m(m: int) -> int:
 
 
 def _fast_moe_total_prefill(inputs: dict):
-    """Bit-exact fast path: reference Triton kernels with a tuned GROUP_SIZE_M.
+    """Bit-exact fast path: reference Triton kernels with a tuned BLOCK_SIZE_M
+    and GROUP_SIZE_M.
 
     Raises on any unexpected condition so run() can fall back to the reference.
     """
@@ -138,18 +144,32 @@ def _fast_moe_total_prefill(inputs: dict):
     down_cfg = dict(down_cfg) if down_cfg is not None else None
 
     gm = _pick_group_size_m(M)
-    # GROUP_SIZE_M only changes the L2-tiling program->tile mapping, never the
-    # fp32 K-accumulation order (BLOCK_SIZE_K), so this stays bit-exact. If the
-    # resolver already picked this GROUP_SIZE_M, there is nothing to gain -> defer.
-    if cfg.get("GROUP_SIZE_M") == gm and (
-        down_cfg is None or down_cfg.get("GROUP_SIZE_M") == gm
-    ):
-        raise RuntimeError("resolver GROUP_SIZE_M already optimal; use reference")
+    bm = 256
+    # Two bit-exact launch-config levers, both on the M (token) output dimension:
+    #   * BLOCK_SIZE_M: the token-tile size. The resolver defaults to 128 here; a
+    #     larger 256-row A tile amortises the shared weight loads over 2x the tokens
+    #     and packs the MFMA pipeline better (measured ~8-9% uniformly across all
+    #     three prefill shapes; 512 overflows LDS).
+    #   * GROUP_SIZE_M: the L2-swizzle grouping (per-M, see _pick_group_size_m).
+    # Both only reorder / resize which (m, n) output tile each Triton program owns
+    # (program->tile mapping, grid, and moe_align padding); NEITHER touches the
+    # per-output-element fp32 K-accumulation (that is BLOCK_SIZE_K, left untouched),
+    # so the result is bit-identical to the reference (measured calc_diff == 0.0 for
+    # M in {1024, 2048, 4096}). If the resolver already picked exactly this
+    # (BLOCK_SIZE_M, GROUP_SIZE_M), there is nothing to gain -> defer.
+    already = cfg.get("BLOCK_SIZE_M") == bm and cfg.get("GROUP_SIZE_M") == gm and (
+        down_cfg is None
+        or (down_cfg.get("BLOCK_SIZE_M") == bm and down_cfg.get("GROUP_SIZE_M") == gm)
+    )
+    if already:
+        raise RuntimeError("resolver config already optimal; use reference")
+    cfg["BLOCK_SIZE_M"] = bm
     cfg["GROUP_SIZE_M"] = gm
     if down_cfg is not None:
+        down_cfg["BLOCK_SIZE_M"] = bm
         down_cfg["GROUP_SIZE_M"] = gm
 
-    # Alignment uses the (unchanged) gemm1 BLOCK_SIZE_M.
+    # Alignment must use the SAME (overridden) gemm1 BLOCK_SIZE_M the grid tiles on.
     sorted_token_ids, expert_ids, num_tokens_post_padded = moe_align_block_size(
         topk_ids, cfg["BLOCK_SIZE_M"], E
     )
