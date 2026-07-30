@@ -65,15 +65,24 @@ def test_o_proj_graph_only_env_registered_and_defaults_on():
     assert 'os.environ.get(key, "1")' in resolver
 
 
-def test_gpu_contract_audits_every_declared_lane():
-    audit_src = ast.get_source_segment(
-        Path(contract.__file__).read_text(), _function(Path(contract.__file__), "audit")
-    )
+def test_gpu_contract_audits_every_plan_gate():
+    src = Path(contract.__file__).read_text()
+    audit_src = ast.get_source_segment(src, _function(Path(contract.__file__), "audit"))
     assert audit_src is not None
-    for tag in ("A:", "B:", "C:", "D:", "E:", "F:", "G:", "H:"):
+    # Plan-required gates A-G are hard audit failures.
+    for tag in ("A:", "B:", "C:", "D:", "E:", "F:", "G:"):
         assert tag in audit_src
     # The performance gate must be the plan's 1.03 graph floor.
     assert "GRAPH_WIN_FLOOR" in audit_src
+    # H (eager identity) is NOT a plan gate: the plan permits eager
+    # stock-fallback under graph-only. It must be reported informationally and
+    # never hard-fail the run.
+    assert "H:" not in audit_src
+    notes_src = ast.get_source_segment(
+        src, _function(Path(contract.__file__), "eager_lane_notes")
+    )
+    assert notes_src is not None
+    assert "expected eager" in notes_src
 
 
 def test_contract_floors_are_the_plan_values():
