@@ -1,0 +1,485 @@
+{
+  "all_gates_pass": false,
+  "captured_utc": "2026-07-30T09:08:57.666077+00:00",
+  "cpu_toolchain": {
+    "all_cache_paths_task_local": true,
+    "cache_environment": {
+      "CMAKE_BUILD_PARALLEL_LEVEL": "4",
+      "CUDA_CACHE_PATH": "/home/qinhaiyan/glm52-hotspot-goal-runs/cache/flashmla_combine_ptx_r1/cuda",
+      "DG_JIT_CACHE_DIR": "/home/qinhaiyan/glm52-hotspot-goal-runs/cache/flashmla_combine_ptx_r1/deepgemm",
+      "GLM52_TASK_BUILD_DIR": "/home/qinhaiyan/glm52-hotspot-goal-runs/cache/flashmla_combine_ptx_r1/build",
+      "MAX_JOBS": "4",
+      "NVCC_THREADS": null,
+      "SGLANG_DG_CACHE_DIR": "/home/qinhaiyan/glm52-hotspot-goal-runs/cache/flashmla_combine_ptx_r1/deepgemm",
+      "TORCH_EXTENSIONS_DIR": "/home/qinhaiyan/glm52-hotspot-goal-runs/cache/flashmla_combine_ptx_r1/torch_extensions",
+      "TRITON_CACHE_DIR": "/home/qinhaiyan/glm52-hotspot-goal-runs/cache/flashmla_combine_ptx_r1/triton",
+      "XDG_CACHE_HOME": "/home/qinhaiyan/glm52-hotspot-goal-runs/cache/flashmla_combine_ptx_r1/xdg"
+    },
+    "disk_threshold_satisfied": false,
+    "gxx": "g++ (Ubuntu 13.3.0-6ubuntu2~24.04.1) 13.3.0",
+    "ncu": [
+      "Version 2026.1.1.0 (build 37634170) (public-release)"
+    ],
+    "nsys": [
+      "NVIDIA Nsight Systems version 2025.6.3.541-256337736014v0"
+    ],
+    "nvcc": "Build cuda_13.2.r13.2/compiler.37668154_0",
+    "nvcc_release": [
+      "Cuda compilation tools, release 13.2, V13.2.78"
+    ],
+    "root_free_gib": 0.12366867065429688,
+    "stop_expansion_below_gib": 8,
+    "task_cache_prefix": "/home/qinhaiyan/glm52-hotspot-goal-runs/cache/flashmla_combine_ptx_r1"
+  },
+  "cuda_initialized": false,
+  "flashmla_source": {
+    "all_variants_prefixed": true,
+    "config_h_sha256": "694d5e6d9a88ff4f0aaddfb2abbbfeff76d900b48337adf0b0742f87d59ab3a5",
+    "default_instantiations": [
+      "model1.cu",
+      "v32.cu"
+    ],
+    "kernel_cuh_sha256": "afd656a9eae63c557027d4de71a29784a4ad526df6f5ef5ca062645263126617",
+    "macro_gates_in_kernel": [
+      "GLM52_ABLATE_SCALE_CHAIN",
+      "GLM52_CONSUMER_SCALE_GATHER",
+      "GLM52_COORD_PREFETCH_ACROSS_BUF_WAIT",
+      "GLM52_COORD_READY_HANDOFF",
+      "GLM52_EXACT_V32_NO_EXTRA",
+      "GLM52_GATHER_EVICT_FIRST",
+      "GLM52_ROPE_GATHER_EARLY_WARP",
+      "GLM52_STAGGER_NOPE_CONSUMERS"
+    ],
+    "variant_sources": {
+      "v32_ablate_scale_chain.cu": {
+        "goal_macros": [
+          "GLM52_ABLATE_SCALE_CHAIN",
+          "GLM52_CONSUMER_SCALE_GATHER",
+          "GLM52_EXACT_V32_NO_EXTRA",
+          "GLM52_NATIVE_FP8_TO_BF16"
+        ],
+        "renames_global_symbol": true,
+        "sha256": "6bcd65c1a50f6577b94e30fb3387f197917b1da60f9f01395617ddfabf63c485",
+        "symbol_prefix_ok": true,
+        "target": "main"
+      },
+      "v32_b1_coord_ready.cu": {
+        "goal_macros": [
+          "GLM52_COORD_READY_HANDOFF"
+        ],
+        "renames_global_symbol": true,
+        "sha256": "b4bc4b293024ce1af26e2b25b71b5b0cbc3a822a454e35ecf330bfa4384cd320",
+        "symbol_prefix_ok": true,
+        "target": "main"
+      },
+      "v32_b2_stagger_nope.cu": {
+        "goal_macros": [
+          "GLM52_STAGGER_NOPE_CONSUMERS"
+        ],
+        "renames_global_symbol": true,
+        "sha256": "2bb5103c4adab48b59c286a8bda072c8ab78f7ec6398afbf14fb79c21196864f",
+        "symbol_prefix_ok": true,
+        "target": "main"
+      },
+      "v32_b3_b5_native_exact.cu": {
+        "goal_macros": [
+          "GLM52_EXACT_V32_NO_EXTRA",
+          "GLM52_NATIVE_FP8_TO_BF16"
+        ],
+        "renames_global_symbol": true,
+        "sha256": "0f731ed17163221baa889ffb0c5def2f2eb284a8573b78bcae59a92bf92b70e6",
+        "symbol_prefix_ok": true,
+        "target": "main"
+      },
+      "v32_b3_native_fp8_bf16.cu": {
+        "goal_macros": [
+          "GLM52_NATIVE_FP8_TO_BF16"
+        ],
+        "renames_global_symbol": true,
+        "sha256": "82dd6d44f8396dcd4bcc092144b70f9ab416e1bea44cda5d3b35bd7e1b650e67",
+        "symbol_prefix_ok": true,
+        "target": "main"
+      },
+      "v32_b4_evict_first.cu": {
+        "goal_macros": [
+          "GLM52_GATHER_EVICT_FIRST"
+        ],
+        "renames_global_symbol": true,
+        "sha256": "0631ab2ad29b44a233901b1a97206ae1b97a00e689f373820382e33717295e58",
+        "symbol_prefix_ok": true,
+        "target": "main"
+      },
+      "v32_b4_rope_early_warp.cu": {
+        "goal_macros": [
+          "GLM52_ROPE_GATHER_EARLY_WARP"
+        ],
+        "renames_global_symbol": true,
+        "sha256": "ec2eb81e7d8c071e0ab03834e7baa64d9d1e23023e0f3251f4136cd6da8fdbaf",
+        "symbol_prefix_ok": true,
+        "target": "main"
+      },
+      "v32_b5_exact_no_extra.cu": {
+        "goal_macros": [
+          "GLM52_EXACT_V32_NO_EXTRA"
+        ],
+        "renames_global_symbol": true,
+        "sha256": "2660829213dd2bcf3ce1c9a838a4288bd075b4f2f1f4a7c6cdffe581ab5f879d",
+        "symbol_prefix_ok": true,
+        "target": "main"
+      },
+      "v32_combine_c1_stage8.cu": {
+        "goal_macros": [
+          "GLM52_COMBINE_BATCHED_ACCUM",
+          "GLM52_COMBINE_KERNEL_NAME",
+          "GLM52_COMBINE_STAGES"
+        ],
+        "renames_global_symbol": true,
+        "sha256": "491a15bd24ccfbc585d8808c733cd14b5bb16faff9235d7ebeb99153752c50d1",
+        "symbol_prefix_ok": true,
+        "target": "combine"
+      },
+      "v32_combine_c2_bucket_stages.cu": {
+        "goal_macros": [
+          "GLM52_COMBINE_BATCHED_ACCUM",
+          "GLM52_COMBINE_BUCKET_STAGES",
+          "GLM52_COMBINE_KERNEL_NAME"
+        ],
+        "renames_global_symbol": true,
+        "sha256": "f842e1281e2cbbeb45b422ee963ec7717e9ba7515f5c7ed32fb4d2a59eaebed3",
+        "symbol_prefix_ok": true,
+        "target": "combine"
+      },
+      "v32_combine_identity.cu": {
+        "goal_macros": [
+          "GLM52_COMBINE_KERNEL_NAME"
+        ],
+        "renames_global_symbol": true,
+        "sha256": "5481301e8caa9a071a2a6709dcb61d06e94199fd7824f1e2fdd1e0d7c3c14977",
+        "symbol_prefix_ok": true,
+        "target": "combine"
+      },
+      "v32_identity.cu": {
+        "goal_macros": [],
+        "renames_global_symbol": true,
+        "sha256": "1abdd32fcb4b9ec7c31bfdcdc382c2c3ce245acb7aac849b268bca8d44bc54e6",
+        "symbol_prefix_ok": true,
+        "target": "main"
+      },
+      "v32_p1_consumer_scale.cu": {
+        "goal_macros": [
+          "GLM52_CONSUMER_SCALE_GATHER",
+          "GLM52_EXACT_V32_NO_EXTRA",
+          "GLM52_NATIVE_FP8_TO_BF16"
+        ],
+        "renames_global_symbol": true,
+        "sha256": "58299603d7343c1daffa086c6c601bc57bb864213b0cb839470bdbc5dedbf565",
+        "symbol_prefix_ok": true,
+        "target": "main"
+      },
+      "v32_r3a_coord_prefetch.cu": {
+        "goal_macros": [
+          "GLM52_CONSUMER_SCALE_GATHER",
+          "GLM52_COORD_PREFETCH_ACROSS_BUF_WAIT",
+          "GLM52_EXACT_V32_NO_EXTRA",
+          "GLM52_NATIVE_FP8_TO_BF16"
+        ],
+        "renames_global_symbol": true,
+        "sha256": "e161106c4782ba7bf8a758489d34b0f0fa547fc67c166a0c266021a422755b4e",
+        "symbol_prefix_ok": true,
+        "target": "main"
+      }
+    }
+  },
+  "frozen_abi_from_plan_section_0_2": {
+    "candidate_symbol_prefix": "infini_kernel_glm52_flashmla_sparse_decode",
+    "per_bucket": {
+      "16": {
+        "block_table_shape": [
+          16,
+          0
+        ],
+        "cache_seqlens_shape": [
+          16
+        ],
+        "indices_shape": [
+          16,
+          1,
+          2048
+        ],
+        "kv_shape": [
+          2049,
+          64,
+          1,
+          656
+        ],
+        "lse_shape": [
+          16,
+          64,
+          1
+        ],
+        "num_splits_shape": [
+          17
+        ],
+        "out_shape": [
+          16,
+          1,
+          64,
+          512
+        ],
+        "q_shape": [
+          16,
+          1,
+          64,
+          576
+        ],
+        "tile_scheduler_metadata_shape": [
+          148,
+          8
+        ]
+      },
+      "32": {
+        "block_table_shape": [
+          32,
+          0
+        ],
+        "cache_seqlens_shape": [
+          32
+        ],
+        "indices_shape": [
+          32,
+          1,
+          2048
+        ],
+        "kv_shape": [
+          4097,
+          64,
+          1,
+          656
+        ],
+        "lse_shape": [
+          32,
+          64,
+          1
+        ],
+        "num_splits_shape": [
+          33
+        ],
+        "out_shape": [
+          32,
+          1,
+          64,
+          512
+        ],
+        "q_shape": [
+          32,
+          1,
+          64,
+          576
+        ],
+        "tile_scheduler_metadata_shape": [
+          148,
+          8
+        ]
+      }
+    },
+    "scalars": {
+      "causal": false,
+      "head_dim_v": 512,
+      "is_fp8_kvcache": true,
+      "kv_bytes_per_token": 656,
+      "num_sm_parts": 148,
+      "page_size": 64,
+      "softmax_scale": 0.0625,
+      "topk": 2048
+    }
+  },
+  "gates": {
+    "all_variants_prefixed": true,
+    "all_worktrees_at_or_after_required_base": true,
+    "cache_paths_task_local": true,
+    "disk_threshold_satisfied": false,
+    "flashmla_dirt_fully_attributed": true,
+    "no_unexpected_worktree_edits": true,
+    "prior_disposition_is_no_replacement": true,
+    "sglang_graph_only_contract_complete": true,
+    "sglang_guard_complete": true,
+    "sglang_worktree_clean": true
+  },
+  "prior_negative_evidence": {
+    "binary_manifest_keys": [
+      "all_main_symbols_prefixed",
+      "combine_sass_identical_across_all_variants",
+      "combine_sass_sha256",
+      "entries",
+      "required_main_symbol_prefix",
+      "schema_version",
+      "tool"
+    ],
+    "binary_manifest_sha256": "8d62537a4e2eef2000b4d46f2955a3e7b357b34bc3a3bd17ec8fa28584baf399",
+    "closed_attempts": {
+      "P1": {
+        "generated_binary": {
+          "barriers": 16,
+          "build_id_reproduced_from_clean_committed_tree": "a39236323dc57a97fbfc28fa479c5cd56ce94c065824912fbd95a98a15160649",
+          "combine_sass_identical_to_control": true,
+          "control_ldg_note": "two scattered scale LDG removed from the index warp, four added to the dequant consumer, matching the predicted +2",
+          "control_static_main_instructions": 4128,
+          "f2fp": 272,
+          "generated_main_sass_identical_across_both_source_hash_generations": true,
+          "ldg": 14,
+          "local_bytes": 0,
+          "main_sass_sha256": "725c9b8ff2a7e332",
+          "registers_per_thread": 168,
+          "spill_bytes": 0,
+          "stack_bytes": 0,
+          "static_main_instructions": 3368
+        },
+        "hypothesis": "The index warp published TMA coordinates only after completing its own 64 scattered FP32 scale loads, so every block serialized a full scattered-load round trip in front of the raw-NoPE and RoPE TMA gather issue. Deriving the scale address from the already-published coordinate and gathering it in the 128-thread dequant consumer, issued before the raw-NoPE wait, removes that round trip from the critical path.",
+        "outcome": "rejected",
+        "variant": "p1_consumer_scale",
+        "why_rejected": "Both mandatory CUDA Graph lanes and the eager leaf pass at both buckets, but the eager containing SGLang DSA region measures 0.664..0.758, so a lane enumerated by plan section 6 fails and no bucket may promote."
+      }
+    },
+    "evidence_gated_non_attempts": [
+      {
+        "decision": "not built",
+        "evidence": [
+          "p0_mechanism_m16.json",
+          "cpu_audit.json"
+        ],
+        "id": "P2",
+        "technique": "conflict-free dequant consumer mapping",
+        "why": "The new NCU capture puts short_scoreboard plus mio_throttle, the stalls that shared-memory bank conflicts produce, at 10.7% of stall cycles against 56.3% for long-scoreboard plus barrier. The prior campaign's B2 already implemented exactly this remap and was rejected because the added address arithmetic (+32 static instructions) outweighed any bank benefit. Spending an identity here would rerun a conclusively rejected variant against a mechanism the current profile shows is not the limiter, which the shared contract forbids."
+      },
+      {
+        "decision": "not built",
+        "evidence": [
+          "binary_manifest.json",
+          "ablation_graph_k20_m16.json",
+          "ablation_graph_k20_m32.json"
+        ],
+        "id": "P3",
+        "technique": "narrowly scoped inline PTX or compiler-constraint scheduling refinement",
+        "why": "The plan allows exactly three predeclared changes: earlier eligible TMA issue, a shorter FP8-to-BF16 scale dependency chain, or reduced register live range. P1 already delivers the first at the source level and its binary confirms it. The ablation bounds the second: with the entire scale chain deleted the graph lanes sit at 1.00, so no further shortening of that chain is available. Registers, barriers, stack, local and spills are already at 168/16/0/0/0 and unchanged, leaving no live-range headroom to recover. P1 is also already past 1.03 on both mandatory graph lanes, so the plan's 'near the threshold' precondition for a rescue refinement does not apply."
+      },
+      {
+        "decision": "not built",
+        "evidence": [
+          "p0_mechanism_m16.json"
+        ],
+        "id": "TWO-SM",
+        "technique": "two-SM cooperative rewrite",
+        "why": "The plan requires proof that one-SM occupancy is the remaining limiter. The capture shows the opposite: one CTA per SM already fills all 148 SMs in a single wave, DRAM throughput is 13.7% of peak, and the binding costs are memory latency on a two-deep pipeline plus a 31.6% tail from the frozen scheduler partitioning. Shared memory also has 816 free bytes against the 106496 a third KV buffer needs, so the cooperative variant could not be staged."
+      },
+      {
+        "decision": "not attempted; reported instead",
+        "evidence": [
+          "dispatch_stage_times_before.json",
+          "identity_eager_k20_m16.json"
+        ],
+        "id": "SGLANG-DISPATCH-OPTIMISATION",
+        "technique": "reduce the +17.4 us API-v1 host tax that fails the eager containing lane",
+        "why": "The arithmetic shows the lane is unreachable even with a zero-cost guard, so the change could not alter the disposition, while editing a fail-closed safety guard at the end of a campaign carries real risk. The measured, actionable findings are handed to the integration owner instead: skip the NVTX context manager and its range-name construction entirely when NVTX is disabled (1.73 us plus 0.13 us), cache the resolved KernelSpec per (op, phase, m) alongside the existing load_manifest cache (2.96 us), and precompute the guard's expected shape and stride tuples per spec instead of per call (part of 4.82 us). Unblocking the lane needs an integration change such as a C++-side guard or graph-only selection, not a kernel change."
+      },
+      {
+        "decision": "not invoked",
+        "evidence": [
+          "p0_mechanism_m16.json",
+          "p1_chain_m16_summary.json"
+        ],
+        "id": "NCU-SURVIVOR-CAPTURE",
+        "technique": "second NCU capture on the surviving candidate",
+        "why": "The one permitted capture already answered the stated critical-path question, and the surviving candidate's mechanism was confirmed directly by the generated binary, the Nsys device spans and the ablation. No further concrete mechanism question remained that a second capture would settle."
+      }
+    ],
+    "ledger_path": "/home/qinhaiyan/glm52-hotspot-goal-runs/worktrees/flashmla-sparse-decode/kernel-harness/profile/glm52-flashmla-ptx-sass-followup-20260730/evidence/attempt_ledger.json",
+    "ledger_sha256": "da53eb8b15d050c5a77241341920ad13895fec5f2788ffafdd5c55c91bcca6da",
+    "material_candidates_used": 1,
+    "terminal_disposition": "no-replacement",
+    "timing_gate_audit_keys": [
+      "files",
+      "gate",
+      "gate_rule",
+      "non_timing_files_skipped",
+      "required_lanes",
+      "schema_version"
+    ],
+    "timing_gate_audit_sha256": "55697484ec68864e483198ae042a4242ab802176175f14f9d4506ba78629de93"
+  },
+  "schema_version": 1,
+  "sglang_abi_guard": {
+    "all_present": true,
+    "checks": {
+      "exact_page_counts": true,
+      "exact_softmax_scale": true,
+      "fp8_e4m3_kv_dtype": true,
+      "guard_returns_on_page_count": true,
+      "kv_contiguous_zero_offset": true,
+      "metadata_shape_148_8": true,
+      "rejects_non_decode": true,
+      "requires_fp8_kvcache": true,
+      "single_device": true
+    },
+    "path": "python/sglang/srt/layers/glm52_opt/dispatch.py",
+    "sha256": "ab191e5fefbcf8644fb06b7bfb31b002b98939e24cbd33bb0ebfc3fe91924195"
+  },
+  "sglang_graph_only": {
+    "all_present": true,
+    "checks": {
+      "capture_probe_uses_torch": true,
+      "dispatch_checks_capture": true,
+      "dispatch_honors_env": true,
+      "dispatch_honors_spec_graph_only": true,
+      "env_can_be_disabled_for_diagnostics": true,
+      "env_default_is_on": true,
+      "graph_gate_precedes_abi_guard": true,
+      "spec_declares_graph_only": true
+    },
+    "config_sha256": "1632a9749903c6b3ba36c36e7f27ddf10011ac6183bfc6fd19f44a63df1691f7",
+    "dispatch_sha256": "ab191e5fefbcf8644fb06b7bfb31b002b98939e24cbd33bb0ebfc3fe91924195",
+    "expected_eager_behavior": "no provider hit; stock fallback",
+    "registry_sha256": "a4957c979dcde3616786de48a899ef19d4fcefd14165c17cb0d49d133e9b0b19"
+  },
+  "stage": "P0_cpu_only_audit",
+  "worktrees": {
+    "flashmla": {
+      "all_dirt_attributed": true,
+      "branch": "goal/glm52-hotspot-flashmla-main",
+      "clean": true,
+      "concurrent_goal_dirty_entries": [],
+      "dirty_entries": [],
+      "head": "a168813371a5f0652d8148fc8d23eddc921927df",
+      "head_is_at_or_after_required_base": true,
+      "path": "/home/qinhaiyan/glm52-hotspot-goal-runs/worktrees/flashmla-sparse-decode/flashmla",
+      "required_base": "b5af443",
+      "this_campaign_dirty_entries": [],
+      "unexpected_dirty_entries": []
+    },
+    "kernel_harness": {
+      "all_dirt_attributed": true,
+      "branch": "goal/glm52-hotspot-flashmla-sparse-decode",
+      "clean": true,
+      "concurrent_goal_dirty_entries": [],
+      "dirty_entries": [],
+      "head": "8112670f1a905d40e7a155ab70dbacce56ec0264",
+      "head_is_at_or_after_required_base": true,
+      "path": "/home/qinhaiyan/glm52-hotspot-goal-runs/worktrees/flashmla-sparse-decode/kernel-harness",
+      "required_base": "c6a5802",
+      "this_campaign_dirty_entries": [],
+      "unexpected_dirty_entries": []
+    },
+    "sglang": {
+      "all_dirt_attributed": true,
+      "branch": "goal/glm52-hotspot-flashmla-sparse-decode",
+      "clean": true,
+      "concurrent_goal_dirty_entries": [],
+      "dirty_entries": [],
+      "head": "d7fe89a7192acb2fa3f2f6f8df116bfdd133757a",
+      "head_is_at_or_after_required_base": true,
+      "path": "/home/qinhaiyan/glm52-hotspot-goal-runs/worktrees/flashmla-sparse-decode/sglang",
+      "required_base": "d7fe89a71",
+      "this_campaign_dirty_entries": [],
+      "unexpected_dirty_entries": []
+    }
+  }
+}
