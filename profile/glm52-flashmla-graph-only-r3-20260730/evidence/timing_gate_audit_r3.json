@@ -1,0 +1,693 @@
+{
+  "audits": [
+    {
+      "all_gated_lanes_pass": false,
+      "candidate": "installed_sgl_kernel_stock",
+      "comparison": "stock_stock",
+      "gated_lanes_present": [
+        "containing_graph",
+        "leaf_graph"
+      ],
+      "gpu_uuid": "GPU-30b619de-87f2-1862-0d07-a595da8fe417",
+      "lanes": {
+        "containing_graph": {
+          "estimator_count": 12,
+          "failed_observations": [
+            {
+              "estimator": "pooled_ratio_of_medians",
+              "series": 1,
+              "value": 0.9977835899680663
+            },
+            {
+              "estimator": "ab_ratio_of_medians",
+              "series": 1,
+              "value": 0.9973955892692807
+            },
+            {
+              "estimator": "ba_ratio_of_medians",
+              "series": 1,
+              "value": 0.9981715156883066
+            },
+            {
+              "estimator": "order_balanced_sqrt_ab_ba",
+              "series": 1,
+              "value": 0.9977834770538896
+            },
+            {
+              "estimator": "pooled_ratio_of_medians",
+              "series": 2,
+              "value": 0.9993622804401076
+            },
+            {
+              "estimator": "ab_ratio_of_medians",
+              "series": 2,
+              "value": 1.000221915690948
+            },
+            {
+              "estimator": "ba_ratio_of_medians",
+              "series": 2,
+              "value": 0.9983922578066935
+            },
+            {
+              "estimator": "order_balanced_sqrt_ab_ba",
+              "series": 2,
+              "value": 0.9993066680025815
+            },
+            {
+              "estimator": "pooled_ratio_of_medians",
+              "series": 3,
+              "value": 0.9976157564151164
+            },
+            {
+              "estimator": "ab_ratio_of_medians",
+              "series": 3,
+              "value": 0.9974216798260196
+            },
+            {
+              "estimator": "ba_ratio_of_medians",
+              "series": 3,
+              "value": 0.9976159547421755
+            },
+            {
+              "estimator": "order_balanced_sqrt_ab_ba",
+              "series": 3,
+              "value": 0.9975188125545197
+            }
+          ],
+          "maximum_estimator": 1.000221915690948,
+          "meets_1_03_everywhere": false,
+          "minimum_estimator": 0.9973955892692807,
+          "provider_launches_during_lane": null,
+          "recomputed_from_raw_pairs": true
+        },
+        "leaf_graph": {
+          "estimator_count": 12,
+          "failed_observations": [
+            {
+              "estimator": "pooled_ratio_of_medians",
+              "series": 1,
+              "value": 1.0006621139225487
+            },
+            {
+              "estimator": "ab_ratio_of_medians",
+              "series": 1,
+              "value": 1.0003035787285377
+            },
+            {
+              "estimator": "ba_ratio_of_medians",
+              "series": 1,
+              "value": 1.000744606036579
+            },
+            {
+              "estimator": "order_balanced_sqrt_ab_ba",
+              "series": 1,
+              "value": 1.0005240680821579
+            },
+            {
+              "estimator": "pooled_ratio_of_medians",
+              "series": 2,
+              "value": 1.0027106087568844
+            },
+            {
+              "estimator": "ab_ratio_of_medians",
+              "series": 2,
+              "value": 1.0013539819483486
+            },
+            {
+              "estimator": "ba_ratio_of_medians",
+              "series": 2,
+              "value": 1.0037635368566205
+            },
+            {
+              "estimator": "order_balanced_sqrt_ab_ba",
+              "series": 2,
+              "value": 1.0025580355101318
+            },
+            {
+              "estimator": "pooled_ratio_of_medians",
+              "series": 3,
+              "value": 1.0005827388062336
+            },
+            {
+              "estimator": "ab_ratio_of_medians",
+              "series": 3,
+              "value": 1.0008049609044103
+            },
+            {
+              "estimator": "ba_ratio_of_medians",
+              "series": 3,
+              "value": 1.0003883395621291
+            },
+            {
+              "estimator": "order_balanced_sqrt_ab_ba",
+              "series": 3,
+              "value": 1.0005966285495391
+            }
+          ],
+          "maximum_estimator": 1.0037635368566205,
+          "meets_1_03_everywhere": false,
+          "minimum_estimator": 1.0003035787285377,
+          "provider_launches_during_lane": null,
+          "recomputed_from_raw_pairs": true
+        }
+      },
+      "m": 16,
+      "pairs_per_series": 100,
+      "path": "/home/qinhaiyan/glm52-hotspot-goal-runs/worktrees/flashmla-sparse-decode/kernel-harness/profile/glm52-flashmla-graph-only-r3-20260730/evidence/null_stock_stock_k20_m16.json",
+      "reference": "installed_sgl_kernel_stock",
+      "replays_per_observation": 20,
+      "series": 3,
+      "sha256": "3717b16b019fc53f90c133da93a45e4b620c93e22fba2cd5d768ebf0bf4365fd"
+    },
+    {
+      "all_gated_lanes_pass": false,
+      "candidate": "installed_sgl_kernel_stock",
+      "comparison": "stock_stock",
+      "gated_lanes_present": [
+        "containing_graph",
+        "leaf_graph"
+      ],
+      "gpu_uuid": "GPU-30b619de-87f2-1862-0d07-a595da8fe417",
+      "lanes": {
+        "containing_graph": {
+          "estimator_count": 12,
+          "failed_observations": [
+            {
+              "estimator": "pooled_ratio_of_medians",
+              "series": 1,
+              "value": 0.9996113173351427
+            },
+            {
+              "estimator": "ab_ratio_of_medians",
+              "series": 1,
+              "value": 0.9994170157476777
+            },
+            {
+              "estimator": "ba_ratio_of_medians",
+              "series": 1,
+              "value": 0.9998785841325979
+            },
+            {
+              "estimator": "order_balanced_sqrt_ab_ba",
+              "series": 1,
+              "value": 0.999647773300083
+            },
+            {
+              "estimator": "pooled_ratio_of_medians",
+              "series": 2,
+              "value": 1.006354958317166
+            },
+            {
+              "estimator": "ab_ratio_of_medians",
+              "series": 2,
+              "value": 1.0003424653477102
+            },
+            {
+              "estimator": "ba_ratio_of_medians",
+              "series": 2,
+              "value": 1.0142060572672653
+            },
+            {
+              "estimator": "order_balanced_sqrt_ab_ba",
+              "series": 2,
+              "value": 1.0072504096287662
+            },
+            {
+              "estimator": "pooled_ratio_of_medians",
+              "series": 3,
+              "value": 0.9995870140865033
+            },
+            {
+              "estimator": "ab_ratio_of_medians",
+              "series": 3,
+              "value": 0.9991012085747191
+            },
+            {
+              "estimator": "ba_ratio_of_medians",
+              "series": 3,
+              "value": 0.9998542269830244
+            },
+            {
+              "estimator": "order_balanced_sqrt_ab_ba",
+              "series": 3,
+              "value": 0.9994776468622403
+            }
+          ],
+          "maximum_estimator": 1.0142060572672653,
+          "meets_1_03_everywhere": false,
+          "minimum_estimator": 0.9991012085747191,
+          "provider_launches_during_lane": null,
+          "recomputed_from_raw_pairs": true
+        },
+        "leaf_graph": {
+          "estimator_count": 12,
+          "failed_observations": [
+            {
+              "estimator": "pooled_ratio_of_medians",
+              "series": 1,
+              "value": 0.9971013622163871
+            },
+            {
+              "estimator": "ab_ratio_of_medians",
+              "series": 1,
+              "value": 0.9906871365297706
+            },
+            {
+              "estimator": "ba_ratio_of_medians",
+              "series": 1,
+              "value": 1.0021246563945525
+            },
+            {
+              "estimator": "order_balanced_sqrt_ab_ba",
+              "series": 1,
+              "value": 0.9963894852362701
+            },
+            {
+              "estimator": "pooled_ratio_of_medians",
+              "series": 2,
+              "value": 1.0004860766956418
+            },
+            {
+              "estimator": "ab_ratio_of_medians",
+              "series": 2,
+              "value": 1.000194338565479
+            },
+            {
+              "estimator": "ba_ratio_of_medians",
+              "series": 2,
+              "value": 1.001385450089275
+            },
+            {
+              "estimator": "order_balanced_sqrt_ab_ba",
+              "series": 2,
+              "value": 1.0007897171240006
+            },
+            {
+              "estimator": "pooled_ratio_of_medians",
+              "series": 3,
+              "value": 1.001972743504785
+            },
+            {
+              "estimator": "ab_ratio_of_medians",
+              "series": 3,
+              "value": 1.000900168972569
+            },
+            {
+              "estimator": "ba_ratio_of_medians",
+              "series": 3,
+              "value": 1.0040269574855136
+            },
+            {
+              "estimator": "order_balanced_sqrt_ab_ba",
+              "series": 3,
+              "value": 1.0024623441308231
+            }
+          ],
+          "maximum_estimator": 1.0040269574855136,
+          "meets_1_03_everywhere": false,
+          "minimum_estimator": 0.9906871365297706,
+          "provider_launches_during_lane": null,
+          "recomputed_from_raw_pairs": true
+        }
+      },
+      "m": 32,
+      "pairs_per_series": 100,
+      "path": "/home/qinhaiyan/glm52-hotspot-goal-runs/worktrees/flashmla-sparse-decode/kernel-harness/profile/glm52-flashmla-graph-only-r3-20260730/evidence/null_stock_stock_k20_m32.json",
+      "reference": "installed_sgl_kernel_stock",
+      "replays_per_observation": 20,
+      "series": 3,
+      "sha256": "5429433d877c95eb58d5ebe0b99e97cc1ed26ec44f48f9c54595463834a084bb"
+    },
+    {
+      "candidate": "p1_consumer_scale",
+      "comparison": "stock_provider",
+      "eager_containing_is_stock_fallback": true,
+      "gated_lanes_present": [],
+      "gpu_uuid": "GPU-5b9be10b-5bfc-b658-9b31-f7ae8516dc54",
+      "lanes": {
+        "containing_eager": {
+          "estimator_count": 12,
+          "failed_observations": [
+            {
+              "estimator": "pooled_ratio_of_medians",
+              "series": 1,
+              "value": 0.8602619779130163
+            },
+            {
+              "estimator": "ab_ratio_of_medians",
+              "series": 1,
+              "value": 0.8560309453192301
+            },
+            {
+              "estimator": "ba_ratio_of_medians",
+              "series": 1,
+              "value": 0.870589048889131
+            },
+            {
+              "estimator": "order_balanced_sqrt_ab_ba",
+              "series": 1,
+              "value": 0.8632793096704752
+            },
+            {
+              "estimator": "pooled_ratio_of_medians",
+              "series": 2,
+              "value": 0.8640368275388894
+            },
+            {
+              "estimator": "ab_ratio_of_medians",
+              "series": 2,
+              "value": 0.8622877359207846
+            },
+            {
+              "estimator": "ba_ratio_of_medians",
+              "series": 2,
+              "value": 0.8672277951446676
+            },
+            {
+              "estimator": "order_balanced_sqrt_ab_ba",
+              "series": 2,
+              "value": 0.8647542379213122
+            },
+            {
+              "estimator": "pooled_ratio_of_medians",
+              "series": 3,
+              "value": 0.8626051748129432
+            },
+            {
+              "estimator": "ab_ratio_of_medians",
+              "series": 3,
+              "value": 0.8577510150273917
+            },
+            {
+              "estimator": "ba_ratio_of_medians",
+              "series": 3,
+              "value": 0.8674628336667145
+            },
+            {
+              "estimator": "order_balanced_sqrt_ab_ba",
+              "series": 3,
+              "value": 0.8625932564518238
+            }
+          ],
+          "maximum_estimator": 0.870589048889131,
+          "meets_1_03_everywhere": false,
+          "minimum_estimator": 0.8560309453192301,
+          "provider_launches_during_lane": 0,
+          "recomputed_from_raw_pairs": true
+        },
+        "leaf_eager": {
+          "estimator_count": 12,
+          "failed_observations": [],
+          "maximum_estimator": 1.0632763913528795,
+          "meets_1_03_everywhere": true,
+          "minimum_estimator": 1.0396689605642846,
+          "provider_launches_during_lane": 6060,
+          "recomputed_from_raw_pairs": true
+        }
+      },
+      "m": 16,
+      "pairs_per_series": 100,
+      "path": "/home/qinhaiyan/glm52-hotspot-goal-runs/worktrees/flashmla-sparse-decode/kernel-harness/profile/glm52-flashmla-graph-only-r3-20260730/evidence/p1_consumer_scale_eager_k20_m16.json",
+      "reference": "installed_sgl_kernel_stock",
+      "replays_per_observation": 20,
+      "series": 3,
+      "sha256": "50f0addf8a0bb12817b68876d123eef4124c5d25d27c4f783211db80e2b8d9bd"
+    },
+    {
+      "candidate": "p1_consumer_scale",
+      "comparison": "stock_provider",
+      "eager_containing_is_stock_fallback": true,
+      "gated_lanes_present": [],
+      "gpu_uuid": "GPU-5b9be10b-5bfc-b658-9b31-f7ae8516dc54",
+      "lanes": {
+        "containing_eager": {
+          "estimator_count": 12,
+          "failed_observations": [
+            {
+              "estimator": "pooled_ratio_of_medians",
+              "series": 1,
+              "value": 0.9093847063713024
+            },
+            {
+              "estimator": "ab_ratio_of_medians",
+              "series": 1,
+              "value": 0.912265648454775
+            },
+            {
+              "estimator": "ba_ratio_of_medians",
+              "series": 1,
+              "value": 0.9034960474806627
+            },
+            {
+              "estimator": "order_balanced_sqrt_ab_ba",
+              "series": 1,
+              "value": 0.9078702592503364
+            },
+            {
+              "estimator": "pooled_ratio_of_medians",
+              "series": 2,
+              "value": 0.9145762736977922
+            },
+            {
+              "estimator": "ab_ratio_of_medians",
+              "series": 2,
+              "value": 0.9094725785634427
+            },
+            {
+              "estimator": "ba_ratio_of_medians",
+              "series": 2,
+              "value": 0.9200984439208206
+            },
+            {
+              "estimator": "order_balanced_sqrt_ab_ba",
+              "series": 2,
+              "value": 0.914770082766637
+            },
+            {
+              "estimator": "pooled_ratio_of_medians",
+              "series": 3,
+              "value": 0.9075933962765264
+            },
+            {
+              "estimator": "ab_ratio_of_medians",
+              "series": 3,
+              "value": 0.904908043551207
+            },
+            {
+              "estimator": "ba_ratio_of_medians",
+              "series": 3,
+              "value": 0.9099668265321168
+            },
+            {
+              "estimator": "order_balanced_sqrt_ab_ba",
+              "series": 3,
+              "value": 0.9074339098213591
+            }
+          ],
+          "maximum_estimator": 0.9200984439208206,
+          "meets_1_03_everywhere": false,
+          "minimum_estimator": 0.9034960474806627,
+          "provider_launches_during_lane": 0,
+          "recomputed_from_raw_pairs": true
+        },
+        "leaf_eager": {
+          "estimator_count": 12,
+          "failed_observations": [],
+          "maximum_estimator": 1.078289646564431,
+          "meets_1_03_everywhere": true,
+          "minimum_estimator": 1.0606408115940185,
+          "provider_launches_during_lane": 6060,
+          "recomputed_from_raw_pairs": true
+        }
+      },
+      "m": 32,
+      "pairs_per_series": 100,
+      "path": "/home/qinhaiyan/glm52-hotspot-goal-runs/worktrees/flashmla-sparse-decode/kernel-harness/profile/glm52-flashmla-graph-only-r3-20260730/evidence/p1_consumer_scale_eager_k20_m32.json",
+      "reference": "installed_sgl_kernel_stock",
+      "replays_per_observation": 20,
+      "series": 3,
+      "sha256": "9662be3dfaf059df480451b211726d6e660be7ab39f2f7a50454367dc464d922"
+    },
+    {
+      "all_gated_lanes_pass": true,
+      "candidate": "p1_consumer_scale",
+      "comparison": "stock_provider",
+      "gated_lanes_present": [
+        "containing_graph",
+        "leaf_graph"
+      ],
+      "gpu_uuid": "GPU-30b619de-87f2-1862-0d07-a595da8fe417",
+      "lanes": {
+        "containing_graph": {
+          "estimator_count": 12,
+          "failed_observations": [],
+          "maximum_estimator": 1.072784921362354,
+          "meets_1_03_everywhere": true,
+          "minimum_estimator": 1.0694427489494664,
+          "provider_launches_during_lane": 3,
+          "recomputed_from_raw_pairs": true
+        },
+        "leaf_graph": {
+          "estimator_count": 12,
+          "failed_observations": [],
+          "maximum_estimator": 1.0760126034588942,
+          "meets_1_03_everywhere": true,
+          "minimum_estimator": 1.071553466037161,
+          "provider_launches_during_lane": 3,
+          "recomputed_from_raw_pairs": true
+        }
+      },
+      "m": 16,
+      "pairs_per_series": 100,
+      "path": "/home/qinhaiyan/glm52-hotspot-goal-runs/worktrees/flashmla-sparse-decode/kernel-harness/profile/glm52-flashmla-graph-only-r3-20260730/evidence/p1_consumer_scale_graph_gate_k20_m16.json",
+      "reference": "installed_sgl_kernel_stock",
+      "replays_per_observation": 20,
+      "series": 3,
+      "sha256": "888b8f9352ffb091d87eee1983700a37954bb6cf4fc7e9b9a56ff8a58e7e60bd"
+    },
+    {
+      "all_gated_lanes_pass": true,
+      "candidate": "p1_consumer_scale",
+      "comparison": "stock_provider",
+      "gated_lanes_present": [
+        "containing_graph",
+        "leaf_graph"
+      ],
+      "gpu_uuid": "GPU-30b619de-87f2-1862-0d07-a595da8fe417",
+      "lanes": {
+        "containing_graph": {
+          "estimator_count": 12,
+          "failed_observations": [],
+          "maximum_estimator": 1.0669047669437342,
+          "meets_1_03_everywhere": true,
+          "minimum_estimator": 1.0636316376003774,
+          "provider_launches_during_lane": 3,
+          "recomputed_from_raw_pairs": true
+        },
+        "leaf_graph": {
+          "estimator_count": 12,
+          "failed_observations": [],
+          "maximum_estimator": 1.0663562338379815,
+          "meets_1_03_everywhere": true,
+          "minimum_estimator": 1.062836278136634,
+          "provider_launches_during_lane": 3,
+          "recomputed_from_raw_pairs": true
+        }
+      },
+      "m": 32,
+      "pairs_per_series": 100,
+      "path": "/home/qinhaiyan/glm52-hotspot-goal-runs/worktrees/flashmla-sparse-decode/kernel-harness/profile/glm52-flashmla-graph-only-r3-20260730/evidence/p1_consumer_scale_graph_gate_k20_m32.json",
+      "reference": "installed_sgl_kernel_stock",
+      "replays_per_observation": 20,
+      "series": 3,
+      "sha256": "279f9b9f8ad612ec9ad66408b9a01b91ea0516816caf1ef855e4384e9d9d6625"
+    },
+    {
+      "all_gated_lanes_pass": true,
+      "candidate": "r3a_coord_prefetch",
+      "comparison": "stock_provider",
+      "gated_lanes_present": [
+        "containing_graph",
+        "leaf_graph"
+      ],
+      "gpu_uuid": "GPU-30b619de-87f2-1862-0d07-a595da8fe417",
+      "lanes": {
+        "containing_graph": {
+          "estimator_count": 12,
+          "failed_observations": [],
+          "maximum_estimator": 1.0756440165806338,
+          "meets_1_03_everywhere": true,
+          "minimum_estimator": 1.073246817826754,
+          "provider_launches_during_lane": 3,
+          "recomputed_from_raw_pairs": true
+        },
+        "leaf_graph": {
+          "estimator_count": 12,
+          "failed_observations": [],
+          "maximum_estimator": 1.0749761740525072,
+          "meets_1_03_everywhere": true,
+          "minimum_estimator": 1.0653635326620239,
+          "provider_launches_during_lane": 3,
+          "recomputed_from_raw_pairs": true
+        }
+      },
+      "m": 16,
+      "pairs_per_series": 100,
+      "path": "/home/qinhaiyan/glm52-hotspot-goal-runs/worktrees/flashmla-sparse-decode/kernel-harness/profile/glm52-flashmla-graph-only-r3-20260730/evidence/r3a_coord_prefetch_graph_gate_k20_m16.json",
+      "reference": "installed_sgl_kernel_stock",
+      "replays_per_observation": 20,
+      "series": 3,
+      "sha256": "16cb6395441632e1213a99fee64f06080d0b1736bc7aab24ab98c0765b6953c9"
+    },
+    {
+      "all_gated_lanes_pass": true,
+      "candidate": "r3a_coord_prefetch",
+      "comparison": "stock_provider",
+      "gated_lanes_present": [
+        "containing_graph",
+        "leaf_graph"
+      ],
+      "gpu_uuid": "GPU-30b619de-87f2-1862-0d07-a595da8fe417",
+      "lanes": {
+        "containing_graph": {
+          "estimator_count": 12,
+          "failed_observations": [],
+          "maximum_estimator": 1.0672764777816812,
+          "meets_1_03_everywhere": true,
+          "minimum_estimator": 1.0603792501011922,
+          "provider_launches_during_lane": 3,
+          "recomputed_from_raw_pairs": true
+        },
+        "leaf_graph": {
+          "estimator_count": 12,
+          "failed_observations": [],
+          "maximum_estimator": 1.0666065598788486,
+          "meets_1_03_everywhere": true,
+          "minimum_estimator": 1.061623895436244,
+          "provider_launches_during_lane": 3,
+          "recomputed_from_raw_pairs": true
+        }
+      },
+      "m": 32,
+      "pairs_per_series": 100,
+      "path": "/home/qinhaiyan/glm52-hotspot-goal-runs/worktrees/flashmla-sparse-decode/kernel-harness/profile/glm52-flashmla-graph-only-r3-20260730/evidence/r3a_coord_prefetch_graph_gate_k20_m32.json",
+      "reference": "installed_sgl_kernel_stock",
+      "replays_per_observation": 20,
+      "series": 3,
+      "sha256": "c5544a7e85ccf3e52db65ccd1177a56982cff38c440df09656a0fdec5c583abe"
+    }
+  ],
+  "instrument_null_this_round": {
+    "files": [
+      "/home/qinhaiyan/glm52-hotspot-goal-runs/worktrees/flashmla-sparse-decode/kernel-harness/profile/glm52-flashmla-graph-only-r3-20260730/evidence/null_stock_stock_k20_m16.json",
+      "/home/qinhaiyan/glm52-hotspot-goal-runs/worktrees/flashmla-sparse-decode/kernel-harness/profile/glm52-flashmla-graph-only-r3-20260730/evidence/null_stock_stock_k20_m32.json"
+    ],
+    "halfwidth_pct": 1.4206057267265315,
+    "max": 1.0142060572672653,
+    "min": 0.9906871365297706,
+    "note": "same installed stock binary in both arms; anything inside this band is instrument noise and cannot support a claim of either presence or absence of an effect"
+  },
+  "policy": {
+    "containing_eager": "stock fallback required (zero provider launches); round-3 policy does not require a speedup on this lane",
+    "gate": 1.03,
+    "gated_lanes": [
+      "containing_graph",
+      "leaf_graph"
+    ],
+    "leaf_eager": "diagnostic only",
+    "requirement": "every estimator in every one of three independent 50-AB/50-BA series must be finite and >= 1.03 against installed stock"
+  },
+  "promotable_bucket_count": 4,
+  "promotable_buckets_by_candidate": {
+    "p1_consumer_scale": [
+      16,
+      32
+    ],
+    "r3a_coord_prefetch": [
+      16,
+      32
+    ]
+  },
+  "schema_version": 1,
+  "terminal_disposition": "external-acceptance-candidate"
+}

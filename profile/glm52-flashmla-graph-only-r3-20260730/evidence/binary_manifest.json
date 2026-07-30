@@ -1,0 +1,153 @@
+{
+  "all_main_symbols_prefixed": true,
+  "combine_sass_identical_across_all_variants": true,
+  "combine_sass_sha256": "67d910ba2c13b9f29eb102e6d4d47c20ad2eac06a8cbb4032075a2a17432f155",
+  "entries": [
+    {
+      "all_generations_same_main_sass": true,
+      "build_generations": [
+        {
+          "build_id": "73c7896523da89e6",
+          "main_sass_sha256": "f4d826d63ac008c29d28640986cf28bdeb812a3daacb90dda53991d74d08b05b",
+          "path": "/home/qinhaiyan/glm52-hotspot-goal-runs/cache/flashmla_ptx_graph_only_r3/torch_extensions/infini_kernel_glm52_flashmla_sparse_decode_identity_73c7896523da89e6/infini_kernel_glm52_flashmla_sparse_decode_identity_73c7896523da89e6.so"
+        }
+      ],
+      "combine_sass_sha256": "67d910ba2c13b9f29eb102e6d4d47c20ad2eac06a8cbb4032075a2a17432f155",
+      "main_has_no_local_or_spill_instructions": true,
+      "main_resources": {
+        "local_bytes": 0,
+        "ptxas_allocated_barriers_from_build_console": 16,
+        "ptxas_spill_load_bytes_from_build_console": 0,
+        "ptxas_spill_store_bytes_from_build_console": 0,
+        "registers_per_thread": 168,
+        "stack_bytes": 0,
+        "static_shared_bytes": 1024
+      },
+      "main_static_instruction_count": 4128,
+      "main_symbol_contains": "infini_kernel_glm52_flashmla_sparse_decode_identity_main",
+      "path": "/home/qinhaiyan/glm52-hotspot-goal-runs/cache/flashmla_ptx_graph_only_r3/torch_extensions/infini_kernel_glm52_flashmla_sparse_decode_identity_73c7896523da89e6/infini_kernel_glm52_flashmla_sparse_decode_identity_73c7896523da89e6.so",
+      "role": "control",
+      "selected_opcode_counts": {
+        "BRA": 160,
+        "F2FP": 400,
+        "HADD2": 256,
+        "HMUL2": 128,
+        "IADD3": 65,
+        "IMAD": 256,
+        "LDG": 28,
+        "LDL": 0,
+        "LDS": 83,
+        "LOP3": 107,
+        "STL": 0,
+        "STS": 119,
+        "SYNCS": 100,
+        "UTCCP": 18,
+        "UTCHMMA": 26,
+        "UTMALDG": 57
+      },
+      "sha256": "7aa56f8c94f8da281027159bd83f0bb80ca4c9383441201bb4a1b93e35152db2",
+      "size_bytes": 1239800,
+      "variant": "identity"
+    },
+    {
+      "all_generations_same_main_sass": true,
+      "build_generations": [
+        {
+          "build_id": "38e3b1a7a5d5bf00",
+          "main_sass_sha256": "81bf91fdc3b188bd0e392e8d12fd9dbd288b19125c61399f889be9c89c148ec8",
+          "path": "/home/qinhaiyan/glm52-hotspot-goal-runs/cache/flashmla_ptx_graph_only_r3/torch_extensions/infini_kernel_glm52_flashmla_sparse_decode_p1_consumer_scale_38e3b1a7a5d5bf00/infini_kernel_glm52_flashmla_sparse_decode_p1_consumer_scale_38e3b1a7a5d5bf00.so"
+        },
+        {
+          "build_id": "a39236323dc57a97",
+          "main_sass_sha256": "81bf91fdc3b188bd0e392e8d12fd9dbd288b19125c61399f889be9c89c148ec8",
+          "path": "/home/qinhaiyan/glm52-hotspot-goal-runs/cache/flashmla_ptx_graph_only_r3/torch_extensions/infini_kernel_glm52_flashmla_sparse_decode_p1_consumer_scale_a39236323dc57a97/infini_kernel_glm52_flashmla_sparse_decode_p1_consumer_scale_a39236323dc57a97.so"
+        }
+      ],
+      "combine_sass_sha256": "67d910ba2c13b9f29eb102e6d4d47c20ad2eac06a8cbb4032075a2a17432f155",
+      "main_has_no_local_or_spill_instructions": true,
+      "main_resources": {
+        "local_bytes": 0,
+        "ptxas_allocated_barriers_from_build_console": 16,
+        "ptxas_spill_load_bytes_from_build_console": 0,
+        "ptxas_spill_store_bytes_from_build_console": 0,
+        "registers_per_thread": 168,
+        "stack_bytes": 0,
+        "static_shared_bytes": 1024
+      },
+      "main_static_instruction_count": 3368,
+      "main_symbol_contains": "infini_kernel_glm52_flashmla_sparse_decode_p1_consumer_scale_main",
+      "path": "/home/qinhaiyan/glm52-hotspot-goal-runs/cache/flashmla_ptx_graph_only_r3/torch_extensions/infini_kernel_glm52_flashmla_sparse_decode_p1_consumer_scale_38e3b1a7a5d5bf00/infini_kernel_glm52_flashmla_sparse_decode_p1_consumer_scale_38e3b1a7a5d5bf00.so",
+      "role": "experimental",
+      "selected_opcode_counts": {
+        "BRA": 155,
+        "F2FP": 272,
+        "HADD2": 0,
+        "HMUL2": 128,
+        "IADD3": 49,
+        "IMAD": 191,
+        "LDG": 14,
+        "LDL": 0,
+        "LDS": 83,
+        "LOP3": 94,
+        "STL": 0,
+        "STS": 115,
+        "SYNCS": 96,
+        "UTCCP": 18,
+        "UTCHMMA": 26,
+        "UTMALDG": 57
+      },
+      "sha256": "75101b80fb9c15a69c4aa90164d6b19b05542bb7af29450db8c044a40c75006e",
+      "size_bytes": 1158008,
+      "variant": "p1_consumer_scale"
+    },
+    {
+      "all_generations_same_main_sass": true,
+      "build_generations": [
+        {
+          "build_id": "ad843122cd5dc891",
+          "main_sass_sha256": "0521b89bdbe746ca889a35fbea1e594a5183de2ed35d33773f5fe7b8e6b217bb",
+          "path": "/home/qinhaiyan/glm52-hotspot-goal-runs/cache/flashmla_ptx_graph_only_r3/torch_extensions/infini_kernel_glm52_flashmla_sparse_decode_r3a_coord_prefetch_ad843122cd5dc891/infini_kernel_glm52_flashmla_sparse_decode_r3a_coord_prefetch_ad843122cd5dc891.so"
+        }
+      ],
+      "combine_sass_sha256": "67d910ba2c13b9f29eb102e6d4d47c20ad2eac06a8cbb4032075a2a17432f155",
+      "main_has_no_local_or_spill_instructions": true,
+      "main_resources": {
+        "local_bytes": 0,
+        "ptxas_allocated_barriers_from_build_console": 16,
+        "ptxas_spill_load_bytes_from_build_console": 0,
+        "ptxas_spill_store_bytes_from_build_console": 0,
+        "registers_per_thread": 168,
+        "stack_bytes": 0,
+        "static_shared_bytes": 1024
+      },
+      "main_static_instruction_count": 3368,
+      "main_symbol_contains": "infini_kernel_glm52_flashmla_sparse_decode_r3a_coord_prefetch_main",
+      "path": "/home/qinhaiyan/glm52-hotspot-goal-runs/cache/flashmla_ptx_graph_only_r3/torch_extensions/infini_kernel_glm52_flashmla_sparse_decode_r3a_coord_prefetch_ad843122cd5dc891/infini_kernel_glm52_flashmla_sparse_decode_r3a_coord_prefetch_ad843122cd5dc891.so",
+      "role": "experimental",
+      "selected_opcode_counts": {
+        "BRA": 155,
+        "F2FP": 272,
+        "HADD2": 0,
+        "HMUL2": 128,
+        "IADD3": 49,
+        "IMAD": 189,
+        "LDG": 14,
+        "LDL": 0,
+        "LDS": 83,
+        "LOP3": 94,
+        "STL": 0,
+        "STS": 115,
+        "SYNCS": 96,
+        "UTCCP": 18,
+        "UTCHMMA": 26,
+        "UTMALDG": 57
+      },
+      "sha256": "6c46fa73f87b0150df1297c2e775658a56a8045f57926e1a3a61e2fdd5ff9820",
+      "size_bytes": 1158024,
+      "variant": "r3a_coord_prefetch"
+    }
+  ],
+  "main_symbol_prefix_required": "infini_kernel_glm52_flashmla_sparse_decode",
+  "schema_version": 1,
+  "tool": "cuobjdump: NVIDIA (R) fat binary listing tool\nCopyright (c) 2005-2026 NVIDIA Corporation\nBuilt on Thu_Mar_19_11:12:51_PM_PDT_2026\nCuda compilation tools, release 13.2, V13.2.78\nBuild cuda_13.2.r13.2/compiler.37668154_0"
+}

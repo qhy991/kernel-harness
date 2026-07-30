@@ -1,0 +1,449 @@
+{
+  "all_cases_passed": true,
+  "case_count": 17,
+  "cases": [
+    {
+      "category": "value",
+      "lse": {
+        "anomaly_elements": 0,
+        "anomaly_positions_match": true,
+        "atol": 0.02,
+        "exact": true,
+        "finite_elements": 1024,
+        "max_abs": 0.0,
+        "rtol": 0.02
+      },
+      "name": "random_baseline",
+      "output": {
+        "anomaly_elements": 0,
+        "anomaly_positions_match": true,
+        "atol": 0.02,
+        "exact": true,
+        "finite_elements": 524288,
+        "max_abs": 0.0,
+        "rtol": 0.02
+      },
+      "poison_overwritten": true,
+      "q_and_indices_immutable": true
+    },
+    {
+      "category": "value",
+      "lse": {
+        "anomaly_elements": 0,
+        "anomaly_positions_match": true,
+        "atol": 0.02,
+        "exact": true,
+        "finite_elements": 1024,
+        "max_abs": 0.0,
+        "rtol": 0.02
+      },
+      "name": "zero_q_kv",
+      "output": {
+        "anomaly_elements": 0,
+        "anomaly_positions_match": true,
+        "atol": 0.02,
+        "exact": true,
+        "finite_elements": 524288,
+        "max_abs": 0.0,
+        "rtol": 0.02
+      },
+      "poison_overwritten": true,
+      "q_and_indices_immutable": true
+    },
+    {
+      "category": "value",
+      "lse": {
+        "anomaly_elements": 0,
+        "anomaly_positions_match": true,
+        "atol": 0.02,
+        "exact": true,
+        "finite_elements": 1024,
+        "max_abs": 0.0,
+        "rtol": 0.02
+      },
+      "name": "signed_ramp_q_kv",
+      "output": {
+        "anomaly_elements": 0,
+        "anomaly_positions_match": true,
+        "atol": 0.02,
+        "exact": true,
+        "finite_elements": 524288,
+        "max_abs": 0.0,
+        "rtol": 0.02
+      },
+      "poison_overwritten": true,
+      "q_and_indices_immutable": true
+    },
+    {
+      "category": "value",
+      "lse": {
+        "anomaly_elements": 0,
+        "anomaly_positions_match": true,
+        "atol": 0.02,
+        "exact": true,
+        "finite_elements": 1024,
+        "max_abs": 0.0,
+        "rtol": 0.02
+      },
+      "name": "extreme_finite_q_kv",
+      "output": {
+        "anomaly_elements": 0,
+        "anomaly_positions_match": true,
+        "atol": 0.02,
+        "exact": true,
+        "finite_elements": 524288,
+        "max_abs": 0.0,
+        "rtol": 0.02
+      },
+      "poison_overwritten": true,
+      "q_and_indices_immutable": true
+    },
+    {
+      "category": "value",
+      "lse": {
+        "anomaly_elements": 0,
+        "anomaly_positions_match": true,
+        "atol": 0.02,
+        "exact": true,
+        "finite_elements": 1024,
+        "max_abs": 0.0,
+        "rtol": 0.02
+      },
+      "name": "exponent_boundary_q_kv",
+      "output": {
+        "anomaly_elements": 0,
+        "anomaly_positions_match": true,
+        "atol": 0.02,
+        "exact": true,
+        "finite_elements": 524288,
+        "max_abs": 0.0,
+        "rtol": 0.02
+      },
+      "poison_overwritten": true,
+      "q_and_indices_immutable": true
+    },
+    {
+      "category": "value",
+      "lse": {
+        "anomaly_elements": 0,
+        "anomaly_positions_match": true,
+        "atol": 0.02,
+        "exact": true,
+        "finite_elements": 1024,
+        "max_abs": 0.0,
+        "rtol": 0.02
+      },
+      "name": "repeated_changed_q_kv_a",
+      "output": {
+        "anomaly_elements": 0,
+        "anomaly_positions_match": true,
+        "atol": 0.02,
+        "exact": true,
+        "finite_elements": 524288,
+        "max_abs": 0.0,
+        "rtol": 0.02
+      },
+      "poison_overwritten": true,
+      "q_and_indices_immutable": true
+    },
+    {
+      "category": "value",
+      "lse": {
+        "anomaly_elements": 0,
+        "anomaly_positions_match": true,
+        "atol": 0.02,
+        "exact": true,
+        "finite_elements": 1024,
+        "max_abs": 0.0,
+        "rtol": 0.02
+      },
+      "name": "repeated_changed_q_kv_b",
+      "output": {
+        "anomaly_elements": 0,
+        "anomaly_positions_match": true,
+        "atol": 0.02,
+        "exact": true,
+        "finite_elements": 524288,
+        "max_abs": 0.0,
+        "rtol": 0.02
+      },
+      "poison_overwritten": true,
+      "q_and_indices_immutable": true
+    },
+    {
+      "category": "indices",
+      "lse": {
+        "anomaly_elements": 0,
+        "anomaly_positions_match": true,
+        "atol": 0.02,
+        "exact": true,
+        "finite_elements": 1024,
+        "max_abs": 0.0,
+        "rtol": 0.02
+      },
+      "name": "duplicate_indices",
+      "output": {
+        "anomaly_elements": 0,
+        "anomaly_positions_match": true,
+        "atol": 0.02,
+        "exact": true,
+        "finite_elements": 524288,
+        "max_abs": 0.0,
+        "rtol": 0.02
+      },
+      "poison_overwritten": true,
+      "q_and_indices_immutable": true
+    },
+    {
+      "category": "indices",
+      "lse": {
+        "anomaly_elements": 0,
+        "anomaly_positions_match": true,
+        "atol": 0.02,
+        "exact": true,
+        "finite_elements": 1024,
+        "max_abs": 0.0,
+        "rtol": 0.02
+      },
+      "name": "interleaved_indices",
+      "output": {
+        "anomaly_elements": 0,
+        "anomaly_positions_match": true,
+        "atol": 0.02,
+        "exact": true,
+        "finite_elements": 524288,
+        "max_abs": 0.0,
+        "rtol": 0.02
+      },
+      "poison_overwritten": true,
+      "q_and_indices_immutable": true
+    },
+    {
+      "category": "indices",
+      "lse": {
+        "anomaly_elements": 0,
+        "anomaly_positions_match": true,
+        "atol": 0.02,
+        "exact": true,
+        "finite_elements": 1024,
+        "max_abs": 0.0,
+        "rtol": 0.02
+      },
+      "name": "sorted_indices",
+      "output": {
+        "anomaly_elements": 0,
+        "anomaly_positions_match": true,
+        "atol": 0.02,
+        "exact": true,
+        "finite_elements": 524288,
+        "max_abs": 0.0,
+        "rtol": 0.02
+      },
+      "poison_overwritten": true,
+      "q_and_indices_immutable": true
+    },
+    {
+      "category": "indices",
+      "lse": {
+        "anomaly_elements": 0,
+        "anomaly_positions_match": true,
+        "atol": 0.02,
+        "exact": true,
+        "finite_elements": 1024,
+        "max_abs": 0.0,
+        "rtol": 0.02
+      },
+      "name": "unsorted_reverse_indices",
+      "output": {
+        "anomaly_elements": 0,
+        "anomaly_positions_match": true,
+        "atol": 0.02,
+        "exact": true,
+        "finite_elements": 524288,
+        "max_abs": 0.0,
+        "rtol": 0.02
+      },
+      "poison_overwritten": true,
+      "q_and_indices_immutable": true
+    },
+    {
+      "category": "indices",
+      "lse": {
+        "anomaly_elements": 0,
+        "anomaly_positions_match": true,
+        "atol": 0.02,
+        "exact": true,
+        "finite_elements": 1024,
+        "max_abs": 0.0,
+        "rtol": 0.02
+      },
+      "name": "boundary_page_indices",
+      "output": {
+        "anomaly_elements": 0,
+        "anomaly_positions_match": true,
+        "atol": 0.02,
+        "exact": true,
+        "finite_elements": 524288,
+        "max_abs": 0.0,
+        "rtol": 0.02
+      },
+      "poison_overwritten": true,
+      "q_and_indices_immutable": true
+    },
+    {
+      "category": "indices",
+      "lse": {
+        "anomaly_elements": 0,
+        "anomaly_positions_match": true,
+        "atol": 0.02,
+        "exact": true,
+        "finite_elements": 1024,
+        "max_abs": 0.0,
+        "rtol": 0.02
+      },
+      "name": "mixed_minus_one_indices",
+      "output": {
+        "anomaly_elements": 0,
+        "anomaly_positions_match": true,
+        "atol": 0.02,
+        "exact": true,
+        "finite_elements": 524288,
+        "max_abs": 0.0,
+        "rtol": 0.02
+      },
+      "poison_overwritten": true,
+      "q_and_indices_immutable": true
+    },
+    {
+      "category": "indices",
+      "lse": {
+        "anomaly_elements": 1024,
+        "anomaly_positions_match": true,
+        "atol": 0.02,
+        "exact": true,
+        "finite_elements": 0,
+        "max_abs": 0.0,
+        "rtol": 0.02
+      },
+      "name": "all_minus_one_indices",
+      "output": {
+        "anomaly_elements": 0,
+        "anomaly_positions_match": true,
+        "atol": 0.02,
+        "exact": true,
+        "finite_elements": 524288,
+        "max_abs": 0.0,
+        "rtol": 0.02
+      },
+      "poison_overwritten": true,
+      "q_and_indices_immutable": true
+    },
+    {
+      "category": "scheduler",
+      "lse": {
+        "anomaly_elements": 0,
+        "anomaly_positions_match": true,
+        "atol": 0.02,
+        "exact": true,
+        "finite_elements": 1024,
+        "max_abs": 0.0,
+        "rtol": 0.02
+      },
+      "name": "minimum_cache_length_and_split",
+      "output": {
+        "anomaly_elements": 0,
+        "anomaly_positions_match": true,
+        "atol": 0.02,
+        "exact": true,
+        "finite_elements": 524288,
+        "max_abs": 0.0,
+        "rtol": 0.02
+      },
+      "poison_overwritten": true,
+      "q_and_indices_immutable": true
+    },
+    {
+      "category": "scheduler",
+      "lse": {
+        "anomaly_elements": 0,
+        "anomaly_positions_match": true,
+        "atol": 0.02,
+        "exact": true,
+        "finite_elements": 1024,
+        "max_abs": 0.0,
+        "rtol": 0.02
+      },
+      "name": "mixed_cache_and_split_edges",
+      "output": {
+        "anomaly_elements": 0,
+        "anomaly_positions_match": true,
+        "atol": 0.02,
+        "exact": true,
+        "finite_elements": 524288,
+        "max_abs": 0.0,
+        "rtol": 0.02
+      },
+      "poison_overwritten": true,
+      "q_and_indices_immutable": true
+    },
+    {
+      "category": "scheduler",
+      "lse": {
+        "anomaly_elements": 0,
+        "anomaly_positions_match": true,
+        "atol": 0.02,
+        "exact": true,
+        "finite_elements": 1024,
+        "max_abs": 0.0,
+        "rtol": 0.02
+      },
+      "name": "maximum_cache_length_and_split",
+      "output": {
+        "anomaly_elements": 0,
+        "anomaly_positions_match": true,
+        "atol": 0.02,
+        "exact": true,
+        "finite_elements": 524288,
+        "max_abs": 0.0,
+        "rtol": 0.02
+      },
+      "poison_overwritten": true,
+      "q_and_indices_immutable": true
+    }
+  ],
+  "gpu": {
+    "name": "NVIDIA B200",
+    "physical_index": 0,
+    "uuid": "GPU-30b619de-87f2-1862-0d07-a595da8fe417"
+  },
+  "m": 16,
+  "production_tolerance": {
+    "atol": 0.02,
+    "rtol": 0.02
+  },
+  "provider": {
+    "build_id": "38e3b1a7a5d5bf008535f9162d51682b1630bd86158430e2500ad466ced7729e",
+    "combine_source": "/home/qinhaiyan/glm52-hotspot-goal-runs/worktrees/flashmla-sparse-decode/flashmla/csrc/smxx/decode/combine/combine.cu",
+    "git_commit": "b5af443ea7c1e9b2d85793e7afe4e61c5b1df19e-dirty",
+    "main_symbol_prefix": "infini_kernel_glm52_flashmla_sparse_decode",
+    "module_name": "infini_kernel_glm52_flashmla_sparse_decode_p1_consumer_scale_38e3b1a7a5d5bf00",
+    "name": "glm52_flashmla_sparse_decode_p1_consumer_scale",
+    "role": "experimental",
+    "source_sha256": {
+      "csrc/glm52_hotspot/api.cpp": "6c5ef0d7a92d18873b245dfe0175c353b232388bccf68733998a64c64a339610",
+      "csrc/glm52_hotspot/v32_p1_consumer_scale.cu": "58299603d7343c1daffa086c6c601bc57bb864213b0cb839470bdbc5dedbf565",
+      "csrc/kerutils/include/kerutils/device/sm100/intrinsics.cuh": "032f5cbeb060a37f95316a4efca1ea80a0890daf00db148b7ddad09cd9a0c738",
+      "csrc/params.h": "a4cc4ccf965ee012ec619401eb8ec0aaa182f2625888b6b1326e345ede218f1b",
+      "csrc/sm100/decode/head64/config.h": "694d5e6d9a88ff4f0aaddfb2abbbfeff76d900b48337adf0b0742f87d59ab3a5",
+      "csrc/sm100/decode/head64/kernel.cuh": "afd656a9eae63c557027d4de71a29784a4ad526df6f5ef5ca062645263126617",
+      "csrc/sm100/decode/head64/kernel.h": "953548cea84d9c7190a6f41dc6ba127281783208dedb7cded12bdeac8bdc422d",
+      "csrc/sm100/helpers.h": "7e3c6e42ef778f7120c90f607082cf6dc3817540b5c24442e52e91fd15c7e791",
+      "csrc/smxx/decode/combine/combine.cu": "1c86f47a8b8bd0adc52123f0a3e51dced9641a00200e93091725d3114eb1fa37",
+      "csrc/smxx/decode/combine/combine.h": "90f38d69986474005f74b911e701a4cce1d069de9cdabf7ba55ec1d3a8e83fd9"
+    },
+    "variant": "p1_consumer_scale"
+  },
+  "schema_version": 1,
+  "separate_graph_and_containing_evidence": "b3_b5_correctness_m16.json",
+  "stage": "adversarial_correctness_matrix"
+}

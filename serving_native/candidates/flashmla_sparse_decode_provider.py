@@ -37,6 +37,7 @@ _VARIANT_SOURCES = {
     "b5_exact_no_extra": "v32_b5_exact_no_extra.cu",
     "b3_b5_native_exact": "v32_b3_b5_native_exact.cu",
     "p1_consumer_scale": "v32_p1_consumer_scale.cu",
+    "r3a_coord_prefetch": "v32_r3a_coord_prefetch.cu",
     # Diagnostic ablation with deliberately wrong numerics. It is
     # registered only so the build/timing harness can reach it; it must
     # never be used for a correctness or promotion run.

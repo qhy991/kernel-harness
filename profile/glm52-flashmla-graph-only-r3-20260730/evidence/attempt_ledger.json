@@ -1,0 +1,176 @@
+{
+  "schema_version": 1,
+  "task": "GLM-5.2 flashmla_kv sparse-index FP8 decode PTX/SASS round 3, graph-only gates, M16 and M32",
+  "plan": "/home/qinhaiyan/glm52-hotspot-goal-runs/tasks/flashmla_ptx_graph_only_r3/plan.md",
+  "baseline": {
+    "note": "Round-3 baselines against P1, not stock, but promotion is still measured against installed stock.",
+    "flashmla": "b5af443ea7c1e9b2d85793e7afe4e61c5b1df19e",
+    "sglang": "d7fe89a7192acb2fa3f2f6f8df116bfdd133757a",
+    "kernel_harness": "c6a5802"
+  },
+  "terminal_disposition": "external-acceptance-candidate",
+  "selected_candidate": "p1_consumer_scale",
+  "promotable_buckets": [16, 32],
+  "production_default": "off",
+  "registration_ceiling": "L2 external E2E, pending checkpoint-backed TP8/DP8/EP8 acceptance",
+  "remote_state_modified": false,
+
+  "p0_rebind": {
+    "id": "P0",
+    "purpose": "bind the round-2 survivor to the current source, binary and SGLang integration before spending any identity",
+    "p1_build_id_reproduced_from_clean_tree": "a39236323dc57a97fbfc28fa479c5cd56ce94c065824912fbd95a98a15160649",
+    "p1_build_id_matches_round2_record": true,
+    "identity_static_instructions": 4128,
+    "p1_static_instructions": 3368,
+    "both_match_round2_record": true,
+    "cpu_audit_all_gates_pass": true,
+    "evidence": ["cpu_audit.json", "preflight.json", "build_p1.json", "binary_manifest.json"]
+  },
+
+  "attempts": [
+    {
+      "id": "R3-A",
+      "variant": "r3a_coord_prefetch",
+      "source": "csrc/glm52_hotspot/v32_r3a_coord_prefetch.cu",
+      "macros": [
+        "GLM52_NATIVE_FP8_TO_BF16",
+        "GLM52_EXACT_V32_NO_EXTRA",
+        "GLM52_CONSUMER_SCALE_GATHER",
+        "GLM52_COORD_PREFETCH_ACROSS_BUF_WAIT"
+      ],
+      "plan_hypothesis_slot": "open PTX search item 1, scoreboard/barrier overlap beyond P1",
+      "hypothesis": "After P1 removed the scattered scale round trip from in front of the gather issue, the only producer work still on the TMA-issue critical path is the coordinate load itself. Both gather warps wait on bar_valid_coord_scale_ready (which publishes the coordinates), then wait on a second barrier that guards a different resource, and only then issue the first LDS.128 of the coordinate stream. Moving that load between the two waits lets its latency overlap the second wait.",
+      "why_ptxas_cannot_do_it": "The second wait is an acquire mbarrier try_wait spin loop. Hoisting a shared-memory load above it is not a legal reordering, so the motion has to be expressed in source.",
+      "predeclared_sass_effect": [
+        "first LDS.128 of the coordinate stream moves above the second SYNCS.PHASECHK.TRANS64.TRYWAIT in both gather warps",
+        "static main instruction count unchanged within a couple of instructions",
+        "168 registers/thread, 16 barriers, 0 stack/local/spill unchanged",
+        "LDG, UTMALDG count and coordinates, STS, F2FP unchanged",
+        "shared-memory footprint and every arrive/wait count unchanged"
+      ],
+      "observed_sass_effect": {
+        "raw_nope_gather_warp": "P1: TRYWAIT[bar_valid_coord_scale_ready] / TRYWAIT[bar_raw_free] / LDS.128 -> R3-A: TRYWAIT[bar_valid_coord_scale_ready] / LDS.128 / TRYWAIT[bar_raw_free]",
+        "rope_gather_warp": "P1: TRYWAIT[bar_valid_coord_scale_ready] / TRYWAIT[bar_qk_done] / LDS.128 -> R3-A: TRYWAIT[bar_valid_coord_scale_ready] / LDS.128 / TRYWAIT[bar_qk_done]",
+        "static_main_instructions": 3368,
+        "p1_static_main_instructions": 3368,
+        "registers_per_thread": 168,
+        "barriers": 16,
+        "stack_bytes": 0,
+        "local_bytes": 0,
+        "spill_bytes": 0,
+        "opcode_deltas_versus_p1": {"IMAD": -2},
+        "all_other_selected_opcodes_identical": true,
+        "combine_sass_identical_to_control": true,
+        "predeclared_effect_present": true
+      },
+      "correctness": {
+        "verdict": "bitwise exact against installed stock at every required boundary for M16 and M32",
+        "boundaries_exact": 10,
+        "max_abs_difference": 0.0,
+        "adversarial_cases_per_bucket": 17,
+        "dispatch": "3 hits, zero fallback after selection, wrong-page rejection launches 0",
+        "evidence": [
+          "r3a_coord_prefetch_correctness_m16.json",
+          "r3a_coord_prefetch_correctness_m32.json",
+          "r3a_coord_prefetch_matrix_m16.json",
+          "r3a_coord_prefetch_matrix_m32.json"
+        ]
+      },
+      "performance_versus_stock_k20": {
+        "containing_graph": {"m16": [1.0732, 1.0756], "m32": [1.0604, 1.0673]},
+        "leaf_graph": {"m16": [1.0654, 1.0750], "m32": [1.0616, 1.0666]},
+        "both_graph_lanes_pass_1_03": true
+      },
+      "performance_versus_p1": {
+        "m16_containing_graph": 1.0031,
+        "m16_leaf_graph": 0.9983,
+        "m32_containing_graph": 0.9948,
+        "m32_leaf_graph": 0.9950,
+        "max_absolute_deviation_pct": 0.52,
+        "instrument_null_halfwidth_pct": 1.42,
+        "conclusion": "indistinguishable from P1; the difference is smaller than the same-binary null spread, so no effect can be claimed in either direction"
+      },
+      "outcome": "valid but not selected",
+      "why": "R3-A clears both mandatory graph lanes against stock at both buckets, so it is promotable on the letter of the policy, but it does not beat P1: every R3-A-versus-P1 ratio lies inside the instrument's own same-binary null band. The predeclared SASS motion is present, so the mechanism was delivered and the mechanism is simply not worth anything measurable. Selecting it would add a source delta against frozen upstream for no measured gain, so P1 remains the selected candidate.",
+      "interpretation": "The latency this removes is a shared-memory load of roughly thirty cycles. P1's six percent came from removing a scattered *global* round trip, which is about twenty times longer. Under a stall profile dominated by long-scoreboard (33.2 percent) and barrier (23.2 percent) waits on global and TMA traffic, hiding a shared load inside a barrier wait does not move the kernel. This is a direct measurement of the last remaining producer work in front of the TMA issue, so it closes the plan's first open-search item rather than leaving it open.",
+      "rollback": "delete csrc/glm52_hotspot/v32_r3a_coord_prefetch.cu, remove the GLM52_COORD_PREFETCH_ACROSS_BUF_WAIT branches from csrc/sm100/decode/head64/kernel.cuh, and drop the provider variant entry; no default instantiation is affected and P1 is unchanged"
+    }
+  ],
+
+  "material_candidate_budget": {
+    "allowed": 2,
+    "used": 1,
+    "second_identity_deliberately_not_spent": true,
+    "why_not_spent": "All three of the plan's bounded open-search items are closed by measurement rather than by argument, so a second identity could only rebuild a mechanism the evidence already rejects, which the shared contract forbids.",
+    "excluded_from_budget": [
+      "P0 rebind of P1 is a control, not a new identity",
+      "identity control rebuild is a control"
+    ]
+  },
+
+  "closed_open_search_items": [
+    {
+      "item": "1. scoreboard/barrier overlap beyond P1",
+      "status": "closed by measurement",
+      "closed_by": "R3-A",
+      "why": "The coordinate load was the only producer work left in front of the TMA issue. Moving it off the critical path produced the predeclared SASS motion and measured 1.00 within the null band."
+    },
+    {
+      "item": "2. tail / partition imbalance",
+      "status": "closed by the frozen contract",
+      "closed_by": "plan section 0.2 and round-2 NCU",
+      "why": "Round-2's capture measured average SM active at 68.4 percent of elapsed with a 6892..34531 cycle spread, which is tail imbalance across the 148 fixed scheduler partitions. tile_scheduler_metadata and num_splits are caller-supplied frozen inputs computed host-side; the kernel reads them and cannot repartition without a host metadata rewrite, which this plan's item 2 explicitly excludes."
+    },
+    {
+      "item": "3. narrow inline PTX for one predeclared effect",
+      "status": "closed by measurement",
+      "closed_by": "round-2 ablation, R3-A, and the resource manifest",
+      "why": "The plan allows exactly three effects. Earlier TMA issue: delivered by P1 at source level and now bounded by R3-A, which shows the remaining exposed latency in front of the gather is worth 1.00. Shorter FP8-to-BF16 scale dependency chain: round-2's ablation deleted the whole chain and measured 0.997..1.008, so nothing remains. Reduced register live range: registers, barriers, stack, local and spill are 168/16/0/0/0 and unchanged across every variant, leaving no headroom."
+    }
+  ],
+
+  "previously_closed_and_not_reopened": [
+    "P2 bank-conflict remap: shared-memory stalls are 10.7 percent against 56.3 percent for long-scoreboard plus barrier, and round-1's B2 already lost to its own address arithmetic",
+    "two-SM cooperative rewrite: one CTA already fills all 148 SMs in a single wave and only 816 shared bytes are free against the 106496 a third KV buffer needs",
+    "instruction-count-only edits: round-2's ablation showed delete is about 1.00 while relocate is about 1.06"
+  ],
+
+  "instrument": {
+    "id": "INSTRUMENT-R3",
+    "method": "K=20 replays per CUDA-event-delimited observation, three series of 100 alternating pairs, capture order alternated per series, stock-versus-stock with the identical installed binary in both arms",
+    "null_spread_m16": [0.9974, 1.0038],
+    "null_spread_m32": [0.9907, 1.0142],
+    "pooled_halfwidth_pct": 1.42,
+    "comparison_to_round_2": "Round-2 validated K=20 at +/-0.28 percent on M16 only. This round's M16 null is comparable at +/-0.38 percent, but M32 is looser at +/-1.42 percent, driven by two of six series; the other four are within +/-0.4 percent. The looser figure is used as the resolution bound rather than round-2's.",
+    "consequence": "P1's graph margins of 6.3 to 7.6 percent exceed the worst-case null half-width by more than four times, so the pass is robust. The R3-A-versus-P1 differences of at most 0.52 percent are below it, so they support only a statement of no measurable difference.",
+    "evidence": ["null_stock_stock_k20_m16.json", "null_stock_stock_k20_m32.json"]
+  },
+
+  "graph_only_contract": {
+    "requirement": "Round-3 replaces the eager-containing speedup gate with a stock-fallback requirement.",
+    "measured_per_bucket": {
+      "eager_default_provider_launches": 0,
+      "eager_default_output_bitwise_equals_stock": true,
+      "graph_capture_provider_launches": 1,
+      "graph_replay_host_launches": 0,
+      "eager_forced_provider_launches_with_env_0": 1
+    },
+    "replay_note": "The launch counter increments in the provider's host code, which runs at capture and not at replay, so selection under graph is established at capture time and the captured device node identity is established separately by the Nsys chain.",
+    "residual_eager_fallback_cost_us": {"m16": 4.74, "m32": 3.18},
+    "residual_cost_note": "With graph-only selection an eager decode step still pays the enable check, phase inference, cached spec lookup and capture probe before returning None. That is a stock-fallback integration cost, not a kernel cost: the provider never launches. It is reported for the integration owner rather than hidden, because round-3 stops gating this lane.",
+    "evidence": [
+      "p1_consumer_scale_graph_only_contract_m16.json",
+      "p1_consumer_scale_graph_only_contract_m32.json",
+      "p1_consumer_scale_eager_k20_m16.json",
+      "p1_consumer_scale_eager_k20_m32.json"
+    ]
+  },
+
+  "provenance": {
+    "kernel_cuh_edit_changes_every_build_id": true,
+    "why": "The provider's build id hashes kernel.cuh, so adding R3-A's macro-gated branches rebuilt P1 under a new id 38e3b1a7a5d5bf00. The measured P1 is therefore that rebuild, not the original a39236323dc57a97.",
+    "resolution": "The two P1 generations produce byte-identical generated main SASS, verified instruction by instruction, so the macro-gated branches are provably inert when the macro is undefined and the P1 measurements bind to the same machine code as the committed round-2 candidate. binary_manifest.json enforces this equality for every variant rather than picking a survivor.",
+    "p1_generations": ["a39236323dc57a97", "38e3b1a7a5d5bf00"],
+    "p1_generations_same_main_sass": true
+  }
+}
