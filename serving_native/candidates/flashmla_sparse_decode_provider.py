@@ -82,44 +82,144 @@ _INCLUDE_DIRS = [
     _SOURCE / "csrc/cutlass/tools/util/include",
     Path("/usr/local/cuda/targets/x86_64-linux/include/cccl"),
 ]
-_EXTENSION = load(
-    name=_MODULE_NAME,
-    sources=[str(path) for path in _BUILD_INPUTS],
-    extra_cflags=[
-        "-O3",
-        "-std=c++20",
-        "-DNDEBUG",
-        "-Wno-deprecated-declarations",
-    ],
-    extra_cuda_cflags=[
-        "-O3",
-        "-std=c++20",
-        "-DNDEBUG",
-        "-D_USE_MATH_DEFINES",
-        "-Wno-deprecated-declarations",
-        "-U__CUDA_NO_HALF_OPERATORS__",
-        "-U__CUDA_NO_HALF_CONVERSIONS__",
-        "-U__CUDA_NO_HALF2_OPERATORS__",
-        "-U__CUDA_NO_BFLOAT16_CONVERSIONS__",
-        "--expt-relaxed-constexpr",
-        "--expt-extended-lambda",
-        "--use_fast_math",
-        (
-            "--ptxas-options=-v,--register-usage-level=10,"
-            "--warn-on-spills,--warn-on-local-memory-usage,"
-            "--warn-on-double-precision-use"
-        ),
-        "-lineinfo",
-        "--source-in-ptx",
-        "-gencode",
-        "arch=compute_100f,code=sm_100f",
-        "--threads",
-        os.environ.get("NVCC_THREADS", "2"),
-    ],
-    extra_include_paths=[str(path) for path in _INCLUDE_DIRS],
-    with_cuda=True,
-    verbose=True,
+_PREBUILT_DIR = (
+    Path(__file__).resolve().parents[1]
+    / "prebuilt"
+    / "flashmla_sparse_decode"
 )
+
+
+def _truthy(value: str) -> bool:
+    return value.strip().lower() in ("1", "true", "yes", "on")
+
+
+def _prebuilt_manifest() -> dict[str, object]:
+    import json
+
+    manifest = _PREBUILT_DIR / "MANIFEST.json"
+    if not manifest.is_file():
+        return {}
+    data = json.loads(manifest.read_text())
+    return data if isinstance(data, dict) else {}
+
+
+def _resolve_prebuilt_so() -> Path | None:
+    explicit = os.environ.get("GLM52_FLASHMLA_PREBUILT_SO", "").strip()
+    if explicit:
+        path = Path(explicit).expanduser().resolve()
+        if path.is_dir():
+            matches = sorted(
+                path.glob(
+                    f"infini_kernel_glm52_flashmla_sparse_decode_{_VARIANT}_*.so"
+                )
+            )
+            if not matches:
+                raise RuntimeError(
+                    f"GLM52_FLASHMLA_PREBUILT_SO={explicit!r} has no "
+                    f".so for variant {_VARIANT}"
+                )
+            path = matches[0]
+        if not path.is_file():
+            raise RuntimeError(
+                f"GLM52_FLASHMLA_PREBUILT_SO={explicit!r} is not a .so file"
+            )
+        return path
+    if not _truthy(os.environ.get("GLM52_FLASHMLA_USE_PREBUILT", "")):
+        return None
+    manifest = _prebuilt_manifest()
+    so_name = manifest.get("so_file")
+    if isinstance(so_name, str) and so_name:
+        candidate = _PREBUILT_DIR / so_name
+        if candidate.is_file() and _VARIANT in so_name:
+            return candidate
+    matches = sorted(
+        _PREBUILT_DIR.glob(
+            f"infini_kernel_glm52_flashmla_sparse_decode_{_VARIANT}_*.so"
+        )
+    )
+    if not matches:
+        raise RuntimeError(
+            "GLM52_FLASHMLA_USE_PREBUILT=1 but no prebuilt .so for "
+            f"variant {_VARIANT} under {_PREBUILT_DIR}"
+        )
+    return matches[0]
+
+
+def _load_prebuilt_extension(so_path: Path):
+    import importlib.util
+    import sys
+
+    # PyInit_* is bound to the module name used at JIT time (so stem).
+    module_name = so_path.stem
+    digest = hashlib.sha256(so_path.read_bytes()).hexdigest()
+    manifest = _prebuilt_manifest()
+    recorded = manifest.get("sha256")
+    if (
+        isinstance(recorded, str)
+        and recorded
+        and manifest.get("so_file") == so_path.name
+        and recorded != digest
+    ):
+        raise RuntimeError(
+            f"prebuilt .so sha256 mismatch: got {digest}, "
+            f"manifest expects {recorded}"
+        )
+    # Load under the .so stem: PyInit_* was baked in at JIT time and may
+    # differ from the build_id of the current FlashMLA checkout.
+    spec = importlib.util.spec_from_file_location(module_name, so_path)
+    if spec is None or spec.loader is None:
+        raise RuntimeError(f"failed to create import spec for {so_path}")
+    module = importlib.util.module_from_spec(spec)
+    sys.modules[module_name] = module
+    spec.loader.exec_module(module)
+    module.__flashmla_prebuilt_module_name__ = module_name
+    return module
+
+
+_PREBUILT_SO = _resolve_prebuilt_so()
+_LOADED_MODULE_NAME = _MODULE_NAME
+if _PREBUILT_SO is not None:
+    _EXTENSION = _load_prebuilt_extension(_PREBUILT_SO)
+    _LOADED_MODULE_NAME = _PREBUILT_SO.stem
+else:
+    _EXTENSION = load(
+        name=_MODULE_NAME,
+        sources=[str(path) for path in _BUILD_INPUTS],
+        extra_cflags=[
+            "-O3",
+            "-std=c++20",
+            "-DNDEBUG",
+            "-Wno-deprecated-declarations",
+        ],
+        extra_cuda_cflags=[
+            "-O3",
+            "-std=c++20",
+            "-DNDEBUG",
+            "-D_USE_MATH_DEFINES",
+            "-Wno-deprecated-declarations",
+            "-U__CUDA_NO_HALF_OPERATORS__",
+            "-U__CUDA_NO_HALF_CONVERSIONS__",
+            "-U__CUDA_NO_HALF2_OPERATORS__",
+            "-U__CUDA_NO_BFLOAT16_CONVERSIONS__",
+            "--expt-relaxed-constexpr",
+            "--expt-extended-lambda",
+            "--use_fast_math",
+            (
+                "--ptxas-options=-v,--register-usage-level=10,"
+                "--warn-on-spills,--warn-on-local-memory-usage,"
+                "--warn-on-double-precision-use"
+            ),
+            "-lineinfo",
+            "--source-in-ptx",
+            "-gencode",
+            "arch=compute_100f,code=sm_100f",
+            "--threads",
+            os.environ.get("NVCC_THREADS", "2"),
+        ],
+        extra_include_paths=[str(path) for path in _INCLUDE_DIRS],
+        with_cuda=True,
+        verbose=True,
+    )
 
 _git_commit = subprocess.check_output(
     ["git", "-C", str(_SOURCE), "rev-parse", "HEAD"],
@@ -141,9 +241,11 @@ PROVIDER_INFO = {
     "variant": _VARIANT,
     "git_commit": _git_commit + ("-dirty" if _git_dirty else ""),
     "build_id": _BUILD_ID,
-    "module_name": _MODULE_NAME,
+    "module_name": _LOADED_MODULE_NAME,
+    "source_module_name": _MODULE_NAME,
     "main_symbol_prefix": "infini_kernel_glm52_flashmla_sparse_decode",
     "combine_source": str(_COMBINE_SOURCE),
+    "prebuilt_so": str(_PREBUILT_SO) if _PREBUILT_SO is not None else None,
     "source_sha256": {
         str(path.relative_to(_SOURCE)): hashlib.sha256(path.read_bytes()).hexdigest()
         for path in _HASH_INPUTS

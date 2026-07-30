@@ -1,0 +1,15 @@
+{
+  "variant": "p1_consumer_scale",
+  "module_name": "infini_kernel_glm52_flashmla_sparse_decode_p1_consumer_scale_a39236323dc57a97",
+  "so_file": "infini_kernel_glm52_flashmla_sparse_decode_p1_consumer_scale_a39236323dc57a97.so",
+  "sha256": "a368b1451733140d9801d4519ba265e5d85252d83ab7ac25e8f570059b68e4e1",
+  "size_bytes": 1158008,
+  "build_id": "a39236323dc57a97fbfc28fa479c5cd56ce94c065824912fbd95a98a15160649",
+  "flashmla_git_commit": "b5af443ea7c1e9b2d85793e7afe4e61c5b1df19e",
+  "nvcc": "Cuda compilation tools, release 13.2, V13.2.78",
+  "gencode": "arch=compute_100f,code=sm_100f",
+  "cubin_arch_reported_by_cuobjdump": ["sm_100"],
+  "built_on_gpu": "NVIDIA B200",
+  "purpose": "Skip local JIT on hosts whose ptxas rejects cvt.rn.bf16x2.e4m3x2 (e.g. CUDA 13.1).",
+  "load": "Set GLM52_FLASHMLA_USE_PREBUILT=1 (or GLM52_FLASHMLA_PREBUILT_SO=<path-to-.so>) with GLM52_FLASHMLA_VARIANT=p1_consumer_scale."
+}
