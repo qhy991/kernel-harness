@@ -1,0 +1,4 @@
+==PROF== Connected to process 3425274 (/mnt/OS-oKqEXySb/home/qinhaiyan/miniconda3/envs/sglang/bin/python3.12)
+==PROF== Profiling "infini_kernel_glm52_moe_w13_decode_em4_bm16_2sm": 0%....50%....100% - 5 passes
+==PROF== Disconnected from process 3425274
+==PROF== Report: /home/qinhaiyan/glm52-hotspot-goal-runs/worktrees/moe-w13-decode/kernel-harness/profile/w13-bm16-r2-survivor-em4-20260730/reports/source_candidate.ncu-rep

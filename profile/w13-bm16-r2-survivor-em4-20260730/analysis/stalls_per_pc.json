@@ -1,0 +1,327 @@
+{
+  "grand_total_samples": 7223,
+  "by_reason": {
+    "long_scoreboard": {
+      "samples": 4864,
+      "pct": 67.34044026027966
+    },
+    "barrier": {
+      "samples": 1532,
+      "pct": 21.2100235359269
+    },
+    "wait": {
+      "samples": 296,
+      "pct": 4.098020213207809
+    },
+    "selected": {
+      "samples": 186,
+      "pct": 2.575107296137339
+    },
+    "branch_resolving": {
+      "samples": 151,
+      "pct": 2.0905440952512806
+    },
+    "short_scoreboard": {
+      "samples": 117,
+      "pct": 1.619825557247681
+    },
+    "no_instructions": {
+      "samples": 67,
+      "pct": 0.9275924131247404
+    },
+    "dispatch_stall": {
+      "samples": 6,
+      "pct": 0.08306797729475288
+    },
+    "not_selected": {
+      "samples": 3,
+      "pct": 0.04153398864737644
+    },
+    "mio_throttle": {
+      "samples": 1,
+      "pct": 0.013844662882458812
+    }
+  },
+  "top_pcs": [
+    {
+      "pc": 1099601692960,
+      "pct_of_all_stalls": 36.92371590751765,
+      "samples": 2667,
+      "source": null,
+      "sass": null,
+      "reasons": {
+        "long_scoreboard": 2667
+      }
+    },
+    {
+      "pc": 1099601691184,
+      "pct_of_all_stalls": 20.9746642669251,
+      "samples": 1515,
+      "source": null,
+      "sass": null,
+      "reasons": {
+        "barrier": 1515
+      }
+    },
+    {
+      "pc": 1099601689648,
+      "pct_of_all_stalls": 10.743458396788037,
+      "samples": 776,
+      "source": null,
+      "sass": null,
+      "reasons": {
+        "long_scoreboard": 776
+      }
+    },
+    {
+      "pc": 1099601679072,
+      "pct_of_all_stalls": 10.591167105080991,
+      "samples": 765,
+      "source": null,
+      "sass": null,
+      "reasons": {
+        "long_scoreboard": 765
+      }
+    },
+    {
+      "pc": 1099601684928,
+      "pct_of_all_stalls": 2.79662190225668,
+      "samples": 202,
+      "source": null,
+      "sass": null,
+      "reasons": {
+        "long_scoreboard": 202
+      }
+    },
+    {
+      "pc": 1099601686560,
+      "pct_of_all_stalls": 1.3152429738335871,
+      "samples": 95,
+      "source": null,
+      "sass": null,
+      "reasons": {
+        "long_scoreboard": 93,
+        "wait": 1,
+        "selected": 1
+      }
+    },
+    {
+      "pc": 1099601691120,
+      "pct_of_all_stalls": 0.8306797729475287,
+      "samples": 60,
+      "source": null,
+      "sass": null,
+      "reasons": {
+        "branch_resolving": 50,
+        "wait": 6,
+        "selected": 4
+      }
+    },
+    {
+      "pc": 1099601679520,
+      "pct_of_all_stalls": 0.6230098297106466,
+      "samples": 45,
+      "source": null,
+      "sass": null,
+      "reasons": {
+        "long_scoreboard": 43,
+        "wait": 2
+      }
+    },
+    {
+      "pc": 1099601680048,
+      "pct_of_all_stalls": 0.4845632008860584,
+      "samples": 35,
+      "source": null,
+      "sass": null,
+      "reasons": {
+        "long_scoreboard": 34,
+        "wait": 1
+      }
+    },
+    {
+      "pc": 1099601692160,
+      "pct_of_all_stalls": 0.4291845493562232,
+      "samples": 31,
+      "source": null,
+      "sass": null,
+      "reasons": {
+        "long_scoreboard": 25,
+        "wait": 4,
+        "no_instructions": 1,
+        "selected": 1
+      }
+    },
+    {
+      "pc": 1099601692352,
+      "pct_of_all_stalls": 0.3461165720614703,
+      "samples": 25,
+      "source": null,
+      "sass": null,
+      "reasons": {
+        "long_scoreboard": 22,
+        "selected": 2,
+        "wait": 1
+      }
+    },
+    {
+      "pc": 1099601682656,
+      "pct_of_all_stalls": 0.3322719091790115,
+      "samples": 24,
+      "source": null,
+      "sass": null,
+      "reasons": {
+        "long_scoreboard": 23,
+        "selected": 1
+      }
+    },
+    {
+      "pc": 1099601692320,
+      "pct_of_all_stalls": 0.31842724629655267,
+      "samples": 23,
+      "source": null,
+      "sass": null,
+      "reasons": {
+        "long_scoreboard": 21,
+        "wait": 1,
+        "selected": 1
+      }
+    },
+    {
+      "pc": 1099601692192,
+      "pct_of_all_stalls": 0.3045825834140939,
+      "samples": 22,
+      "source": null,
+      "sass": null,
+      "reasons": {
+        "long_scoreboard": 20,
+        "wait": 2
+      }
+    },
+    {
+      "pc": 1099601683136,
+      "pct_of_all_stalls": 0.29073792053163505,
+      "samples": 21,
+      "source": null,
+      "sass": null,
+      "reasons": {
+        "long_scoreboard": 21
+      }
+    },
+    {
+      "pc": 1099601681088,
+      "pct_of_all_stalls": 0.2768932576491762,
+      "samples": 20,
+      "source": null,
+      "sass": null,
+      "reasons": {
+        "branch_resolving": 17,
+        "wait": 3
+      }
+    },
+    {
+      "pc": 1099601674752,
+      "pct_of_all_stalls": 0.2768932576491762,
+      "samples": 20,
+      "source": null,
+      "sass": null,
+      "reasons": {
+        "no_instructions": 20
+      }
+    },
+    {
+      "pc": 1099601692336,
+      "pct_of_all_stalls": 0.24920393188425863,
+      "samples": 18,
+      "source": null,
+      "sass": null,
+      "reasons": {
+        "branch_resolving": 11,
+        "wait": 4,
+        "no_instructions": 2,
+        "selected": 1
+      }
+    },
+    {
+      "pc": 1099601678784,
+      "pct_of_all_stalls": 0.2353592690017998,
+      "samples": 17,
+      "source": null,
+      "sass": null,
+      "reasons": {
+        "long_scoreboard": 17
+      }
+    },
+    {
+      "pc": 1099601681152,
+      "pct_of_all_stalls": 0.20766994323688218,
+      "samples": 15,
+      "source": null,
+      "sass": null,
+      "reasons": {
+        "long_scoreboard": 13,
+        "selected": 2
+      }
+    },
+    {
+      "pc": 1099601692992,
+      "pct_of_all_stalls": 0.19382528035442337,
+      "samples": 14,
+      "source": null,
+      "sass": null,
+      "reasons": {
+        "long_scoreboard": 12,
+        "wait": 1,
+        "not_selected": 1
+      }
+    },
+    {
+      "pc": 1099601688880,
+      "pct_of_all_stalls": 0.19382528035442337,
+      "samples": 14,
+      "source": null,
+      "sass": null,
+      "reasons": {
+        "short_scoreboard": 13,
+        "wait": 1
+      }
+    },
+    {
+      "pc": 1099601692976,
+      "pct_of_all_stalls": 0.19382528035442337,
+      "samples": 14,
+      "source": null,
+      "sass": null,
+      "reasons": {
+        "branch_resolving": 12,
+        "wait": 1,
+        "selected": 1
+      }
+    },
+    {
+      "pc": 1099601679488,
+      "pct_of_all_stalls": 0.17998061747196456,
+      "samples": 13,
+      "source": null,
+      "sass": null,
+      "reasons": {
+        "long_scoreboard": 8,
+        "branch_resolving": 2,
+        "wait": 1,
+        "no_instructions": 1,
+        "selected": 1
+      }
+    },
+    {
+      "pc": 1099601682096,
+      "pct_of_all_stalls": 0.17998061747196456,
+      "samples": 13,
+      "source": null,
+      "sass": null,
+      "reasons": {
+        "long_scoreboard": 12,
+        "wait": 1
+      }
+    }
+  ]
+}

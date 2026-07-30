@@ -1,0 +1,13 @@
+==PROF== Connected to process 3423692 (/mnt/OS-oKqEXySb/home/qinhaiyan/miniconda3/envs/sglang/bin/python3.12)
+==WARNING== Unable to access the following 6 metrics: ctc__rx_bytes_data_user.sum, ctc__rx_bytes_data_user.sum.pct_of_peak_sustained_elapsed, ctc__rx_bytes_data_user.sum.per_second, ctc__tx_bytes_data_user.sum, ctc__tx_bytes_data_user.sum.pct_of_peak_sustained_elapsed, ctc__tx_bytes_data_user.sum.per_second.
+
+
+==PROF== Profiling "sm100_fp8_fp4_gemm_1d1d_impl": 0%....50%....100% - 40 passes
+ptxas info    : 12 bytes gmem
+ptxas info    : Compiling entry function '_ZN9deep_gemm28sm100_fp8_fp4_gemm_1d1d_implILN4cute4UMMA5MajorE0ELS3_0ELj128ELj128ELj128ELj0ELj4096ELj6144ELj128ELj128ELj128ELj32ELj128ELj128ELj128ELj8ELj128ELj128ELj2ELb1ELj148ELb1ELb1ELNS_8GemmTypeE2ELb0EN7cutlass12float_e4m3_tES6_NS5_10bfloat16_tENS_8epilogue9transform16EpilogueIdentityEEEvPijjj14CUtensorMap_stSC_SC_SC_SC_' for 'sm_100f'
+ptxas info    : Function properties for _ZN9deep_gemm28sm100_fp8_fp4_gemm_1d1d_implILN4cute4UMMA5MajorE0ELS3_0ELj128ELj128ELj128ELj0ELj4096ELj6144ELj128ELj128ELj128ELj32ELj128ELj128ELj128ELj8ELj128ELj128ELj2ELb1ELj148ELb1ELb1ELNS_8GemmTypeE2ELb0EN7cutlass12float_e4m3_tES6_NS5_10bfloat16_tENS_8epilogue9transform16EpilogueIdentityEEEvPijjj14CUtensorMap_stSC_SC_SC_SC_
+    0 bytes stack frame, 0 bytes spill stores, 0 bytes spill loads
+ptxas info    : Used 36 registers, used 9 barriers
+ptxas info    : Compile time = 91.524 ms
+==PROF== Disconnected from process 3423692
+==PROF== Report: /home/qinhaiyan/glm52-hotspot-goal-runs/worktrees/moe-w13-decode/kernel-harness/profile/w13-bm16-r2-survivor-em4-20260730/reports/full_stock.ncu-rep

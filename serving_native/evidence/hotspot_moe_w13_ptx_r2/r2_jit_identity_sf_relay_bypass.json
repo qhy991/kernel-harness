@@ -1,0 +1,205 @@
+{
+  "audit": "cpu_only_generated_source_ptx_sass_elf_resources",
+  "candidate": [
+    {
+      "artifacts": {
+        "cu": {
+          "path": "/home/qinhaiyan/glm52-hotspot-goal-runs/cache/moe_w13_ptx_r2/deepgemm/w13_variants/jit/candidate/cache/kernel.infini_kernel_glm52_moe_w13_decode_em4_bm16_1sm_sfrelaybypass.8ac6d3bd20aa1eb68462a4e096e41735/kernel.cu",
+          "sha256": "9a9a72d84930ece952281fd45892cfaa6b2f1a2cbdd93714539f097ed5d6e11b",
+          "size_bytes": 1307
+        },
+        "cubin": {
+          "path": "/home/qinhaiyan/glm52-hotspot-goal-runs/cache/moe_w13_ptx_r2/deepgemm/w13_variants/jit/candidate/cache/kernel.infini_kernel_glm52_moe_w13_decode_em4_bm16_1sm_sfrelaybypass.8ac6d3bd20aa1eb68462a4e096e41735/kernel.cubin",
+          "sha256": "052b2e1953bcae232acc519aec84d7af766766f931082c39b6427b998925b5c9",
+          "size_bytes": 36600
+        },
+        "ptx": {
+          "path": "/home/qinhaiyan/glm52-hotspot-goal-runs/cache/moe_w13_ptx_r2/deepgemm/w13_variants/jit/candidate/cache/kernel.infini_kernel_glm52_moe_w13_decode_em4_bm16_1sm_sfrelaybypass.8ac6d3bd20aa1eb68462a4e096e41735/kernel.ptx",
+          "sha256": "585cac0ae6ed673fa6709c0fd68ad22c2f7ec966773bef52214e058f447ffdd0",
+          "size_bytes": 41063
+        },
+        "sass": {
+          "path": "/home/qinhaiyan/glm52-hotspot-goal-runs/cache/moe_w13_ptx_r2/deepgemm/w13_variants/jit/candidate/cache/kernel.infini_kernel_glm52_moe_w13_decode_em4_bm16_1sm_sfrelaybypass.8ac6d3bd20aa1eb68462a4e096e41735/kernel.sass",
+          "sha256": "39a71d34fab77a7a0bce5f1c5a2c129d16f58049a2b3d612e2ba4ed74a779563",
+          "size_bytes": 288190
+        }
+      },
+      "config": [
+        16,
+        128,
+        128,
+        11,
+        1
+      ],
+      "expected_m": 4,
+      "intended_launch": {
+        "block_threads": 256,
+        "cluster_size": 1,
+        "dynamic_shared_bytes": 223020,
+        "grid_ctas": 148
+      },
+      "ptx_counts": {
+        "cluster_multicast": 0,
+        "tcgen05_alloc_group": 1,
+        "tcgen05_commit_group": 5,
+        "tcgen05_cp_group": 2,
+        "tcgen05_dealloc_group": 1,
+        "tcgen05_mma_group": 16,
+        "tcgen05_other_group": 0
+      },
+      "resources": {
+        "local_bytes": 0,
+        "registers": 31,
+        "stack_bytes": 0,
+        "static_shared_bytes": 1024
+      },
+      "sass_counts": {
+        "ldl": 0,
+        "ldtm": 4,
+        "stl": 0,
+        "ucgabar_arrive": 0,
+        "ucgabar_wait": 0,
+        "utcqmma": 16,
+        "utcqmma_2cta": 0,
+        "utmaldg_2d": 10
+      },
+      "symbol": "infini_kernel_glm52_moe_w13_decode_em4_bm16_1sm_sfrelaybypass",
+      "topology": "1sm"
+    },
+    {
+      "artifacts": {
+        "cu": {
+          "path": "/home/qinhaiyan/glm52-hotspot-goal-runs/cache/moe_w13_ptx_r2/deepgemm/w13_variants/jit/candidate/cache/kernel.infini_kernel_glm52_moe_w13_decode_em4_bm16_2sm_sfrelaybypass.d783304b4e916cdee267bb8510d1bf12/kernel.cu",
+          "sha256": "9d92b5595c6df937e5dab3ed5b91b7c9ebf6e16b108469b5400f6cacb68d16ae",
+          "size_bytes": 1306
+        },
+        "cubin": {
+          "path": "/home/qinhaiyan/glm52-hotspot-goal-runs/cache/moe_w13_ptx_r2/deepgemm/w13_variants/jit/candidate/cache/kernel.infini_kernel_glm52_moe_w13_decode_em4_bm16_2sm_sfrelaybypass.d783304b4e916cdee267bb8510d1bf12/kernel.cubin",
+          "sha256": "3ecc70fff67e9a2ccd3be8280777fc724dd7788253237a205387db0914b00f00",
+          "size_bytes": 39600
+        },
+        "ptx": {
+          "path": "/home/qinhaiyan/glm52-hotspot-goal-runs/cache/moe_w13_ptx_r2/deepgemm/w13_variants/jit/candidate/cache/kernel.infini_kernel_glm52_moe_w13_decode_em4_bm16_2sm_sfrelaybypass.d783304b4e916cdee267bb8510d1bf12/kernel.ptx",
+          "sha256": "6dcc8c293f7e3734ed3728d43acfca3b084302e09e4e31cf0f15db8825687c20",
+          "size_bytes": 43115
+        },
+        "sass": {
+          "path": "/home/qinhaiyan/glm52-hotspot-goal-runs/cache/moe_w13_ptx_r2/deepgemm/w13_variants/jit/candidate/cache/kernel.infini_kernel_glm52_moe_w13_decode_em4_bm16_2sm_sfrelaybypass.d783304b4e916cdee267bb8510d1bf12/kernel.sass",
+          "sha256": "ca3d2bcbc9856aad14c3b87c31ebf5ec1a38a072b85a0a4e46fe77f771cc8844",
+          "size_bytes": 344910
+        }
+      },
+      "config": [
+        16,
+        128,
+        128,
+        12,
+        2
+      ],
+      "expected_m": 4,
+      "intended_launch": {
+        "block_threads": 256,
+        "cluster_size": 2,
+        "dynamic_shared_bytes": 230188,
+        "grid_ctas": 148
+      },
+      "ptx_counts": {
+        "cluster_multicast": 5,
+        "tcgen05_alloc_group": 1,
+        "tcgen05_commit_group": 5,
+        "tcgen05_cp_group": 2,
+        "tcgen05_dealloc_group": 1,
+        "tcgen05_mma_group": 16,
+        "tcgen05_other_group": 0
+      },
+      "resources": {
+        "local_bytes": 0,
+        "registers": 35,
+        "stack_bytes": 0,
+        "static_shared_bytes": 1024
+      },
+      "sass_counts": {
+        "ldl": 0,
+        "ldtm": 4,
+        "stl": 0,
+        "ucgabar_arrive": 3,
+        "ucgabar_wait": 3,
+        "utcqmma": 16,
+        "utcqmma_2cta": 16,
+        "utmaldg_2d": 10
+      },
+      "symbol": "infini_kernel_glm52_moe_w13_decode_em4_bm16_2sm_sfrelaybypass",
+      "topology": "2sm"
+    }
+  ],
+  "candidate_context_duplicates": [],
+  "manifest": "/home/qinhaiyan/glm52-hotspot-goal-runs/cache/moe_w13_ptx_r2/deepgemm/w13_variants/manifest.json",
+  "manifest_sha256": "f200616197ccc9959665f7cfeeac28306d9c9ad02cf9612ab7f5c590695621d4",
+  "schema_version": 1,
+  "status": "PASS",
+  "stock": [
+    {
+      "artifacts": {
+        "cu": {
+          "path": "/home/qinhaiyan/glm52-hotspot-goal-runs/cache/moe_w13_ptx_r2/deepgemm/w13_variants/jit/stock/cache/kernel.sm100_m_grouped_fp8_fp4_gemm_masked_1d1d.0101224525804312e880cad6099dfce3/kernel.cu",
+          "sha256": "a768d3cbee53eafa04c944012b716af0cef56dd6f4c1db4ec834c5b662a5bffe",
+          "size_bytes": 663
+        },
+        "cubin": {
+          "path": "/home/qinhaiyan/glm52-hotspot-goal-runs/cache/moe_w13_ptx_r2/deepgemm/w13_variants/jit/stock/cache/kernel.sm100_m_grouped_fp8_fp4_gemm_masked_1d1d.0101224525804312e880cad6099dfce3/kernel.cubin",
+          "sha256": "b9a2cc14b22ede563dc25390140e3e362af8b11c39475c89ff8cf24b9c6372bc",
+          "size_bytes": 61720
+        },
+        "ptx": {
+          "path": "/home/qinhaiyan/glm52-hotspot-goal-runs/cache/moe_w13_ptx_r2/deepgemm/w13_variants/jit/stock/cache/kernel.sm100_m_grouped_fp8_fp4_gemm_masked_1d1d.0101224525804312e880cad6099dfce3/kernel.ptx",
+          "sha256": "2ad84e33e61f598658cd727369fc440fe2b28b5f64f5009b7ec02328903e2fa1",
+          "size_bytes": 66926
+        },
+        "sass": {
+          "path": "/home/qinhaiyan/glm52-hotspot-goal-runs/cache/moe_w13_ptx_r2/deepgemm/w13_variants/jit/stock/cache/kernel.sm100_m_grouped_fp8_fp4_gemm_masked_1d1d.0101224525804312e880cad6099dfce3/kernel.sass",
+          "sha256": "cfc90c36c64491ed50bd4a4ca7e4d26df1702cf33e48d513ae343b7bbc6b643e",
+          "size_bytes": 439416
+        }
+      },
+      "config": [
+        128,
+        128,
+        128,
+        8,
+        2
+      ],
+      "expected_m_values_sharing_identity": [
+        4,
+        5,
+        8,
+        9
+      ],
+      "intended_launch": {
+        "block_threads": 256,
+        "cluster_size": 2,
+        "grid_ctas": 148
+      },
+      "ptx_counts": {
+        "cluster_multicast": 5,
+        "tcgen05_mma_group2": 16,
+        "tcgen05_other_group": 0
+      },
+      "resources": {
+        "local_bytes": 0,
+        "registers": 36,
+        "stack_bytes": 0,
+        "static_shared_bytes": 1024
+      },
+      "sass_counts": {
+        "ldl": 0,
+        "ldtm": 32,
+        "stl": 0,
+        "ucgabar_arrive": 3,
+        "ucgabar_wait": 3,
+        "utcqmma_2cta": 16,
+        "utmaldg_2d": 10
+      },
+      "symbol": "_ZN9deep_gemm28sm100_fp8_fp4_gemm_1d1d_implILN4cute4UMMA5MajorE0ELS3_0ELj128ELj128ELj128ELj0ELj4096ELj6144ELj128ELj128ELj128ELj32ELj128ELj128ELj128ELj8ELj128ELj128ELj2ELb1ELj148ELb1ELb1ELNS_8GemmTypeE2ELb0EN7cutlass12float_e4m3_tES6_NS5_10bfloat16_tENS_8epilogue9transform16EpilogueIdentityEEEvPijjj14CUtensorMap_stSC_SC_SC_SC_"
+    }
+  ]
+}

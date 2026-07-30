@@ -18,6 +18,7 @@ from serving_native.runner import (
     _compare_masked,
 )
 from serving_native.w13_runtime import (
+    PROVIDER_FILENAMES,
     VARIANT_CONFIGS,
     W13Runtime,
     _prove_runtime_state_independence,
@@ -166,11 +167,16 @@ class W13GraphContractTest(unittest.TestCase):
     def test_harness_runtime_uses_exact_api_v1_provider_and_independent_state(
         self,
     ) -> None:
+        # Round-2 widened `w13_config` with a sixth SF-relay-bypass selector and
+        # registered its own identities. Every validated identity keeps it 0.
         self.assertEqual(
             VARIANT_CONFIGS,
             {
-                "bm16_2sm": (16, 128, 128, 12, 2),
-                "bm16_1sm": (16, 128, 128, 11, 1),
+                "bm16_2sm": (16, 128, 128, 12, 2, 0),
+                "bm16_1sm": (16, 128, 128, 11, 1, 0),
+                "r2_bm16_2sm_control": (16, 128, 128, 12, 2, 0),
+                "r2_bm16_2sm_sfbypass": (16, 128, 128, 12, 2, 1),
+                "r2_bm16_1sm_sfbypass": (16, 128, 128, 11, 1, 1),
             },
         )
         stock = _FakeDeepGemm("stock")
@@ -189,8 +195,11 @@ class W13GraphContractTest(unittest.TestCase):
             initializer.index("self.stock = _load_package"),
             initializer.index("initialize_hotspot_provider"),
         )
-        self.assertIn("provider_bm16_2sm.py", initializer)
-        self.assertIn("provider_bm16_1sm.py", initializer)
+        self.assertIn("PROVIDER_FILENAMES[variant]", initializer)
+        self.assertEqual(set(PROVIDER_FILENAMES), set(VARIANT_CONFIGS))
+        for variant, filename in PROVIDER_FILENAMES.items():
+            self.assertTrue(filename.startswith("provider_"))
+            self.assertEqual(filename, f"provider_{variant}.py")
         launcher = inspect.getsource(W13Runtime.candidate_launcher)
         self.assertIn("self._provider_callback", launcher)
         self.assertNotIn("self.stock", launcher)

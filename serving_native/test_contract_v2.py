@@ -434,7 +434,9 @@ class ContractV2AuditTest(unittest.TestCase):
             for field, mutation in mutations.items()
         }
         variant = "bm16_1sm"
-        config = [16, 128, 128, 11, 1]
+        # Round-2 widened `w13_config`; the sixth element must be 0 for every
+        # validated identity.
+        config = [16, 128, 128, 11, 1, 0]
         provider_path = self.root / "provider_bm16_1sm.py"
         provider_path.write_text("fixture API-v1 provider\n")
         provider_name = "infini_kernel_glm52_moe_w13_decode_bm16_1sm"

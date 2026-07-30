@@ -1,0 +1,226 @@
+{
+  "candidate_commit": "e29df03e8fc401fcf4a25d5dfd2de51d1a55f73a",
+  "criterion": "bitwise equality on valid rows; masked rows untouched",
+  "identities": [
+    {
+      "all_exact": true,
+      "all_masked_untouched": true,
+      "cases": [
+        {
+          "exact": true,
+          "expected_m": 4,
+          "mask_pattern": "uniform",
+          "masked_region_untouched": true,
+          "masked_touched": 0,
+          "max_abs_err": 0.0,
+          "mismatches": 0,
+          "repeats": 3
+        },
+        {
+          "exact": true,
+          "expected_m": 4,
+          "mask_pattern": "empty_experts",
+          "masked_region_untouched": true,
+          "masked_touched": 0,
+          "max_abs_err": 0.0,
+          "mismatches": 0,
+          "repeats": 3
+        },
+        {
+          "exact": true,
+          "expected_m": 4,
+          "mask_pattern": "tile_boundary",
+          "masked_region_untouched": true,
+          "masked_touched": 0,
+          "max_abs_err": 0.0,
+          "mismatches": 0,
+          "repeats": 3
+        },
+        {
+          "exact": true,
+          "expected_m": 4,
+          "mask_pattern": "skewed",
+          "masked_region_untouched": true,
+          "masked_touched": 0,
+          "max_abs_err": 0.0,
+          "mismatches": 0,
+          "repeats": 3
+        },
+        {
+          "exact": true,
+          "expected_m": 4,
+          "mask_pattern": "maximum",
+          "masked_region_untouched": true,
+          "masked_touched": 0,
+          "max_abs_err": 0.0,
+          "mismatches": 0,
+          "repeats": 3
+        },
+        {
+          "exact": true,
+          "expected_m": 5,
+          "mask_pattern": "uniform",
+          "masked_region_untouched": true,
+          "masked_touched": 0,
+          "max_abs_err": 0.0,
+          "mismatches": 0,
+          "repeats": 3
+        },
+        {
+          "exact": true,
+          "expected_m": 5,
+          "mask_pattern": "empty_experts",
+          "masked_region_untouched": true,
+          "masked_touched": 0,
+          "max_abs_err": 0.0,
+          "mismatches": 0,
+          "repeats": 3
+        },
+        {
+          "exact": true,
+          "expected_m": 5,
+          "mask_pattern": "tile_boundary",
+          "masked_region_untouched": true,
+          "masked_touched": 0,
+          "max_abs_err": 0.0,
+          "mismatches": 0,
+          "repeats": 3
+        },
+        {
+          "exact": true,
+          "expected_m": 5,
+          "mask_pattern": "skewed",
+          "masked_region_untouched": true,
+          "masked_touched": 0,
+          "max_abs_err": 0.0,
+          "mismatches": 0,
+          "repeats": 3
+        },
+        {
+          "exact": true,
+          "expected_m": 5,
+          "mask_pattern": "maximum",
+          "masked_region_untouched": true,
+          "masked_touched": 0,
+          "max_abs_err": 0.0,
+          "mismatches": 0,
+          "repeats": 3
+        },
+        {
+          "exact": true,
+          "expected_m": 8,
+          "mask_pattern": "uniform",
+          "masked_region_untouched": true,
+          "masked_touched": 0,
+          "max_abs_err": 0.0,
+          "mismatches": 0,
+          "repeats": 3
+        },
+        {
+          "exact": true,
+          "expected_m": 8,
+          "mask_pattern": "empty_experts",
+          "masked_region_untouched": true,
+          "masked_touched": 0,
+          "max_abs_err": 0.0,
+          "mismatches": 0,
+          "repeats": 3
+        },
+        {
+          "exact": true,
+          "expected_m": 8,
+          "mask_pattern": "tile_boundary",
+          "masked_region_untouched": true,
+          "masked_touched": 0,
+          "max_abs_err": 0.0,
+          "mismatches": 0,
+          "repeats": 3
+        },
+        {
+          "exact": true,
+          "expected_m": 8,
+          "mask_pattern": "skewed",
+          "masked_region_untouched": true,
+          "masked_touched": 0,
+          "max_abs_err": 0.0,
+          "mismatches": 0,
+          "repeats": 3
+        },
+        {
+          "exact": true,
+          "expected_m": 8,
+          "mask_pattern": "maximum",
+          "masked_region_untouched": true,
+          "masked_touched": 0,
+          "max_abs_err": 0.0,
+          "mismatches": 0,
+          "repeats": 3
+        },
+        {
+          "exact": true,
+          "expected_m": 9,
+          "mask_pattern": "uniform",
+          "masked_region_untouched": true,
+          "masked_touched": 0,
+          "max_abs_err": 0.0,
+          "mismatches": 0,
+          "repeats": 3
+        },
+        {
+          "exact": true,
+          "expected_m": 9,
+          "mask_pattern": "empty_experts",
+          "masked_region_untouched": true,
+          "masked_touched": 0,
+          "max_abs_err": 0.0,
+          "mismatches": 0,
+          "repeats": 3
+        },
+        {
+          "exact": true,
+          "expected_m": 9,
+          "mask_pattern": "tile_boundary",
+          "masked_region_untouched": true,
+          "masked_touched": 0,
+          "max_abs_err": 0.0,
+          "mismatches": 0,
+          "repeats": 3
+        },
+        {
+          "exact": true,
+          "expected_m": 9,
+          "mask_pattern": "skewed",
+          "masked_region_untouched": true,
+          "masked_touched": 0,
+          "max_abs_err": 0.0,
+          "mismatches": 0,
+          "repeats": 3
+        },
+        {
+          "exact": true,
+          "expected_m": 9,
+          "mask_pattern": "maximum",
+          "masked_region_untouched": true,
+          "masked_touched": 0,
+          "max_abs_err": 0.0,
+          "mismatches": 0,
+          "repeats": 3
+        }
+      ],
+      "config": [
+        16,
+        128,
+        128,
+        12,
+        2,
+        0
+      ],
+      "identity": "bm16_2sm_control",
+      "status": "pass"
+    }
+  ],
+  "manifest": "/home/qinhaiyan/glm52-hotspot-goal-runs/cache/moe_w13_ptx_r2/deepgemm/w13_variants/manifest.json",
+  "physical_gpu": "0",
+  "physical_gpu_uuid": "GPU-30b619de-87f2-1862-0d07-a595da8fe417",
+  "reference": "stock production masked grouped GEMM, same input bytes"
+}

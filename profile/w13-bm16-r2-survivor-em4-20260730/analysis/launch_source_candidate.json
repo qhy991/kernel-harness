@@ -1,0 +1,19 @@
+{
+  "arm": "candidate",
+  "commit": "87e0359edbb461181d3bba218442132007b9a738",
+  "expected_m": 4,
+  "jit_cache": "/home/qinhaiyan/glm52-hotspot-goal-runs/cache/moe_w13_ptx_r2/deepgemm/w13_variants/jit/candidate",
+  "masked_m": 4,
+  "num_sms": 148,
+  "output_pointer": 126048163332096,
+  "pdl": true,
+  "physical_gpu": "0",
+  "physical_gpu_uuid": "GPU-30b619de-87f2-1862-0d07-a595da8fe417",
+  "profiled_launches": 1,
+  "shared_object_sha256": "2b58b962c6902e2f67dbbfdf11e29492d1a549133d237ab6c89d80565de788fa",
+  "sm_clock_mhz": null,
+  "stream": 0,
+  "tc_util": 100,
+  "valid_region_finite": true,
+  "variant": "bm16_2sm"
+}

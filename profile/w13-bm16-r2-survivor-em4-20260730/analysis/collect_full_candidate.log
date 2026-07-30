@@ -1,0 +1,7 @@
+==PROF== Connected to process 3421715 (/mnt/OS-oKqEXySb/home/qinhaiyan/miniconda3/envs/sglang/bin/python3.12)
+==WARNING== Unable to access the following 6 metrics: ctc__rx_bytes_data_user.sum, ctc__rx_bytes_data_user.sum.pct_of_peak_sustained_elapsed, ctc__rx_bytes_data_user.sum.per_second, ctc__tx_bytes_data_user.sum, ctc__tx_bytes_data_user.sum.pct_of_peak_sustained_elapsed, ctc__tx_bytes_data_user.sum.per_second.
+
+
+==PROF== Profiling "infini_kernel_glm52_moe_w13_decode_em4_bm16_2sm": 0%....50%....100% - 40 passes
+==PROF== Disconnected from process 3421715
+==PROF== Report: /home/qinhaiyan/glm52-hotspot-goal-runs/worktrees/moe-w13-decode/kernel-harness/profile/w13-bm16-r2-survivor-em4-20260730/reports/full_candidate.ncu-rep

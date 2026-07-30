@@ -24,9 +24,41 @@ STOCK_TREE_SHA256 = (
 CANDIDATE_TREE_SHA256 = (
     "d682daa65b8ba0ac3846d766910b8c751e0568fe62087084271bb354e46c49e4"
 )
+# Round-2 widened `w13_config` to six elements; the sixth selects the
+# SF-relay-bypass experiment and must be 0 for every validated identity.
 VARIANT_CONFIGS = {
-    "bm16_2sm": (16, 128, 128, 12, 2),
-    "bm16_1sm": (16, 128, 128, 11, 1),
+    "bm16_2sm": (16, 128, 128, 12, 2, 0),
+    "bm16_1sm": (16, 128, 128, 11, 1, 0),
+    "r2_bm16_2sm_control": (16, 128, 128, 12, 2, 0),
+    "r2_bm16_2sm_sfbypass": (16, 128, 128, 12, 2, 1),
+    "r2_bm16_1sm_sfbypass": (16, 128, 128, 11, 1, 1),
+}
+PROVIDER_FILENAMES = {
+    "bm16_2sm": "provider_bm16_2sm.py",
+    "bm16_1sm": "provider_bm16_1sm.py",
+    "r2_bm16_2sm_control": "provider_r2_bm16_2sm_control.py",
+    "r2_bm16_2sm_sfbypass": "provider_r2_bm16_2sm_sfbypass.py",
+    "r2_bm16_1sm_sfbypass": "provider_r2_bm16_1sm_sfbypass.py",
+}
+# Fail closed: only these candidate DeepGEMM commits may be measured, each
+# pinned to its exact source tree and diff. The stock denominator never moves.
+CANDIDATE_IDENTITIES = {
+    "87e0359edbb461181d3bba218442132007b9a738": {
+        "candidate_diff_sha256": (
+            "465c8373c0a37970225a0e93267b6c399431b23e22cf35b4511db2308df98092"
+        ),
+        "candidate_source_tree_sha256": (
+            "d682daa65b8ba0ac3846d766910b8c751e0568fe62087084271bb354e46c49e4"
+        ),
+    },
+    "e29df03e8fc401fcf4a25d5dfd2de51d1a55f73a": {
+        "candidate_diff_sha256": (
+            "2ff441d8d732e5795daf78ae245b3874e633edd5edf1d855f201272e27795c20"
+        ),
+        "candidate_source_tree_sha256": (
+            "dad28452bc47ee69b20f00154b669c41e778161d235d16a23223161f05fdd82b"
+        ),
+    },
 }
 EXPECTED_M_VALUES = (4, 5, 8, 9)
 REQUIRED_PDL = True
@@ -92,12 +124,18 @@ def _validate_manifest(
     if manifest.get("schema_version") != 3:
         raise RuntimeError("W13 build manifest schema mismatch")
     source = manifest.get("source", {})
+    candidate_commit = str(source.get("candidate_commit", ""))
+    pinned = CANDIDATE_IDENTITIES.get(candidate_commit)
+    if pinned is None:
+        raise RuntimeError(
+            f"W13 manifest candidate commit is not an allowed identity: "
+            f"{candidate_commit!r}"
+        )
     expected_source = {
         "base_commit": BASE_COMMIT,
-        "candidate_commit": CANDIDATE_COMMIT,
-        "candidate_diff_sha256": CANDIDATE_DIFF_SHA256,
+        "candidate_commit": candidate_commit,
         "stock_source_tree_sha256": STOCK_TREE_SHA256,
-        "candidate_source_tree_sha256": CANDIDATE_TREE_SHA256,
+        **pinned,
     }
     actual_source = {key: source.get(key) for key in expected_source}
     if actual_source != expected_source:
@@ -118,7 +156,11 @@ def _validate_manifest(
     records: dict[str, dict[str, Any]] = {}
     for variant, expected_commit, expected_tree in (
         ("stock", BASE_COMMIT, STOCK_TREE_SHA256),
-        ("candidate", CANDIDATE_COMMIT, CANDIDATE_TREE_SHA256),
+        (
+            "candidate",
+            candidate_commit,
+            pinned["candidate_source_tree_sha256"],
+        ),
     ):
         record = manifest.get("variants", {}).get(variant)
         if (
@@ -297,10 +339,7 @@ class W13Runtime:
         if not provider_path_text:
             raise RuntimeError("W13 benchmark requires SGLANG_GLM52_HOTSPOT_MODULE")
         provider_path = Path(provider_path_text).expanduser().resolve()
-        expected_provider_name = {
-            "bm16_2sm": "provider_bm16_2sm.py",
-            "bm16_1sm": "provider_bm16_1sm.py",
-        }[variant]
+        expected_provider_name = PROVIDER_FILENAMES[variant]
         if not provider_path.is_file() or provider_path.name != expected_provider_name:
             raise RuntimeError(
                 f"W13 provider {provider_path} does not match {variant}"
@@ -386,7 +425,7 @@ class W13Runtime:
                 provider_object is None
                 or tuple(provider_object.config) != self.config
                 or provider_module.PROVIDER_INFO.get("git_commit")
-                != CANDIDATE_COMMIT
+                != manifest["source"]["candidate_commit"]
                 or not provider_module.PROVIDER_INFO.get("name", "").startswith(
                     "infini_kernel_glm52_moe_w13_decode"
                 )

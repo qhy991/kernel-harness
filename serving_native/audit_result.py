@@ -33,6 +33,32 @@ CALLABLE_CANDIDATE_API = "callable_v1"
 TRUSTED_CONFIG_CANDIDATE_API = "reference_with_config_v1"
 W13_BASE_COMMIT = "731e7c7a97d269e4b9f482ea18d0e709a948f293"
 W13_CANDIDATE_COMMIT = "87e0359edbb461181d3bba218442132007b9a738"
+# Round-2 rebuilt the same BM16 lineage in its own task-local cache and
+# added the SF-relay-bypass experiment. Only these commits may be audited.
+W13_CANDIDATE_IDENTITIES = {
+    W13_CANDIDATE_COMMIT: {
+        "candidate_diff_sha256": (
+            "465c8373c0a37970225a0e93267b6c399431b23e22cf35b4511db2308df98092"
+        ),
+        "candidate_source_tree_sha256": (
+            "d682daa65b8ba0ac3846d766910b8c751e0568fe62087084271bb354e46c49e4"
+        ),
+    },
+    "e29df03e8fc401fcf4a25d5dfd2de51d1a55f73a": {
+        "candidate_diff_sha256": (
+            "2ff441d8d732e5795daf78ae245b3874e633edd5edf1d855f201272e27795c20"
+        ),
+        "candidate_source_tree_sha256": (
+            "dad28452bc47ee69b20f00154b669c41e778161d235d16a23223161f05fdd82b"
+        ),
+    },
+}
+
+
+def _w13_candidate_identity(manifest: Any) -> dict[str, str] | None:
+    """Resolve the pinned identity for the manifest's candidate commit."""
+    source = manifest.get("source", {}) if isinstance(manifest, dict) else {}
+    return W13_CANDIDATE_IDENTITIES.get(str(source.get("candidate_commit", "")))
 W13_CUTLASS_COMMIT = "f3fde58372d33e9a5650ba7b80fc48b3b49d40c8"
 W13_FMT_COMMIT = "553ec11ec06fbe0beebfbb45f9dc3c9eabd83d28"
 W13_DIFF_SHA256 = "465c8373c0a37970225a0e93267b6c399431b23e22cf35b4511db2308df98092"
@@ -715,16 +741,27 @@ def _audit_w13_runtime(
                 manifest.get("schema_version") == 3,
                 f"{prefix}.manifest schema mismatch",
             )
+            pinned = _w13_candidate_identity(manifest)
+            findings.require(
+                pinned is not None,
+                f"{prefix}.manifest candidate commit is not an allowed identity",
+            )
+            pinned = pinned or {
+                "candidate_diff_sha256": W13_DIFF_SHA256,
+                "candidate_source_tree_sha256": W13_CANDIDATE_TREE_SHA256,
+            }
             expected_source = {
                 "base_commit": W13_BASE_COMMIT,
-                "candidate_commit": W13_CANDIDATE_COMMIT,
+                "candidate_commit": source.get("candidate_commit"),
                 "cutlass_commit": W13_CUTLASS_COMMIT,
                 "fmt_commit": W13_FMT_COMMIT,
-                "candidate_diff_sha256": W13_DIFF_SHA256,
-                "candidate_diff_file_sha256": W13_DIFF_SHA256,
+                "candidate_diff_sha256": pinned["candidate_diff_sha256"],
+                "candidate_diff_file_sha256": pinned["candidate_diff_sha256"],
                 "base_blob_sha256": W13_BASE_BLOB_SHA256,
                 "stock_source_tree_sha256": W13_STOCK_TREE_SHA256,
-                "candidate_source_tree_sha256": W13_CANDIDATE_TREE_SHA256,
+                "candidate_source_tree_sha256": pinned[
+                    "candidate_source_tree_sha256"
+                ],
             }
             findings.require(
                 {key: source.get(key) for key in expected_source} == expected_source,
@@ -762,8 +799,11 @@ def _audit_w13_runtime(
 
     variant = runtime.get("variant")
     configs = {
-        "bm16_2sm": [16, 128, 128, 12, 2],
-        "bm16_1sm": [16, 128, 128, 11, 1],
+        "bm16_2sm": [16, 128, 128, 12, 2, 0],
+        "bm16_1sm": [16, 128, 128, 11, 1, 0],
+        "r2_bm16_2sm_control": [16, 128, 128, 12, 2, 0],
+        "r2_bm16_2sm_sfbypass": [16, 128, 128, 12, 2, 1],
+        "r2_bm16_1sm_sfbypass": [16, 128, 128, 11, 1, 1],
     }
     findings.require(
         runtime.get("manifest_schema") == 3,
@@ -804,6 +844,9 @@ def _audit_w13_runtime(
         expected_provider_name = {
             "bm16_2sm": "provider_bm16_2sm.py",
             "bm16_1sm": "provider_bm16_1sm.py",
+            "r2_bm16_2sm_control": "provider_r2_bm16_2sm_control.py",
+            "r2_bm16_2sm_sfbypass": "provider_r2_bm16_2sm_sfbypass.py",
+            "r2_bm16_1sm_sfbypass": "provider_r2_bm16_1sm_sfbypass.py",
         }.get(variant)
         findings.require(
             provider_path is not None
@@ -833,6 +876,18 @@ def _audit_w13_runtime(
                     "infini_kernel_glm52_moe_w13_decode_bm16_1sm",
                     "bm16-1sm-stage11-api-v1",
                 ),
+                "r2_bm16_2sm_control": (
+                    "infini_kernel_glm52_moe_w13_decode_r2_bm16_2sm_control",
+                    "r2-bm16-2sm-stage12-control-api-v1",
+                ),
+                "r2_bm16_2sm_sfbypass": (
+                    "infini_kernel_glm52_moe_w13_decode_r2_bm16_2sm_sfbypass",
+                    "r2-bm16-2sm-stage12-sfrelaybypass-api-v1",
+                ),
+                "r2_bm16_1sm_sfbypass": (
+                    "infini_kernel_glm52_moe_w13_decode_r2_bm16_1sm_sfbypass",
+                    "r2-bm16-1sm-stage11-sfrelaybypass-api-v1",
+                ),
             }.get(variant)
             findings.require(
                 state.get("ready") is True
@@ -847,7 +902,8 @@ def _audit_w13_runtime(
                 findings.require(
                     provider_info.get("name") == expected_provider_identity[0]
                     and provider_info.get("build_id") == expected_provider_identity[1]
-                    and provider_info.get("git_commit") == W13_CANDIDATE_COMMIT,
+                    and provider_info.get("git_commit")
+                    in W13_CANDIDATE_IDENTITIES,
                     f"{prefix}.provider API-v1 identity mismatch",
                 )
             if provider_path is not None:
@@ -981,10 +1037,13 @@ def _audit_w13_runtime(
                         )
             if manifest is not None:
                 manifest_record = manifest.get("variants", {}).get(name, {})
+                manifest_identity = _w13_candidate_identity(manifest)
                 expected_tree = (
                     W13_STOCK_TREE_SHA256
                     if name == "stock"
-                    else W13_CANDIDATE_TREE_SHA256
+                    else (manifest_identity or {}).get(
+                        "candidate_source_tree_sha256"
+                    )
                 )
                 required_record = {
                     "package": item.get("package"),
@@ -995,7 +1054,7 @@ def _audit_w13_runtime(
                     "commit": (
                         W13_BASE_COMMIT
                         if name == "stock"
-                        else W13_CANDIDATE_COMMIT
+                        else manifest.get("source", {}).get("candidate_commit")
                     ),
                     "source_tree_sha256": expected_tree,
                     "normalized_build_plan_sha256": manifest.get("build", {}).get(
@@ -1982,7 +2041,7 @@ def audit_document(
         )
         if (
             _list(w13_config)
-            and len(w13_config) == 5
+            and len(w13_config) in (5, 6)
             and isinstance(w13_config[0], int)
             and not isinstance(w13_config[0], bool)
         ):
