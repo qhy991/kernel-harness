@@ -304,7 +304,8 @@ worktrees. **The SGLang worktree is unmodified by this campaign** — the graph-
 integration it relies on was already committed as `d7fe89a71` by the prior round.
 
 Two broader base checks remain nonzero for inherited contracts outside this
-campaign, unchanged from the prior campaigns' disclosure: `serving_native/selftest.py`
+campaign. Both were re-run rather than inherited, and both reproduce exactly
+([`evidence/base_check_reproduction.json`](evidence/base_check_reproduction.json)): `serving_native/selftest.py`
 expects `PRODUCTION_FLASHMLA_KV_DECODE_CASES` in a mandated, unmodified SGLang
 base file, and `testbench/bin/verify_harness.py` reports pre-existing stale
 generated projections. Neither touches the provider, dispatch guard, FlashMLA

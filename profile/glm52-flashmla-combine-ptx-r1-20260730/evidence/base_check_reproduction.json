@@ -1,0 +1,34 @@
+{
+  "campaign_checks_that_do_pass": {
+    "campaign_python_compiles": true,
+    "git_diff_check_clean_in_all_three_worktrees": true,
+    "retained_json_artifacts_parse": 61,
+    "sglang_glm52_hotspot_registry_tests": "10 passed",
+    "sglang_worktree_unmodified_by_this_campaign": true
+  },
+  "checks": [
+    {
+      "attribution": "the selftest expects that symbol in a mandated, unmodified SGLang base file; this goal forbids editing it. Pre-existing and unrelated to the combine campaign.",
+      "command": "serving_native/selftest.py",
+      "exit": 1,
+      "failure": "AssertionError: production source contract drift: test/registered/attention/unittests/dsa/test_dsa.py: PRODUCTION_FLASHMLA_KV_DECODE_CASES",
+      "touches_this_campaign": false
+    },
+    {
+      "attribution": "pre-existing stale generated artifacts; this goal forbids regenerating them.",
+      "command": "testbench/bin/verify_harness.py",
+      "exit": 1,
+      "failure": "sync_glm52_tasks.py --check reports stale generated GLM-5.2 task projections; pointer audit reports runs/index.jsonl missing",
+      "touches_this_campaign": false
+    }
+  ],
+  "purpose": "the prior campaigns disclosed two nonzero base checks; this campaign re-ran them rather than inheriting the claim, and reproduces both",
+  "schema_version": 1,
+  "what_these_do_not_touch": [
+    "serving_native/candidates/flashmla_combine_decode_provider.py",
+    "SGLang glm52_opt dispatch guard and graph-only selection",
+    "FlashMLA combine and main kernel sources",
+    "the generated binaries and their SASS",
+    "the correctness harness and every measurement in this campaign"
+  ]
+}
