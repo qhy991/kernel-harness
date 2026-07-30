@@ -72,75 +72,176 @@ _HASH_INPUTS = _BUILD_INPUTS + (
     _SOURCE / "csrc/kerutils/include/kerutils/device/sm100/intrinsics.cuh",
     _SOURCE / "csrc/params.h",
 )
-for _path in _HASH_INPUTS:
-    if not _path.is_file():
-        raise RuntimeError(f"missing FlashMLA hotspot build input: {_path}")
-
-_digest = hashlib.sha256()
-for _path in _HASH_INPUTS:
-    _digest.update(str(_path.relative_to(_SOURCE)).encode())
-    _digest.update(_path.read_bytes())
-_BUILD_ID = _digest.hexdigest()
-_MODULE_NAME = (
-    f"infini_kernel_glm52_flashmla_sparse_decode_{_VARIANT}_" + _BUILD_ID[:16]
-)
-_INCLUDE_DIRS = [
-    _SOURCE / "csrc",
-    _SOURCE / "csrc/kerutils/include",
-    _SOURCE / "csrc/sm90",
-    _SOURCE / "csrc/cutlass/include",
-    _SOURCE / "csrc/cutlass/tools/util/include",
-    Path("/usr/local/cuda/targets/x86_64-linux/include/cccl"),
-]
-_EXTENSION = load(
-    name=_MODULE_NAME,
-    sources=[str(path) for path in _BUILD_INPUTS],
-    extra_cflags=[
-        "-O3",
-        "-std=c++20",
-        "-DNDEBUG",
-        "-Wno-deprecated-declarations",
-    ],
-    extra_cuda_cflags=[
-        "-O3",
-        "-std=c++20",
-        "-DNDEBUG",
-        "-D_USE_MATH_DEFINES",
-        "-Wno-deprecated-declarations",
-        "-U__CUDA_NO_HALF_OPERATORS__",
-        "-U__CUDA_NO_HALF_CONVERSIONS__",
-        "-U__CUDA_NO_HALF2_OPERATORS__",
-        "-U__CUDA_NO_BFLOAT16_CONVERSIONS__",
-        "--expt-relaxed-constexpr",
-        "--expt-extended-lambda",
-        "--use_fast_math",
-        (
-            "--ptxas-options=-v,--register-usage-level=10,"
-            "--warn-on-spills,--warn-on-local-memory-usage,"
-            "--warn-on-double-precision-use"
-        ),
-        "-lineinfo",
-        "--source-in-ptx",
-        "-gencode",
-        "arch=compute_100f,code=sm_100f",
-        "--threads",
-        os.environ.get("NVCC_THREADS", "2"),
-    ],
-    extra_include_paths=[str(path) for path in _INCLUDE_DIRS],
-    with_cuda=True,
-    verbose=True,
+_PREBUILT_DIR = (
+    Path(__file__).resolve().parents[1]
+    / "prebuilt"
+    / "flashmla_sparse_decode"
 )
 
-_git_commit = subprocess.check_output(
-    ["git", "-C", str(_SOURCE), "rev-parse", "HEAD"],
-    text=True,
-).strip()
-_git_dirty = bool(
-    subprocess.check_output(
-        ["git", "-C", str(_SOURCE), "status", "--porcelain"],
+
+def _truthy(value: str) -> bool:
+    return value.strip().lower() in ("1", "true", "yes", "on")
+
+
+def _prebuilt_manifest() -> dict:
+    import json
+
+    path = _PREBUILT_DIR / "MANIFEST.json"
+    if not path.is_file():
+        return {}
+    data = json.loads(path.read_text())
+    return data if isinstance(data, dict) else {}
+
+
+def _resolve_prebuilt_so() -> Path | None:
+    explicit = os.environ.get("GLM52_FLASHMLA_PREBUILT_SO", "").strip()
+    if explicit:
+        path = Path(explicit).expanduser().resolve()
+        if path.is_dir():
+            matches = sorted(
+                path.glob(
+                    f"infini_kernel_glm52_flashmla_sparse_decode_{_VARIANT}_*.so"
+                )
+            )
+            if not matches:
+                raise RuntimeError(
+                    f"GLM52_FLASHMLA_PREBUILT_SO={explicit!r} has no .so for {_VARIANT}"
+                )
+            return matches[0]
+        if not path.is_file():
+            raise RuntimeError(
+                f"GLM52_FLASHMLA_PREBUILT_SO={explicit!r} is not a .so file"
+            )
+        return path
+    if not _truthy(os.environ.get("GLM52_FLASHMLA_USE_PREBUILT", "")):
+        return None
+    for entry in _prebuilt_manifest().get("binaries", []):
+        if entry.get("variant") == _VARIANT and entry.get("so_file"):
+            candidate = _PREBUILT_DIR / str(entry["so_file"])
+            if candidate.is_file():
+                return candidate
+    matches = sorted(
+        _PREBUILT_DIR.glob(
+            f"infini_kernel_glm52_flashmla_sparse_decode_{_VARIANT}_*.so"
+        )
+    )
+    if not matches:
+        raise RuntimeError(
+            "GLM52_FLASHMLA_USE_PREBUILT=1 but no prebuilt .so for "
+            f"{_VARIANT} under {_PREBUILT_DIR}"
+        )
+    return matches[0]
+
+
+def _load_prebuilt_extension(so_path: Path):
+    import importlib.util
+    import sys
+
+    module_name = so_path.stem
+    digest = hashlib.sha256(so_path.read_bytes()).hexdigest()
+    for entry in _prebuilt_manifest().get("binaries", []):
+        if entry.get("so_file") == so_path.name:
+            expected = entry.get("sha256")
+            if expected and expected != digest:
+                raise RuntimeError(
+                    f"prebuilt .so sha256 mismatch: got {digest}, expected {expected}"
+                )
+            break
+    spec = importlib.util.spec_from_file_location(module_name, so_path)
+    if spec is None or spec.loader is None:
+        raise RuntimeError(f"failed to create import spec for {so_path}")
+    module = importlib.util.module_from_spec(spec)
+    sys.modules[module_name] = module
+    spec.loader.exec_module(module)
+    return module
+
+
+_PREBUILT_SO = _resolve_prebuilt_so()
+if _PREBUILT_SO is None:
+    for _path in _HASH_INPUTS:
+        if not _path.is_file():
+            raise RuntimeError(f"missing FlashMLA hotspot build input: {_path}")
+
+    _digest = hashlib.sha256()
+    for _path in _HASH_INPUTS:
+        _digest.update(str(_path.relative_to(_SOURCE)).encode())
+        _digest.update(_path.read_bytes())
+    _BUILD_ID = _digest.hexdigest()
+    _MODULE_NAME = (
+        f"infini_kernel_glm52_flashmla_sparse_decode_{_VARIANT}_" + _BUILD_ID[:16]
+    )
+    _INCLUDE_DIRS = [
+        _SOURCE / "csrc",
+        _SOURCE / "csrc/kerutils/include",
+        _SOURCE / "csrc/sm90",
+        _SOURCE / "csrc/cutlass/include",
+        _SOURCE / "csrc/cutlass/tools/util/include",
+        Path("/usr/local/cuda/targets/x86_64-linux/include/cccl"),
+    ]
+    _EXTENSION = load(
+        name=_MODULE_NAME,
+        sources=[str(path) for path in _BUILD_INPUTS],
+        extra_cflags=[
+            "-O3",
+            "-std=c++20",
+            "-DNDEBUG",
+            "-Wno-deprecated-declarations",
+        ],
+        extra_cuda_cflags=[
+            "-O3",
+            "-std=c++20",
+            "-DNDEBUG",
+            "-D_USE_MATH_DEFINES",
+            "-Wno-deprecated-declarations",
+            "-U__CUDA_NO_HALF_OPERATORS__",
+            "-U__CUDA_NO_HALF_CONVERSIONS__",
+            "-U__CUDA_NO_HALF2_OPERATORS__",
+            "-U__CUDA_NO_BFLOAT16_CONVERSIONS__",
+            "--expt-relaxed-constexpr",
+            "--expt-extended-lambda",
+            "--use_fast_math",
+            (
+                "--ptxas-options=-v,--register-usage-level=10,"
+                "--warn-on-spills,--warn-on-local-memory-usage,"
+                "--warn-on-double-precision-use"
+            ),
+            "-lineinfo",
+            "--source-in-ptx",
+            "-gencode",
+            "arch=compute_100f,code=sm_100f",
+            "--threads",
+            os.environ.get("NVCC_THREADS", "2"),
+        ],
+        extra_include_paths=[str(path) for path in _INCLUDE_DIRS],
+        with_cuda=True,
+        verbose=True,
+    )
+    _LOADED_MODULE_NAME = _MODULE_NAME
+    _SOURCE_SHA256 = {
+        str(path.relative_to(_SOURCE)): hashlib.sha256(path.read_bytes()).hexdigest()
+        for path in _HASH_INPUTS
+    }
+else:
+    _EXTENSION = _load_prebuilt_extension(_PREBUILT_SO)
+    _LOADED_MODULE_NAME = _PREBUILT_SO.stem
+    _MODULE_NAME = _LOADED_MODULE_NAME
+    _BUILD_ID = _LOADED_MODULE_NAME.rsplit("_", 1)[-1]
+    _SOURCE_SHA256 = {}
+
+if _PREBUILT_SO is None and _SOURCE.is_dir():
+    _git_commit = subprocess.check_output(
+        ["git", "-C", str(_SOURCE), "rev-parse", "HEAD"],
         text=True,
     ).strip()
-)
+    _git_dirty = bool(
+        subprocess.check_output(
+            ["git", "-C", str(_SOURCE), "status", "--porcelain"],
+            text=True,
+        ).strip()
+    )
+else:
+    _git_commit = "prebuilt"
+    _git_dirty = False
 PROVIDER_INFO = {
     "name": (
         "glm52_flashmla_combine_control_identity"
@@ -152,16 +253,15 @@ PROVIDER_INFO = {
     "main_variant": _MAIN_VARIANT,
     "git_commit": _git_commit + ("-dirty" if _git_dirty else ""),
     "build_id": _BUILD_ID,
-    "module_name": _MODULE_NAME,
+    "module_name": _LOADED_MODULE_NAME,
+    "source_module_name": _MODULE_NAME,
     "main_symbol_prefix": "infini_kernel_glm52_flashmla_sparse_decode",
     "combine_symbol_prefix": (
         "infini_kernel_glm52_flashmla_sparse_decode_combine"
     ),
     "stock_combine_translation_unit_linked": False,
-    "source_sha256": {
-        str(path.relative_to(_SOURCE)): hashlib.sha256(path.read_bytes()).hexdigest()
-        for path in _HASH_INPUTS
-    },
+    "prebuilt_so": str(_PREBUILT_SO) if _PREBUILT_SO is not None else None,
+    "source_sha256": _SOURCE_SHA256,
 }
 
 _WORKSPACES: dict[int, tuple[torch.Tensor, ...]] = {}
