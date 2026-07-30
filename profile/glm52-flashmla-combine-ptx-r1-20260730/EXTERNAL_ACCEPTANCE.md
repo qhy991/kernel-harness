@@ -92,8 +92,9 @@ Distributed latency is the **maximum across ranks**, not the mean.
 5. No regression in prefill or in any non-promoted path.
 
 Expected magnitude, from the local graph lanes against installed stock: the
-FlashMLA DSA decode leaf improves about 27% at M16 and about 14% at M32. Layer
-share bounds the end-to-end effect: DSA/FlashMLA is roughly 13.6–13.7% of a
+FlashMLA DSA decode leaf improves by at least 27.0% at M16 and at least 13.5% at
+M32, those being the minimum of all twelve estimators. Layer share bounds the
+end-to-end effect: DSA/FlashMLA is roughly 13.6–13.7% of a
 comm-free decode layer and roughly 5.1% of full-server short-decode GPU kernel
 time, so expect a low-single-digit end-to-end effect, not 27%.
 

@@ -61,7 +61,7 @@
       "correctness": "bitwise exact against installed stock at both buckets on every boundary (max_abs 0.0), all 17 adversarial matrix cases, exactly one provider launch, wrong-page rejected before launch, graph-only contract holds.",
       "measurement": "M16 graph containing and leaf pass against both denominators. M32 gains nothing over P1: the Nsys chain shows the M32 combine unchanged at 9.44 us against stock's 9.50 us.",
       "why_m32_failed": "the combine grid is 256 CTAs at M32 against 148 SMs. At 48 registers the stock kernel has capacity for 5 CTAs per SM and resides in a single wave; at 184 registers only one CTA per SM fits (65536 registers per SM, 256 threads, 8-register granularity), so the grid becomes two waves of 148 and 108. Only four of the eight stages are ever used at M32, capping the possible gain at 4x, and the second wave cancels it. At M16 the grid is 128 CTAs, below the SM count, so occupancy is grid-limited to one CTA per SM in the stock build too and the register increase is free.",
-      "decision": "superseded by C2 at both buckets; retained as the measured intermediate result and as the evidence that motivated C2",
+      "decision": "superseded by C2 at both buckets; not promotable: it fails the P1-relative condition at M32 (containing 0.9990-1.0013, leaf 0.9994-1.0007). Retained as the measured intermediate result and as the evidence that motivated C2",
       "rollback": "GLM52_FLASHMLA_COMBINE_VARIANT=combine_identity restores P1 plus the stock combine; unsetting SGLANG_GLM52_OPT restores installed stock",
       "evidence": [
         "evidence/combine_c1_stage8_graph_gate_k20_m16.json",

@@ -63,8 +63,9 @@ unchanged shared memory, unchanged FMA order. Delivered exactly that —
 `LDG.E.128` 8 → 64, registers 48 → 184, 0 spill stores, 0 spill loads, `LOCAL 0`,
 `STACK 24` and `SHARED 6144` both unchanged.
 
-It won 1.18–1.21 against P1 at M16 and **exactly nothing** at M32
-(0.9990–1.0013). Nsys says why, at the level of the kernel rather than the chain:
+It won 1.18–1.21 against P1 at M16 and **exactly nothing** at M32: 0.9990–1.0013
+on the containing lane and 0.9994–1.0007 on the leaf, both straddling 1.0 inside
+an 0.085% null. Nsys says why, at the level of the kernel rather than the chain:
 
 | M32 graph lane | main | combine | overlap | chain |
 |---|---:|---:|---:|---:|
@@ -107,7 +108,9 @@ and `STACK 24` / `SHARED 6144` unchanged from stock.
 ## 3. What C2 changed on the device
 
 Nsys graph-lane medians over five replays, one prefixed main followed by one
-prefixed combine and no other device kernel in the marked ranges:
+prefixed combine and no other device kernel in the marked ranges. Each report
+captures its own stock arm, so the stock rows come from the C2 report and the
+identity rows from the identity report:
 
 | Graph lane | main | combine | overlap | chain | combine regs |
 |---|---:|---:|---:|---:|---:|
@@ -131,11 +134,13 @@ that bucket's own null:
 
 | Null | half-width | the claim it bounds |
 |---|---:|---|
-| installed stock in both arms, M16 | ±0.29% | M16 +27.1% vs stock |
-| installed stock in both arms, M32 | ±1.45% | M32 +13.8% vs stock |
+| installed stock in both arms, M16 | ±0.29% | M16 +27.0% vs stock |
+| installed stock in both arms, M32 | ±1.45% | M32 +13.5% vs stock |
 | `combine_identity` in both provider arms, M16 | ±2.63% | M16 +18.2% vs P1 |
 | `combine_identity` in both provider arms, M32 | ±0.085% | M32 +6.4% vs P1 |
 
+Each "claim" column is the **minimum** of all twelve estimators for that lane, so
+it is the conservative end of the range, not the mean.
 The smallest margin is M32-versus-P1 at 6.4% against an 0.085% null. The widest
 null is M16 provider-pair at 2.63%, against an 18% claim. A pooled null figure
 would have misrepresented both, so it is reported per bucket.
