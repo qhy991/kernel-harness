@@ -1,17 +1,13 @@
-"""CPU-only contracts for the graph-only decode o_proj fixed-N/K dispatch."""
+"""CPU-only contracts for the graph-only decode fused_qkv_a_proj fixed-N/K dispatch."""
 
 from __future__ import annotations
 
 import ast
 from pathlib import Path
 
-from serving_native import o_proj_graph_only_gpu_contract as contract
+from serving_native import fused_qkv_a_graph_only_gpu_contract as contract
 
-# Validate the SGLang tree this harness ships with (this round's dedicated
-# worktree), NOT the sibling moe-w2-decode tree the o_proj round lived in — that
-# tree is now a live worktree for the concurrent q_b task and mutates
-# independently. The exact _E2E_DECODE graph_only set for this worktree is owned
-# by test_fused_qkv_a_graph_only.py; here we keep the o_proj-specific invariant.
+# This round's dedicated worktree (not the shared moe-w2-decode tree o_proj used).
 SGLANG_ROOT = Path(
     "/home/qinhaiyan/glm52-hotspot-goal-runs/worktrees/fused-qkv-a-decode/sglang"
 )
@@ -29,7 +25,7 @@ def _function(path: Path, name: str) -> ast.FunctionDef:
     )
 
 
-def test_o_proj_e2e_spec_declares_graph_only():
+def test_e2e_decode_graph_only_ops_are_exactly_o_proj_and_fused_qkv_a():
     source = REGISTRY.read_text()
     tree = ast.parse(source)
     e2e = next(
@@ -44,9 +40,34 @@ def test_o_proj_e2e_spec_declares_graph_only():
         for keyword in value.keywords:
             if keyword.arg == "graph_only" and keyword.value.value is True:
                 graph_only_ops.add(key.value)
-    # o_proj-specific invariant (this worktree also adds fused_qkv_a_proj; the
-    # exact set is asserted by test_fused_qkv_a_graph_only.py).
-    assert "o_proj" in graph_only_ops
+    # This worktree adds fused_qkv_a_proj alongside the inherited o_proj.
+    assert graph_only_ops == {"o_proj", "fused_qkv_a_proj"}
+
+
+def test_fused_qkv_a_decode_spec_shape_and_symbol():
+    source = REGISTRY.read_text()
+    tree = ast.parse(source)
+    e2e = next(
+        node
+        for node in ast.walk(tree)
+        if isinstance(node, ast.AnnAssign)
+        and isinstance(node.target, ast.Name)
+        and node.target.id == "_E2E_DECODE"
+    )
+    spec_kwargs = None
+    for key, value in zip(e2e.value.keys, e2e.value.values):
+        if key.value == "fused_qkv_a_proj":
+            spec_kwargs = {kw.arg: kw.value for kw in value.keywords}
+    assert spec_kwargs is not None, "fused_qkv_a_proj missing from _E2E_DECODE"
+    assert spec_kwargs["implementation"].value == "fixed_nk"
+    assert spec_kwargs["n"].value == 2624
+    assert spec_kwargs["k"].value == 6144
+    assert spec_kwargs["graph_only"].value is True
+    assert (
+        spec_kwargs["profiler_name"].value
+        == "infini_kernel_glm52_fused_qkv_a_decode_nk"
+    )
+    assert [e.value for e in spec_kwargs["m_values"].elts] == [16, 32]
 
 
 def test_fp8_gemm_graph_only_decline_precedes_abi_and_miss_accounting():
@@ -63,10 +84,10 @@ def test_fp8_gemm_graph_only_decline_precedes_abi_and_miss_accounting():
     assert "_record_miss" not in tail
 
 
-def test_o_proj_graph_only_env_registered_and_defaults_on():
+def test_fused_qkv_a_graph_only_env_registered_and_defaults_on():
     source = CONFIG.read_text()
-    assert '"SGLANG_GLM52_O_PROJ_GRAPH_ONLY",' in source
-    assert '"o_proj": "SGLANG_GLM52_O_PROJ_GRAPH_ONLY"' in source
+    assert '"SGLANG_GLM52_FUSED_QKV_A_GRAPH_ONLY",' in source
+    assert '"fused_qkv_a_proj": "SGLANG_GLM52_FUSED_QKV_A_GRAPH_ONLY"' in source
     resolver = ast.get_source_segment(source, _function(CONFIG, "graph_only_enabled"))
     assert resolver is not None
     assert 'os.environ.get(key, "1")' in resolver
@@ -95,13 +116,15 @@ def test_gpu_contract_audits_every_plan_gate():
 def test_contract_floors_are_the_plan_values():
     assert contract.GRAPH_WIN_FLOOR == 1.03
     assert 0.9 < contract.IDENTITY_LANE_FLOOR < 1.0
-    assert contract.N == 6144 and contract.K == 16384
+    assert contract.N == 2624 and contract.K == 6144
     assert contract.M_VALUES == (16, 32)
-    assert contract.CANDIDATE_NVTX_SYMBOL == "infini_kernel_glm52_attn_o_decode_nk"
+    assert contract.OP == "fused_qkv_a_proj"
+    assert contract.CANDIDATE_NVTX_SYMBOL == "infini_kernel_glm52_fused_qkv_a_decode_nk"
+    assert contract.GRAPH_ONLY_ENV == "SGLANG_GLM52_FUSED_QKV_A_GRAPH_ONLY"
 
 
 def test_audit_flags_a_sub_floor_graph_series():
-    """A synthetic sub-1.03 graph-leaf series must fail the audit."""
+    """A synthetic sub-1.03 graph-region series must fail the audit."""
 
     def series(ratio):
         raw = []
