@@ -1,0 +1,519 @@
+{
+  "best_case_region_gate_at_physical_floor": [
+    {
+      "best_case_passes": false,
+      "best_case_worst_estimator": 1.0288117063255902,
+      "expected_m": 4,
+      "measured_worst_estimator": 1.0263840409628544
+    },
+    {
+      "best_case_passes": false,
+      "best_case_worst_estimator": 1.029612004026396,
+      "expected_m": 5,
+      "measured_worst_estimator": 1.0271912093788695
+    },
+    {
+      "best_case_passes": true,
+      "best_case_worst_estimator": 1.030512924230066,
+      "expected_m": 8,
+      "measured_worst_estimator": 1.0280974496640745
+    },
+    {
+      "best_case_passes": false,
+      "best_case_worst_estimator": 1.0280490322860236,
+      "expected_m": 9,
+      "measured_worst_estimator": 1.0256295499724772
+    }
+  ],
+  "contract": "glm52-moe-w2-graph-only-campaign-v1",
+  "disposition": "no-replacement",
+  "graph_leaf_gate_passes": true,
+  "graph_only_integration": {
+    "capture_selects_one_candidate_node": true,
+    "captured_graph_identical_across_settings": true,
+    "contract_path": "/home/qinhaiyan/glm52-hotspot-goal-runs/cache/moe_w2_ptx_graph_only/results/graph_only_contract.json",
+    "contract_sha256": "fe7a04d09e73cb619b6f432922aede24acf843ebc090385f47574432e969de5f",
+    "eager_containing_identity_estimators": [
+      {
+        "ab_median_speedup": 1.0068410627405362,
+        "ba_median_speedup": 0.9977861760853641,
+        "candidate_p50_ms": 0.26024000346660614,
+        "order_balanced_speedup": 1.0023033941465047,
+        "pair_count": 50,
+        "pooled_speedup": 1.0006147931355944,
+        "reference_p50_ms": 0.2603999972343445
+      },
+      {
+        "ab_median_speedup": 1.0033226646507494,
+        "ba_median_speedup": 1.0027144521162856,
+        "candidate_p50_ms": 0.2592960000038147,
+        "order_balanced_speedup": 1.0030185122823645,
+        "pair_count": 50,
+        "pooled_speedup": 1.0032086551049189,
+        "reference_p50_ms": 0.260127991437912
+      },
+      {
+        "ab_median_speedup": 1.0016129444133297,
+        "ba_median_speedup": 1.0008630033803645,
+        "candidate_p50_ms": 0.26051199436187744,
+        "order_balanced_speedup": 1.0012379036823242,
+        "pair_count": 50,
+        "pooled_speedup": 0.9987102652090093,
+        "reference_p50_ms": 0.26017600297927856
+      }
+    ],
+    "eager_declines_before_provider_launch": true,
+    "status": "pass"
+  },
+  "graph_region_gate_passes": false,
+  "lanes": [
+    {
+      "execution_mode": "cuda_graph",
+      "expected_m": 4,
+      "family": "moe_grouped_masked",
+      "gate_passes": true,
+      "result_path": "/home/qinhaiyan/glm52-hotspot-goal-runs/cache/moe_w2_ptx_graph_only/results/graph_leaf_em4.json",
+      "result_sha256": "4c9cdefe2f28df0821080b191c65ca22354b795eb0867de37b72903a5393f69d",
+      "self_audit_valid": true,
+      "series": [
+        {
+          "ab_median_speedup": 1.0934018950059525,
+          "ba_median_speedup": 1.1061906540962674,
+          "candidate_median_ms": 0.07254400104284286,
+          "min_estimator": 1.0934018950059525,
+          "order_balanced_speedup": 1.0997776854558983,
+          "pair_count": 50,
+          "passes": true,
+          "pooled_speedup": 1.098147306923882,
+          "reference_median_ms": 0.07966399937868118,
+          "series_index": 0,
+          "start_order": "AB"
+        },
+        {
+          "ab_median_speedup": 1.0931541438657248,
+          "ba_median_speedup": 1.108754494807961,
+          "candidate_median_ms": 0.07259200140833855,
+          "min_estimator": 1.0931541438657248,
+          "order_balanced_speedup": 1.1009266871727068,
+          "pair_count": 50,
+          "passes": true,
+          "pooled_speedup": 1.104253883003861,
+          "reference_median_ms": 0.0801599994301796,
+          "series_index": 1,
+          "start_order": "BA"
+        },
+        {
+          "ab_median_speedup": 1.0897658012589615,
+          "ba_median_speedup": 1.1050496644162853,
+          "candidate_median_ms": 0.07249600067734718,
+          "min_estimator": 1.0897658012589615,
+          "order_balanced_speedup": 1.097381124757283,
+          "pair_count": 50,
+          "passes": true,
+          "pooled_speedup": 1.104171234681211,
+          "reference_median_ms": 0.08004799857735634,
+          "series_index": 2,
+          "start_order": "AB"
+        }
+      ],
+      "series_passing": 3,
+      "series_total": 3,
+      "workload": "moe_w2_hotspot_decode_em4",
+      "worst_estimator": 1.0897658012589615
+    },
+    {
+      "execution_mode": "cuda_graph",
+      "expected_m": 5,
+      "family": "moe_grouped_masked",
+      "gate_passes": true,
+      "result_path": "/home/qinhaiyan/glm52-hotspot-goal-runs/cache/moe_w2_ptx_graph_only/results/graph_leaf_em5.json",
+      "result_sha256": "640f4fa3faf538c9f2353db17023ab2d74f1f96921147f7bc0f5625f1a0cac01",
+      "self_audit_valid": true,
+      "series": [
+        {
+          "ab_median_speedup": 1.0977973811373951,
+          "ba_median_speedup": 1.1184637184983683,
+          "candidate_median_ms": 0.07100800052285194,
+          "min_estimator": 1.0977973811373951,
+          "order_balanced_speedup": 1.1080823710648506,
+          "pair_count": 50,
+          "passes": true,
+          "pooled_speedup": 1.1140152976761792,
+          "reference_median_ms": 0.0791039988398552,
+          "series_index": 0,
+          "start_order": "AB"
+        },
+        {
+          "ab_median_speedup": 1.0958537669982973,
+          "ba_median_speedup": 1.1073918585047857,
+          "candidate_median_ms": 0.07147200033068657,
+          "min_estimator": 1.0958537669982973,
+          "order_balanced_speedup": 1.1016077068020698,
+          "pair_count": 50,
+          "passes": true,
+          "pooled_speedup": 1.0973808038197777,
+          "reference_median_ms": 0.07843200117349625,
+          "series_index": 1,
+          "start_order": "BA"
+        },
+        {
+          "ab_median_speedup": 1.0960526524057892,
+          "ba_median_speedup": 1.1102325274144538,
+          "candidate_median_ms": 0.07097600027918816,
+          "min_estimator": 1.0960526524057892,
+          "order_balanced_speedup": 1.103119806031872,
+          "pair_count": 50,
+          "passes": true,
+          "pooled_speedup": 1.1064021865925555,
+          "reference_median_ms": 0.07852800190448761,
+          "series_index": 2,
+          "start_order": "AB"
+        }
+      ],
+      "series_passing": 3,
+      "series_total": 3,
+      "workload": "moe_w2_hotspot_decode_em5",
+      "worst_estimator": 1.0958537669982973
+    },
+    {
+      "execution_mode": "cuda_graph",
+      "expected_m": 8,
+      "family": "moe_grouped_masked",
+      "gate_passes": true,
+      "result_path": "/home/qinhaiyan/glm52-hotspot-goal-runs/cache/moe_w2_ptx_graph_only/results/graph_leaf_em8.json",
+      "result_sha256": "51eecc646c0bc5a5ee38a8389a47c0ea594ef7a4bf4a0726c4ac818cbabbd8f6",
+      "self_audit_valid": true,
+      "series": [
+        {
+          "ab_median_speedup": 1.0963441182823728,
+          "ba_median_speedup": 1.0983310967447606,
+          "candidate_median_ms": 0.07251200079917908,
+          "min_estimator": 1.0963441182823728,
+          "order_balanced_speedup": 1.097337157779115,
+          "pair_count": 50,
+          "passes": true,
+          "pooled_speedup": 1.0970873975945903,
+          "reference_median_ms": 0.07955200225114822,
+          "series_index": 0,
+          "start_order": "AB"
+        },
+        {
+          "ab_median_speedup": 1.0890052026271668,
+          "ba_median_speedup": 1.1019136046036428,
+          "candidate_median_ms": 0.07252800092101097,
+          "min_estimator": 1.0890052026271668,
+          "order_balanced_speedup": 1.0954403900984397,
+          "pair_count": 50,
+          "passes": true,
+          "pooled_speedup": 1.095742342720026,
+          "reference_median_ms": 0.07947200164198875,
+          "series_index": 1,
+          "start_order": "BA"
+        },
+        {
+          "ab_median_speedup": 1.0845749692764548,
+          "ba_median_speedup": 1.106135217777459,
+          "candidate_median_ms": 0.07230399921536446,
+          "min_estimator": 1.0845749692764548,
+          "order_balanced_speedup": 1.0953020450252946,
+          "pair_count": 50,
+          "passes": true,
+          "pooled_speedup": 1.0969241160150955,
+          "reference_median_ms": 0.07931200042366982,
+          "series_index": 2,
+          "start_order": "AB"
+        }
+      ],
+      "series_passing": 3,
+      "series_total": 3,
+      "workload": "moe_w2_hotspot_decode_em8",
+      "worst_estimator": 1.0845749692764548
+    },
+    {
+      "execution_mode": "cuda_graph",
+      "expected_m": 9,
+      "family": "moe_grouped_masked",
+      "gate_passes": true,
+      "result_path": "/home/qinhaiyan/glm52-hotspot-goal-runs/cache/moe_w2_ptx_graph_only/results/graph_leaf_em9.json",
+      "result_sha256": "678ef44a2938306235c8215526ed0758753f53fae4e9df03af7278853a03c8a4",
+      "self_audit_valid": true,
+      "series": [
+        {
+          "ab_median_speedup": 1.0936426233692353,
+          "ba_median_speedup": 1.1009421650346238,
+          "candidate_median_ms": 0.07228799909353256,
+          "min_estimator": 1.0936426233692353,
+          "order_balanced_speedup": 1.0972863243229962,
+          "pair_count": 50,
+          "passes": true,
+          "pooled_speedup": 1.1031430488199176,
+          "reference_median_ms": 0.07974400371313095,
+          "series_index": 0,
+          "start_order": "AB"
+        },
+        {
+          "ab_median_speedup": 1.0946358581530327,
+          "ba_median_speedup": 1.1117216044972986,
+          "candidate_median_ms": 0.07203199714422226,
+          "min_estimator": 1.0946358581530327,
+          "order_balanced_speedup": 1.1031456533777246,
+          "pair_count": 50,
+          "passes": true,
+          "pooled_speedup": 1.099733491132731,
+          "reference_median_ms": 0.07921599969267845,
+          "series_index": 1,
+          "start_order": "BA"
+        },
+        {
+          "ab_median_speedup": 1.0901494825917633,
+          "ba_median_speedup": 1.1058394819602981,
+          "candidate_median_ms": 0.07223999872803688,
+          "min_estimator": 1.0901494825917633,
+          "order_balanced_speedup": 1.0979664562674776,
+          "pair_count": 50,
+          "passes": true,
+          "pooled_speedup": 1.0928017581885352,
+          "reference_median_ms": 0.07894399762153625,
+          "series_index": 2,
+          "start_order": "AB"
+        }
+      ],
+      "series_passing": 3,
+      "series_total": 3,
+      "workload": "moe_w2_hotspot_decode_em9",
+      "worst_estimator": 1.0901494825917633
+    },
+    {
+      "execution_mode": "cuda_graph",
+      "expected_m": 4,
+      "family": "moe_compute_region",
+      "gate_passes": false,
+      "result_path": "/home/qinhaiyan/glm52-hotspot-goal-runs/cache/moe_w2_ptx_graph_only/results/graph_region_em4.json",
+      "result_sha256": "d20a2c8c7237e6a6d68f7bfb0d71ef86a701914486afca13b7eb9c744fe7446b",
+      "self_audit_valid": true,
+      "series": [
+        {
+          "ab_median_speedup": 1.0333132995561194,
+          "ba_median_speedup": 1.0334089279132377,
+          "candidate_median_ms": 0.21200000494718552,
+          "min_estimator": 1.0332075532437983,
+          "order_balanced_speedup": 1.0333611126284845,
+          "pair_count": 50,
+          "passes": true,
+          "pooled_speedup": 1.0332075532437983,
+          "reference_median_ms": 0.21904000639915466,
+          "series_index": 0,
+          "start_order": "AB"
+        },
+        {
+          "ab_median_speedup": 1.0322532264123976,
+          "ba_median_speedup": 1.0301095068833748,
+          "candidate_median_ms": 0.2120320051908493,
+          "min_estimator": 1.0301095068833748,
+          "order_balanced_speedup": 1.0311808095763066,
+          "pair_count": 50,
+          "passes": true,
+          "pooled_speedup": 1.03025954958762,
+          "reference_median_ms": 0.2184479981660843,
+          "series_index": 1,
+          "start_order": "BA"
+        },
+        {
+          "ab_median_speedup": 1.0332781285254595,
+          "ba_median_speedup": 1.0263840409628544,
+          "candidate_median_ms": 0.21225599944591522,
+          "min_estimator": 1.0263840409628544,
+          "order_balanced_speedup": 1.0298253157669492,
+          "pair_count": 50,
+          "passes": false,
+          "pooled_speedup": 1.029172314263592,
+          "reference_median_ms": 0.2184479981660843,
+          "series_index": 2,
+          "start_order": "AB"
+        }
+      ],
+      "series_passing": 2,
+      "series_total": 3,
+      "workload": "moe_w2_hotspot_region_decode_em4",
+      "worst_estimator": 1.0263840409628544
+    },
+    {
+      "execution_mode": "cuda_graph",
+      "expected_m": 5,
+      "family": "moe_compute_region",
+      "gate_passes": false,
+      "result_path": "/home/qinhaiyan/glm52-hotspot-goal-runs/cache/moe_w2_ptx_graph_only/results/graph_region_em5.json",
+      "result_sha256": "b2468bff6a3908d373c2ec4dc6b2c78aa7f5c7b18e4906882e9ad1abd402535a",
+      "self_audit_valid": true,
+      "series": [
+        {
+          "ab_median_speedup": 1.035386260811409,
+          "ba_median_speedup": 1.0352241017984694,
+          "candidate_median_ms": 0.2118080034852028,
+          "min_estimator": 1.0338419458098733,
+          "order_balanced_speedup": 1.0353051781300848,
+          "pair_count": 50,
+          "passes": true,
+          "pooled_speedup": 1.0338419458098733,
+          "reference_median_ms": 0.2189759984612465,
+          "series_index": 0,
+          "start_order": "AB"
+        },
+        {
+          "ab_median_speedup": 1.0310865622650947,
+          "ba_median_speedup": 1.0357962234350644,
+          "candidate_median_ms": 0.21167999505996704,
+          "min_estimator": 1.0310865622650947,
+          "order_balanced_speedup": 1.0334387099527618,
+          "pair_count": 50,
+          "passes": true,
+          "pooled_speedup": 1.0318972357669551,
+          "reference_median_ms": 0.2184320017695427,
+          "series_index": 1,
+          "start_order": "BA"
+        },
+        {
+          "ab_median_speedup": 1.0316104841949671,
+          "ba_median_speedup": 1.0271912093788695,
+          "candidate_median_ms": 0.21302400529384613,
+          "min_estimator": 1.0271912093788695,
+          "order_balanced_speedup": 1.0293984752602607,
+          "pair_count": 50,
+          "passes": false,
+          "pooled_speedup": 1.0293675435699676,
+          "reference_median_ms": 0.21927999705076218,
+          "series_index": 2,
+          "start_order": "AB"
+        }
+      ],
+      "series_passing": 2,
+      "series_total": 3,
+      "workload": "moe_w2_hotspot_region_decode_em5",
+      "worst_estimator": 1.0271912093788695
+    },
+    {
+      "execution_mode": "cuda_graph",
+      "expected_m": 8,
+      "family": "moe_compute_region",
+      "gate_passes": false,
+      "result_path": "/home/qinhaiyan/glm52-hotspot-goal-runs/cache/moe_w2_ptx_graph_only/results/graph_region_em8.json",
+      "result_sha256": "7a8b2875f06d1d84468c058b64e5d46cf05fc481424824d45e377e3a20ebac94",
+      "self_audit_valid": true,
+      "series": [
+        {
+          "ab_median_speedup": 1.0350246854155105,
+          "ba_median_speedup": 1.0382978819770818,
+          "candidate_median_ms": 0.21315199881792068,
+          "min_estimator": 1.0350246854155105,
+          "order_balanced_speedup": 1.0366599918299733,
+          "pair_count": 50,
+          "passes": true,
+          "pooled_speedup": 1.0361057028058207,
+          "reference_median_ms": 0.22084800153970718,
+          "series_index": 0,
+          "start_order": "AB"
+        },
+        {
+          "ab_median_speedup": 1.0321663678719915,
+          "ba_median_speedup": 1.0321128800975987,
+          "candidate_median_ms": 0.213359996676445,
+          "min_estimator": 1.0321128800975987,
+          "order_balanced_speedup": 1.0321396236383131,
+          "pair_count": 50,
+          "passes": true,
+          "pooled_speedup": 1.033220873889982,
+          "reference_median_ms": 0.22044800221920013,
+          "series_index": 1,
+          "start_order": "BA"
+        },
+        {
+          "ab_median_speedup": 1.0280974496640745,
+          "ba_median_speedup": 1.034550669330747,
+          "candidate_median_ms": 0.21367999911308289,
+          "min_estimator": 1.0280974496640745,
+          "order_balanced_speedup": 1.0313190120846227,
+          "pair_count": 50,
+          "passes": false,
+          "pooled_speedup": 1.0304005865623715,
+          "reference_median_ms": 0.22017599642276764,
+          "series_index": 2,
+          "start_order": "AB"
+        }
+      ],
+      "series_passing": 2,
+      "series_total": 3,
+      "workload": "moe_w2_hotspot_region_decode_em8",
+      "worst_estimator": 1.0280974496640745
+    },
+    {
+      "execution_mode": "cuda_graph",
+      "expected_m": 9,
+      "family": "moe_compute_region",
+      "gate_passes": false,
+      "result_path": "/home/qinhaiyan/glm52-hotspot-goal-runs/cache/moe_w2_ptx_graph_only/results/graph_region_em9.json",
+      "result_sha256": "0e4de8f56311c7f4e50edba5bdafe8884fb47977e979f20187e960877f23c154",
+      "self_audit_valid": true,
+      "series": [
+        {
+          "ab_median_speedup": 1.0301898284847886,
+          "ba_median_speedup": 1.0321655070725735,
+          "candidate_median_ms": 0.21291200071573257,
+          "min_estimator": 1.0296836236265625,
+          "order_balanced_speedup": 1.031177194617399,
+          "pair_count": 50,
+          "passes": false,
+          "pooled_speedup": 1.0296836236265625,
+          "reference_median_ms": 0.2192320004105568,
+          "series_index": 0,
+          "start_order": "AB"
+        },
+        {
+          "ab_median_speedup": 1.0256295499724772,
+          "ba_median_speedup": 1.0316301997783293,
+          "candidate_median_ms": 0.2128159999847412,
+          "min_estimator": 1.0256295499724772,
+          "order_balanced_speedup": 1.028625499167051,
+          "pair_count": 50,
+          "passes": false,
+          "pooled_speedup": 1.0280429902589583,
+          "reference_median_ms": 0.21878399699926376,
+          "series_index": 1,
+          "start_order": "BA"
+        },
+        {
+          "ab_median_speedup": 1.0286952721842786,
+          "ba_median_speedup": 1.031575761524009,
+          "candidate_median_ms": 0.21294400095939636,
+          "min_estimator": 1.0286952721842786,
+          "order_balanced_speedup": 1.0301345100420842,
+          "pair_count": 50,
+          "passes": false,
+          "pooled_speedup": 1.0310316064667053,
+          "reference_median_ms": 0.21955199539661407,
+          "series_index": 2,
+          "start_order": "AB"
+        }
+      ],
+      "series_passing": 0,
+      "series_total": 3,
+      "workload": "moe_w2_hotspot_region_decode_em9",
+      "worst_estimator": 1.0256295499724772
+    }
+  ],
+  "roofline": {
+    "candidate_achieved_bandwidth_tb_s": 6.0430300751879695,
+    "candidate_bytes_moved_mb": 411.506176,
+    "candidate_duration_us": 68.096,
+    "floor_duration_us": 67.59514397870909,
+    "irreducible_weight_mb": 402.653184,
+    "max_remaining_headroom_us": 0.5008560212909146,
+    "pct_of_achievable_floor": 99.26448540106479,
+    "read_bytes_mb": 406.906624,
+    "read_over_irreducible": 1.0105635325113933,
+    "stock_achieved_bandwidth_tb_s": 6.070344591705857,
+    "write_bytes_mb": 4.599552,
+    "write_floor_mb": 1.572864
+  },
+  "series_gate": "all_four_estimates_each_series_gte_1p03_v1",
+  "threshold": 1.03
+}

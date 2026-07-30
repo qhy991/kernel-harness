@@ -1,5 +1,5 @@
 {
-  "generated_from_entries": 13,
+  "generated_from_entries": 14,
   "mistakes": [
     {
       "class": "launch-overhead::integration-empty-expert-diagnosis",
@@ -191,6 +191,25 @@
         "The Triton path interpreted the packed UE8M0 scales incorrectly and produced very large output errors on the quick check."
       ],
       "suggested_owner": "typed-boundary|diagnostic",
+      "promoted": false,
+      "recurring": false
+    },
+    {
+      "class": "memory-bandwidth::roofline-bounded-ptx-rejection",
+      "bottleneck": "memory-bandwidth",
+      "technique": "roofline-bounded-ptx-rejection",
+      "count": 1,
+      "distinct_entries": 1,
+      "ops": [
+        "MoE W2 down-projection"
+      ],
+      "outcomes": [
+        "abandoned"
+      ],
+      "whys": [
+        "The candidate is at 99.26% of its achievable DRAM floor with 0.50 us of total headroom, while the region gate needs about 2.5 us. Re-scoring each region lane at that unreachable floor still fails three of four hints."
+      ],
+      "suggested_owner": "doc|reviewer",
       "promoted": false,
       "recurring": false
     },
@@ -456,6 +475,26 @@
         "Sparse MLA Decode"
       ],
       "median_geomean": 1.0611
+    },
+    {
+      "class": "memory-bandwidth::graph-only-dispatch",
+      "bottleneck": "memory-bandwidth",
+      "technique": "graph-only-dispatch",
+      "count": 1,
+      "ops": [
+        "MoE W2 down-projection"
+      ],
+      "median_geomean": 1.0008
+    },
+    {
+      "class": "memory-bandwidth::bm16-auto-under-graph-replay",
+      "bottleneck": "memory-bandwidth",
+      "technique": "bm16-auto-under-graph-replay",
+      "count": 1,
+      "ops": [
+        "MoE W2 down-projection"
+      ],
+      "median_geomean": 1.0313
     },
     {
       "class": "launch-overhead::harness-integrate-active-rows-fix",

@@ -18,6 +18,7 @@
 
 ## memory-bandwidth
 
+- `glm52--moe_w2_decode_graph_only--b200--20260730a` [no-win] MoE W2 down-projection/decode — Graph-only selection is the right fix when a Python provider tax hides a real device win, and it is worth keeping on its own merits. But it only exposes the kernel's true ceiling: once both arms sustain the same DRAM bandwidth, duration is bytes divided by bandwidth, and a tile or epilogue change can only win by moving fewer bytes. Compute the byte floor from the irreducible operand footprint before spending PTX identities on barrier or scheduling hypotheses.
 - `glm52--o_proj_decode--b200--20260714a` [no-win] Attention O Projection/decode — For small-M B200 FP8 decode GEMMs with SGLang-packed UE8M0 scales, the production DeepGEMM wrapper is already the safe path. Python-wrapper bypasses do not improve CUPTI device-kernel timing, and alternate APIs either need different scale layouts or fail to beat both M=16 and M=32.
 
 ## other

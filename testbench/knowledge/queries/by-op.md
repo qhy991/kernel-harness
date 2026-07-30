@@ -8,6 +8,7 @@
 
 ## MoE W2 down-projection
 
+- `glm52--moe_w2_decode_graph_only--b200--20260730a` [no-win] MoE W2 down-projection/decode — Graph-only selection is the right fix when a Python provider tax hides a real device win, and it is worth keeping on its own merits. But it only exposes the kernel's true ceiling: once both arms sustain the same DRAM bandwidth, duration is bytes divided by bandwidth, and a tile or epilogue change can only win by moving fewer bytes. Compute the byte floor from the irreducible operand footprint before spending PTX identities on barrier or scheduling hypotheses.
 - `glm52--moe_w2_decode_hotspot--b200--20260729a` [no-win] MoE W2 down-projection/decode — A smaller grouped-GEMM tile can reduce padded output traffic yet still lose at the production callback boundary. Measure the complete selected interval early, and preserve caller-owned partial tiles in the kernel before spending profiling budget on stage or barrier refinements.
 
 ## Routed Expert Down

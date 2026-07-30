@@ -15,6 +15,10 @@
 
 - `glm52--moe_w2_decode_hotspot--b200--20260729a` [no-win] MoE W2 down-projection/decode — A smaller grouped-GEMM tile can reduce padded output traffic yet still lose at the production callback boundary. Measure the complete selected interval early, and preserve caller-owned partial tiles in the kernel before spending profiling budget on stage or barrier refinements.
 
+## bm16-auto-under-graph-replay
+
+- `glm52--moe_w2_decode_graph_only--b200--20260730a` [no-win] MoE W2 down-projection/decode — Graph-only selection is the right fix when a Python provider tax hides a real device win, and it is worth keeping on its own merits. But it only exposes the kernel's true ceiling: once both arms sustain the same DRAM bandwidth, duration is bytes divided by bandwidth, and a tile or epilogue change can only win by moving fewer bytes. Compute the byte floor from the irreducible operand footprint before spending PTX identities on barrier or scheduling hypotheses.
+
 ## cuda-direct-expert-token-kernel
 
 - `glm52--routed_swiglu_decode--b200--20260714a` [no-win] Routed Expert SwiGLU+FP8 Quant/decode — For GLM-5.2 masked routed SwiGLU decode on B200, the production SGLang C++ kernel is already close to the small-shape floor despite sparse active rows. Removing the CTA prefix mapping is not enough; a replacement must match the production vectorized bf16x2/fp8x2 instruction quality and beat run-to-run noise on M=16.
@@ -68,6 +72,10 @@
 
 - `glm52--routed_gateup_nvfp4_decode--b200--20260714c` [win] Routed Expert Gate+Up NVFP4/decode — For fixed-shape GLM-5.2 NVFP4 MoE decode harness tasks, do not pass small CUDA scalar tensors through .item() in solution.py. If values are fixed by task.json/definition axes, use Python constants or shape-derived Python ints so the timed call contains the real FlashInfer work instead of device-host synchronization. Validate each FlashInfer routing knob with repeat-3 because several correct API choices differ mostly by noise.
 
+## graph-only-dispatch
+
+- `glm52--moe_w2_decode_graph_only--b200--20260730a` [no-win] MoE W2 down-projection/decode — Graph-only selection is the right fix when a Python provider tax hides a real device win, and it is worth keeping on its own merits. But it only exposes the kernel's true ceiling: once both arms sustain the same DRAM bandwidth, duration is bytes divided by bandwidth, and a tile or epilogue change can only win by moving fewer bytes. Compute the byte floor from the irreducible operand footprint before spending PTX identities on barrier or scheduling hypotheses.
+
 ## harness-integrate-active-rows-fix
 
 - `glm52--routed_down_decode--b200--20260715a` [win] Routed Expert Down/decode — Masked grouped-MoE decode drop-in verification must ignore empty-expert padded slots. A harness WIN that removes device-scalar layout reads is production-safe once active rows match bit-exactly under deep_gemm_wrapper.grouped_gemm_nt_f8f8bf16_masked.
@@ -104,6 +112,10 @@
 ## restore-production-wrapper
 
 - `glm52--o_proj_decode--b200--20260714a` [no-win] Attention O Projection/decode — For small-M B200 FP8 decode GEMMs with SGLang-packed UE8M0 scales, the production DeepGEMM wrapper is already the safe path. Python-wrapper bypasses do not improve CUPTI device-kernel timing, and alternate APIs either need different scale layouts or fail to beat both M=16 and M=32.
+
+## roofline-bounded-ptx-rejection
+
+- `glm52--moe_w2_decode_graph_only--b200--20260730a` [no-win] MoE W2 down-projection/decode — Graph-only selection is the right fix when a Python provider tax hides a real device win, and it is worth keeping on its own merits. But it only exposes the kernel's true ceiling: once both arms sustain the same DRAM bandwidth, duration is bytes divided by bandwidth, and a tile or epilogue change can only win by moving fewer bytes. Compute the byte floor from the irreducible operand footprint before spending PTX identities on barrier or scheduling hypotheses.
 
 ## routing-method-topk-type-1
 

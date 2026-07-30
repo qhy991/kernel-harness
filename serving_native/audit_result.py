@@ -217,6 +217,16 @@ def _is_w2_leaf_workload(workload: dict[str, Any]) -> bool:
     )
 
 
+def _runs_w2_edge_masks(workload: dict[str, Any]) -> bool:
+    """Mirror the runner's edge-mask gate, which covers leaf and region."""
+    params = workload.get("params")
+    return (
+        workload.get("family") in {"moe_grouped_masked", "moe_compute_region"}
+        and _mapping(params)
+        and "candidate_jit_identity" in params
+    )
+
+
 def _is_moe_w2_hotspot(workload: dict[str, Any]) -> bool:
     params = workload.get("params")
     return bool(
@@ -369,7 +379,7 @@ def _expected_phase_counts(
     if mode == "eager":
         add("profiler_reference", 1, 0)
         add("profiler_candidate", 0, 1)
-    if _is_w2_leaf_workload(workload):
+    if _runs_w2_edge_masks(workload):
         for case_index, (name, _counts) in enumerate(W2_EDGE_MASK_CASES):
             add(f"edge:{name}:eager", 1, 1)
             if mode == "cuda_graph":

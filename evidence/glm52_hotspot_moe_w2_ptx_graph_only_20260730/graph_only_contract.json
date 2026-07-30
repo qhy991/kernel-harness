@@ -1,0 +1,1649 @@
+{
+  "A_eager_graph_only": {
+    "output_untouched": true,
+    "provider_attempts": 0,
+    "selected": false
+  },
+  "B_eager_graph_only_disabled": {
+    "output_untouched": false,
+    "provider_attempts": 1,
+    "selected": true
+  },
+  "C_capture": {
+    "graph_only_off": {
+      "forbidden_nodes": [],
+      "kernel_identities": [
+        "infini_kernel_glm52_moe_w2_decode_bm16_auto"
+      ],
+      "node_count": 1,
+      "node_type_counts": {
+        "CU_GRAPH_NODE_TYPE_KERNEL": 1
+      },
+      "nodes": [
+        {
+          "block": [
+            256,
+            1,
+            1
+          ],
+          "grid": [
+            148,
+            1,
+            1
+          ],
+          "index": 0,
+          "kernel": "infini_kernel_glm52_moe_w2_decode_bm16_auto",
+          "shared_memory_bytes": 230188,
+          "type": "CU_GRAPH_NODE_TYPE_KERNEL"
+        }
+      ],
+      "provider_attempts": 1,
+      "selected": true
+    },
+    "graph_only_on": {
+      "forbidden_nodes": [],
+      "kernel_identities": [
+        "infini_kernel_glm52_moe_w2_decode_bm16_auto"
+      ],
+      "node_count": 1,
+      "node_type_counts": {
+        "CU_GRAPH_NODE_TYPE_KERNEL": 1
+      },
+      "nodes": [
+        {
+          "block": [
+            256,
+            1,
+            1
+          ],
+          "grid": [
+            148,
+            1,
+            1
+          ],
+          "index": 0,
+          "kernel": "infini_kernel_glm52_moe_w2_decode_bm16_auto",
+          "shared_memory_bytes": 230188,
+          "type": "CU_GRAPH_NODE_TYPE_KERNEL"
+        }
+      ],
+      "provider_attempts": 1,
+      "selected": true
+    }
+  },
+  "D_capture_identical": {
+    "kernel_identities_equal": true,
+    "node_count_equal": true,
+    "node_type_counts_equal": true
+  },
+  "E_eager_containing_identity_lane": {
+    "declared_floor": 0.97,
+    "policy": "both_arms_execute_stock_w2_kernel",
+    "provider_attempts_during_lane": 0,
+    "series": [
+      {
+        "pairs": 50,
+        "performance_estimates": {
+          "ab_median_speedup": 1.0068410627405362,
+          "ba_median_speedup": 0.9977861760853641,
+          "candidate_p50_ms": 0.26024000346660614,
+          "order_balanced_speedup": 1.0023033941465047,
+          "pair_count": 50,
+          "pooled_speedup": 1.0006147931355944,
+          "reference_p50_ms": 0.2603999972343445
+        },
+        "raw_ordered_samples": [
+          {
+            "implementation": "reference",
+            "latency_ms": 0.27369600534439087,
+            "order": "AB"
+          },
+          {
+            "implementation": "candidate",
+            "latency_ms": 0.2672640085220337,
+            "order": "AB"
+          },
+          {
+            "implementation": "candidate",
+            "latency_ms": 0.25999999046325684,
+            "order": "BA"
+          },
+          {
+            "implementation": "reference",
+            "latency_ms": 0.26124799251556396,
+            "order": "BA"
+          },
+          {
+            "implementation": "reference",
+            "latency_ms": 0.2707839906215668,
+            "order": "AB"
+          },
+          {
+            "implementation": "candidate",
+            "latency_ms": 0.2597759962081909,
+            "order": "AB"
+          },
+          {
+            "implementation": "candidate",
+            "latency_ms": 0.2602880001068115,
+            "order": "BA"
+          },
+          {
+            "implementation": "reference",
+            "latency_ms": 0.2584959864616394,
+            "order": "BA"
+          },
+          {
+            "implementation": "reference",
+            "latency_ms": 0.2640959918498993,
+            "order": "AB"
+          },
+          {
+            "implementation": "candidate",
+            "latency_ms": 0.2836480140686035,
+            "order": "AB"
+          },
+          {
+            "implementation": "candidate",
+            "latency_ms": 0.27926400303840637,
+            "order": "BA"
+          },
+          {
+            "implementation": "reference",
+            "latency_ms": 0.3160000145435333,
+            "order": "BA"
+          },
+          {
+            "implementation": "reference",
+            "latency_ms": 0.28460800647735596,
+            "order": "AB"
+          },
+          {
+            "implementation": "candidate",
+            "latency_ms": 0.2661759853363037,
+            "order": "AB"
+          },
+          {
+            "implementation": "candidate",
+            "latency_ms": 0.27353599667549133,
+            "order": "BA"
+          },
+          {
+            "implementation": "reference",
+            "latency_ms": 0.2625280022621155,
+            "order": "BA"
+          },
+          {
+            "implementation": "reference",
+            "latency_ms": 0.260672003030777,
+            "order": "AB"
+          },
+          {
+            "implementation": "candidate",
+            "latency_ms": 0.2963840067386627,
+            "order": "AB"
+          },
+          {
+            "implementation": "candidate",
+            "latency_ms": 0.26124799251556396,
+            "order": "BA"
+          },
+          {
+            "implementation": "reference",
+            "latency_ms": 0.2596159875392914,
+            "order": "BA"
+          },
+          {
+            "implementation": "reference",
+            "latency_ms": 0.26134398579597473,
+            "order": "AB"
+          },
+          {
+            "implementation": "candidate",
+            "latency_ms": 0.2725119888782501,
+            "order": "AB"
+          },
+          {
+            "implementation": "candidate",
+            "latency_ms": 0.26019200682640076,
+            "order": "BA"
+          },
+          {
+            "implementation": "reference",
+            "latency_ms": 0.2596159875392914,
+            "order": "BA"
+          },
+          {
+            "implementation": "reference",
+            "latency_ms": 0.2691839933395386,
+            "order": "AB"
+          },
+          {
+            "implementation": "candidate",
+            "latency_ms": 0.2613759934902191,
+            "order": "AB"
+          },
+          {
+            "implementation": "candidate",
+            "latency_ms": 0.26019200682640076,
+            "order": "BA"
+          },
+          {
+            "implementation": "reference",
+            "latency_ms": 0.25836798548698425,
+            "order": "BA"
+          },
+          {
+            "implementation": "reference",
+            "latency_ms": 0.2706559896469116,
+            "order": "AB"
+          },
+          {
+            "implementation": "candidate",
+            "latency_ms": 0.2608639895915985,
+            "order": "AB"
+          },
+          {
+            "implementation": "candidate",
+            "latency_ms": 0.2600319981575012,
+            "order": "BA"
+          },
+          {
+            "implementation": "reference",
+            "latency_ms": 0.2661440074443817,
+            "order": "BA"
+          },
+          {
+            "implementation": "reference",
+            "latency_ms": 0.2563520073890686,
+            "order": "AB"
+          },
+          {
+            "implementation": "candidate",
+            "latency_ms": 0.25942400097846985,
+            "order": "AB"
+          },
+          {
+            "implementation": "candidate",
+            "latency_ms": 0.2573759853839874,
+            "order": "BA"
+          },
+          {
+            "implementation": "reference",
+            "latency_ms": 0.26924800872802734,
+            "order": "BA"
+          },
+          {
+            "implementation": "reference",
+            "latency_ms": 0.25993600487709045,
+            "order": "AB"
+          },
+          {
+            "implementation": "candidate",
+            "latency_ms": 0.25830399990081787,
+            "order": "AB"
+          },
+          {
+            "implementation": "candidate",
+            "latency_ms": 0.26787200570106506,
+            "order": "BA"
+          },
+          {
+            "implementation": "reference",
+            "latency_ms": 0.2587200105190277,
+            "order": "BA"
+          },
+          {
+            "implementation": "reference",
+            "latency_ms": 0.25999999046325684,
+            "order": "AB"
+          },
+          {
+            "implementation": "candidate",
+            "latency_ms": 0.2555519938468933,
+            "order": "AB"
+          },
+          {
+            "implementation": "candidate",
+            "latency_ms": 0.2650879919528961,
+            "order": "BA"
+          },
+          {
+            "implementation": "reference",
+            "latency_ms": 0.2584640085697174,
+            "order": "BA"
+          },
+          {
+            "implementation": "reference",
+            "latency_ms": 0.25920000672340393,
+            "order": "AB"
+          },
+          {
+            "implementation": "candidate",
+            "latency_ms": 0.26611199975013733,
+            "order": "AB"
+          },
+          {
+            "implementation": "candidate",
+            "latency_ms": 0.25734400749206543,
+            "order": "BA"
+          },
+          {
+            "implementation": "reference",
+            "latency_ms": 0.2588160037994385,
+            "order": "BA"
+          },
+          {
+            "implementation": "reference",
+            "latency_ms": 0.2575039863586426,
+            "order": "AB"
+          },
+          {
+            "implementation": "candidate",
+            "latency_ms": 0.26819199323654175,
+            "order": "AB"
+          },
+          {
+            "implementation": "candidate",
+            "latency_ms": 0.25833600759506226,
+            "order": "BA"
+          },
+          {
+            "implementation": "reference",
+            "latency_ms": 0.25788798928260803,
+            "order": "BA"
+          },
+          {
+            "implementation": "reference",
+            "latency_ms": 0.27059200406074524,
+            "order": "AB"
+          },
+          {
+            "implementation": "candidate",
+            "latency_ms": 0.2604160010814667,
+            "order": "AB"
+          },
+          {
+            "implementation": "candidate",
+            "latency_ms": 0.25782400369644165,
+            "order": "BA"
+          },
+          {
+            "implementation": "reference",
+            "latency_ms": 0.25913599133491516,
+            "order": "BA"
+          },
+          {
+            "implementation": "reference",
+            "latency_ms": 0.26531198620796204,
+            "order": "AB"
+          },
+          {
+            "implementation": "candidate",
+            "latency_ms": 0.26230400800704956,
+            "order": "AB"
+          },
+          {
+            "implementation": "candidate",
+            "latency_ms": 0.258976012468338,
+            "order": "BA"
+          },
+          {
+            "implementation": "reference",
+            "latency_ms": 0.26688000559806824,
+            "order": "BA"
+          },
+          {
+            "implementation": "reference",
+            "latency_ms": 0.2592639923095703,
+            "order": "AB"
+          },
+          {
+            "implementation": "candidate",
+            "latency_ms": 0.25859200954437256,
+            "order": "AB"
+          },
+          {
+            "implementation": "candidate",
+            "latency_ms": 0.2587200105190277,
+            "order": "BA"
+          },
+          {
+            "implementation": "reference",
+            "latency_ms": 0.26310399174690247,
+            "order": "BA"
+          },
+          {
+            "implementation": "reference",
+            "latency_ms": 0.2821120023727417,
+            "order": "AB"
+          },
+          {
+            "implementation": "candidate",
+            "latency_ms": 0.259552001953125,
+            "order": "AB"
+          },
+          {
+            "implementation": "candidate",
+            "latency_ms": 0.2661759853363037,
+            "order": "BA"
+          },
+          {
+            "implementation": "reference",
+            "latency_ms": 0.2606399953365326,
+            "order": "BA"
+          },
+          {
+            "implementation": "reference",
+            "latency_ms": 0.2590399980545044,
+            "order": "AB"
+          },
+          {
+            "implementation": "candidate",
+            "latency_ms": 0.25760000944137573,
+            "order": "AB"
+          },
+          {
+            "implementation": "candidate",
+            "latency_ms": 0.26582399010658264,
+            "order": "BA"
+          },
+          {
+            "implementation": "reference",
+            "latency_ms": 0.25939199328422546,
+            "order": "BA"
+          },
+          {
+            "implementation": "reference",
+            "latency_ms": 0.26844799518585205,
+            "order": "AB"
+          },
+          {
+            "implementation": "candidate",
+            "latency_ms": 0.26662400364875793,
+            "order": "AB"
+          },
+          {
+            "implementation": "candidate",
+            "latency_ms": 0.2593280076980591,
+            "order": "BA"
+          },
+          {
+            "implementation": "reference",
+            "latency_ms": 0.2588160037994385,
+            "order": "BA"
+          },
+          {
+            "implementation": "reference",
+            "latency_ms": 0.2708800137042999,
+            "order": "AB"
+          },
+          {
+            "implementation": "candidate",
+            "latency_ms": 0.2629759907722473,
+            "order": "AB"
+          },
+          {
+            "implementation": "candidate",
+            "latency_ms": 0.2621760070323944,
+            "order": "BA"
+          },
+          {
+            "implementation": "reference",
+            "latency_ms": 0.26015999913215637,
+            "order": "BA"
+          },
+          {
+            "implementation": "reference",
+            "latency_ms": 0.26659199595451355,
+            "order": "AB"
+          },
+          {
+            "implementation": "candidate",
+            "latency_ms": 0.26019200682640076,
+            "order": "AB"
+          },
+          {
+            "implementation": "candidate",
+            "latency_ms": 0.25859200954437256,
+            "order": "BA"
+          },
+          {
+            "implementation": "reference",
+            "latency_ms": 0.2980799973011017,
+            "order": "BA"
+          },
+          {
+            "implementation": "reference",
+            "latency_ms": 0.2611199915409088,
+            "order": "AB"
+          },
+          {
+            "implementation": "candidate",
+            "latency_ms": 0.2571519911289215,
+            "order": "AB"
+          },
+          {
+            "implementation": "candidate",
+            "latency_ms": 0.2571200132369995,
+            "order": "BA"
+          },
+          {
+            "implementation": "reference",
+            "latency_ms": 0.26742398738861084,
+            "order": "BA"
+          },
+          {
+            "implementation": "reference",
+            "latency_ms": 0.2575039863586426,
+            "order": "AB"
+          },
+          {
+            "implementation": "candidate",
+            "latency_ms": 0.2587519884109497,
+            "order": "AB"
+          },
+          {
+            "implementation": "candidate",
+            "latency_ms": 0.278656005859375,
+            "order": "BA"
+          },
+          {
+            "implementation": "reference",
+            "latency_ms": 0.2582400143146515,
+            "order": "BA"
+          },
+          {
+            "implementation": "reference",
+            "latency_ms": 0.2579199969768524,
+            "order": "AB"
+          },
+          {
+            "implementation": "candidate",
+            "latency_ms": 0.25833600759506226,
+            "order": "AB"
+          },
+          {
+            "implementation": "candidate",
+            "latency_ms": 0.26892799139022827,
+            "order": "BA"
+          },
+          {
+            "implementation": "reference",
+            "latency_ms": 0.258976012468338,
+            "order": "BA"
+          },
+          {
+            "implementation": "reference",
+            "latency_ms": 0.25727999210357666,
+            "order": "AB"
+          },
+          {
+            "implementation": "candidate",
+            "latency_ms": 0.26451200246810913,
+            "order": "AB"
+          },
+          {
+            "implementation": "candidate",
+            "latency_ms": 0.25974398851394653,
+            "order": "BA"
+          },
+          {
+            "implementation": "reference",
+            "latency_ms": 0.25676798820495605,
+            "order": "BA"
+          }
+        ],
+        "series_index": 0,
+        "start_order": "AB",
+        "warmup_pairs": 5
+      },
+      {
+        "pairs": 50,
+        "performance_estimates": {
+          "ab_median_speedup": 1.0033226646507494,
+          "ba_median_speedup": 1.0027144521162856,
+          "candidate_p50_ms": 0.2592960000038147,
+          "order_balanced_speedup": 1.0030185122823645,
+          "pair_count": 50,
+          "pooled_speedup": 1.0032086551049189,
+          "reference_p50_ms": 0.260127991437912
+        },
+        "raw_ordered_samples": [
+          {
+            "implementation": "candidate",
+            "latency_ms": 0.2754560112953186,
+            "order": "BA"
+          },
+          {
+            "implementation": "reference",
+            "latency_ms": 0.2587200105190277,
+            "order": "BA"
+          },
+          {
+            "implementation": "reference",
+            "latency_ms": 0.2587839961051941,
+            "order": "AB"
+          },
+          {
+            "implementation": "candidate",
+            "latency_ms": 0.26739200949668884,
+            "order": "AB"
+          },
+          {
+            "implementation": "candidate",
+            "latency_ms": 0.2569600045681,
+            "order": "BA"
+          },
+          {
+            "implementation": "reference",
+            "latency_ms": 0.25913599133491516,
+            "order": "BA"
+          },
+          {
+            "implementation": "reference",
+            "latency_ms": 0.2787199914455414,
+            "order": "AB"
+          },
+          {
+            "implementation": "candidate",
+            "latency_ms": 0.2574720084667206,
+            "order": "AB"
+          },
+          {
+            "implementation": "candidate",
+            "latency_ms": 0.2602880001068115,
+            "order": "BA"
+          },
+          {
+            "implementation": "reference",
+            "latency_ms": 0.25654399394989014,
+            "order": "BA"
+          },
+          {
+            "implementation": "reference",
+            "latency_ms": 0.2664639949798584,
+            "order": "AB"
+          },
+          {
+            "implementation": "candidate",
+            "latency_ms": 0.2592320144176483,
+            "order": "AB"
+          },
+          {
+            "implementation": "candidate",
+            "latency_ms": 0.2576960027217865,
+            "order": "BA"
+          },
+          {
+            "implementation": "reference",
+            "latency_ms": 0.2670400142669678,
+            "order": "BA"
+          },
+          {
+            "implementation": "reference",
+            "latency_ms": 0.26025599241256714,
+            "order": "AB"
+          },
+          {
+            "implementation": "candidate",
+            "latency_ms": 0.25628799200057983,
+            "order": "AB"
+          },
+          {
+            "implementation": "candidate",
+            "latency_ms": 0.2568959891796112,
+            "order": "BA"
+          },
+          {
+            "implementation": "reference",
+            "latency_ms": 0.27110400795936584,
+            "order": "BA"
+          },
+          {
+            "implementation": "reference",
+            "latency_ms": 0.2608959972858429,
+            "order": "AB"
+          },
+          {
+            "implementation": "candidate",
+            "latency_ms": 0.2600319981575012,
+            "order": "AB"
+          },
+          {
+            "implementation": "candidate",
+            "latency_ms": 0.2646079957485199,
+            "order": "BA"
+          },
+          {
+            "implementation": "reference",
+            "latency_ms": 0.260127991437912,
+            "order": "BA"
+          },
+          {
+            "implementation": "reference",
+            "latency_ms": 0.25760000944137573,
+            "order": "AB"
+          },
+          {
+            "implementation": "candidate",
+            "latency_ms": 0.2568959891796112,
+            "order": "AB"
+          },
+          {
+            "implementation": "candidate",
+            "latency_ms": 0.26582399010658264,
+            "order": "BA"
+          },
+          {
+            "implementation": "reference",
+            "latency_ms": 0.2573759853839874,
+            "order": "BA"
+          },
+          {
+            "implementation": "reference",
+            "latency_ms": 0.2563199996948242,
+            "order": "AB"
+          },
+          {
+            "implementation": "candidate",
+            "latency_ms": 0.26576000452041626,
+            "order": "AB"
+          },
+          {
+            "implementation": "candidate",
+            "latency_ms": 0.2593599855899811,
+            "order": "BA"
+          },
+          {
+            "implementation": "reference",
+            "latency_ms": 0.2600640058517456,
+            "order": "BA"
+          },
+          {
+            "implementation": "reference",
+            "latency_ms": 0.2587519884109497,
+            "order": "AB"
+          },
+          {
+            "implementation": "candidate",
+            "latency_ms": 0.266431987285614,
+            "order": "AB"
+          },
+          {
+            "implementation": "candidate",
+            "latency_ms": 0.25814399123191833,
+            "order": "BA"
+          },
+          {
+            "implementation": "reference",
+            "latency_ms": 0.27001601457595825,
+            "order": "BA"
+          },
+          {
+            "implementation": "reference",
+            "latency_ms": 0.26607999205589294,
+            "order": "AB"
+          },
+          {
+            "implementation": "candidate",
+            "latency_ms": 0.26096001267433167,
+            "order": "AB"
+          },
+          {
+            "implementation": "candidate",
+            "latency_ms": 0.25724801421165466,
+            "order": "BA"
+          },
+          {
+            "implementation": "reference",
+            "latency_ms": 0.25894400477409363,
+            "order": "BA"
+          },
+          {
+            "implementation": "reference",
+            "latency_ms": 0.2667520046234131,
+            "order": "AB"
+          },
+          {
+            "implementation": "candidate",
+            "latency_ms": 0.2587839961051941,
+            "order": "AB"
+          },
+          {
+            "implementation": "candidate",
+            "latency_ms": 0.2586880028247833,
+            "order": "BA"
+          },
+          {
+            "implementation": "reference",
+            "latency_ms": 0.26707199215888977,
+            "order": "BA"
+          },
+          {
+            "implementation": "reference",
+            "latency_ms": 0.26025599241256714,
+            "order": "AB"
+          },
+          {
+            "implementation": "candidate",
+            "latency_ms": 0.2600319981575012,
+            "order": "AB"
+          },
+          {
+            "implementation": "candidate",
+            "latency_ms": 0.2558079957962036,
+            "order": "BA"
+          },
+          {
+            "implementation": "reference",
+            "latency_ms": 0.263839989900589,
+            "order": "BA"
+          },
+          {
+            "implementation": "reference",
+            "latency_ms": 0.25974398851394653,
+            "order": "AB"
+          },
+          {
+            "implementation": "candidate",
+            "latency_ms": 0.25913599133491516,
+            "order": "AB"
+          },
+          {
+            "implementation": "candidate",
+            "latency_ms": 0.2682560086250305,
+            "order": "BA"
+          },
+          {
+            "implementation": "reference",
+            "latency_ms": 0.26131200790405273,
+            "order": "BA"
+          },
+          {
+            "implementation": "reference",
+            "latency_ms": 0.25865599513053894,
+            "order": "AB"
+          },
+          {
+            "implementation": "candidate",
+            "latency_ms": 0.2608639895915985,
+            "order": "AB"
+          },
+          {
+            "implementation": "candidate",
+            "latency_ms": 0.2616319954395294,
+            "order": "BA"
+          },
+          {
+            "implementation": "reference",
+            "latency_ms": 0.2597759962081909,
+            "order": "BA"
+          },
+          {
+            "implementation": "reference",
+            "latency_ms": 0.2592639923095703,
+            "order": "AB"
+          },
+          {
+            "implementation": "candidate",
+            "latency_ms": 0.26764801144599915,
+            "order": "AB"
+          },
+          {
+            "implementation": "candidate",
+            "latency_ms": 0.2577599883079529,
+            "order": "BA"
+          },
+          {
+            "implementation": "reference",
+            "latency_ms": 0.25779199600219727,
+            "order": "BA"
+          },
+          {
+            "implementation": "reference",
+            "latency_ms": 0.25894400477409363,
+            "order": "AB"
+          },
+          {
+            "implementation": "candidate",
+            "latency_ms": 0.2661759853363037,
+            "order": "AB"
+          },
+          {
+            "implementation": "candidate",
+            "latency_ms": 0.2595840096473694,
+            "order": "BA"
+          },
+          {
+            "implementation": "reference",
+            "latency_ms": 0.2590720057487488,
+            "order": "BA"
+          },
+          {
+            "implementation": "reference",
+            "latency_ms": 0.26607999205589294,
+            "order": "AB"
+          },
+          {
+            "implementation": "candidate",
+            "latency_ms": 0.2587839961051941,
+            "order": "AB"
+          },
+          {
+            "implementation": "candidate",
+            "latency_ms": 0.2574079930782318,
+            "order": "BA"
+          },
+          {
+            "implementation": "reference",
+            "latency_ms": 0.25830399990081787,
+            "order": "BA"
+          },
+          {
+            "implementation": "reference",
+            "latency_ms": 0.26556798815727234,
+            "order": "AB"
+          },
+          {
+            "implementation": "candidate",
+            "latency_ms": 0.26076799631118774,
+            "order": "AB"
+          },
+          {
+            "implementation": "candidate",
+            "latency_ms": 0.255264014005661,
+            "order": "BA"
+          },
+          {
+            "implementation": "reference",
+            "latency_ms": 0.27055999636650085,
+            "order": "BA"
+          },
+          {
+            "implementation": "reference",
+            "latency_ms": 0.2574720084667206,
+            "order": "AB"
+          },
+          {
+            "implementation": "candidate",
+            "latency_ms": 0.25699201226234436,
+            "order": "AB"
+          },
+          {
+            "implementation": "candidate",
+            "latency_ms": 0.2568959891796112,
+            "order": "BA"
+          },
+          {
+            "implementation": "reference",
+            "latency_ms": 0.2614400088787079,
+            "order": "BA"
+          },
+          {
+            "implementation": "reference",
+            "latency_ms": 0.2604160010814667,
+            "order": "AB"
+          },
+          {
+            "implementation": "candidate",
+            "latency_ms": 0.258976012468338,
+            "order": "AB"
+          },
+          {
+            "implementation": "candidate",
+            "latency_ms": 0.2651199996471405,
+            "order": "BA"
+          },
+          {
+            "implementation": "reference",
+            "latency_ms": 0.2613759934902191,
+            "order": "BA"
+          },
+          {
+            "implementation": "reference",
+            "latency_ms": 0.260127991437912,
+            "order": "AB"
+          },
+          {
+            "implementation": "candidate",
+            "latency_ms": 0.2553600072860718,
+            "order": "AB"
+          },
+          {
+            "implementation": "candidate",
+            "latency_ms": 0.26208001375198364,
+            "order": "BA"
+          },
+          {
+            "implementation": "reference",
+            "latency_ms": 0.26047998666763306,
+            "order": "BA"
+          },
+          {
+            "implementation": "reference",
+            "latency_ms": 0.2568959891796112,
+            "order": "AB"
+          },
+          {
+            "implementation": "candidate",
+            "latency_ms": 0.2762239873409271,
+            "order": "AB"
+          },
+          {
+            "implementation": "candidate",
+            "latency_ms": 0.26019200682640076,
+            "order": "BA"
+          },
+          {
+            "implementation": "reference",
+            "latency_ms": 0.2590399980545044,
+            "order": "BA"
+          },
+          {
+            "implementation": "reference",
+            "latency_ms": 0.2584959864616394,
+            "order": "AB"
+          },
+          {
+            "implementation": "candidate",
+            "latency_ms": 0.2619200050830841,
+            "order": "AB"
+          },
+          {
+            "implementation": "candidate",
+            "latency_ms": 0.2590720057487488,
+            "order": "BA"
+          },
+          {
+            "implementation": "reference",
+            "latency_ms": 0.2571519911289215,
+            "order": "BA"
+          },
+          {
+            "implementation": "reference",
+            "latency_ms": 0.26531198620796204,
+            "order": "AB"
+          },
+          {
+            "implementation": "candidate",
+            "latency_ms": 0.26051199436187744,
+            "order": "AB"
+          },
+          {
+            "implementation": "candidate",
+            "latency_ms": 0.2558720111846924,
+            "order": "BA"
+          },
+          {
+            "implementation": "reference",
+            "latency_ms": 0.2577599883079529,
+            "order": "BA"
+          },
+          {
+            "implementation": "reference",
+            "latency_ms": 0.26710399985313416,
+            "order": "AB"
+          },
+          {
+            "implementation": "candidate",
+            "latency_ms": 0.2571839988231659,
+            "order": "AB"
+          },
+          {
+            "implementation": "candidate",
+            "latency_ms": 0.25753599405288696,
+            "order": "BA"
+          },
+          {
+            "implementation": "reference",
+            "latency_ms": 0.2778559923171997,
+            "order": "BA"
+          },
+          {
+            "implementation": "reference",
+            "latency_ms": 0.2927680015563965,
+            "order": "AB"
+          },
+          {
+            "implementation": "candidate",
+            "latency_ms": 0.26636800169944763,
+            "order": "AB"
+          }
+        ],
+        "series_index": 1,
+        "start_order": "BA",
+        "warmup_pairs": 5
+      },
+      {
+        "pairs": 50,
+        "performance_estimates": {
+          "ab_median_speedup": 1.0016129444133297,
+          "ba_median_speedup": 1.0008630033803645,
+          "candidate_p50_ms": 0.26051199436187744,
+          "order_balanced_speedup": 1.0012379036823242,
+          "pair_count": 50,
+          "pooled_speedup": 0.9987102652090093,
+          "reference_p50_ms": 0.26017600297927856
+        },
+        "raw_ordered_samples": [
+          {
+            "implementation": "reference",
+            "latency_ms": 0.2816320061683655,
+            "order": "AB"
+          },
+          {
+            "implementation": "candidate",
+            "latency_ms": 0.259552001953125,
+            "order": "AB"
+          },
+          {
+            "implementation": "candidate",
+            "latency_ms": 0.2596159875392914,
+            "order": "BA"
+          },
+          {
+            "implementation": "reference",
+            "latency_ms": 0.2648960053920746,
+            "order": "BA"
+          },
+          {
+            "implementation": "reference",
+            "latency_ms": 0.25996801257133484,
+            "order": "AB"
+          },
+          {
+            "implementation": "candidate",
+            "latency_ms": 0.2605440020561218,
+            "order": "AB"
+          },
+          {
+            "implementation": "candidate",
+            "latency_ms": 0.27395200729370117,
+            "order": "BA"
+          },
+          {
+            "implementation": "reference",
+            "latency_ms": 0.26121601462364197,
+            "order": "BA"
+          },
+          {
+            "implementation": "reference",
+            "latency_ms": 0.2614080011844635,
+            "order": "AB"
+          },
+          {
+            "implementation": "candidate",
+            "latency_ms": 0.2985279858112335,
+            "order": "AB"
+          },
+          {
+            "implementation": "candidate",
+            "latency_ms": 0.26710399985313416,
+            "order": "BA"
+          },
+          {
+            "implementation": "reference",
+            "latency_ms": 0.26208001375198364,
+            "order": "BA"
+          },
+          {
+            "implementation": "reference",
+            "latency_ms": 0.2573759853839874,
+            "order": "AB"
+          },
+          {
+            "implementation": "candidate",
+            "latency_ms": 0.2743360102176666,
+            "order": "AB"
+          },
+          {
+            "implementation": "candidate",
+            "latency_ms": 0.2595840096473694,
+            "order": "BA"
+          },
+          {
+            "implementation": "reference",
+            "latency_ms": 0.2602880001068115,
+            "order": "BA"
+          },
+          {
+            "implementation": "reference",
+            "latency_ms": 0.27296000719070435,
+            "order": "AB"
+          },
+          {
+            "implementation": "candidate",
+            "latency_ms": 0.26390400528907776,
+            "order": "AB"
+          },
+          {
+            "implementation": "candidate",
+            "latency_ms": 0.2624320089817047,
+            "order": "BA"
+          },
+          {
+            "implementation": "reference",
+            "latency_ms": 0.25968000292778015,
+            "order": "BA"
+          },
+          {
+            "implementation": "reference",
+            "latency_ms": 0.2696639895439148,
+            "order": "AB"
+          },
+          {
+            "implementation": "candidate",
+            "latency_ms": 0.26121601462364197,
+            "order": "AB"
+          },
+          {
+            "implementation": "candidate",
+            "latency_ms": 0.2579840123653412,
+            "order": "BA"
+          },
+          {
+            "implementation": "reference",
+            "latency_ms": 0.2677760124206543,
+            "order": "BA"
+          },
+          {
+            "implementation": "reference",
+            "latency_ms": 0.26047998666763306,
+            "order": "AB"
+          },
+          {
+            "implementation": "candidate",
+            "latency_ms": 0.25974398851394653,
+            "order": "AB"
+          },
+          {
+            "implementation": "candidate",
+            "latency_ms": 0.26047998666763306,
+            "order": "BA"
+          },
+          {
+            "implementation": "reference",
+            "latency_ms": 0.26361599564552307,
+            "order": "BA"
+          },
+          {
+            "implementation": "reference",
+            "latency_ms": 0.25971201062202454,
+            "order": "AB"
+          },
+          {
+            "implementation": "candidate",
+            "latency_ms": 0.2619200050830841,
+            "order": "AB"
+          },
+          {
+            "implementation": "candidate",
+            "latency_ms": 0.26812800765037537,
+            "order": "BA"
+          },
+          {
+            "implementation": "reference",
+            "latency_ms": 0.25974398851394653,
+            "order": "BA"
+          },
+          {
+            "implementation": "reference",
+            "latency_ms": 0.25884801149368286,
+            "order": "AB"
+          },
+          {
+            "implementation": "candidate",
+            "latency_ms": 0.2575039863586426,
+            "order": "AB"
+          },
+          {
+            "implementation": "candidate",
+            "latency_ms": 0.26291200518608093,
+            "order": "BA"
+          },
+          {
+            "implementation": "reference",
+            "latency_ms": 0.25945600867271423,
+            "order": "BA"
+          },
+          {
+            "implementation": "reference",
+            "latency_ms": 0.2598400115966797,
+            "order": "AB"
+          },
+          {
+            "implementation": "candidate",
+            "latency_ms": 0.26787200570106506,
+            "order": "AB"
+          },
+          {
+            "implementation": "candidate",
+            "latency_ms": 0.2584640085697174,
+            "order": "BA"
+          },
+          {
+            "implementation": "reference",
+            "latency_ms": 0.2579199969768524,
+            "order": "BA"
+          },
+          {
+            "implementation": "reference",
+            "latency_ms": 0.25785601139068604,
+            "order": "AB"
+          },
+          {
+            "implementation": "candidate",
+            "latency_ms": 0.26313599944114685,
+            "order": "AB"
+          },
+          {
+            "implementation": "candidate",
+            "latency_ms": 0.25862398743629456,
+            "order": "BA"
+          },
+          {
+            "implementation": "reference",
+            "latency_ms": 0.26102399826049805,
+            "order": "BA"
+          },
+          {
+            "implementation": "reference",
+            "latency_ms": 0.2662400007247925,
+            "order": "AB"
+          },
+          {
+            "implementation": "candidate",
+            "latency_ms": 0.2608959972858429,
+            "order": "AB"
+          },
+          {
+            "implementation": "candidate",
+            "latency_ms": 0.25756800174713135,
+            "order": "BA"
+          },
+          {
+            "implementation": "reference",
+            "latency_ms": 0.25839999318122864,
+            "order": "BA"
+          },
+          {
+            "implementation": "reference",
+            "latency_ms": 0.2635520100593567,
+            "order": "AB"
+          },
+          {
+            "implementation": "candidate",
+            "latency_ms": 0.2582719922065735,
+            "order": "AB"
+          },
+          {
+            "implementation": "candidate",
+            "latency_ms": 0.25891199707984924,
+            "order": "BA"
+          },
+          {
+            "implementation": "reference",
+            "latency_ms": 0.2680639922618866,
+            "order": "BA"
+          },
+          {
+            "implementation": "reference",
+            "latency_ms": 0.26131200790405273,
+            "order": "AB"
+          },
+          {
+            "implementation": "candidate",
+            "latency_ms": 0.26080000400543213,
+            "order": "AB"
+          },
+          {
+            "implementation": "candidate",
+            "latency_ms": 0.25971201062202454,
+            "order": "BA"
+          },
+          {
+            "implementation": "reference",
+            "latency_ms": 0.26265600323677063,
+            "order": "BA"
+          },
+          {
+            "implementation": "reference",
+            "latency_ms": 0.25833600759506226,
+            "order": "AB"
+          },
+          {
+            "implementation": "candidate",
+            "latency_ms": 0.2579199969768524,
+            "order": "AB"
+          },
+          {
+            "implementation": "candidate",
+            "latency_ms": 0.26976001262664795,
+            "order": "BA"
+          },
+          {
+            "implementation": "reference",
+            "latency_ms": 0.26956799626350403,
+            "order": "BA"
+          },
+          {
+            "implementation": "reference",
+            "latency_ms": 0.2579199969768524,
+            "order": "AB"
+          },
+          {
+            "implementation": "candidate",
+            "latency_ms": 0.2879680097103119,
+            "order": "AB"
+          },
+          {
+            "implementation": "candidate",
+            "latency_ms": 0.2590720057487488,
+            "order": "BA"
+          },
+          {
+            "implementation": "reference",
+            "latency_ms": 0.2586880028247833,
+            "order": "BA"
+          },
+          {
+            "implementation": "reference",
+            "latency_ms": 0.2585600018501282,
+            "order": "AB"
+          },
+          {
+            "implementation": "candidate",
+            "latency_ms": 0.2691519856452942,
+            "order": "AB"
+          },
+          {
+            "implementation": "candidate",
+            "latency_ms": 0.259552001953125,
+            "order": "BA"
+          },
+          {
+            "implementation": "reference",
+            "latency_ms": 0.2597759962081909,
+            "order": "BA"
+          },
+          {
+            "implementation": "reference",
+            "latency_ms": 0.2954559922218323,
+            "order": "AB"
+          },
+          {
+            "implementation": "candidate",
+            "latency_ms": 0.25974398851394653,
+            "order": "AB"
+          },
+          {
+            "implementation": "candidate",
+            "latency_ms": 0.25964799523353577,
+            "order": "BA"
+          },
+          {
+            "implementation": "reference",
+            "latency_ms": 0.25808000564575195,
+            "order": "BA"
+          },
+          {
+            "implementation": "reference",
+            "latency_ms": 0.2680639922618866,
+            "order": "AB"
+          },
+          {
+            "implementation": "candidate",
+            "latency_ms": 0.26179200410842896,
+            "order": "AB"
+          },
+          {
+            "implementation": "candidate",
+            "latency_ms": 0.2598400115966797,
+            "order": "BA"
+          },
+          {
+            "implementation": "reference",
+            "latency_ms": 0.26870399713516235,
+            "order": "BA"
+          },
+          {
+            "implementation": "reference",
+            "latency_ms": 0.2598719894886017,
+            "order": "AB"
+          },
+          {
+            "implementation": "candidate",
+            "latency_ms": 0.258976012468338,
+            "order": "AB"
+          },
+          {
+            "implementation": "candidate",
+            "latency_ms": 0.25753599405288696,
+            "order": "BA"
+          },
+          {
+            "implementation": "reference",
+            "latency_ms": 0.26767998933792114,
+            "order": "BA"
+          },
+          {
+            "implementation": "reference",
+            "latency_ms": 0.2604160010814667,
+            "order": "AB"
+          },
+          {
+            "implementation": "candidate",
+            "latency_ms": 0.2605760097503662,
+            "order": "AB"
+          },
+          {
+            "implementation": "candidate",
+            "latency_ms": 0.2706240117549896,
+            "order": "BA"
+          },
+          {
+            "implementation": "reference",
+            "latency_ms": 0.2600640058517456,
+            "order": "BA"
+          },
+          {
+            "implementation": "reference",
+            "latency_ms": 0.2571519911289215,
+            "order": "AB"
+          },
+          {
+            "implementation": "candidate",
+            "latency_ms": 0.25859200954437256,
+            "order": "AB"
+          },
+          {
+            "implementation": "candidate",
+            "latency_ms": 0.2654080092906952,
+            "order": "BA"
+          },
+          {
+            "implementation": "reference",
+            "latency_ms": 0.2584640085697174,
+            "order": "BA"
+          },
+          {
+            "implementation": "reference",
+            "latency_ms": 0.2598719894886017,
+            "order": "AB"
+          },
+          {
+            "implementation": "candidate",
+            "latency_ms": 0.2680000066757202,
+            "order": "AB"
+          },
+          {
+            "implementation": "candidate",
+            "latency_ms": 0.2606399953365326,
+            "order": "BA"
+          },
+          {
+            "implementation": "reference",
+            "latency_ms": 0.2597759962081909,
+            "order": "BA"
+          },
+          {
+            "implementation": "reference",
+            "latency_ms": 0.25884801149368286,
+            "order": "AB"
+          },
+          {
+            "implementation": "candidate",
+            "latency_ms": 0.2661440074443817,
+            "order": "AB"
+          },
+          {
+            "implementation": "candidate",
+            "latency_ms": 0.2582400143146515,
+            "order": "BA"
+          },
+          {
+            "implementation": "reference",
+            "latency_ms": 0.2603200078010559,
+            "order": "BA"
+          },
+          {
+            "implementation": "reference",
+            "latency_ms": 0.2675839960575104,
+            "order": "AB"
+          },
+          {
+            "implementation": "candidate",
+            "latency_ms": 0.26009601354599,
+            "order": "AB"
+          },
+          {
+            "implementation": "candidate",
+            "latency_ms": 0.25782400369644165,
+            "order": "BA"
+          },
+          {
+            "implementation": "reference",
+            "latency_ms": 0.2592320144176483,
+            "order": "BA"
+          }
+        ],
+        "series_index": 2,
+        "start_order": "AB",
+        "warmup_pairs": 5
+      }
+    ]
+  },
+  "candidate_symbol": "infini_kernel_glm52_moe_w2_decode_bm16_auto",
+  "candidate_wrapper_invocations": 0,
+  "contract": "glm52-moe-w2-graph-only-gpu-v1",
+  "failures": [],
+  "graph_only_env": "SGLANG_GLM52_W2_GRAPH_ONLY",
+  "provider_call_counts_final": {
+    "attempted": 6,
+    "completed": 6,
+    "warmup": 4
+  },
+  "region_workload": "moe_w2_hotspot_region_decode_em4",
+  "status": "pass"
+}

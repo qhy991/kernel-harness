@@ -1,0 +1,86 @@
+{
+  "contract": "glm52-moe-w2-ptx-graph-only-ledger-v1",
+  "goal": "MoE W2 PTX + graph-only dispatch unlock",
+  "disposition": "no-replacement",
+  "material_kernel_identities_built": 2,
+  "ptx_identities_allowed": 2,
+  "ptx_identities_built": 0,
+  "bases": {
+    "kernel_harness": "694de1e6d1aeb0995ce3e3a7a50a087d7df4b4c6",
+    "sglang": "6e5d660d4f02bcb011bc54d817e7d965b5da3ece",
+    "deepgemm": "2afbc0dfca07f6bfc840f4546456a08a5c6d41d5",
+    "deepgemm_upstream_base": "edcf77b276965de8f03cdc47c23f01b08bf7c7ab",
+    "cutlass": "f3fde58372d33e9a5650ba7b80fc48b3b49d40c8",
+    "fmt": "553ec11ec06fbe0beebfbb45f9dc3c9eabd83d28"
+  },
+  "attempts": [
+    {
+      "id": "A0",
+      "title": "CPU environment, source, ABI and negative-evidence audit",
+      "hypothesis": "The prior campaign's signed identity is still exact for the current source, so stock/candidate bundles can be reused instead of rebuilt.",
+      "delta": "none; re-verification only",
+      "evidence": "READY 17a5e23c0bd3cac16d88a1054047c4488fd9ca46b34fcca25560f83fdca7858b re-verified with zero drift; stock BM128/stage-8 and candidate BM16/stage-12 confirmed for expected-M 4/5/8/9; DSO 395655ab609ef5037fe3bb93f4a2d813c047f1265fd5f30554948dd8d0e51780; no spills, no local memory, identical launch topology.",
+      "decision": "reuse",
+      "notes": "Explicitly records stock as BM128/stage-8, so the invalidated Task-26 stage-11 premise is not reused. Avoided a rebuild that would have grown cache against a 12-13 GiB free-disk margin."
+    },
+    {
+      "id": "I1",
+      "title": "Graph-only dispatch for the W2 hotspot entry",
+      "hypothesis": "The prior 0.80x selected eager leaf was the API-v1 Python provider tax, not the kernel. Restricting selection to CUDA graph capture keeps eager on stock and lets the device win survive.",
+      "delta": "SGLang: KernelSpec.graph_only on moe_down_proj only; config.graph_only_enabled with SGLANG_GLM52_W2_GRAPH_ONLY default on; try_dispatch_moe_masked declines before the ABI check and before the hit/miss lock when not capturing.",
+      "evidence": "5 CPU contract tests; GPU contract status=pass: eager 0 provider attempts with output untouched, capture selects exactly one candidate node, captured graph identical with graph-only on and off, eager containing identity lane estimators 0.9987-1.0068 with 0 provider attempts.",
+      "decision": "keep",
+      "notes": "This is the plan's required integration and it works. It is retained even though the candidate it unblocks does not pass."
+    },
+    {
+      "id": "H0",
+      "title": "BM16-auto candidate under graph-only gates",
+      "hypothesis": "With the provider tax removed, BM16's reduced output traffic clears 1.03 on both graph leaf and graph containing region for all four expected-M hints.",
+      "delta": "none to the kernel; measurement under the graph-only policy",
+      "evidence": "Graph leaf passes 3/3 series for every hint, worst estimator 1.08457-1.09585. Graph containing region fails for every hint: worst estimators 1.02638 (em4), 1.02719 (em5), 1.02810 (em8), 1.02563 (em9); em9 fails all three series.",
+      "decision": "reject",
+      "notes": "Leaf is a development gate only. The region saves ~6.4 us on a ~219 us denominator, which lands on the 1.03 threshold, so per-series spread decides each result."
+    },
+    {
+      "id": "P1",
+      "title": "PTX hypothesis 1: reduce padded TMEM/output stores for exact expected-M",
+      "hypothesis": "Further trimming padded output/TMEM stores buys the ~2.5 us the containing region needs.",
+      "delta": "not implemented",
+      "evidence": "NCU w2_em4.ncu-rep: candidate DRAM write is already 4.60 MB against stock's 40.07 MB, and the exact-valid-row floor is 1.573 MB. The whole remaining write surplus is 3.03 MB, worth 0.501 us at the measured 6.043 TB/s, i.e. 0.23% on the region.",
+      "decision": "reject-before-implementation",
+      "notes": "Quantified ceiling is an order of magnitude below the requirement. Building it would confirm arithmetic at the cost of GPU time and cache growth."
+    },
+    {
+      "id": "P2",
+      "title": "PTX hypothesis 2: narrow PTX scheduling / barrier overlap on the BM16 pipeline",
+      "hypothesis": "Barrier or TMA-issue scheduling is leaving microseconds on the table in the BM16 pipeline.",
+      "delta": "not implemented",
+      "evidence": "NCU: stock and candidate both sustain ~6.05 TB/s DRAM, so duration equals bytes moved divided by a bandwidth the candidate already matches. Issue slots 5.49% busy, 0 spill bytes, 0 local memory, 43 registers: the kernel is neither issue-bound nor barrier-bound. Reads are 406.91 MB against an irreducible 402.65 MB of weights (ratio 1.0106). Shared memory is 230188 B of a ~228 KiB cap, so deeper prefetch is unavailable.",
+      "decision": "reject-before-implementation",
+      "notes": "The plan requires a concrete SASS defect and a predicted instruction/stall change before inline PTX. No such defect exists: the candidate is at 99.26% of its achievable DRAM floor with 0.501 us of total headroom."
+    },
+    {
+      "id": "F1",
+      "title": "Harness auditor edge-phase model did not cover the containing region",
+      "hypothesis": "The first region lane's audit failure is a latent harness contract defect, not a measurement problem.",
+      "delta": "audit_result.py and test_contract_v2.py derive the expected phase set from the same predicate the runner uses for W2 edge-mask validation (leaf and region).",
+      "evidence": "Runner validates edge masks for family in {moe_grouped_masked, moe_compute_region}; auditor expected them only for moe_grouped_masked. No region lane had been run before, so the mismatch was latent.",
+      "decision": "fix",
+      "notes": "Three unrelated test_contract_v2.py failures remain and are pre-existing at the parent commit (legacy Task-26 artifact directory absent from this worktree)."
+    }
+  ],
+  "not_expanded": {
+    "reason": "The containing-region gate fails for all four expected-M hints and the roofline ceiling shows no bounded kernel change can close it.",
+    "routes": [
+      "B1 expected-M-specific tile/stage policy: stages are capped by 230188 B of ~228 KiB shared memory",
+      "B3 barrier/TMA and persistent scheduler: superseded by the P2 rejection evidence",
+      "B4 CUTLASS/CuTe or Triton alternate: cannot reduce the irreducible 402.65 MB weight read",
+      "B5 further PTX/SASS refinement: no concrete SASS defect exists"
+    ]
+  },
+  "external_gate": {
+    "status": "not-run",
+    "reason": "no valid candidate to promote; this four-GPU host cannot provide TP8/DP8/EP8 or checkpoint-backed serving validation",
+    "production_default": false
+  }
+}

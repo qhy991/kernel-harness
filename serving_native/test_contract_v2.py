@@ -341,12 +341,15 @@ class ContractV2AuditTest(unittest.TestCase):
             add("profiler_reference", 1, 0)
             add("profiler_candidate", 0, 1)
         params = workload.get("params")
-        is_w2_leaf = (
-            workload.get("family") == "moe_grouped_masked"
+        # The runner validates W2 edge masks for the leaf and for the
+        # containing region, so both carry the same edge phases.
+        runs_edge_masks = (
+            workload.get("family")
+            in {"moe_grouped_masked", "moe_compute_region"}
             and isinstance(params, dict)
             and "candidate_jit_identity" in params
         )
-        if is_w2_leaf:
+        if runs_edge_masks:
             for case_index, (name, _counts) in enumerate(
                 W2_EDGE_MASK_CASES
             ):
@@ -1768,20 +1771,20 @@ class ContractV2AuditTest(unittest.TestCase):
         )
         self.assert_invalid(missing_phase, "phase set does not close")
 
+        # The containing region runs the same edge-mask suite as the leaf, so
+        # its phase set must carry those phases too.
         region = self._valid_w2_candidate_fixture(
             "eager",
             "moe_w13_swiglu_w2_region_decode_m16_current_source_m5",
         )
         region_phases = region["implementations"]["candidate"]["by_phase"]
-        self.assertFalse(
+        self.assertTrue(
             any(phase.startswith("edge:") for phase in region_phases)
         )
         self.assertTrue(
             audit_document(region, verify_files=False)["valid"],
         )
-        region_phases["edge:zero_all_experts:eager"] = {
-            field: 0 for field in COUNTER_FIELDS
-        }
+        del region_phases["edge:zero_all_experts:eager"]
         self.assert_invalid(region, "phase set does not close")
 
     def test_w2_containing_region_kernel_sequence_is_exact(self) -> None:

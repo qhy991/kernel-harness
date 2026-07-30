@@ -1,0 +1,79 @@
+{
+  "schema_version": 1,
+  "id": "glm52--moe_w2_decode_graph_only--b200--20260730a",
+  "date": "2026-07-30",
+  "model": "glm52",
+  "task": "glm52/moe_w2_decode_hotspot",
+  "op": "MoE W2 down-projection",
+  "family": "serving-native-fp8-grouped-masked-gemm",
+  "phase": "decode",
+  "shapes": {
+    "experts": 32,
+    "slab_m": 1024,
+    "K": 2048,
+    "N": 6144,
+    "expected_m": [
+      4,
+      5,
+      8,
+      9
+    ]
+  },
+  "hardware": {
+    "gpu": "NVIDIA B200",
+    "sm": "sm_100"
+  },
+  "stack": {
+    "sglang_commit": "6e5d660d",
+    "deepgemm_commit": "2afbc0df",
+    "torch": "2.11.0+cu130",
+    "cuda": "13.2"
+  },
+  "baseline_kernel": "current-source SGLang API-v1 DeepGEMM grouped masked BM128/stage-8",
+  "bottleneck": {
+    "kind": "memory-bandwidth",
+    "evidence": "NCU: stock and BM16 candidate both sustain ~6.05 TB/s DRAM, so duration equals bytes moved divided by a bandwidth the candidate already matches. Reads are 406.91 MB against an irreducible 402.65 MB of E32xN6144xK2048 FP8 weights; writes are 4.60 MB against a 1.57 MB valid-row floor. Issue slots 5.49% busy, no spills, no local memory."
+  },
+  "approaches": [
+    {
+      "technique": "graph-only-dispatch",
+      "summary": "Mirrored the FlashMLA pattern: KernelSpec.graph_only on the W2 hotspot entry, SGLANG_GLM52_W2_GRAPH_ONLY default on, and an eager decline before the ABI check and the hit/miss lock.",
+      "outcome": "partial",
+      "geomean_speedup": 1.00084,
+      "why": "Removed the API-v1 Python provider tax that had made the selected eager leaf 0.80x. A GPU contract proved eager declines with zero provider launches, capture selects exactly one candidate node, and the captured graph is identical with graph-only on and off."
+    },
+    {
+      "technique": "bm16-auto-under-graph-replay",
+      "summary": "Timed the existing per-call BM16 auto-stage candidate on graph leaf and graph containing-region lanes, 3 series x 50 AB/BA pairs per lane.",
+      "outcome": "partial",
+      "geomean_speedup": 1.03135,
+      "why": "Graph leaf passes 3/3 series for all four hints at 1.084-1.096x, but the containing region lands on the threshold: worst estimators 1.0256-1.0281 against a required 1.03, and expected-M 9 fails all three series."
+    },
+    {
+      "technique": "roofline-bounded-ptx-rejection",
+      "summary": "Used one NCU capture to bound both planned PTX hypotheses before writing them.",
+      "outcome": "abandoned",
+      "geomean_speedup": null,
+      "why": "The candidate is at 99.26% of its achievable DRAM floor with 0.50 us of total headroom, while the region gate needs about 2.5 us. Re-scoring each region lane at that unreachable floor still fails three of four hints."
+    }
+  ],
+  "result": {
+    "status": "no-win",
+    "geomean_speedup": 1.03135,
+    "min_speedup_conservative": 1.02563,
+    "repeat": 50,
+    "integrate": "not-run"
+  },
+  "lesson": "Graph-only selection is the right fix when a Python provider tax hides a real device win, and it is worth keeping on its own merits. But it only exposes the kernel's true ceiling: once both arms sustain the same DRAM bandwidth, duration is bytes divided by bandwidth, and a tile or epilogue change can only win by moving fewer bytes. Compute the byte floor from the irreducible operand footprint before spending PTX identities on barrier or scheduling hypotheses.",
+  "transfers_to": [
+    "small-M grouped masked GEMMs on SM100 where weights dominate DRAM traffic",
+    "serving callbacks where Python selector overhead is comparable to kernel time",
+    "leaf-versus-containing-region promotion decisions"
+  ],
+  "caveats": [
+    "The leaf gate passing while the containing region fails is the expected outcome when the target kernel is a third of the region: a 1.09x leaf becomes a 1.03x region.",
+    "The 0.50 us headroom assumes the achieved 6.043 TB/s is fixed; raising DRAM efficiency above the measured ~79% of peak was not attempted and has no concrete SASS defect to target.",
+    "Production remains default-off; no TP8/DP8/EP8 or checkpoint-backed acceptance was run."
+  ],
+  "agent": "claude-fable-5"
+}
