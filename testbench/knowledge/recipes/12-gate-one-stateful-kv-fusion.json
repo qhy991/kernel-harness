@@ -1,0 +1,13 @@
+{
+  "schema_version": 1,
+  "kind": "atomic_experiment_recipe",
+  "id": "12-gate-one-stateful-kv-fusion",
+  "title": "Gate one stateful paged-KV fusion at a real context",
+  "objective": "Prove one cache-mutating fusion without erasing the existing-prefix, page-layout, non-contiguous-input, or assigned-row semantics used by serving.",
+  "preconditions": ["A pinned production paged-cache ABI and page size", "Separate existing-prefix S and new-token M scenarios", "A known set of cache rows written by the call"],
+  "steps": ["Allocate a cache large enough for S existing tokens plus M new tokens and fill historical rows with adversarial bytes", "Preserve production input strides and views instead of making sliced projections contiguous", "Poison only assigned output rows before each candidate call and retain historical rows", "Compare assigned rows through the production dequantization/layout interpretation and rerun with a different seed after timing"],
+  "acceptance": {"pass": "All assigned rows, scales, and side outputs pass at decode and incremental-prefill contexts without changing historical rows.", "incorrect": "The candidate writes the wrong page/offset, changes a scale byte, relies on stale reference output, or silently assumes prefix=0."},
+  "artifacts": ["paged-cache layout description", "decode and incremental-prefill result rows", "post-timing unseen-seed correctness result"],
+  "stop_rule": "Do not report a cache fusion win until the exact state mutation passes; an equivalent standalone tensor output is not a substitute.",
+  "origin_evidence": ["The integrated GLM-5.2 K-indexer task required a 132-byte token layout, page size 64, a non-contiguous kw[:, :128] view, and writes beginning after S=65536."]
+}

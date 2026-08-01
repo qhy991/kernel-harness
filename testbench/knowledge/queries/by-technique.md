@@ -85,6 +85,10 @@
 
 - `glm52--sparse_mla_decode--b200--20260715a` [win] Sparse MLA Decode/decode — sparse-mla-decode is intentionally fused-only: agents must NOT invent a drop-in integrate symbol. A harness WIN that keeps the FlashInfer call signature (including device tensor scales) is the production-ready claim.
 
+## production-jit-router-gemm-small-m
+
+- `glm52--router_gemm_topk_decode--b200--20260801a` [win] router_gemm_topk/decode — For a launch-scale routing projection, use the production specialized kernel only inside its proven shape domain and retain an exact fallback. If paired CUPTI ratios are unstable, change only inner iterations once and keep the complete sweep, correctness, and conservative gate unchanged.
+
 ## raw-deepgemm-fp8-gemm-nt
 
 - `glm52--o_proj_decode--b200--20260714a` [no-win] Attention O Projection/decode — For small-M B200 FP8 decode GEMMs with SGLang-packed UE8M0 scales, the production DeepGEMM wrapper is already the safe path. Python-wrapper bypasses do not improve CUPTI device-kernel timing, and alternate APIs either need different scale layouts or fail to beat both M=16 and M=32.
@@ -117,3 +121,7 @@
 ## triton-direct-active-row-kernel
 
 - `glm52--routed_swiglu_decode--b200--20260714a` [no-win] Routed Expert SwiGLU+FP8 Quant/decode — For GLM-5.2 masked routed SwiGLU decode on B200, the production SGLang C++ kernel is already close to the small-shape floor despite sparse active rows. Removing the CTA prefix mapping is not enough; a replacement must match the production vectorized bf16x2/fp8x2 instruction quality and beat run-to-run noise on M=16.
+
+## two-iteration-cupti-gate
+
+- `glm52--router_gemm_topk_decode--b200--20260801a` [win] router_gemm_topk/decode — For a launch-scale routing projection, use the production specialized kernel only inside its proven shape domain and retain an exact fallback. If paired CUPTI ratios are unstable, change only inner iterations once and keep the complete sweep, correctness, and conservative gate unchanged.

@@ -1,7 +1,7 @@
 # Kernel optimization agent guide
 
-The task suite is **GLM-5.2 on B200**: 12 leaf operators plus 2 production fusion
-regions, each in prefill and decode, for 28 synthetic/region oracle tasks under
+The task suite is **GLM-5.2 on B200**: 12 leaf operators plus 6 production fusion
+regions, each in prefill and decode, for 36 synthetic/region oracle tasks under
 [`testbench/tasks/glm52/`](testbench/tasks/glm52/), plus the production-ABI and
 communication workloads under [`serving_native/`](serving_native/).
 Optimize **one production boundary per session**. All commands run from the repo root.
@@ -19,7 +19,7 @@ here; don't copy patterns from it.
 
 ## The contract
 
-All 14 operator/region contracts are defined exactly once, in
+All 18 operator/region contracts are defined exactly once, in
 [`testbench/harness/glm52_ops.py`](testbench/harness/glm52_ops.py). A task directory
 names which problem it is and nothing else, so it has nothing it could contradict:
 
@@ -114,13 +114,20 @@ and work inside `run()` is your latency.
   the reference. Re-quantizing or re-seeding inside `run()` measures a different
   problem than the one the gate checked. Changing *layout* (`.contiguous()`, `.view()`)
   is fine — that is your kernel's business, and it is timed.
-- `inputs["out"]`, where present, is **NaN-poisoned** before `run()` is called.
-  Returning it unwritten fails — a no-op cannot inherit the reference's answer.
+- Writable outputs are **poisoned** before `run()` is called. Leaf `out` buffers use
+  NaNs; byte-packed fusion outputs and assigned paged-cache rows use task-specific
+  poison values. Returning a shared buffer unwritten fails — a no-op cannot inherit
+  the reference's answer.
 - Fusion-region tasks also gate the in-place residual. `norm_quant_qkv_*` must
   return `(out, residual, normed_bf16)` because GLM-5.2's DSA indexer consumes the
   normalized BF16 activation; `norm_quant_gate_*` returns `(out, residual)` because
   that post-attention seam has no BF16 side consumer. A two-output QKV candidate is
   a contract failure even if its projection is numerically correct.
+- The DSA fusion contracts preserve their production side effects: Q returns both
+  FP8 Q and head-gate-with-scale, while K writes the exact paged-cache byte layout
+  through a non-contiguous 160-wide projection view. `moe_swiglu_quant_*` returns
+  FP8 activations plus transposed packed UE8M0 scales and ignores padded expert rows.
+  `router_gemm_topk_*` requires exact top-k IDs as well as numerically correct weights.
 - Correctness is not allclose and not cosine. It is FlashMLA's three-layer check:
   anomaly positions, then per-element `abs OR rel`, then DeepGEMM's `calc_diff`.
   Cosine and best-fit scale are reported as **diagnostics, never gates** — cosine ~1
@@ -144,10 +151,10 @@ and work inside `run()` is your latency.
   timer and byte/cost model before doing any more candidate work.
 - Leaf-GEMM baselines use deep_gemm's f32-blockwise-scale path, which is **~1.6x
   slower than SGLang's production int32-ue8m0 dispatch**. A sub-1.6x leaf speedup
-  does not mean you beat production. The four `norm_quant_*` region tasks are the
-  exception: their reference uses the production packed-UE8M0 sequence and their
-  task-specific output ABI. Even those region wins still need end-to-end serving
-  confirmation before promotion.
+  does not mean you beat production. All 12 fusion-region tasks instead use the
+  production fused kernel/sequence and their task-specific output ABI as the timed
+  denominator. Even those region wins still need end-to-end serving confirmation
+  before promotion.
 
 ## Where the headroom is
 

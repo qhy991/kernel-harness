@@ -7,35 +7,26 @@ TASK  norm_quant_gate/decode — Residual+RMSNorm+FP8Quant -> MoE Gate Projectio
   GLM-5.2, B200 DP1/TP1/EP32.  family=fusion  S=65536  seed=0
 
   MATH   residual += hidden ; h = RMSNorm(residual)*norm_weight ; (x_fp8,x_scale) = per_token_group_quant_fp8(h, 128, ue8m0) ; out[M,2048] = x_fp8[M,6144] @ w_fp8[2048,6144].T
-         NOTE THIS TASK IS A REGION, NOT A LEAF. The reference is the production
-         NOTE sequence fused_add_rmsnorm -> per-token-group FP8 quant with TMA-
-         NOTE aligned packed UE8M0 scales -> fp8_gemm_nt. A speedup therefore
-         NOTE measures the whole fusion opportunity rather than one isolated
-         NOTE launch.
-         NOTE run(inputs) MUST return exactly (out, residual); every returned
-         NOTE tensor is gated.
-         NOTE GATE PRODUCTION REQUIREMENT: this post-attention/MoE-gate seam has
-         NOTE no BF16 side consumer, so the normalized activation may remain
-         NOTE internal to a fused candidate.
-         NOTE reference() mutates hidden and residual in place. The harness
-         NOTE restores both before candidate correctness and clones all inputs
-         NOTE outside every timed iteration.
-         NOTE The minimum-byte model excludes internal quantized activations and
-         NOTE scales. For QKV it includes the mandatory normalized-BF16
-         NOTE materialization; for gate it does not.
+         NOTE THIS TASK IS A PRODUCTION REGION, NOT AN ISOLATED LEAF. Its
+         NOTE reference is the exact SGLang call sequence/ABI at the named site.
+         NOTE run(inputs) MUST return exactly (out, residual); every logical
+         NOTE output is gated.
+         NOTE This post-attention expert-gate seam has no BF16 side consumer.
+         NOTE reference() mutates hidden and residual; the harness restores both
+         NOTE before candidate correctness and clones them outside timing.
 
   WORKLOAD   M in [16, 32]   (every shape must pass correctness; at least one shape must win and none may regress)
 
-  BASELINE   sgl_kernel.fused_add_rmsnorm -> sglang_per_token_group_quant_fp8(ue8m0) -> deep_gemm.fp8_gemm_nt
+  BASELINE   sgl_kernel.fused_add_rmsnorm -> production packed-UE8M0 per-token quant -> deep_gemm.fp8_gemm_nt
              glm52_ops.reference('norm_quant_gate', 'decode', inputs)
              the correctness oracle AND the latency denominator — the same
              call, on the same frozen inputs, timed under the same protocol
-             CAVEAT This region baseline uses SGLang's production sequence and
-                    packed int32 UE8M0 weight-scale ABI. It does not inherit the
-                    leaf-GEMM baseline's ~1.6x null line. The QKV contract
-                    additionally requires the normalized BF16 activation
-                    consumed by GLM-5.2's DSA indexer; the gate contract does
-                    not have that side consumer.
+             CAVEAT Fusion-region baselines use the exact SGLang production call
+                    sequence and observable ABI for that site, including packed
+                    int32 UE8M0 scales and paged cache layout where applicable.
+                    They do not inherit the leaf-GEMM baseline's ~1.6x null
+                    line. A candidate must beat the whole named region, not a
+                    decomposed or unpacked surrogate.
 
   CONTRACT   run(inputs: dict) -> (out, residual) — that function is the entire ABI.
              candidate.py in this directory, or any file/directory passed to
@@ -46,6 +37,8 @@ TASK  norm_quant_gate/decode — Residual+RMSNorm+FP8Quant -> MoE Gate Projectio
              seed, or rebuild any tensor inside run(), or you measure a
              different problem than the one the gate checked
              tensors at M=16 (read from a real build_inputs() call):
+               fusion_kind        'norm_quant_gemm'
+               required_outputs   ('out', 'residual')
                hidden             (16, 6144)                 bfloat16
                residual           (16, 6144)                 bfloat16
                norm_weight        (6144,)                    bfloat16
@@ -61,7 +54,7 @@ TASK  norm_quant_gate/decode — Residual+RMSNorm+FP8Quant -> MoE Gate Projectio
                _hidden0           (16, 6144)                 bfloat16
                _residual0         (16, 6144)                 bfloat16
              inputs['out'] is pre-allocated and MAY be written in place,
-             but is NaN-filled before run() is called: returning it unwritten FAILS.
+             but is poisoned before run() is called: returning it unwritten FAILS.
              accepted candidate forms:
                - Python / PyTorch — a .py defining run(inputs)
                - Triton — @triton.jit / @triton.autotune live in that same
@@ -74,7 +67,7 @@ TASK  norm_quant_gate/decode — Residual+RMSNorm+FP8Quant -> MoE Gate Projectio
                  maps to its arguments. run(inputs) is that missing
                  statement, and it is the whole ABI.
 
-  CORRECT    masked by output_kind=fusion_region, then all three, in order
+  CORRECT    masked by output_kind=fusion_tuple, then all three, in order
              (FlashMLA kernelkit.check_is_allclose; the aggregate is)
              (deep_gemm.testing.numeric.calc_diff verbatim)
                1. inf / -inf / nan occupy the same positions in both

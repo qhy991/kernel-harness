@@ -4,10 +4,11 @@ Date: 2026-08-01
 
 ## Inventory decision
 
-The four campaign tasks under
+The four original campaign tasks under
 `/home/qinhaiyan/glm52-fusion-goal-runs/worktrees/` were not present in the main
 `/home/qinhaiyan/Kernel-Harness` task registry. They are now additive tasks; the
-existing 24 leaf tasks remain intact, so the suite contains 28 task directories.
+existing 24 leaf tasks remain intact. A later B300 nsys audit added eight more
+phase-specific fusion tasks, so the current suite contains 36 task directories.
 
 | task | phase | production seam | required outputs |
 |---|---|---|---|
@@ -51,7 +52,7 @@ The original reconciliation remains at
 analysis remains at
 `/home/qinhaiyan/glm52-fusion-goal-runs/SGLANG_INTEGRATION_FINDINGS.md`.
 
-## Main-worktree verification
+## Initial four-task verification
 
 Verification on `verda-b200x4` after integration:
 
@@ -77,3 +78,21 @@ The positive run is `PROVISIONAL`, not `OFFICIAL`, because the repository and
 candidate were uncommitted during integration. Its numerical and performance
 fields are internally consistent, but production promotion still requires a
 clean rerun plus checkpoint-backed distributed/end-to-end acceptance.
+
+## B300-derived additive regions
+
+The 2026-08-01 audit added four more production regions, each split into prefill
+and decode without removing or replacing any prior task:
+
+| region | production boundary | context/output contract |
+|---|---|---|
+| `indexer_q_rope_quant` | Q RoPE + FP8 quant + head-gate scale | existing KV S=65536; returns Q and scaled head gate |
+| `indexer_k_norm_rope_store` | K LayerNorm + RoPE + cache quant/store | existing KV S=65536; writes assigned page-size-64 cache rows |
+| `moe_swiglu_quant` | masked SwiGLU + W2-input quant | returns masked FP8 activations and packed UE8M0 scales |
+| `router_gemm_topk` | router GEMM + sigmoid/correction/top-k | returns weights and exact top-k IDs |
+
+The first three are already fused in production and are included so an optimizer
+must beat the fused denominator rather than a decomposed proxy. Router GEMM and
+top-k remain two kernels in the B300 trace and are the open fusion boundary. Full
+evidence, deferred candidates, and B200 measurements are recorded in
+[`GLM52_B300_FUSION_AUDIT_20260801.md`](GLM52_B300_FUSION_AUDIT_20260801.md).

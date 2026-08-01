@@ -1,0 +1,67 @@
+{
+  "schema_version": 1,
+  "id": "glm52--router_gemm_topk_decode--b200--20260801a",
+  "date": "2026-08-01",
+  "model": "glm52",
+  "task": "glm52/router_gemm_topk_decode",
+  "op": "router_gemm_topk",
+  "family": "fusion",
+  "phase": "decode",
+  "shapes": {
+    "K": 6144,
+    "experts": 256,
+    "topk": 8,
+    "M_sweep": [16, 32]
+  },
+  "hardware": {
+    "gpu": "NVIDIA B200",
+    "sm": "sm_100"
+  },
+  "stack": {
+    "sglang_commit": "2a51dee17",
+    "torch": "2.11.0+cu130",
+    "cuda": "13.0"
+  },
+  "baseline_kernel": "FP32 torch.nn.functional.linear followed by sglang.jit_kernel.moe_fused_gate",
+  "bottleneck": {
+    "kind": "launch-overhead",
+    "evidence": "B300 nsys_op_single/opt0_k2026 recorded router_gemm_kernel and _router_triton_kernel on roughly 75k calls each at 2.598 us and 3.099 us mean; B200 M16 remained launch-scale and the production-shaped JIT router GEMM reduced the complete region denominator."
+  },
+  "approaches": [
+    {
+      "technique": "production-jit-router-gemm-small-m",
+      "summary": "Use dsv3_router_gemm for M<=16, preserve moe_fused_gate, and fall back to the exact FP32 projection for M=32.",
+      "outcome": "win",
+      "geomean_speedup": 1.6527,
+      "why": "The bounded JIT kernel removes most of the small-M FP32 projection cost while exact fallback prevents a larger-shape regression and exact top-k ID gating protects routing."
+    },
+    {
+      "technique": "two-iteration-cupti-gate",
+      "summary": "Run the same full candidate with only two inner iterations per paired sample.",
+      "outcome": "abandoned",
+      "geomean_speedup": null,
+      "why": "Launch-scale pair ratios remained above the 1.25x spread limit after the automatic retry, so the harness correctly returned UNSTABLE_NO_VERDICT."
+    }
+  ],
+  "result": {
+    "status": "win",
+    "geomean_speedup": 1.6527,
+    "min_speedup_conservative": 0.9981,
+    "repeat": 10,
+    "integrate": "not-run",
+    "shapes_won": 1,
+    "shapes_regressed": 0
+  },
+  "lesson": "For a launch-scale routing projection, use the production specialized kernel only inside its proven shape domain and retain an exact fallback. If paired CUPTI ratios are unstable, change only inner iterations once and keep the complete sweep, correctness, and conservative gate unchanged.",
+  "transfers_to": [
+    "small-M router projection and top-k regions",
+    "shape-bounded SGLang JIT kernels on sm_100",
+    "microsecond-scale paired CUPTI measurements"
+  ],
+  "caveats": [
+    "Result runs/glm52/router_gemm_topk_decode/20260801T053943Z-4007d5 is provisional because task and candidate were uncommitted and the shared worktree was dirty during measurement.",
+    "The candidate accelerates the projection but does not yet fuse the top-k consumer.",
+    "Containing MoE eager/CUDA-graph and end-to-end serving validation were not run."
+  ],
+  "agent": "codex"
+}

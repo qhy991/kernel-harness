@@ -90,9 +90,14 @@ INDEX_HEAD_DIM = 128
 MOE_INTERMEDIATE_SIZE = 2048
 N_EXPERT = 8              # single-GPU shard (EP32)
 EXPERTS_PER_TOK = 8
+ROUTER_EXPERTS = 256
+ROUTER_TOPK = 8
+ROUTED_SCALING_FACTOR = 2.5
 FUSED_QKV_A_OUT = 2624
 BLOCK_SIZE_KV = 64
 HEAD_DIM_WITH_SF = 132    # 128 fp8 bytes + 4-byte inline f32 scale
+INDEXER_ROPE_DIM = 64
+INDEXER_K_PROJ_DIM = INDEX_HEAD_DIM + INDEX_N_HEADS  # fused wk + head-gate projection
 
 FP8_MAX = torch.finfo(torch.float8_e4m3fn).max  # 448.0
 DEFAULT_S = 65536
@@ -133,6 +138,8 @@ MOE_OPS = {
 }
 MLA_OPS = ("dsa_attn",)
 SCORE_OPS = ("index_score",)
+RMS_EPS = 1e-5
+QUANT_GROUP = 128
 
 # Fusion tasks model a production REGION rather than an isolated leaf:
 # residual-add + RMSNorm + per-token-group FP8 quant + the consuming GEMM.
@@ -143,18 +150,81 @@ FUSION_OPS = {
     # The input-layernorm/QKV seam also feeds GLM-5.2's DSA indexer. Production
     # therefore needs the normalized BF16 activation as a third observable output.
     "norm_quant_qkv": dict(
+        kind="norm_quant_gemm",
         K=HIDDEN_SIZE,
         N=FUSED_QKV_A_OUT,
         requires_bf16_output=True,
+        required_outputs=("out", "residual", "normed_bf16"),
+        output_kind="fusion_tuple",
+        has_output_buffer=True,
         production_site="input_layernorm/QKV-A + DSA indexer",
+        backend=("sgl_kernel.fused_add_rmsnorm -> production packed-UE8M0 "
+                 "per-token quant -> deep_gemm.fp8_gemm_nt"),
     ),
     # The post-attention/MoE-gate seam has no BF16 side consumer, so the
     # normalized activation may remain internal to a genuinely fused candidate.
     "norm_quant_gate": dict(
+        kind="norm_quant_gemm",
         K=HIDDEN_SIZE,
         N=MOE_INTERMEDIATE_SIZE,
         requires_bf16_output=False,
+        required_outputs=("out", "residual"),
+        output_kind="fusion_tuple",
+        has_output_buffer=True,
         production_site="post_attention_layernorm/MoE gate",
+        backend=("sgl_kernel.fused_add_rmsnorm -> production packed-UE8M0 "
+                 "per-token quant -> deep_gemm.fp8_gemm_nt"),
+    ),
+    # These three are already fused in the profiled SGLang path, but were absent
+    # from Kernel Harness.  Making them first-class tasks gives an agent the exact
+    # production fused baseline to beat instead of rewarding a decomposition.
+    "indexer_q_rope_quant": dict(
+        kind="indexer_q_rope_quant",
+        heads=INDEX_N_HEADS,
+        head_dim=INDEX_HEAD_DIM,
+        rope_dim=INDEXER_ROPE_DIM,
+        required_outputs=("q_fp8", "head_gate_with_q_scale"),
+        output_kind="fusion_tuple",
+        has_output_buffer=False,
+        production_site="DSA indexer Q RoPE + per-head FP8 quant + head-gate scale",
+        backend="sglang.jit_kernel.dsv4.fused_q_indexer_rope_first_quant",
+    ),
+    "indexer_k_norm_rope_store": dict(
+        kind="indexer_k_norm_rope_store",
+        head_dim=INDEX_HEAD_DIM,
+        rope_dim=INDEXER_ROPE_DIM,
+        page_size=BLOCK_SIZE_KV,
+        required_outputs=("updated_paged_index_k_cache",),
+        output_kind="index_cache",
+        has_output_buffer=True,
+        production_site="DSA indexer K LayerNorm + RoPE + FP8 paged-cache store",
+        backend="sglang.jit_kernel.dsv32.fused_k_indexer_norm_rope_store",
+    ),
+    "moe_swiglu_quant": dict(
+        kind="moe_swiglu_quant",
+        E=N_EXPERT,
+        intermediate=MOE_INTERMEDIATE_SIZE,
+        group=QUANT_GROUP,
+        topk=EXPERTS_PER_TOK,
+        required_outputs=("down_input_fp8", "packed_ue8m0_scale"),
+        output_kind="masked_quant",
+        has_output_buffer=True,
+        production_site="DeepEP masked W13 output -> SwiGLU -> packed-UE8M0 FP8 W2 input",
+        backend="sglang.jit_kernel.dsv4.silu_and_mul_masked_post_quant",
+    ),
+    # B300 exposes this as two repeated kernels: router_gemm_kernel followed by
+    # _router_triton_kernel.  Unlike the entries above, this is a still-open
+    # epilogue/consumer fusion boundary rather than an already-fused leaf.
+    "router_gemm_topk": dict(
+        kind="router_gemm_topk",
+        K=HIDDEN_SIZE,
+        experts=ROUTER_EXPERTS,
+        topk=ROUTER_TOPK,
+        required_outputs=("topk_weights", "topk_ids"),
+        output_kind="fusion_tuple",
+        has_output_buffer=False,
+        production_site="GLM MoE FP32 router projection -> sigmoid/correction/top-k",
+        backend="torch.nn.functional.linear(fp32) -> sglang.jit_kernel.moe_fused_gate",
     ),
 }
 
@@ -170,10 +240,6 @@ BACKEND = {
     "fusion": ("sgl_kernel.fused_add_rmsnorm -> "
                "sglang_per_token_group_quant_fp8(ue8m0) -> deep_gemm.fp8_gemm_nt"),
 }
-
-RMS_EPS = 1e-5
-QUANT_GROUP = 128
-
 
 def transform_scale_ue8m0(sf, mn: int):
     """Apply SGLang's production load-time packed-UE8M0 scale transform.
@@ -194,6 +260,10 @@ _LABEL = {
     "dsa_attn": "DSA Sparse Attention", "index_score": "Indexer Score (MQA logits)",
     "norm_quant_qkv": "Residual+RMSNorm+FP8Quant -> QKV-A Projection (fusion region)",
     "norm_quant_gate": "Residual+RMSNorm+FP8Quant -> MoE Gate Projection (fusion region)",
+    "indexer_q_rope_quant": "DSA Indexer Q RoPE+Quant+Head-Gate Scale (fused region)",
+    "indexer_k_norm_rope_store": "DSA Indexer K Norm+RoPE+Paged-Cache Store (fused region)",
+    "moe_swiglu_quant": "Masked MoE SwiGLU+Packed-UE8M0 Quant (fused region)",
+    "router_gemm_topk": "MoE Router GEMM+Sigmoid/Correction/Top-K (fusion region)",
 }
 
 
@@ -266,7 +336,7 @@ def spec(op: str, phase: str) -> dict:
     """The complete contract for one (op, phase). Nothing else may declare these."""
     fam = family(op)
     kind = {"gemm": "dense", "bmm": "dense", "moe": "masked_grouped",
-            "mla": "mla_sparse", "fusion": "fusion_region"}.get(fam) or (
+            "mla": "mla_sparse", "fusion": "fusion_tuple"}.get(fam) or (
         "logits_ksrange" if phase == "prefill" else "logits_paged")
     d = dict(op=op, phase=phase, label=_LABEL[op], family=fam,
              backend=BACKEND[fam], output_kind=kind,
@@ -276,11 +346,15 @@ def spec(op: str, phase: str) -> dict:
              has_output_buffer=fam in ("gemm", "moe", "fusion"))
     if fam == "fusion":
         cfg = FUSION_OPS[op]
-        d.update(K=cfg["K"], N=cfg["N"], rms_eps=RMS_EPS,
-                 quant_group=QUANT_GROUP,
-                 requires_bf16_output=cfg["requires_bf16_output"],
-                 output_arity=3 if cfg["requires_bf16_output"] else 2,
-                 production_site=cfg["production_site"])
+        d.update(cfg)
+        d.update(backend=cfg["backend"], output_kind=cfg["output_kind"],
+                 has_output_buffer=cfg["has_output_buffer"],
+                 output_arity=len(cfg["required_outputs"]),
+                 peak_dtype="bf16" if cfg["kind"] in (
+                     "indexer_k_norm_rope_store", "moe_swiglu_quant",
+                     "router_gemm_topk") else "fp8")
+        if cfg["kind"] == "norm_quant_gemm":
+            d.update(rms_eps=RMS_EPS, quant_group=QUANT_GROUP)
     elif fam == "gemm":
         d.update(K=GEMM_OPS[op]["K"], N=GEMM_OPS[op]["N"], rows=GEMM_OPS[op]["rows"])
     elif fam == "bmm":
@@ -315,13 +389,33 @@ def build_inputs(op: str, phase: str, M: int, S: int = DEFAULT_S,
     if fam == "bmm":   return _build_bmm(op, M, device)
     if fam == "moe":   return _build_moe(op, M, device)
     if fam == "mla":   return _build_mla(M, S, device)
-    if fam == "fusion": return _build_fusion(op, M, device)
+    if fam == "fusion": return _build_fusion(op, phase, M, S, device)
     return _build_score(phase, M, S, device)
 
 
-def _build_fusion(op, M, device):
-    """Build the exact mutable inputs for a norm+quant+GEMM production region."""
+def _build_fusion(op, phase, M, S, device):
+    """Build one of the production fusion-region contracts."""
     cfg = FUSION_OPS[op]
+    kind = cfg["kind"]
+    if kind == "norm_quant_gemm":
+        return _build_norm_quant_gemm(cfg, M, device)
+    if kind == "indexer_q_rope_quant":
+        return _build_indexer_q_rope_quant(cfg, phase, M, S, device)
+    if kind == "indexer_k_norm_rope_store":
+        return _build_indexer_k_norm_rope_store(cfg, phase, M, S, device)
+    if kind == "moe_swiglu_quant":
+        return _build_moe_swiglu_quant(cfg, M, device)
+    if kind == "router_gemm_topk":
+        return _build_router_gemm_topk(cfg, M, device)
+    raise KeyError(f"unknown fusion kind {kind!r} for {op!r}")
+
+
+def _fusion_common(cfg):
+    return dict(fusion_kind=cfg["kind"], required_outputs=cfg["required_outputs"])
+
+
+def _build_norm_quant_gemm(cfg, M, device):
+    """Exact mutable inputs for the norm+quant+GEMM production region."""
     K, N = cfg["K"], cfg["N"]
     hidden = torch.randn(M, K, dtype=torch.bfloat16, device=device)
     residual = torch.randn(M, K, dtype=torch.bfloat16, device=device)
@@ -335,6 +429,7 @@ def _build_fusion(op, M, device):
     w_scale = transform_scale_ue8m0(w_scale, mn=N)
     out = torch.empty(M, N, dtype=torch.bfloat16, device=device)
     return dict(
+        **_fusion_common(cfg),
         hidden=hidden,
         residual=residual,
         norm_weight=norm_weight,
@@ -352,6 +447,127 @@ def _build_fusion(op, M, device):
         # candidate correctness; timed iterations independently clone all inputs.
         _hidden0=hidden.clone(),
         _residual0=residual.clone(),
+    )
+
+
+def _positions_and_cos_sin(phase, M, S, rope_dim, device):
+    """Production-like RoPE table whose positions begin after an S-token cache."""
+    if phase == "prefill":
+        positions = torch.arange(S, S + M, dtype=torch.int64, device=device)
+    else:
+        # Decode M is batch size: every request has the same representative cache
+        # length, rather than pretending the M rows are one contiguous extension.
+        positions = torch.full((M,), S, dtype=torch.int64, device=device)
+    max_position = S + M + 1
+    half = rope_dim // 2
+    inv_freq = 1.0 / (
+        1_000_000.0 ** (torch.arange(half, device=device, dtype=torch.float32) / half)
+    )
+    angles = torch.arange(max_position, device=device, dtype=torch.float32)[:, None]
+    angles = angles * inv_freq[None, :]
+    # DSV3.2's kernels consume [cos..., sin...] in one fp32 row.
+    cos_sin_cache = torch.cat((angles.cos(), angles.sin()), dim=-1).contiguous()
+    return positions, cos_sin_cache
+
+
+def _build_indexer_q_rope_quant(cfg, phase, M, S, device):
+    positions, cos_sin_cache = _positions_and_cos_sin(
+        phase, M, S, cfg["rope_dim"], device)
+    q_input = torch.randn(
+        M, cfg["heads"], cfg["head_dim"], dtype=torch.bfloat16, device=device)
+    head_gate = torch.randn(M, cfg["heads"], dtype=torch.bfloat16, device=device)
+    return dict(
+        **_fusion_common(cfg),
+        q_input=q_input,
+        head_gate=head_gate,
+        weight_scale=cfg["head_dim"] ** -0.5 * cfg["heads"] ** -0.5,
+        cos_sin_cache=cos_sin_cache,
+        positions=positions,
+        context_len=S,
+    )
+
+
+def _build_indexer_k_norm_rope_store(cfg, phase, M, S, device):
+    positions, cos_sin_cache = _positions_and_cos_sin(
+        phase, M, S, cfg["rope_dim"], device)
+    # Production passes kw[:, :128], a non-contiguous view of the fused
+    # [index-k | head-gate] projection.  Store the parent tensor so timed input
+    # cloning cannot silently turn that view contiguous.
+    k_projection = torch.randn(
+        M, INDEXER_K_PROJ_DIM, dtype=torch.bfloat16, device=device)
+    page_size = cfg["page_size"]
+    slots = S + M
+    num_pages = (slots + page_size - 1) // page_size
+    cache = torch.randint(
+        0, 256, (num_pages, HEAD_DIM_WITH_SF * page_size),
+        dtype=torch.uint8, device=device)
+    out_cache_loc = torch.arange(S, S + M, dtype=torch.int64, device=device)
+    return dict(
+        **_fusion_common(cfg),
+        k_projection=k_projection,
+        norm_weight=torch.randn(cfg["head_dim"], dtype=torch.float32, device=device),
+        norm_bias=torch.randn(cfg["head_dim"], dtype=torch.float32, device=device),
+        eps=RMS_EPS,
+        cos_sin_cache=cos_sin_cache,
+        positions=positions,
+        out_cache_loc=out_cache_loc,
+        cache=cache,
+        _cache0=cache.clone(),
+        page_size=page_size,
+        context_len=S,
+    )
+
+
+def _masked_counts(M):
+    total_m = M * EXPERTS_PER_TOK
+    counts = [0] * N_EXPERT
+    for _ in range(total_m):
+        counts[random.randint(0, N_EXPERT - 1)] += 1
+    expected_m = _round128(max((total_m + N_EXPERT - 1) // N_EXPERT, max(counts)))
+    return counts, expected_m
+
+
+def _build_moe_swiglu_quant(cfg, M, device):
+    counts, expected_m = _masked_counts(M)
+    D = cfg["intermediate"]
+    G = D // cfg["group"]
+    gate_up = torch.randn(
+        cfg["E"], expected_m, 2 * D, dtype=torch.bfloat16, device=device)
+    down_input = torch.empty(
+        cfg["E"], expected_m, D, dtype=torch.float8_e4m3fn, device=device)
+    # This is the exact pre-transpose packed-UE8M0 ABI in DeepGemmRunner's
+    # masked activation path.  The observable returned scale is its transpose.
+    down_scale_storage = torch.empty(
+        cfg["E"], G // 4, expected_m, dtype=torch.int32, device=device)
+    return dict(
+        **_fusion_common(cfg),
+        gate_up=gate_up,
+        down_input=down_input,
+        down_scale_storage=down_scale_storage,
+        masked_m=torch.tensor(counts, dtype=torch.int32, device=device),
+        expected_m=expected_m,
+        group_size=cfg["group"],
+        topk=cfg["topk"],
+        E=cfg["E"],
+        intermediate=D,
+    )
+
+
+def _build_router_gemm_topk(cfg, M, device):
+    hidden = torch.randn(M, cfg["K"], dtype=torch.bfloat16, device=device)
+    # GLM stores the gate parameter in BF16 but production caches one FP32 copy.
+    weight_bf16 = torch.randn(
+        cfg["experts"], cfg["K"], dtype=torch.bfloat16, device=device)
+    return dict(
+        **_fusion_common(cfg),
+        hidden=hidden,
+        router_weight_bf16=weight_bf16,
+        router_weight_fp32=weight_bf16.float(),
+        correction_bias=(0.05 * torch.randn(
+            cfg["experts"], dtype=torch.float32, device=device)),
+        topk=cfg["topk"],
+        renormalize=True,
+        routed_scaling_factor=ROUTED_SCALING_FACTOR,
     )
 
 
@@ -498,7 +714,7 @@ def reference(op: str, phase: str, inputs: dict):
             out, inputs["masked_m"], inputs["expected_m"])
         return out
     if fam == "fusion":
-        return _reference_fusion(inputs)
+        return _reference_fusion(op, inputs)
     if fam == "mla":
         return flash_mla_sparse_fwd(inputs["q"], inputs["kv"], inputs["indices"],
                                     inputs["sm_scale"], inputs["d_v"])
@@ -512,7 +728,48 @@ def reference(op: str, phase: str, inputs: dict):
         clean_logits=False)
 
 
-def _reference_fusion(inputs: dict):
+def _reference_fusion(op: str, inputs: dict):
+    kind = FUSION_OPS[op]["kind"]
+    if kind == "norm_quant_gemm":
+        return _reference_norm_quant_gemm(inputs)
+    if kind == "indexer_q_rope_quant":
+        from sglang.jit_kernel.dsv4 import fused_q_indexer_rope_first_quant
+
+        return fused_q_indexer_rope_first_quant(
+            inputs["q_input"], inputs["head_gate"], inputs["weight_scale"],
+            inputs["cos_sin_cache"], inputs["positions"])
+    if kind == "indexer_k_norm_rope_store":
+        from sglang.jit_kernel.dsv32 import fused_k_indexer_norm_rope_store
+
+        cache = inputs["cache"]
+        fused_k_indexer_norm_rope_store(
+            inputs["k_projection"][:, :INDEX_HEAD_DIM], cache,
+            inputs["out_cache_loc"], inputs["norm_weight"], inputs["norm_bias"],
+            inputs["eps"], inputs["cos_sin_cache"], inputs["positions"],
+            inputs["page_size"])
+        return cache
+    if kind == "moe_swiglu_quant":
+        from sglang.jit_kernel.dsv4 import silu_and_mul_masked_post_quant
+
+        silu_and_mul_masked_post_quant(
+            inputs["gate_up"], inputs["down_input"],
+            inputs["down_scale_storage"], inputs["group_size"], inputs["masked_m"],
+            scale_ue8m0=True, topk=inputs["topk"], transposed=True)
+        return inputs["down_input"], inputs["down_scale_storage"].transpose(-1, -2)
+    if kind == "router_gemm_topk":
+        import torch.nn.functional as F
+        from sglang.jit_kernel.moe_fused_gate import moe_fused_gate
+
+        logits = F.linear(inputs["hidden"].float(), inputs["router_weight_fp32"])
+        return moe_fused_gate(
+            logits, inputs["correction_bias"], inputs["topk"],
+            scoring_func="sigmoid", renormalize=inputs["renormalize"],
+            routed_scaling_factor=inputs["routed_scaling_factor"],
+            apply_routed_scaling_factor_on_output=False)
+    raise KeyError(f"unknown fusion kind {kind!r}")
+
+
+def _reference_norm_quant_gemm(inputs: dict):
     """Run the three stock kernels in the same order and ABI as production."""
     from sgl_kernel import fused_add_rmsnorm
     from sglang.srt.layers.quantization.fp8_kernel import (
@@ -553,6 +810,24 @@ def poison(inputs: dict) -> bool:
     if torch.is_tensor(inputs.get("_hidden0")):
         inputs["hidden"].copy_(inputs["_hidden0"])
         inputs["residual"].copy_(inputs["_residual0"])
+
+    kind = inputs.get("fusion_kind")
+    if kind == "indexer_k_norm_rope_store":
+        cache = inputs["cache"]
+        cache.copy_(inputs["_cache0"])
+        values, scales = _index_cache_views(cache, inputs["page_size"])
+        pages, offsets = _cache_pages_offsets(
+            inputs["out_cache_loc"], inputs["page_size"])
+        # 0xff decodes to non-finite FP8 / FP32 values.  A candidate that returns
+        # the cache without writing its assigned rows therefore fails the anomaly
+        # gate instead of inheriting the reference answer.
+        values[pages, offsets] = 0xFF
+        scales[pages, offsets] = 0xFF
+        return True
+    if kind == "moe_swiglu_quant":
+        inputs["down_input"].fill_(float("nan"))
+        inputs["down_scale_storage"].fill_(0x7F7F7F7F)
+        return True
     out = inputs.get("out")
     if torch.is_tensor(out):
         out.fill_(float("nan"))
@@ -569,10 +844,11 @@ def _main(x):
 
 def prepare(out, kind: str, inputs: dict) -> torch.Tensor:
     """Reduce a raw output to the flat vector that is actually compared."""
-    if kind == "fusion_region":
-        expected = 3 if inputs["requires_bf16_output"] else 2
+    if kind == "fusion_tuple":
+        names = tuple(inputs["required_outputs"])
+        expected = len(names)
         if not isinstance(out, (tuple, list)) or len(out) != expected:
-            signature = "(out, residual, normed_bf16)" if expected == 3 else "(out, residual)"
+            signature = "(" + ", ".join(names) + ")"
             detail = (f" of length {len(out)}"
                       if isinstance(out, (tuple, list)) else "")
             raise ValueError(
@@ -581,6 +857,32 @@ def prepare(out, kind: str, inputs: dict) -> torch.Tensor:
         if not all(torch.is_tensor(t) for t in out):
             raise ValueError("every fusion output must be a torch.Tensor")
         return torch.cat([t.reshape(-1).float() for t in out])
+    if kind == "index_cache":
+        if not torch.is_tensor(out):
+            raise ValueError("indexer K fusion must return the updated cache tensor")
+        values, scales = _index_cache_views(out, inputs["page_size"])
+        pages, offsets = _cache_pages_offsets(
+            inputs["out_cache_loc"], inputs["page_size"])
+        value_rows = values[pages, offsets].contiguous().view(torch.float8_e4m3fn)
+        scale_rows = scales[pages, offsets].contiguous().view(torch.float32)
+        return (value_rows.float() * scale_rows.reshape(-1, 1)).reshape(-1)
+    if kind == "masked_quant":
+        if not isinstance(out, (tuple, list)) or len(out) != 2:
+            raise ValueError(
+                "MoE activation fusion must return (down_input_fp8, packed_ue8m0_scale)")
+        values, scales = out
+        if not torch.is_tensor(values) or not torch.is_tensor(scales):
+            raise ValueError("both MoE activation outputs must be tensors")
+        parts = []
+        for e, n_t in enumerate(inputs["masked_m"].tolist()):
+            n = int(n_t)
+            if n <= 0:
+                continue
+            parts.append(values[e, :n].reshape(-1).float())
+            # Packed UE8M0 is a production ABI, not merely an equivalent numeric
+            # scale.  Compare its four exponent bytes explicitly.
+            parts.append(scales[e, :n].contiguous().view(torch.uint8).reshape(-1).float())
+        return torch.cat(parts) if parts else values.reshape(-1).float()
     out = _main(out)
     if kind in ("dense", "mla_sparse"):
         return out.reshape(-1)
@@ -599,6 +901,25 @@ def prepare(out, kind: str, inputs: dict) -> torch.Tensor:
         col = torch.arange(S, device=out.device).view(1, -1)
         return (out[..., :S] * (col < inputs["seqlens"].view(-1, 1))).reshape(-1)
     raise ValueError(f"unknown output_kind {kind!r}")
+
+
+def _index_cache_views(cache: torch.Tensor, page_size: int):
+    """Logical FP8 values/scales in the production 132-byte paged row ABI."""
+    if cache.dtype != torch.uint8 or cache.ndim != 2:
+        raise ValueError(
+            f"index cache must be 2-D uint8; got {tuple(cache.shape)} {cache.dtype}")
+    expected = HEAD_DIM_WITH_SF * page_size
+    if cache.shape[1] != expected:
+        raise ValueError(
+            f"index cache row bytes {cache.shape[1]} != 132*page_size={expected}")
+    value_bytes = INDEX_HEAD_DIM * page_size
+    values = cache[:, :value_bytes].reshape(-1, page_size, INDEX_HEAD_DIM)
+    scales = cache[:, value_bytes:].reshape(-1, page_size, F32_B)
+    return values, scales
+
+
+def _cache_pages_offsets(out_cache_loc: torch.Tensor, page_size: int):
+    return torch.div(out_cache_loc, page_size, rounding_mode="floor"), out_cache_loc % page_size
 
 
 def compare(ref_out, cand_out, op: str, phase: str, inputs: dict) -> dict:
@@ -743,19 +1064,47 @@ def cost(op: str, phase: str, M: int, S: int = DEFAULT_S):
         return 2.0 * total_m * K * N, float(byts), "fp8"
     if fam == "fusion":
         cfg = FUSION_OPS[op]
-        K, N = cfg["K"], cfg["N"]
-        # Minimum traffic a fully fused implementation must perform. Quantized
-        # activation/scales are internal and need not spill. The QKV seam has one
-        # extra mandatory BF16 write because the DSA indexer consumes that tensor.
-        byts = (M * K * BF16_B * 2          # read hidden + residual
-                + K * BF16_B                # norm weight
-                + N * K * FP8_B             # packed FP8 weight
-                + N * math.ceil(K / 128 / 4) * F32_B  # packed UE8M0 weight scale
-                + M * K * BF16_B            # write updated residual
-                + M * N * BF16_B)           # write projection output
-        if cfg["requires_bf16_output"]:
-            byts += M * K * BF16_B           # write normalized BF16 for DSA indexer
-        return 2.0 * M * K * N, float(byts), "fp8"
+        kind = cfg["kind"]
+        if kind == "norm_quant_gemm":
+            K, N = cfg["K"], cfg["N"]
+            # Minimum traffic a fully fused implementation must perform. Quantized
+            # activation/scales are internal and need not spill. The QKV seam has one
+            # extra mandatory BF16 write because the DSA indexer consumes that tensor.
+            byts = (M * K * BF16_B * 2          # read hidden + residual
+                    + K * BF16_B                # norm weight
+                    + N * K * FP8_B             # packed FP8 weight
+                    + N * math.ceil(K / 128 / 4) * F32_B
+                    + M * K * BF16_B            # write updated residual
+                    + M * N * BF16_B)           # write projection output
+            if cfg["requires_bf16_output"]:
+                byts += M * K * BF16_B
+            return 2.0 * M * K * N, float(byts), "fp8"
+        if kind == "indexer_q_rope_quant":
+            H, D, R = cfg["heads"], cfg["head_dim"], cfg["rope_dim"]
+            byts = (M * H * D * BF16_B + M * H * BF16_B
+                    + M * R * F32_B + M * F32_B
+                    + M * H * D * FP8_B + M * H * F32_B)
+            # Approximate elementwise work: RoPE, max-reduction/scale and quant.
+            return float(M * H * (6 * R + 4 * D)), float(byts), "fp8"
+        if kind == "indexer_k_norm_rope_store":
+            D, R = cfg["head_dim"], cfg["rope_dim"]
+            byts = (M * D * BF16_B + 2 * D * F32_B + M * R * F32_B
+                    + M * 8 + M * HEAD_DIM_WITH_SF)
+            # LayerNorm plus RoPE and per-row absmax/quantization.
+            return float(M * (10 * D + 6 * R)), float(byts), "bf16"
+        if kind == "moe_swiglu_quant":
+            total_m = M * cfg["topk"]
+            D = cfg["intermediate"]
+            scale_bytes = total_m * (D // cfg["group"])
+            byts = total_m * 2 * D * BF16_B + total_m * D * FP8_B + scale_bytes
+            return float(total_m * D * 8), float(byts), "bf16"
+        if kind == "router_gemm_topk":
+            K, E = cfg["K"], cfg["experts"]
+            # A fully fused consumer need not materialize/read the MxE logits.
+            byts = (M * K * BF16_B + E * K * BF16_B + E * F32_B
+                    + M * cfg["topk"] * (F32_B + F32_B))
+            return 2.0 * M * K * E, float(byts), "bf16"
+        raise KeyError(f"unknown fusion kind {kind!r}")
     if fam == "mla":
         tk = min(TOPK, S)
         # KV dedup: gathered rows saturate at the latent cache, so KV traffic stops
@@ -828,10 +1177,11 @@ BASELINE_CAVEAT = (
 )
 
 FUSION_BASELINE_CAVEAT = (
-    "This region baseline uses SGLang's production sequence and packed int32 UE8M0 "
-    "weight-scale ABI. It does not inherit the leaf-GEMM baseline's ~1.6x null line. "
-    "The QKV contract additionally requires the normalized BF16 activation consumed "
-    "by GLM-5.2's DSA indexer; the gate contract does not have that side consumer."
+    "Fusion-region baselines use the exact SGLang production call sequence and "
+    "observable ABI for that site, including packed int32 UE8M0 scales and paged "
+    "cache layout where applicable. They do not inherit the leaf-GEMM baseline's "
+    "~1.6x null line. A candidate must beat the whole named region, not a decomposed "
+    "or unpacked surrogate."
 )
 
 ACCEPTED_CANDIDATE_FORMS = [
@@ -879,34 +1229,73 @@ def problem(op: str, phase: str, device=None) -> dict:
             f"seeded multinomial (masked_m); expected_m is the per-expert slab capacity "
             f"and is sized to hold the largest bin.")
     elif fam == "fusion":
-        expr = (f"residual += hidden ; h = RMSNorm(residual)*norm_weight ; "
-                f"(x_fp8,x_scale) = per_token_group_quant_fp8(h, "
-                f"{s['quant_group']}, ue8m0) ; out[M,{s['N']}] = "
-                f"x_fp8[M,{s['K']}] @ w_fp8[{s['N']},{s['K']}].T")
-        dims = {"K": s["K"], "N": s["N"], "group": s["quant_group"],
-                "eps": s["rms_eps"], "production_site": s["production_site"]}
-        required = ("(out, residual, normed_bf16)"
-                    if s["requires_bf16_output"] else "(out, residual)")
+        fkind = s["kind"]
+        required = "(" + ", ".join(s["required_outputs"]) + ")"
+        dims = {"production_site": s["production_site"]}
         math_notes += [
-            "THIS TASK IS A REGION, NOT A LEAF. The reference is the production "
-            "sequence fused_add_rmsnorm -> per-token-group FP8 quant with TMA-aligned "
-            "packed UE8M0 scales -> fp8_gemm_nt. A speedup therefore measures the "
-            "whole fusion opportunity rather than one isolated launch.",
-            f"run(inputs) MUST return exactly {required}; every returned tensor is gated.",
-            ("QKV PRODUCTION REQUIREMENT: normed_bf16 is consumed by GLM-5.2's DSA "
-             "indexer. Earlier two-output QKV experiments omitted this write and are "
-             "optimistic; they are evidence to remeasure, not deployable wins."
-             if s["requires_bf16_output"] else
-             "GATE PRODUCTION REQUIREMENT: this post-attention/MoE-gate seam has no "
-             "BF16 side consumer, so the normalized activation may remain internal to "
-             "a fused candidate."),
-            "reference() mutates hidden and residual in place. The harness restores "
-            "both before candidate correctness and clones all inputs outside every "
-            "timed iteration.",
-            "The minimum-byte model excludes internal quantized activations and scales. "
-            "For QKV it includes the mandatory normalized-BF16 materialization; for "
-            "gate it does not.",
+            "THIS TASK IS A PRODUCTION REGION, NOT AN ISOLATED LEAF. Its reference is "
+            "the exact SGLang call sequence/ABI at the named site.",
+            f"run(inputs) MUST return exactly {required}; every logical output is gated.",
         ]
+        if fkind == "norm_quant_gemm":
+            expr = (f"residual += hidden ; h = RMSNorm(residual)*norm_weight ; "
+                    f"(x_fp8,x_scale) = per_token_group_quant_fp8(h, "
+                    f"{s['quant_group']}, ue8m0) ; out[M,{s['N']}] = "
+                    f"x_fp8[M,{s['K']}] @ w_fp8[{s['N']},{s['K']}].T")
+            dims.update(K=s["K"], N=s["N"], group=s["quant_group"], eps=s["rms_eps"])
+            math_notes += [
+                ("QKV REQUIREMENT: normed_bf16 is consumed by the DSA indexer; older "
+                 "two-output experiments omitted this mandatory write."
+                 if s["requires_bf16_output"] else
+                 "This post-attention expert-gate seam has no BF16 side consumer."),
+                "reference() mutates hidden and residual; the harness restores both "
+                "before candidate correctness and clones them outside timing.",
+            ]
+        elif fkind == "indexer_q_rope_quant":
+            expr = ("RoPE(q_bf16) -> per-(token,head) FP8 quant; emit q_fp8 and "
+                    "head_gate * index_softmax_scale * q_scale")
+            dims.update(heads=s["heads"], head_dim=s["head_dim"], rope_dim=s["rope_dim"])
+            math_notes += [
+                "RoPE positions begin at S=65536: decode rows represent independent "
+                "requests at that cache length; prefill rows are the incremental span S:S+M.",
+                "B300 already executes this as one fused kernel. The task is to beat that "
+                "production fusion, not to claim the decomposition saving as a win.",
+            ]
+        elif fkind == "indexer_k_norm_rope_store":
+            expr = ("LayerNorm(k_bf16) -> leading-64 RoPE -> per-row FP8 quant -> "
+                    "write [128 fp8 bytes + f32 scale] into paged index-K cache")
+            dims.update(head_dim=s["head_dim"], rope_dim=s["rope_dim"],
+                        page_size=s["page_size"], context_len=s["S"])
+            math_notes += [
+                "The input is the non-contiguous [:, :128] view of the fused 160-wide "
+                "index-K/head-gate projection, matching production stride.",
+                "The task allocates a real S+M paged cache and writes slots after the "
+                "existing S=65536 context. Correctness dequantizes only those assigned rows.",
+                "B300 already executes norm+RoPE+quant+store in one kernel; this task makes "
+                "that fused cache ABI available for further B200 tuning.",
+            ]
+        elif fkind == "moe_swiglu_quant":
+            expr = ("masked W13 bf16 output -> SiLU(gate)*up -> per-128 FP8 quant -> "
+                    "packed UE8M0 scale for masked W2")
+            dims.update(E=s["E"], intermediate=s["intermediate"], group=s["group"],
+                        topk=s["topk"])
+            math_notes += [
+                "Only masked_m[e] rows per expert are observable; padded slab rows are poison.",
+                "Packed UE8M0 bytes are part of the downstream DeepGEMM ABI and are gated, "
+                "not treated as an interchangeable float-scale representation.",
+            ]
+        elif fkind == "router_gemm_topk":
+            expr = ("FP32 GLM router projection hidden[M,6144] @ weight[256,6144].T "
+                    "-> sigmoid + correction bias + normalized top-8")
+            dims.update(K=s["K"], experts=s["experts"], topk=s["topk"])
+            math_notes += [
+                "This is the still-open fusion boundary seen on B300 as router_gemm_kernel "
+                "followed by _router_triton_kernel.",
+                "Top-k IDs are gated exactly. A faster reduced-precision projection that "
+                "changes routing is incorrect even when its logits are numerically close.",
+            ]
+        else:
+            raise KeyError(f"unknown fusion kind {fkind!r}")
     elif fam == "mla":
         expr = (f"sparse MLA: q[M,{NUM_HEADS},{D_QK}] attends the top-{TOPK} of "
                 f"kv[{s['S']},1,{D_QK}] -> out[M,{NUM_HEADS},{D_V}]")
@@ -965,9 +1354,7 @@ def problem(op: str, phase: str, device=None) -> dict:
 
         "contract": {
             "entrypoint": (
-                ("run(inputs: dict) -> (out, residual, normed_bf16)"
-                 if s["requires_bf16_output"] else
-                 "run(inputs: dict) -> (out, residual)")
+                "run(inputs: dict) -> (" + ", ".join(s["required_outputs"]) + ")"
                 if fam == "fusion" else "run(inputs: dict) -> output"),
             "where": "candidate.py in this directory, or any file/directory passed to "
                      "--candidate (it may live anywhere; testing a kernel does not "
@@ -979,10 +1366,16 @@ def problem(op: str, phase: str, device=None) -> dict:
             "tensors": tensors,
             "tensors_error": tensors_error,
             "required_outputs": (
-                ["out", "residual", "normed_bf16"]
-                if fam == "fusion" and s["requires_bf16_output"] else
-                ["out", "residual"] if fam == "fusion" else None),
+                list(s["required_outputs"]) if fam == "fusion" else None),
             "output_buffer": (
+                {"key": ({"indexer_k_norm_rope_store": "cache",
+                           "moe_swiglu_quant": "down_input/down_scale_storage"}
+                          .get(s.get("kind"), "out")),
+                 "may_write_in_place": True,
+                 "poisoned": "poisoned before run() is called",
+                 "why": "reference() writes shared buffers; poisoning prevents a no-op "
+                        "candidate from inheriting the oracle answer."}
+                if fam == "fusion" and s["has_output_buffer"] else
                 {"key": "out",
                  "may_write_in_place": True,
                  "poisoned": "NaN-filled before run() is called",

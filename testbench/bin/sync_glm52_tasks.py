@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-"""Regenerate the 28 GLM-5.2 task directories from glm52_ops.
+"""Regenerate the 36 GLM-5.2 task directories from glm52_ops.
 
 glm52_ops is the only place an operator is defined. This tool projects it onto
 the task tree, so a task directory holds nothing it could disagree with:
@@ -72,6 +72,16 @@ TASKS: list[tuple[str, str, str]] = [
     ("norm_quant_qkv_prefill",  "norm_quant_qkv",  "prefill"),
     ("norm_quant_gate_decode",  "norm_quant_gate", "decode"),
     ("norm_quant_gate_prefill", "norm_quant_gate", "prefill"),
+    # Additive B300-profiled regions (2026-08-01).  Existing leaf and fusion
+    # tasks remain intact; task count is intentionally not capped.
+    ("indexer_q_rope_quant_decode",    "indexer_q_rope_quant",    "decode"),
+    ("indexer_q_rope_quant_prefill",   "indexer_q_rope_quant",    "prefill"),
+    ("indexer_k_norm_rope_store_decode",  "indexer_k_norm_rope_store", "decode"),
+    ("indexer_k_norm_rope_store_prefill", "indexer_k_norm_rope_store", "prefill"),
+    ("moe_swiglu_quant_decode",        "moe_swiglu_quant",        "decode"),
+    ("moe_swiglu_quant_prefill",       "moe_swiglu_quant",        "prefill"),
+    ("router_gemm_topk_decode",        "router_gemm_topk",        "decode"),
+    ("router_gemm_topk_prefill",       "router_gemm_topk",        "prefill"),
 ]
 
 # Files from the superseded stacks. Each was a second definition of the same
@@ -114,7 +124,7 @@ exec "$PYTHON" "$TESTBENCH/bin/supervise.py" --timeout "$TIMEOUT_SECONDS" -- \
 # Per-family default candidate: the real backend call, spelled out, so the agent
 # starts from the baseline it has to beat rather than from an indirection.
 _BODY = {
-    "fusion": '''import deep_gemm
+    "fusion_norm_quant_gemm": '''import deep_gemm
 from sgl_kernel import fused_add_rmsnorm
 from sglang.srt.layers.quantization.fp8_kernel import sglang_per_token_group_quant_fp8
 
@@ -140,6 +150,79 @@ def run(inputs: dict):
     if inputs["requires_bf16_output"]:
         return out, residual, hidden
     return out, residual
+''',
+    "fusion_indexer_q_rope_quant": '''from sglang.jit_kernel.dsv4 import (
+    fused_q_indexer_rope_first_quant,
+)
+
+
+def run(inputs: dict):
+    # Starting point is the already-fused production Q preparation kernel.
+    return fused_q_indexer_rope_first_quant(
+        inputs["q_input"],
+        inputs["head_gate"],
+        inputs["weight_scale"],
+        inputs["cos_sin_cache"],
+        inputs["positions"],
+    )
+''',
+    "fusion_indexer_k_norm_rope_store": '''from sglang.jit_kernel.dsv32 import (
+    fused_k_indexer_norm_rope_store,
+)
+
+
+def run(inputs: dict):
+    # Preserve the production non-contiguous [:, :128] projection view and the
+    # exact paged 132-byte (fp8 values + f32 scale) cache ABI.
+    cache = inputs["cache"]
+    fused_k_indexer_norm_rope_store(
+        inputs["k_projection"][:, :128],
+        cache,
+        inputs["out_cache_loc"],
+        inputs["norm_weight"],
+        inputs["norm_bias"],
+        inputs["eps"],
+        inputs["cos_sin_cache"],
+        inputs["positions"],
+        inputs["page_size"],
+    )
+    return cache
+''',
+    "fusion_moe_swiglu_quant": '''from sglang.jit_kernel.dsv4 import (
+    silu_and_mul_masked_post_quant,
+)
+
+
+def run(inputs: dict):
+    # Production masked DeepEP activation: fused SwiGLU and packed-UE8M0 quant.
+    silu_and_mul_masked_post_quant(
+        inputs["gate_up"],
+        inputs["down_input"],
+        inputs["down_scale_storage"],
+        inputs["group_size"],
+        inputs["masked_m"],
+        scale_ue8m0=True,
+        topk=inputs["topk"],
+        transposed=True,
+    )
+    return inputs["down_input"], inputs["down_scale_storage"].transpose(-1, -2)
+''',
+    "fusion_router_gemm_topk": '''import torch.nn.functional as F
+from sglang.jit_kernel.moe_fused_gate import moe_fused_gate
+
+
+def run(inputs: dict):
+    # Open production boundary: FP32 router projection, then fused sigmoid/top-k.
+    logits = F.linear(inputs["hidden"].float(), inputs["router_weight_fp32"])
+    return moe_fused_gate(
+        logits,
+        inputs["correction_bias"],
+        inputs["topk"],
+        scoring_func="sigmoid",
+        renormalize=inputs["renormalize"],
+        routed_scaling_factor=inputs["routed_scaling_factor"],
+        apply_routed_scaling_factor_on_output=False,
+    )
 ''',
     "gemm": '''import deep_gemm
 
@@ -211,7 +294,8 @@ def run(inputs: dict):
 def _candidate_src(op: str, phase: str, device) -> str:
     s = ops.spec(op, phase)
     fam = s["family"]
-    key = f"score_{phase}" if fam == "score" else fam
+    key = (f"score_{phase}" if fam == "score" else
+           f"fusion_{s['kind']}" if fam == "fusion" else fam)
     tensors = []
     try:
         ins = ops.build_inputs(op, phase, s["sweep"][0], s["S"], device, s["seed"])
@@ -223,10 +307,8 @@ def _candidate_src(op: str, phase: str, device) -> str:
         pass
     table = "\n".join(tensors) or "    (run ./run.sh --describe on a GPU node for the tensor table)"
     if fam == "fusion":
-        return_contract = ("Return exactly `(out, residual, normed_bf16)`; the third tensor is "
-                           "required by the DSA indexer."
-                           if s["requires_bf16_output"] else
-                           "Return exactly `(out, residual)`; both tensors are gated.")
+        return_contract = ("Return exactly `(" + ", ".join(s["required_outputs"]) +
+                           ")`; every logical output is gated.")
     else:
         return_contract = "Return the output."
     doc = f'''"""GLM-5.2 {s['label']} ({phase}) — the one file to edit for this task.
@@ -252,8 +334,9 @@ abs_err < abs_tol OR rel_err < {s['rel_tol']:.4f}, then DeepGEMM's calc_diff
 '''
     if s["has_output_buffer"]:
         doc += '''
-`inputs["out"]` is pre-allocated and may be written in place, but the harness
-NaN-poisons it before calling run(): returning it unwritten FAILS.
+The production output buffer(s) are pre-allocated and may be written in place,
+but the harness poisons every observable row before calling run(). Returning a
+shared buffer unwritten therefore FAILS.
 '''
     doc += f'''
 Baseline to beat: the call below, timed CUPTI cold-L2 on these same inputs.

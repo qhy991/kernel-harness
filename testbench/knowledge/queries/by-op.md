@@ -28,3 +28,7 @@
 
 - `glm52--sparse_mla_decode--b200--20260715a` [win] Sparse MLA Decode/decode — sparse-mla-decode is intentionally fused-only: agents must NOT invent a drop-in integrate symbol. A harness WIN that keeps the FlashInfer call signature (including device tensor scales) is the production-ready claim.
 - `glm52--sparse_mla_decode--b200--20260714a` [win] Sparse MLA Decode/decode — For FlashInfer TRT-LLM FP8 sparse MLA decode on Blackwell, preserve device tensor scale inputs when the wrapper supports them; converting scalar scale tensors to Python floats can silently select a slower static-scale path. Do not shrink sparse_mla_top_k unless the block-table shape and production semantics also change.
+
+## router_gemm_topk
+
+- `glm52--router_gemm_topk_decode--b200--20260801a` [win] router_gemm_topk/decode — For a launch-scale routing projection, use the production specialized kernel only inside its proven shape domain and retain an exact fallback. If paired CUPTI ratios are unstable, change only inner iterations once and keep the complete sweep, correctness, and conservative gate unchanged.

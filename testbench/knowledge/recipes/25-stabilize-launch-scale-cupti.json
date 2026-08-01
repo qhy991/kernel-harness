@@ -1,0 +1,13 @@
+{
+  "schema_version": 1,
+  "kind": "atomic_experiment_recipe",
+  "id": "25-stabilize-launch-scale-cupti",
+  "title": "Stabilize one launch-scale CUPTI comparison with inner iterations",
+  "objective": "Determine whether a microsecond-scale candidate is a real paired win when two-iteration CUPTI samples have excessive ratio spread.",
+  "preconditions": ["Correct reference and candidate outputs", "An otherwise gate-eligible paired run whose timing spread exceeds the configured limit", "An idle target GPU"],
+  "steps": ["Preserve the same candidate, shapes, warmup, repeat count, cold-L2 policy, and adjacent order-balanced pairs", "Increase only the inner iterations used to form each sample median", "Rerun the complete canonical sweep and inspect p10, regressions, pair-ratio spread, and unseen-seed correctness", "Record both the unstable diagnostic and stable rerun; never discard the first result"],
+  "acceptance": {"pass": "Every shape is correct, at least one wins, none regress, and all pair-ratio spreads are within the declared stability limit.", "no_verdict": "The automatic retry or higher-inner-iteration run remains unstable.", "no_win": "The stable conservative ratios remove the apparent speedup or expose a regression."},
+  "artifacts": ["original unstable result.json", "higher-inner-iteration result.json", "GPU utilization/clock telemetry"],
+  "stop_rule": "After one higher-inner-iteration rerun, accept its terminal state; do not tune sampling parameters repeatedly to manufacture a verdict.",
+  "origin_evidence": ["router_jit_gemm was UNSTABLE_NO_VERDICT at iterations=2, then passed the unchanged full gate at iterations=30 with M16 p10=2.712x and spread=1.010x."]
+}

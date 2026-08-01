@@ -1,5 +1,5 @@
 {
-  "generated_from_entries": 12,
+  "generated_from_entries": 13,
   "mistakes": [
     {
       "class": "launch-overhead::integration-empty-expert-diagnosis",
@@ -271,6 +271,25 @@
       "recurring": false
     },
     {
+      "class": "launch-overhead::two-iteration-cupti-gate",
+      "bottleneck": "launch-overhead",
+      "technique": "two-iteration-cupti-gate",
+      "count": 1,
+      "distinct_entries": 1,
+      "ops": [
+        "router_gemm_topk"
+      ],
+      "outcomes": [
+        "abandoned"
+      ],
+      "whys": [
+        "Launch-scale pair ratios remained above the 1.25x spread limit after the automatic retry, so the harness correctly returned UNSTABLE_NO_VERDICT."
+      ],
+      "suggested_owner": "doc|reviewer",
+      "promoted": false,
+      "recurring": false
+    },
+    {
       "class": "kernel-count::sgl-kernel-fused-swiglu-quant",
       "bottleneck": "kernel-count",
       "technique": "sgl-kernel-fused-swiglu-quant",
@@ -399,6 +418,16 @@
         "Sparse MLA Decode"
       ],
       "median_geomean": 1.0611
+    },
+    {
+      "class": "launch-overhead::production-jit-router-gemm-small-m",
+      "bottleneck": "launch-overhead",
+      "technique": "production-jit-router-gemm-small-m",
+      "count": 1,
+      "ops": [
+        "router_gemm_topk"
+      ],
+      "median_geomean": 1.6527
     },
     {
       "class": "launch-overhead::harness-integrate-active-rows-fix",

@@ -1,0 +1,13 @@
+{
+  "schema_version": 1,
+  "kind": "atomic_experiment_recipe",
+  "id": "11-mine-one-nsys-fusion-boundary",
+  "title": "Turn one repeated nsys producer-consumer pair into a region task",
+  "objective": "Decide whether one adjacent production kernel pair deserves an additive region task with a real fused or production-order denominator.",
+  "preconditions": ["A production nsys capture with kernel names, call counts, and total time", "Source access to both call sites and their consumer-visible outputs"],
+  "steps": ["Select one repeated adjacent producer-consumer pair and record its combined GPU share, call count, and mean latency", "Trace both kernels to the production call site and list every output, alias, mutation, dtype, layout, and fallback consumed downstream", "Classify it as an open fusion boundary, an already-fused optimization surface, or a distributed/backend region", "For an open or already-fused single-device region, add one phase-specific task whose denominator is the exact production sequence and whose contract exposes every required side effect"],
+  "acceptance": {"pass": "One additive region task reproduces the production ABI and beats or exactly matches the production denominator for correctness.", "defer": "The boundary crosses distributed synchronization, backend ownership, or state whose consumer contract has not yet been modeled.", "invalid": "A decomposed proxy is used as denominator even though production already has a fused implementation."},
+  "artifacts": ["nsys kernel-summary rows", "production call-site anchors", "generated task problem.json and workload.jsonl"],
+  "stop_rule": "Create only the selected boundary; defer communication and backend-wide work to their own serving-native task instead of expanding this experiment.",
+  "origin_evidence": ["The B300 audit found router_gemm_kernel followed by _router_triton_kernel on about 75k calls, while Q/K indexer and MoE SwiGLU paths were already fused and required their fused kernels as denominators."]
+}
