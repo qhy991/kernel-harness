@@ -1,4 +1,4 @@
-"""GLM-5.2 operator definitions — the single source of truth for all 12 ops.
+"""GLM-5.2 operator definitions — the single source of truth for leaf ops and regions.
 
 One file owns everything a task needs, so a task directory carries no definition
 of its own and cannot drift from what actually runs:
@@ -36,16 +36,17 @@ is right about both:
              its logits are off by a per-token factor — it has no correctness
              gate, so it never noticed. PR1's fold is adopted here.
 
-Cost model and peaks follow PR2 (verified bit-exact against rewardbench across
-all 12 ops x 5 shapes): its byte model additionally counts the fp8 scale
+Cost model and peaks for the original leaf tasks follow PR2 (verified bit-exact
+against rewardbench across all 12 ops x 5 shapes): its byte model additionally counts the fp8 scale
 side-bands and the MLA index buffer that PR1 omits (+0.00%..+5.19%). Peaks are
 HBM 8.0e12 / FP8 4.5e15 / BF16 2.25e15 — PR2 and testbench/harness/profile.py
 agree on 8.0e12; opbench/mfu.py's 7.7e12 is the lone outlier.
 
 Baseline caveat
 ---------------
-`reference` is deep_gemm's native f32-blockwise-scale path, NOT SGLang's
-production dispatch. SGLang runs deepgemm_w8a8_block_fp8_linear_with_fallback
+For the original GEMM leaf tasks, `reference` is deep_gemm's native
+f32-blockwise-scale path, NOT SGLang's production dispatch. SGLang runs
+deepgemm_w8a8_block_fp8_linear_with_fallback
 (fp8_utils.py:740), which hands int32-PACKED ue8m0 scales of shape
 (N, K//block_k//4) to w8a8_block_fp8_matmul_deepgemm. Both land in deep_gemm;
 only the scale representation differs. Measured on B200 (CUPTI cold-L2
@@ -53,7 +54,10 @@ device-kernel median), o_proj decode: production 33.1us vs this 53.3us at M=16 �
 production is ~1.6x FASTER. A candidate that merely reproduces SGLang's
 production call therefore scores a ~1.6x "win" here having improved nothing.
 Kept deliberately: PR1 and PR2 agree on this definition and it is the frozen,
-verified standard. Read sub-1.6x speedups with that in mind.
+verified standard. Read sub-1.6x leaf speedups with that in mind. The
+`norm_quant_*` fusion-region references are the exception: they use production
+packed UE8M0 scales and the site-specific observable outputs, so this null line
+does not apply to them.
 """
 from __future__ import annotations
 
@@ -130,7 +134,32 @@ MOE_OPS = {
 MLA_OPS = ("dsa_attn",)
 SCORE_OPS = ("index_score",)
 
-ALL_OPS = list(GEMM_OPS) + list(BMM_OPS) + list(MOE_OPS) + list(MLA_OPS) + list(SCORE_OPS)
+# Fusion tasks model a production REGION rather than an isolated leaf:
+# residual-add + RMSNorm + per-token-group FP8 quant + the consuming GEMM.
+# Region-level measurement makes intermediate activation spills and launch
+# overhead visible, instead of awarding a fast leaf whose end-to-end impact is
+# later hidden by the surrounding kernels.
+FUSION_OPS = {
+    # The input-layernorm/QKV seam also feeds GLM-5.2's DSA indexer. Production
+    # therefore needs the normalized BF16 activation as a third observable output.
+    "norm_quant_qkv": dict(
+        K=HIDDEN_SIZE,
+        N=FUSED_QKV_A_OUT,
+        requires_bf16_output=True,
+        production_site="input_layernorm/QKV-A + DSA indexer",
+    ),
+    # The post-attention/MoE-gate seam has no BF16 side consumer, so the
+    # normalized activation may remain internal to a genuinely fused candidate.
+    "norm_quant_gate": dict(
+        K=HIDDEN_SIZE,
+        N=MOE_INTERMEDIATE_SIZE,
+        requires_bf16_output=False,
+        production_site="post_attention_layernorm/MoE gate",
+    ),
+}
+
+ALL_OPS = (list(GEMM_OPS) + list(BMM_OPS) + list(MOE_OPS) + list(MLA_OPS)
+           + list(SCORE_OPS) + list(FUSION_OPS))
 
 BACKEND = {
     "gemm":  "deep_gemm.fp8_gemm_nt",
@@ -138,7 +167,23 @@ BACKEND = {
     "moe":   "deep_gemm.fp8_m_grouped_gemm_nt_masked",
     "mla":   "sgl_kernel.flash_mla.flash_mla_sparse_fwd",
     "score": "deep_gemm.fp8_mqa_logits / fp8_paged_mqa_logits",
+    "fusion": ("sgl_kernel.fused_add_rmsnorm -> "
+               "sglang_per_token_group_quant_fp8(ue8m0) -> deep_gemm.fp8_gemm_nt"),
 }
+
+RMS_EPS = 1e-5
+QUANT_GROUP = 128
+
+
+def transform_scale_ue8m0(sf, mn: int):
+    """Apply SGLang's production load-time packed-UE8M0 scale transform.
+
+    Kept lazy so importing this module for a non-fusion task does not import the
+    full SGLang quantization stack.
+    """
+    from sglang.srt.layers.quantization.fp8_utils import (
+        transform_scale_ue8m0 as _transform)
+    return _transform(sf, mn=mn)
 
 _LABEL = {
     "fused_qkv_a": "Fused QKV-A Projection", "q_b": "Q-B Projection",
@@ -147,6 +192,8 @@ _LABEL = {
     "absorbed_W_UV": "Absorbed W_UV BMM", "moe_gate": "MoE Gate Projection",
     "moe_up": "MoE Up Projection", "moe_down": "MoE Down Projection",
     "dsa_attn": "DSA Sparse Attention", "index_score": "Indexer Score (MQA logits)",
+    "norm_quant_qkv": "Residual+RMSNorm+FP8Quant -> QKV-A Projection (fusion region)",
+    "norm_quant_gate": "Residual+RMSNorm+FP8Quant -> MoE Gate Projection (fusion region)",
 }
 
 
@@ -156,6 +203,7 @@ def family(op: str) -> str:
     if op in MOE_OPS:   return "moe"
     if op in MLA_OPS:   return "mla"
     if op in SCORE_OPS: return "score"
+    if op in FUSION_OPS: return "fusion"
     raise KeyError(f"unknown op {op!r}; known: {', '.join(ALL_OPS)}")
 
 
@@ -218,15 +266,22 @@ def spec(op: str, phase: str) -> dict:
     """The complete contract for one (op, phase). Nothing else may declare these."""
     fam = family(op)
     kind = {"gemm": "dense", "bmm": "dense", "moe": "masked_grouped",
-            "mla": "mla_sparse"}.get(fam) or (
+            "mla": "mla_sparse", "fusion": "fusion_region"}.get(fam) or (
         "logits_ksrange" if phase == "prefill" else "logits_paged")
     d = dict(op=op, phase=phase, label=_LABEL[op], family=fam,
              backend=BACKEND[fam], output_kind=kind,
              peak_dtype="bf16" if fam == "mla" else "fp8",
              diff_tol=DIFF_TOL, rel_tol=REL_TOL, abs_tol_factor=ABS_TOL_FACTOR,
              sweep=list(DEFAULT_SWEEP[phase]), S=DEFAULT_S, seed=DEFAULT_SEED,
-             has_output_buffer=fam in ("gemm", "moe"))
-    if fam == "gemm":
+             has_output_buffer=fam in ("gemm", "moe", "fusion"))
+    if fam == "fusion":
+        cfg = FUSION_OPS[op]
+        d.update(K=cfg["K"], N=cfg["N"], rms_eps=RMS_EPS,
+                 quant_group=QUANT_GROUP,
+                 requires_bf16_output=cfg["requires_bf16_output"],
+                 output_arity=3 if cfg["requires_bf16_output"] else 2,
+                 production_site=cfg["production_site"])
+    elif fam == "gemm":
         d.update(K=GEMM_OPS[op]["K"], N=GEMM_OPS[op]["N"], rows=GEMM_OPS[op]["rows"])
     elif fam == "bmm":
         d.update(K=BMM_OPS[op]["K"], N=BMM_OPS[op]["N"], batch=NUM_HEADS)
@@ -260,7 +315,44 @@ def build_inputs(op: str, phase: str, M: int, S: int = DEFAULT_S,
     if fam == "bmm":   return _build_bmm(op, M, device)
     if fam == "moe":   return _build_moe(op, M, device)
     if fam == "mla":   return _build_mla(M, S, device)
+    if fam == "fusion": return _build_fusion(op, M, device)
     return _build_score(phase, M, S, device)
+
+
+def _build_fusion(op, M, device):
+    """Build the exact mutable inputs for a norm+quant+GEMM production region."""
+    cfg = FUSION_OPS[op]
+    K, N = cfg["K"], cfg["N"]
+    hidden = torch.randn(M, K, dtype=torch.bfloat16, device=device)
+    residual = torch.randn(M, K, dtype=torch.bfloat16, device=device)
+    norm_weight = torch.randn(K, dtype=torch.bfloat16, device=device)
+    w_bf16 = torch.randn(N, K, dtype=torch.bfloat16, device=device)
+    w_fp8, w_scale = _dg_per_block_cast(w_bf16, use_ue8m0=True)
+
+    # Production performs this transform once while loading weights. Passing the
+    # raw f32 block scale makes fp8_gemm_nt repack it on every invocation and
+    # creates an artificial denominator (measured as four extra graph nodes).
+    w_scale = transform_scale_ue8m0(w_scale, mn=N)
+    out = torch.empty(M, N, dtype=torch.bfloat16, device=device)
+    return dict(
+        hidden=hidden,
+        residual=residual,
+        norm_weight=norm_weight,
+        w_fp8=w_fp8,
+        w_scale=w_scale,
+        eps=RMS_EPS,
+        group_size=QUANT_GROUP,
+        rows=M,
+        K=K,
+        N=N,
+        requires_bf16_output=cfg["requires_bf16_output"],
+        device=device,
+        out=out,
+        # reference() mutates both tensors. poison() restores these copies before
+        # candidate correctness; timed iterations independently clone all inputs.
+        _hidden0=hidden.clone(),
+        _residual0=residual.clone(),
+    )
 
 
 def _build_gemm(op, phase, M, S, device):
@@ -405,6 +497,8 @@ def reference(op: str, phase: str, inputs: dict):
             (inputs["x_fp8"], inputs["x_scale"]), (inputs["w_fp8"], inputs["w_scale"]),
             out, inputs["masked_m"], inputs["expected_m"])
         return out
+    if fam == "fusion":
+        return _reference_fusion(inputs)
     if fam == "mla":
         return flash_mla_sparse_fwd(inputs["q"], inputs["kv"], inputs["indices"],
                                     inputs["sm_scale"], inputs["d_v"])
@@ -418,6 +512,32 @@ def reference(op: str, phase: str, inputs: dict):
         clean_logits=False)
 
 
+def _reference_fusion(inputs: dict):
+    """Run the three stock kernels in the same order and ABI as production."""
+    from sgl_kernel import fused_add_rmsnorm
+    from sglang.srt.layers.quantization.fp8_kernel import (
+        sglang_per_token_group_quant_fp8)
+
+    hidden, residual = inputs["hidden"], inputs["residual"]
+    fused_add_rmsnorm(hidden, residual, inputs["norm_weight"], inputs["eps"])
+    x_fp8, x_scale = sglang_per_token_group_quant_fp8(
+        hidden,
+        inputs["group_size"],
+        column_major_scales=True,
+        scale_tma_aligned=True,
+        scale_ue8m0=True,
+    )
+    out = inputs["out"]
+    deep_gemm.fp8_gemm_nt(
+        (x_fp8, x_scale), (inputs["w_fp8"], inputs["w_scale"]), out)
+    if inputs["requires_bf16_output"]:
+        # GLM-5.2's QKV seam forwards this normalized BF16 activation to the DSA
+        # indexer. Omitting it makes an activation-spill-eliminating candidate look
+        # deployable even though production still has to materialize the tensor.
+        return out, residual, hidden
+    return out, residual
+
+
 def poison(inputs: dict) -> bool:
     """Destroy the reference's answer in the shared output buffer.
 
@@ -428,6 +548,11 @@ def poison(inputs: dict) -> bool:
     with NaN makes that candidate fail instead. Returns whether anything was
     poisoned (False for the families that allocate their own output).
     """
+    # Fusion reference() mutates both inputs in place. Restore them before the
+    # candidate so both implementations solve the same problem.
+    if torch.is_tensor(inputs.get("_hidden0")):
+        inputs["hidden"].copy_(inputs["_hidden0"])
+        inputs["residual"].copy_(inputs["_residual0"])
     out = inputs.get("out")
     if torch.is_tensor(out):
         out.fill_(float("nan"))
@@ -444,6 +569,18 @@ def _main(x):
 
 def prepare(out, kind: str, inputs: dict) -> torch.Tensor:
     """Reduce a raw output to the flat vector that is actually compared."""
+    if kind == "fusion_region":
+        expected = 3 if inputs["requires_bf16_output"] else 2
+        if not isinstance(out, (tuple, list)) or len(out) != expected:
+            signature = "(out, residual, normed_bf16)" if expected == 3 else "(out, residual)"
+            detail = (f" of length {len(out)}"
+                      if isinstance(out, (tuple, list)) else "")
+            raise ValueError(
+                f"fusion run(inputs) must return exactly {signature}; got "
+                f"{type(out).__name__}{detail}")
+        if not all(torch.is_tensor(t) for t in out):
+            raise ValueError("every fusion output must be a torch.Tensor")
+        return torch.cat([t.reshape(-1).float() for t in out])
     out = _main(out)
     if kind in ("dense", "mla_sparse"):
         return out.reshape(-1)
@@ -604,6 +741,21 @@ def cost(op: str, phase: str, M: int, S: int = DEFAULT_S):
                 + total_m * (K // 128) * F32_B
                 + E * math.ceil(N / 128) * (K // 128) * F32_B)
         return 2.0 * total_m * K * N, float(byts), "fp8"
+    if fam == "fusion":
+        cfg = FUSION_OPS[op]
+        K, N = cfg["K"], cfg["N"]
+        # Minimum traffic a fully fused implementation must perform. Quantized
+        # activation/scales are internal and need not spill. The QKV seam has one
+        # extra mandatory BF16 write because the DSA indexer consumes that tensor.
+        byts = (M * K * BF16_B * 2          # read hidden + residual
+                + K * BF16_B                # norm weight
+                + N * K * FP8_B             # packed FP8 weight
+                + N * math.ceil(K / 128 / 4) * F32_B  # packed UE8M0 weight scale
+                + M * K * BF16_B            # write updated residual
+                + M * N * BF16_B)           # write projection output
+        if cfg["requires_bf16_output"]:
+            byts += M * K * BF16_B           # write normalized BF16 for DSA indexer
+        return 2.0 * M * K * N, float(byts), "fp8"
     if fam == "mla":
         tk = min(TOPK, S)
         # KV dedup: gathered rows saturate at the latent cache, so KV traffic stops
@@ -675,6 +827,13 @@ BASELINE_CAVEAT = (
     "is the frozen, verified standard."
 )
 
+FUSION_BASELINE_CAVEAT = (
+    "This region baseline uses SGLang's production sequence and packed int32 UE8M0 "
+    "weight-scale ABI. It does not inherit the leaf-GEMM baseline's ~1.6x null line. "
+    "The QKV contract additionally requires the normalized BF16 activation consumed "
+    "by GLM-5.2's DSA indexer; the gate contract does not have that side consumer."
+)
+
 ACCEPTED_CANDIDATE_FORMS = [
     "Python / PyTorch — a .py defining run(inputs)",
     "Triton — @triton.jit / @triton.autotune live in that same .py; nothing special needed",
@@ -719,6 +878,35 @@ def problem(op: str, phase: str, device=None) -> dict:
             f"rows are replicated M*{s['experts_per_tok']} and bucketed into experts by a "
             f"seeded multinomial (masked_m); expected_m is the per-expert slab capacity "
             f"and is sized to hold the largest bin.")
+    elif fam == "fusion":
+        expr = (f"residual += hidden ; h = RMSNorm(residual)*norm_weight ; "
+                f"(x_fp8,x_scale) = per_token_group_quant_fp8(h, "
+                f"{s['quant_group']}, ue8m0) ; out[M,{s['N']}] = "
+                f"x_fp8[M,{s['K']}] @ w_fp8[{s['N']},{s['K']}].T")
+        dims = {"K": s["K"], "N": s["N"], "group": s["quant_group"],
+                "eps": s["rms_eps"], "production_site": s["production_site"]}
+        required = ("(out, residual, normed_bf16)"
+                    if s["requires_bf16_output"] else "(out, residual)")
+        math_notes += [
+            "THIS TASK IS A REGION, NOT A LEAF. The reference is the production "
+            "sequence fused_add_rmsnorm -> per-token-group FP8 quant with TMA-aligned "
+            "packed UE8M0 scales -> fp8_gemm_nt. A speedup therefore measures the "
+            "whole fusion opportunity rather than one isolated launch.",
+            f"run(inputs) MUST return exactly {required}; every returned tensor is gated.",
+            ("QKV PRODUCTION REQUIREMENT: normed_bf16 is consumed by GLM-5.2's DSA "
+             "indexer. Earlier two-output QKV experiments omitted this write and are "
+             "optimistic; they are evidence to remeasure, not deployable wins."
+             if s["requires_bf16_output"] else
+             "GATE PRODUCTION REQUIREMENT: this post-attention/MoE-gate seam has no "
+             "BF16 side consumer, so the normalized activation may remain internal to "
+             "a fused candidate."),
+            "reference() mutates hidden and residual in place. The harness restores "
+            "both before candidate correctness and clones all inputs outside every "
+            "timed iteration.",
+            "The minimum-byte model excludes internal quantized activations and scales. "
+            "For QKV it includes the mandatory normalized-BF16 materialization; for "
+            "gate it does not.",
+        ]
     elif fam == "mla":
         expr = (f"sparse MLA: q[M,{NUM_HEADS},{D_QK}] attends the top-{TOPK} of "
                 f"kv[{s['S']},1,{D_QK}] -> out[M,{NUM_HEADS},{D_V}]")
@@ -772,11 +960,15 @@ def problem(op: str, phase: str, device=None) -> dict:
             "call": f"glm52_ops.reference({op!r}, {phase!r}, inputs)",
             "role": "the correctness oracle AND the latency denominator — the same call, "
                     "on the same frozen inputs, timed under the same protocol",
-            "caveat": BASELINE_CAVEAT,
+            "caveat": FUSION_BASELINE_CAVEAT if fam == "fusion" else BASELINE_CAVEAT,
         },
 
         "contract": {
-            "entrypoint": "run(inputs: dict) -> output",
+            "entrypoint": (
+                ("run(inputs: dict) -> (out, residual, normed_bf16)"
+                 if s["requires_bf16_output"] else
+                 "run(inputs: dict) -> (out, residual)")
+                if fam == "fusion" else "run(inputs: dict) -> output"),
             "where": "candidate.py in this directory, or any file/directory passed to "
                      "--candidate (it may live anywhere; testing a kernel does not "
                      "require editing the task)",
@@ -786,6 +978,10 @@ def problem(op: str, phase: str, device=None) -> dict:
                       "different problem than the one the gate checked",
             "tensors": tensors,
             "tensors_error": tensors_error,
+            "required_outputs": (
+                ["out", "residual", "normed_bf16"]
+                if fam == "fusion" and s["requires_bf16_output"] else
+                ["out", "residual"] if fam == "fusion" else None),
             "output_buffer": (
                 {"key": "out",
                  "may_write_in_place": True,
@@ -810,8 +1006,8 @@ def problem(op: str, phase: str, device=None) -> dict:
                  "abs_tol": f"{s['abs_tol_factor']:.0e} * |ref|.max(), computed per shape",
                  "why_or": "large elements pass on relative error, near-zero elements on "
                            "absolute — neither alone works",
-                 "why_derived_abs_tol": "output magnitude spans seven orders across these "
-                                        "12 ops (dsa_attn 0.285, o_proj 564, index_score "
+                 "why_derived_abs_tol": "output magnitude spans seven orders across the "
+                                        "original leaf ops (dsa_attn 0.285, o_proj 564, index_score "
                                         "1.5e7), so a fixed abs_tol cannot port"},
                 {"order": 3,
                  "check": "calc_diff <= diff_tol",
@@ -820,9 +1016,9 @@ def problem(op: str, phase: str, device=None) -> dict:
                  "why": "scale-SENSITIVE, unlike cosine — a uniform k*reference is caught "
                         "here (k=0.5 or 2 both give 0.2)"},
             ],
-            "post_timing_recheck": "correctness is re-checked on freshly built inputs "
-                                   "after timing, to catch a kernel that mutates its "
-                                   "inputs or drifts across the timed iterations",
+            "post_timing_recheck": "correctness is re-checked after timing on freshly "
+                                   "built inputs from a different seed, to catch input "
+                                   "memoization as well as state drift",
             "diagnostics": {
                 "cosine": "reported, never gated — it is scale-invariant, so "
                           "reference*k scores 1.000000 for every k and it cannot "
@@ -839,21 +1035,22 @@ def problem(op: str, phase: str, device=None) -> dict:
 
         "performance": {
             "timing": "CUPTI cold-L2 device-kernel median: inputs cloned per iteration and "
-                      "L2 flushed before each, both outside the measured window",
+                      "L2 flushed before each, both outside the measured window; the "
+                      "first recorded inner sample is discarded",
             "why_device_time": "the reward is a hardware-utilisation ratio, so it must be "
                                "paired with device time; a per-call wall-clock timer "
                                "reports ~99us for this op's ~47us kernel, and the "
                                "difference is host dispatch stall",
             "gate": "at least one shape WINS and no shape REGRESSES",
             "shape_verdict": {
-                "win": "reference p10 / candidate p90 > 1.0 — the candidate is ahead "
-                       "even on the reading least favourable to it",
-                "regress": "reference p90 / candidate p10 < 1.0 — the candidate is "
-                           "behind even on the reading most favourable to it",
-                "neutral": "neither — inside the noise band; does not veto the run",
-                "why_quantiles": "not max/min: dividing two extremes lets one artifact "
-                                 "sample decide the verdict, which at repeat=10 is "
-                                 "likely rather than rare",
+                "win": "p10 of adjacent per-pair (reference/candidate) ratios > 1.0",
+                "regress": "p90 of adjacent per-pair (reference/candidate) ratios < 1.0",
+                "neutral": "neither — inside the paired noise band; does not veto the run",
+                "unstable": "candidate or reference timing spread remains >1.25x after "
+                            "an automatic repeat*3 retry; no performance verdict",
+                "why_pairing": "R/C,C/R adjacent pairs cancel the 2.1--4.7x "
+                               "op-specific drift that invalidated independent quantiles; "
+                               "legacy unpaired estimates remain in result.json for comparison",
                 "why_not_all_shapes": "requiring every shape to win is unreachable the "
                                       "moment one shape merely matches — an "
                                       "identical-to-reference candidate measures "
@@ -870,25 +1067,30 @@ def problem(op: str, phase: str, device=None) -> dict:
                 "unless something real is gained somewhere. Do the dispatch inside "
                 "run() — the harness will not do it for you, because then it would be "
                 "measuring a kernel the candidate does not contain."),
-            "defaults": {"warmup": 3, "repeat": 10, "iterations": 30},
+            "defaults": {"warmup": 8, "repeat": 10, "iterations": 30},
             "repeat_note": "--repeat 1 is a probe, not a verdict: at 1 the conservative "
                            "margin collapses to the median one and a candidate identical "
-                           "to the reference passes a >1.0 gate a good fraction of the time",
+                           "to the reference passes a >1.0 gate a good fraction of the time; "
+                           "any repeat below 10 or restricted shape sweep is probe-only",
             "reward": "bound-aware roofline utilisation: (flops/latency) / "
-                      "min(peak_flops, ai*peak_bw); unclamped",
+                      "min(peak_flops, ai*peak_bw); unclamped, and >1.0 is a hard invalid "
+                      "measurement rather than a record",
             "peaks": PEAKS,
         },
 
         "verdict": {
             "exit_0": "correct on every shape, at least one shape wins, and no shape regresses",
-            "exit_1": "correct on every shape, performance gate not met",
-            "exit_2": "incorrect, incomplete sweep, or correctness did not survive timing",
+            "exit_1": "correct but performance gate not met, probe-only, or unstable no-verdict",
+            "exit_2": "incorrect/post-seed failure, or physically invalid reward >1.0",
             "exit_3": "infrastructure error, or task.json disagrees with glm52_ops",
             "terminal_state": {
                 "COMPLETE_WIN": "exit 0; correct complete sweep with >=1 win and 0 regressions",
                 "NO_WIN_WITH_EVIDENCE": "exit 1; correct complete sweep but every shape is neutral",
                 "PARTIAL_OR_REGRESSED_WITH_EVIDENCE": "exit 1; correct complete sweep but at least one shape regressed",
-                "INCORRECT_OR_INCOMPLETE": "exit 2; correctness failed, the sweep was incomplete, or post-timing correctness failed",
+                "PROBE_ONLY_NO_VERDICT": "exit 1; restricted sweep or repeat below 10",
+                "UNSTABLE_NO_VERDICT": "exit 1; timing still unstable after repeat*3 retry",
+                "INVALID_MEASUREMENT": "exit 2; candidate or reference roofline reward exceeded 1.0",
+                "INCORRECT_OR_INCOMPLETE": "exit 2; correctness failed or the unseen-seed post-timing check failed",
             },
         },
 

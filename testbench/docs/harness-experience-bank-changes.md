@@ -75,6 +75,20 @@ This is a separate, complementary body of work that landed in the same tree:
 - **Route context just in time** → §1 `brief.py` warm-start + `$KH_KNOWLEDGE_ROOT` shared projection.
 - **Honest measurement** (proof integrity) → §2 GPU-lease flock + attainable-BW ceiling.
 
+## 4. KV-context coverage and atomic recipes *(2026-08-01 review)*
+
+| Change | Effect | Files |
+|---|---|---|
+| Explicit paged-KV axes | DSA decode accepts one broadcast `--kv-context` or an exact ragged `--kv-contexts` vector; result JSON discloses selected-token and uncovered-region scope | `serving_native/{workloads,runner}.py` |
+| Context-profile gate | Trace-backed profiles separate decode KV lengths from incremental-prefill prefix/extend shapes; diagnostic examples cannot produce a production verdict | `serving_native/context_profiles/`, `context_matrix.py` |
+| Honest prefill boundary | Incremental prefill is explicitly region/E2E-only because `ForwardBatch` metadata selects different SGLang backends; decode or prefix=0 emulation is rejected | serving-native docs and recipes `01`, `05`, `06` |
+| One experience per file | The former campaign-wide workflow was split into 17 atomic experiments, each with one objective, acceptance states, artifacts, and stop rule | `testbench/knowledge/recipes/`, `testbench/bin/recipe.py` |
+
+The sparse-attention context matrix still does not claim full decode: SGLang's
+full-context indexer scoring and top-k/page-table transform stay in the required
+containing-region gate. Likewise, GEMM/MoE/communication leaves disclose that KV is
+outside their ABI while their end-to-end contribution remains context-conditioned.
+
 ## Verification status
 
 - **GPU-free, verified:** `selftest` 24/0, `knowledge lint` 12/0, `index --check` 0 stale,

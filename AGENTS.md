@@ -1,8 +1,16 @@
 # Kernel optimization agent guide
 
-The task suite is **GLM-5.2 on B200**: 12 operators × 2 phases = 24 tasks under
-[`testbench/tasks/glm52/`](testbench/tasks/glm52/). Optimize **one task per session**.
-All commands run from the repo root.
+The task suite is **GLM-5.2 on B200**: 12 leaf operators plus 2 production fusion
+regions, each in prefill and decode, for 28 synthetic/region oracle tasks under
+[`testbench/tasks/glm52/`](testbench/tasks/glm52/), plus the production-ABI and
+communication workloads under [`serving_native/`](serving_native/).
+Optimize **one production boundary per session**. All commands run from the repo root.
+
+Start with `python3 testbench/bin/brief.py <task>`. It prints the durable
+production-first recipe, audited prior evidence, and the measured roofline context.
+The synthetic task can prove a kernel idea and numerical contract; only the
+serving-native eager+graph lane and then the containing region/end-to-end workload
+can prove a production win.
 
 Everything else in this repo is retired and lives under [`legacy/`](legacy/README.md)
 — the Kimi-K2.7 / MiniMax-M3 tasks, the `solution.py` + `definition.json` contract,
@@ -11,7 +19,7 @@ here; don't copy patterns from it.
 
 ## The contract
 
-All 12 operators are defined exactly once, in
+All 14 operator/region contracts are defined exactly once, in
 [`testbench/harness/glm52_ops.py`](testbench/harness/glm52_ops.py). A task directory
 names which problem it is and nothing else, so it has nothing it could contradict:
 
@@ -32,14 +40,32 @@ T=testbench/tasks/glm52/o_proj_decode
 
 $T/run.sh --describe          # what is this problem? (tensor table included)
 $T/run.sh --describe --json   # ...the same, machine-readable (== problem.json)
-$T/run.sh                     # the gate (warmup=3, repeat=10)
+$T/run.sh                     # synthetic or production-region gate (warmup=8, repeat=10)
 ```
 
 One command reports correctness, latency, speedup and roofline reward, and persists
 the run under `runs/glm52/<task>/<run_id>/`.
 
-**Exit codes:** `0` correct and faster · `1` correct, not faster · `2` incorrect ·
-`3` infrastructure or contract error.
+**Exit codes:** `0` gate-eligible, correct and faster · `1` correct but no win,
+probe-only, or unstable/no-verdict · `2` incorrect or physically invalid measurement ·
+`3` infrastructure or contract error. A restricted sweep or repeat below 10 can
+never return 0.
+
+### Production ABI and CUDA-graph leaf gate
+
+Once an idea survives the synthetic oracle, run the matching fixed production
+workload in both modes:
+
+```bash
+serving_native/run.sh linear_indexer_wq_b_decode_m16 \
+  --candidate ~/kernels/indexer_wq_b.py --execution-mode both
+```
+
+This pins `SGLANG_GLM52_OPT=0` for the reference, uses packed int32 UE8M0 and the
+real SGLang symbol, checks a different input seed after timing, and requires the
+paired p10 speedup to reach 1.03 in both eager and CUDA graph lanes. Distributed
+latency is the maximum across ranks. Even exit 0 is leaf evidence only: the JSON
+explicitly requires containing-region eager+graph and end-to-end confirmation.
 
 ### Acceptance (not the gate)
 
@@ -55,6 +81,9 @@ After a per-op result, optionally measure what the candidate does to the **full
 This swaps only the focused op onto its candidate (the other 11 stay on the
 reference), reports layer total + end-to-end speedup, and exits 0 on a successful
 measurement. It does **not** check correctness and does **not** replace `run.sh`.
+Fusion-region tasks are intentionally rejected here because adding a region to
+the 12-leaf sum would double-count its GEMM; validate them with their own region
+gate and a containing-region/end-to-end serving replay instead.
 
 ## Candidates
 
@@ -87,6 +116,11 @@ and work inside `run()` is your latency.
   is fine — that is your kernel's business, and it is timed.
 - `inputs["out"]`, where present, is **NaN-poisoned** before `run()` is called.
   Returning it unwritten fails — a no-op cannot inherit the reference's answer.
+- Fusion-region tasks also gate the in-place residual. `norm_quant_qkv_*` must
+  return `(out, residual, normed_bf16)` because GLM-5.2's DSA indexer consumes the
+  normalized BF16 activation; `norm_quant_gate_*` returns `(out, residual)` because
+  that post-attention seam has no BF16 side consumer. A two-output QKV candidate is
+  a contract failure even if its projection is numerically correct.
 - Correctness is not allclose and not cosine. It is FlashMLA's three-layer check:
   anomaly positions, then per-element `abs OR rel`, then DeepGEMM's `calc_diff`.
   Cosine and best-fit scale are reported as **diagnostics, never gates** — cosine ~1
@@ -100,16 +134,28 @@ and work inside `run()` is your latency.
   still fails.
 - `--repeat 1` is a probe, not a verdict: noise is ±4%, so a candidate identical to
   the reference passes a `>1.0` gate a good fraction of the time. The default is 10.
-- The baseline is deep_gemm's f32-blockwise-scale path, which is **~1.6x slower than
-  SGLang's production int32-ue8m0 dispatch**. A sub-1.6x speedup here does not mean
-  you beat production. `--describe` repeats this warning per task.
+- Reference and candidate samples are adjacent order-balanced `R/C,C/R` pairs. The
+  p10/p90 of per-pair ratios decide the gate; legacy unpaired estimates are recorded
+  only for comparison. Spread above 1.25× retries once with 3× samples and continued
+  instability returns no verdict. GPU clocks, power, and temperature are recorded.
+- Correctness is re-checked after timing with a **different seed**. Reusing a cached
+  answer from the pre-check fails even when it is copied into a fresh output buffer.
+- Roofline reward above 1.0 is a hard invalid measurement, not a record. Check the
+  timer and byte/cost model before doing any more candidate work.
+- Leaf-GEMM baselines use deep_gemm's f32-blockwise-scale path, which is **~1.6x
+  slower than SGLang's production int32-ue8m0 dispatch**. A sub-1.6x leaf speedup
+  does not mean you beat production. The four `norm_quant_*` region tasks are the
+  exception: their reference uses the production packed-UE8M0 sequence and their
+  task-specific output ABI. Even those region wins still need end-to-end serving
+  confirmation before promotion.
 
 ## Where the headroom is
 
-Ask the task, don't consult a list:
+Ask the task and select one applicable atomic recipe; do not begin with a config sweep:
 
 ```bash
 $T/run.sh --describe
+python3 testbench/bin/brief.py o_proj_decode
 ```
 
 Every decode shape is memory- or launch-bound (arithmetic intensity ~30 against an
@@ -122,6 +168,11 @@ roof. `index_k_proj_decode` is the clearest case — AI 28 calls it memory-bound
 0.12% says the time isn't going into moving data at all, so its leverage is fusion.
 
 List everything with `.venv/bin/python testbench/bin/inventory.py`.
+
+Before search, measure deletion/fusion ceiling, pure-read/copy floor, launch floor,
+and the target's share of the served region. Stop with a no-go when the requested
+gain is above that attainable ceiling. Reopen only for a new mechanism class,
+contract, production baseline, or hardware fact.
 
 ## Environment
 
@@ -142,6 +193,17 @@ List everything with `.venv/bin/python testbench/bin/inventory.py`.
 - After changing `glm52_ops.py`, re-project it onto the tasks:
   `.venv/bin/python testbench/bin/sync_glm52_tasks.py` (`--check` for CI; it never
   overwrites `candidate.py`).
+- Production ABI leaf confirmation: `serving_native/run.sh <workload>
+  --candidate PATH --execution-mode both`; follow it with the containing-region and
+  end-to-end SGLang replay before promotion.
+- For DSA decode, replace the backward-compatible fixed KV=8192 probe with a traced
+  profile and run `serving_native/context_matrix.py`. For incremental prefill, record
+  existing prefix KV and new extend tokens separately and replay real SGLang
+  `ForwardBatch`/paged-cache dispatch; never substitute prefix=0 full prefill or the
+  decode callable. Recipes `01`, `05`, and `06` make these three experiments explicit.
+- Task and serving-native `run.sh` commands have a 30-minute process-group timeout;
+  set `KERNEL_HARNESS_TIMEOUT_SECONDS` when a justified compile/profile needs a
+  different bound. Timeout cleanup includes JIT, torchrun, profiler, and worker children.
 
 ## Roofline-reward bench (folder of optimized ops → one CSV)
 
@@ -172,6 +234,13 @@ bottleneck diagnosis (with evidence), every approach tried — failures included
 with a one-sentence "why" — the final measured result, and a transferable lesson.
 Schema and honesty rules:
 [`testbench/knowledge/README.md`](testbench/knowledge/README.md).
+
+The cross-session lessons distilled from the 2026-07-31 campaign and `.codex`
+history are separate atomic experiments under `testbench/knowledge/recipes/`,
+cataloged by `recipes/index.json`. Select an ID with
+`python3 testbench/bin/recipe.py list`, inspect it with `recipe.py show <id>`, and
+finish one terminal experiment before selecting another. Do not reinterpret the
+catalog as one bundled workflow; per-session entries continue to own measured runs.
 
 - **Warm-start every session with one command** — best prior run + prior recipes
   (what was tried + why) + the library-kernel-first ledger + KernelWiki prior-art:

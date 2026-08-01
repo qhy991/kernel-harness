@@ -92,7 +92,7 @@ def check_harness_utilities() -> list[str]:
     root = Path(__file__).resolve().parents[2]
     sys.path.insert(0, str(root))
     try:
-        from testbench.harness import gpu_lease, result_store
+        from testbench.harness import gpu_lease, paired_stats, result_store
         audit_path = root / "testbench" / "bin" / "audit_result.py"
         spec = importlib.util.spec_from_file_location("audit_result", audit_path)
         if spec is None or spec.loader is None:
@@ -105,6 +105,107 @@ def check_harness_utilities() -> list[str]:
             raise RuntimeError(f"cannot load {verify_path}")
         verify_harness = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(verify_harness)
+
+        def synthetic_pairs(repeat=10):
+            return [
+                {
+                    "pair": index,
+                    "order": ("reference,candidate" if index % 2 == 0
+                              else "candidate,reference"),
+                    "candidate_us": 10.0,
+                    "reference_us": 11.0,
+                    "speedup": 1.1,
+                }
+                for index in range(repeat)
+            ]
+
+        def current_run_fields(result_dir, *, repeat=10, gate_eligible=True):
+            return {
+                "result_dir": str(result_dir),
+                "repeat": repeat,
+                "iterations": 30,
+                "warmup": 8,
+                "gate_eligible": gate_eligible,
+                "pairing": "adjacent balanced R/C,C/R",
+                "first_recorded_iteration_discarded": True,
+                "post_timing_seed_differs": True,
+                "probe_reasons": [],
+            }
+
+        def current_shape(uuid, *, repeat=10):
+            return {
+                "uuid": uuid,
+                "correct": True,
+                "candidate_us": 10.0,
+                "reference_us": 11.0,
+                "samples": repeat,
+                "timing_pairs": synthetic_pairs(repeat),
+                "timing_unstable": False,
+                "post_timing_seed": 8,
+                "reward": 0.5,
+                "reference_reward": 0.55,
+                "shape_verdict": "win",
+            }
+
+        drift = paired_stats.summarize_pairs(
+            [10.0, 20.0, 30.0, 40.0], [12.0, 24.0, 36.0, 48.0])
+        if abs(drift["speedup_median"] - 1.2) > 1e-12:
+            problems.append(f"paired ratio failed to cancel common-mode drift: {drift!r}")
+        if paired_stats.balanced_orders(4) != [
+                "reference,candidate", "candidate,reference",
+                "reference,candidate", "candidate,reference"]:
+            problems.append("paired timing order is not balanced")
+        stable = paired_stats.summarize_pairs(
+            [10.0, 10.5, 9.8, 10.2], [11.0, 11.55, 10.78, 11.22])
+        if stable["timing_unstable"] or stable["speedup_conservative"] < 1.099:
+            problems.append(f"stable paired summary regression: {stable!r}")
+        parsed_telemetry = result_store._parse_gpu_telemetry(
+            "3, GPU-abc, P0, 1980, 3200, 811.5, 1000.0, 57\n")
+        if (len(parsed_telemetry) != 1 or parsed_telemetry[0].get("index") != 3 or
+                parsed_telemetry[0].get("power.draw") != 811.5):
+            problems.append(f"GPU telemetry parser regression: {parsed_telemetry!r}")
+
+        recipe_cli = root / "testbench" / "bin" / "recipe.py"
+        recipe_check = subprocess.run(
+            [sys.executable, str(recipe_cli), "check"],
+            capture_output=True,
+            text=True,
+            timeout=10,
+        )
+        if recipe_check.returncode != 0:
+            problems.append(
+                "atomic recipe catalog failed validation: "
+                f"{recipe_check.stderr or recipe_check.stdout}"
+            )
+        try:
+            catalog = json.loads(
+                (root / "testbench" / "knowledge" / "recipes" / "index.json").read_text()
+            )
+            recipe_ids = {entry.get("id") for entry in catalog.get("recipes") or []}
+            for recipe_id in (
+                "01-capture-kv-context-profile",
+                "05-decode-kv-context-matrix",
+                "06-incremental-prefill-kv-matrix",
+                "09-end-to-end-serving-promotion",
+                "10-no-go-closeout",
+            ):
+                if recipe_id not in recipe_ids:
+                    problems.append(f"atomic recipe catalog missing {recipe_id!r}")
+        except Exception as exc:
+            problems.append(f"atomic recipe index does not parse: {exc}")
+
+        supervisor = root / "testbench" / "bin" / "supervise.py"
+        timed_out = subprocess.run(
+            [sys.executable, str(supervisor), "--timeout", "0.05", "--kill-after", "0.05",
+             "--", sys.executable, "-c", "import time; time.sleep(5)"],
+            capture_output=True,
+            text=True,
+            timeout=5,
+        )
+        if timed_out.returncode != 3 or "HARNESS TIMEOUT" not in timed_out.stderr:
+            problems.append(
+                f"process-group supervisor timeout regression: rc={timed_out.returncode} "
+                f"stderr={timed_out.stderr!r}")
 
         for stdout, expected in (
             (json.dumps({"official": True, "provisional": False, "errors": []}), "official"),
@@ -223,7 +324,7 @@ def check_harness_utilities() -> list[str]:
             with tempfile.TemporaryDirectory() as td:
                 root_tmp = Path(td)
                 verify_harness.ROOT = root_tmp
-                for run_id, schema_version in (("official", "1.3"), ("old", "1.1")):
+                for run_id, schema_version in (("official", "1.4"), ("old", "1.1")):
                     run_dir = root_tmp / "runs" / "glm52" / "synthetic" / run_id
                     run_dir.mkdir(parents=True)
                     cand = run_dir / "candidate.py"
@@ -231,19 +332,25 @@ def check_harness_utilities() -> list[str]:
                     cand_sha = hashlib.sha256(cand.read_bytes()).hexdigest()
                     result = {
                         "schema_version": schema_version,
-                        "task": {"name": "synthetic"},
-                        "run": {"result_dir": str(run_dir)},
+                        "task": {"name": "synthetic", "seed": 7},
+                        "run": current_run_fields(run_dir),
                         "candidate": {
                             "sha256": cand_sha,
                             "is_reference_fallback": False,
                             "git": {"in_repo": True, "path": "candidate.py", "dirty": False, "status": []},
                         },
                         "environment": {"git_dirty": False, "git_status": []},
-                        "per_shape": [{"uuid": f"synthetic-{run_id}"}],
-                        "aggregate": {"complete_sweep": True, "shapes_won": 1, "shapes_regressed": 0},
+                        "per_shape": [current_shape(f"synthetic-{run_id}")],
+                        "aggregate": {
+                            "complete_sweep": True,
+                            "shapes_won": 1,
+                            "shapes_regressed": 0,
+                            "timing_unstable_shapes": [],
+                        },
                         "verdict": {
                             "correct": True,
                             "performance_ok": True,
+                            "measurement_valid": True,
                             "status": "CORRECT",
                             "exit_code": 0,
                             "terminal_state": "COMPLETE_WIN",
@@ -301,20 +408,26 @@ def check_harness_utilities() -> list[str]:
             cand.write_text("def run(inputs):\n    return inputs\n")
             cand_sha = hashlib.sha256(cand.read_bytes()).hexdigest()
             result = {
-                "schema_version": "1.3",
-                "task": {"name": "synthetic"},
-                "run": {"result_dir": str(run_dir)},
+                "schema_version": "1.4",
+                "task": {"name": "synthetic", "seed": 7},
+                "run": current_run_fields(run_dir),
                 "candidate": {
                     "sha256": cand_sha,
                     "is_reference_fallback": False,
                     "git": {"in_repo": True, "path": "candidate.py", "dirty": False, "status": []},
                 },
                 "environment": {"git_dirty": False, "git_status": []},
-                "per_shape": [{"uuid": "synthetic-M1"}],
-                "aggregate": {"complete_sweep": True, "shapes_won": 1, "shapes_regressed": 0},
+                "per_shape": [current_shape("synthetic-M1")],
+                "aggregate": {
+                    "complete_sweep": True,
+                    "shapes_won": 1,
+                    "shapes_regressed": 0,
+                    "timing_unstable_shapes": [],
+                },
                 "verdict": {
                     "correct": True,
                     "performance_ok": True,
+                    "measurement_valid": True,
                     "status": "CORRECT",
                     "exit_code": 0,
                     "terminal_state": "COMPLETE_WIN",
@@ -346,7 +459,7 @@ def check_harness_utilities() -> list[str]:
             verdict = audit_result.audit(result_path)
             if verdict.get("official") or not verdict.get("provisional"):
                 problems.append(f"old-schema audit should be provisional: {verdict!r}")
-            result["schema_version"] = "1.3"
+            result["schema_version"] = "1.4"
 
             result["run"]["result_dir"] = str(run_dir / "wrong")
             result_path.write_text(json.dumps(result))
@@ -361,6 +474,47 @@ def check_harness_utilities() -> list[str]:
             if verdict.get("official") or not verdict.get("provisional"):
                 problems.append(f"missing result_dir should be provisional: {verdict!r}")
             result["run"]["result_dir"] = str(run_dir)
+
+            result["schema_version"] = "1.3"
+            result["aggregate"]["timing_unstable_shapes"] = ["synthetic-M1"]
+            result["per_shape"][0]["timing_unstable"] = True
+            result_path.write_text(json.dumps(result))
+            verdict = audit_result.audit(result_path)
+            if verdict.get("errors") or not verdict.get("provisional"):
+                problems.append(f"legacy unstable win should be provisional, not invalid: {verdict!r}")
+
+            result["schema_version"] = "1.4"
+            result["run"]["gate_eligible"] = False
+            result["aggregate"].update(
+                shapes_won=0, shapes_regressed=0,
+                timing_unstable_shapes=["synthetic-M1"])
+            result["per_shape"][0].update(
+                timing_unstable=True, shape_verdict="unstable")
+            result["verdict"].update(
+                performance_ok=False, exit_code=1,
+                terminal_state="UNSTABLE_NO_VERDICT")
+            result_path.write_text(json.dumps(result))
+            verdict = audit_result.audit(result_path)
+            if verdict.get("errors") or not verdict.get("provisional"):
+                problems.append(f"current unstable run should be a valid no-verdict: {verdict!r}")
+
+            result["per_shape"][0]["reward"] = 1.01
+            result["verdict"].update(
+                measurement_valid=True, status="CORRECT", exit_code=1,
+                terminal_state="UNSTABLE_NO_VERDICT")
+            result_path.write_text(json.dumps(result))
+            verdict = audit_result.audit(result_path)
+            if not any("physical reward > 1.0" in error for error in verdict.get("errors", [])):
+                problems.append(f"physical reward violation should be invalid: {verdict!r}")
+
+            result["per_shape"][0].update(
+                reward=0.5, timing_unstable=False, shape_verdict="win")
+            result["aggregate"].update(
+                shapes_won=1, shapes_regressed=0, timing_unstable_shapes=[])
+            result["run"]["gate_eligible"] = True
+            result["verdict"].update(
+                performance_ok=True, measurement_valid=True, status="CORRECT",
+                exit_code=0, terminal_state="COMPLETE_WIN")
 
             result["verdict"]["terminal_state"] = "NO_WIN_WITH_EVIDENCE"
             result_path.write_text(json.dumps(result))

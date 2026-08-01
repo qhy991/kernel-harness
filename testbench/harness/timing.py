@@ -1,7 +1,9 @@
 """GPU kernel timing — self-contained extraction of the kernel-harness method.
 
 Primary: CUPTI activity-trace device-kernel time (excludes CPU launch overhead), with
-the L2 cache flushed and args cloned between iterations, median over `rep` reps.
+the L2 cache flushed and args cloned between iterations. ``time_runnable`` discards
+the first recorded iteration (the B200 campaign measured it at 3--5x steady state)
+and returns the median of the remaining reps.
 Fallback: torch.cuda.Event timing if the `cupti` package is unavailable.
 
 The implementation is maintained in this repository; its only runtime dependencies are
@@ -165,6 +167,15 @@ def bench_time_with_cuda_events(fn: Callable, warmup=10, rep=100, setup=None,
 
 
 def time_runnable(fn: Callable, setup=None, warmup=10, rep=100, device="cuda") -> float:
-    """Median device-kernel latency in ms (CUPTI when available, else CUDA events)."""
+    """Steady-state median device latency (CUPTI when available, else events).
+
+    The first *recorded* sample is discarded when possible.  Warmup alone did not
+    remove the repeatable first-sample spike in the GLM-5.2 B200 campaign, and
+    retaining it made short probes and timing-spread diagnostics misleading.
+    """
+    if rep < 1:
+        raise ValueError(f"rep must be >= 1, got {rep}")
     bench = bench_gpu_time_with_cupti if _HAVE_CUPTI else bench_time_with_cuda_events
-    return statistics.median(bench(fn, warmup=warmup, rep=rep, setup=setup, device=device))
+    samples = bench(fn, warmup=warmup, rep=rep, setup=setup, device=device)
+    steady_samples = samples[1:] if len(samples) > 1 else samples
+    return statistics.median(steady_samples)

@@ -1,0 +1,13 @@
+{
+  "schema_version": 1,
+  "kind": "atomic_experiment_recipe",
+  "id": "23-stop-roofline-bound-moe-retuning",
+  "title": "Prove a MoE retuning no-go",
+  "objective": "Determine whether one MoE GEMM is already close enough to its attainable read/copy floor that configuration retuning should stop.",
+  "preconditions": ["Exact production fused W13 or W2 contract", "Measured attainable bandwidth floor on the target GPU"],
+  "steps": ["Measure baseline bytes, launch count, and latency", "Measure pure-read/copy and deletion/fusion floors", "Compare attainable utilization rather than theoretical peak only", "Try at most one causally bounded library/config set"],
+  "acceptance": {"no_go": "Remaining headroom is smaller than the target plus uncertainty and the bounded set fails.", "continue": "A mechanism removes bytes, a launch, or a fusion boundary rather than retuning the same work."},
+  "artifacts": ["attainable floor", "utilization calculation", "bounded sweep result"],
+  "stop_rule": "Do not continue block-size or physical-constant tuning after the attainable floor proves the target impossible.",
+  "origin_evidence": ["Reviewed W13 reached 83.918% versus an 83.93% read ceiling; W2 was about 99.26% of its attainable floor."]
+}

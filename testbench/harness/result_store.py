@@ -25,7 +25,7 @@ import subprocess
 import sys
 from pathlib import Path
 
-SCHEMA_VERSION = "1.3"
+SCHEMA_VERSION = "1.4"
 
 _REPO_ROOT = Path(__file__).resolve().parents[2]
 RUNS_ROOT = _REPO_ROOT / "runs"
@@ -104,6 +104,61 @@ def _pkg_version(name: str) -> str | None:
         return None
 
 
+_GPU_TELEMETRY_FIELDS = (
+    "index",
+    "uuid",
+    "pstate",
+    "clocks.current.sm",
+    "clocks.current.memory",
+    "power.draw",
+    "power.limit",
+    "temperature.gpu",
+)
+
+
+def _parse_gpu_telemetry(out: str | None) -> list[dict]:
+    rows = []
+    for line in (out or "").splitlines():
+        values = [value.strip() for value in line.split(",")]
+        if len(values) != len(_GPU_TELEMETRY_FIELDS):
+            continue
+        row = dict(zip(_GPU_TELEMETRY_FIELDS, values))
+        try:
+            row["index"] = int(row["index"])
+        except (TypeError, ValueError):
+            continue
+        for key in (
+            "clocks.current.sm",
+            "clocks.current.memory",
+            "power.draw",
+            "power.limit",
+            "temperature.gpu",
+        ):
+            try:
+                row[key] = float(row[key])
+            except (TypeError, ValueError):
+                pass
+        rows.append(row)
+    return rows
+
+
+def capture_gpu_telemetry(physical_index: int | None = None) -> dict:
+    """Capture clock/power/pstate/temperature outside the timed window."""
+    query = ",".join(_GPU_TELEMETRY_FIELDS)
+    rows = _parse_gpu_telemetry(_cmd([
+        "nvidia-smi",
+        f"--query-gpu={query}",
+        "--format=csv,noheader,nounits",
+    ]))
+    selected = next((row for row in rows if row["index"] == physical_index), None)
+    return {
+        "captured_utc": utc_now(),
+        "physical_index": physical_index,
+        "selected": selected,
+        "gpus": rows,
+    }
+
+
 def capture_environment() -> dict:
     """Everything needed to decide whether two results are comparable."""
     git_status = _git_status_porcelain()
@@ -119,6 +174,7 @@ def capture_environment() -> dict:
         "torch": _pkg_version("torch"),
         "deep_gemm": _pkg_version("deep_gemm"),
         "sgl_kernel": _pkg_version("sgl_kernel"),
+        "gpu_telemetry": capture_gpu_telemetry(),
     }
     try:
         import torch

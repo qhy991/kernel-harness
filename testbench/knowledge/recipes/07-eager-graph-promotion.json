@@ -1,0 +1,13 @@
+{
+  "schema_version": 1,
+  "kind": "atomic_experiment_recipe",
+  "id": "07-eager-graph-promotion",
+  "title": "Promote one leaf through eager and CUDA graph",
+  "objective": "Verify that one leaf win survives the exact eager call and an independently captured CUDA-graph replay.",
+  "preconditions": ["Correct paired leaf win", "Production graph bucket and static input contract"],
+  "steps": ["Capture reference and candidate independently", "Check graph outputs before timing and after recapture with a different seed", "Measure paired eager and graph lanes", "Record capture failures as unavailable rather than falling back to eager"],
+  "acceptance": {"pass": "Both production modes pass correctness and their paired speed gates.", "no_win": "Either mode is neutral or slower.", "invalid": "Graph capture failed or graph correctness was not checked."},
+  "artifacts": ["eager lane", "graph lane", "graph correctness evidence"],
+  "stop_rule": "An eager-only number is a probe, not a promotable leaf verdict.",
+  "origin_evidence": ["Several device-level wins disappeared once graph and dispatch boundaries were included."]
+}

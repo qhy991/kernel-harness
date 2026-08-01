@@ -1,0 +1,13 @@
+{
+  "schema_version": 1,
+  "kind": "atomic_experiment_recipe",
+  "id": "22-bounded-compiled-dimension",
+  "title": "Test one bounded compiled-dimension change",
+  "objective": "Test a small evidence-driven set of compiled launch dimensions for one fixed production shape.",
+  "preconditions": ["A fixed graph bucket", "A measured occupancy, wave, or tile-quantization hypothesis", "No stronger deletion/fusion mechanism is available"],
+  "steps": ["Predict a short candidate set from the measured shape and hardware", "Compile every candidate before timing", "Use paired full-boundary timing rather than autotuner self-time", "Keep an exact-shape dispatch predicate and production fallback"],
+  "acceptance": {"pass": "One configuration wins beyond uncertainty for its owned shape and all fallbacks remain unchanged.", "no_win": "The bounded set does not improve the production baseline."},
+  "artifacts": ["candidate set rationale", "compile provenance", "per-shape paired results"],
+  "stop_rule": "A larger blind grid is not a new mechanism.",
+  "origin_evidence": ["o_proj_decode gained about 1.077x from a shape-specific compiled-dimension change against production."]
+}

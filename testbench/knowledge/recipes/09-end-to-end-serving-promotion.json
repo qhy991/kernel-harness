@@ -1,0 +1,13 @@
+{
+  "schema_version": 1,
+  "kind": "atomic_experiment_recipe",
+  "id": "09-end-to-end-serving-promotion",
+  "title": "Confirm one change end-to-end",
+  "objective": "Measure whether one candidate improves the actual multi-GPU serving trace across its production KV-context mix.",
+  "preconditions": ["Containing-region win", "Pinned production topology and request trace"],
+  "steps": ["Run baseline and candidate with identical request order, cache state, scheduler policy, topology, and warmup", "Report incremental-prefill and decode separately plus weighted aggregate", "Measure latency distribution, throughput, memory, graph recapture, communication, and concurrency", "Use multiple balanced trials and retain raw request-level output"],
+  "acceptance": {"pass": "The declared service metric improves beyond uncertainty and no phase, tail, correctness, memory, or stability metric regresses.", "no_win": "The region win is hidden by overlap, communication, scheduling, or a shifted critical path."},
+  "artifacts": ["request trace ID", "baseline/candidate service metrics", "phase breakdown", "resource telemetry"],
+  "stop_rule": "A single-card leaf result is never substituted for this experiment.",
+  "origin_evidence": ["Communication accounted for 52.5% of decode and 79.3% of 64k-prefill GPU time in the reviewed campaign."]
+}

@@ -21,6 +21,7 @@ which is exactly what sglang emits at runtime on B200.
 """
 
 import math
+import statistics
 import torch
 import deep_gemm
 from deep_gemm.utils.math import per_token_cast_to_fp8, per_block_cast_to_fp8
@@ -141,6 +142,26 @@ def event_bench(run_fn, warmup=NUM_WARMUP, iters=NUM_RUNS):
     end.record()
     torch.cuda.synchronize()
     return start.elapsed_time(end) / iters
+
+
+def paired_event_medians(baseline_fn, candidate_fn, repeat):
+    """Symmetric R/C,C/R event samples; return median candidate and baseline ms.
+
+    Candidate mode used to measure the baseline once and take the candidate's
+    fastest of N samples. That estimator asymmetry can manufacture a speedup.
+    Adjacent balanced pairs and the same median estimator on both sides make this
+    secondary reward report comparable to the primary task gate.
+    """
+    repeats = max(1, int(repeat))
+    base_samples, candidate_samples = [], []
+    for index in range(repeats):
+        if index % 2 == 0:
+            base_samples.append(event_bench(baseline_fn))
+            candidate_samples.append(event_bench(candidate_fn))
+        else:
+            candidate_samples.append(event_bench(candidate_fn))
+            base_samples.append(event_bench(baseline_fn))
+    return statistics.median(candidate_samples), statistics.median(base_samples)
 
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -426,6 +447,9 @@ def roofline_reward(latency_ms, flops, bytes_hbm, compute_dtype):
     achieved_bw = bytes_hbm / lat_s
     roofline_ceiling = min(peak_flops, ai * HBM_BYTES_PER_S)
     reward = achieved_flops / roofline_ceiling if roofline_ceiling > 0 else 0.0
+    if reward > 1.0:
+        raise ValueError(
+            f"physical roofline reward {reward:.6f} > 1.0; timing or cost bytes are invalid")
     return {
         "latency_ms": latency_ms,
         "tflops": achieved_flops / 1e12,
@@ -814,15 +838,19 @@ def run_candidate_folder(kernels_dir, phase, device, out_csv, repeat=1, no_basel
             # separate upstream gate we do not implement here — no allclose / no `correct`.
             sol_us = base_us = None
             try:
-                if not no_baseline:
-                    try:
-                        bi = _clone_inputs(inputs0); baseline_run(fam, bi)
-                        torch.cuda.synchronize()
-                        base_us = event_bench(lambda: baseline_run(fam, bi)) * 1e3
-                    except Exception:
-                        base_us = None
-                sol_us = min(event_bench(lambda: call_by_name(run_fn, inputs0))
-                             for _ in range(max(1, repeat))) * 1e3
+                candidate_call = lambda: call_by_name(run_fn, inputs0)  # noqa: E731
+                if no_baseline:
+                    candidate_samples = [event_bench(candidate_call)
+                                         for _ in range(max(1, repeat))]
+                    sol_us = statistics.median(candidate_samples) * 1e3
+                else:
+                    bi = _clone_inputs(inputs0)
+                    baseline_call = lambda: baseline_run(fam, bi)  # noqa: E731
+                    baseline_call()
+                    torch.cuda.synchronize()
+                    sol_ms, base_ms = paired_event_medians(
+                        baseline_call, candidate_call, repeat)
+                    sol_us, base_us = sol_ms * 1e3, base_ms * 1e3
             except Exception as e:
                 print(f"  ! {f.name} {tag}: run: {str(e)[:90]}")
             rec = {"ts": TS, "round": rnd, "candidate": f.name, "task": f"glm52/{op}_{phase}",

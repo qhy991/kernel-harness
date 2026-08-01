@@ -1,0 +1,13 @@
+{
+  "schema_version": 1,
+  "kind": "atomic_experiment_recipe",
+  "id": "20-fuse-scale-packing",
+  "title": "Test fusion of FP8 scale packing",
+  "objective": "Test whether fusing a measured scale-layout conversion into one FP8 GEMM removes real production work.",
+  "preconditions": ["The production trace shows scale packing or transformation inside the timed containing region", "The baseline contract uses packed int32 UE8M0 scales"],
+  "steps": ["Measure the packing kernel/wrapper share", "Implement one fusion that emits or consumes the production packed layout", "Compare against the exact packed production path, not an f32-scale surrogate", "Run adversarial scale-boundary correctness and region promotion"],
+  "acceptance": {"pass": "Kernel count or bytes fall and the containing region wins.", "no_win": "Packing was outside the region or fusion overhead consumes the saving.", "invalid": "The baseline is an unpacked/f32 strawman."},
+  "artifacts": ["before/after call graph", "scale ABI test", "region timing"],
+  "stop_rule": "Do not claim removal of work that production had already removed.",
+  "origin_evidence": ["q_b_decode achieved about 1.24x by removing a real scale-packing portion; many apparent 1.5x results only reproduced production packing."]
+}

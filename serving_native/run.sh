@@ -27,4 +27,6 @@ fi
 
 TASK="$1"
 shift
-exec "${PY}" "${ROOT}/serving_native/launch.py" "${TASK}" "$@"
+TIMEOUT_SECONDS="${KERNEL_HARNESS_TIMEOUT_SECONDS:-1800}"
+exec "${PY}" "${ROOT}/testbench/bin/supervise.py" --timeout "${TIMEOUT_SECONDS}" -- \
+  "${PY}" "${ROOT}/serving_native/launch.py" "${TASK}" "$@"

@@ -5,11 +5,12 @@ touch the kernel, in one call. Stdlib-only, fast, GPU-free.
     python3 testbench/bin/brief.py o_proj_decode
 
 Prints, in order:
-  1. the best prior measured result for this task (from runs/), so you start from the
+  1. individually runnable production experiment recipes;
+  2. the best audited prior measured result for this task (from runs/), so you start from the
      current frontier instead of rediscovering it;
-  2. the knowledge union — internal recipes (what we tried + why) + the library-kernel
+  3. the knowledge union — internal recipes (what we tried + why) + the library-kernel
      ledger + KernelWiki prior-art (delegates to `knowledge.py brief`);
-  3. the task's roofline / bound (best-effort `run.sh --describe`; skipped if the heavy
+  4. the task's roofline / bound (best-effort `run.sh --describe`; skipped if the heavy
      import stack or venv isn't ready — never blocks the fast sections above).
 
 Retrieval was the discretionary step sessions skipped; this makes it one command.
@@ -17,6 +18,7 @@ Retrieval was the discretionary step sessions skipped; this makes it one command
 from __future__ import annotations
 
 import argparse
+import importlib.util
 import json
 import subprocess
 import sys
@@ -25,6 +27,17 @@ from pathlib import Path
 BIN = Path(__file__).resolve().parent
 TASKS = BIN.parent / "tasks" / "glm52"
 RUNS = BIN.parent.parent / "runs" / "glm52"
+RECIPE_INDEX = BIN.parent / "knowledge" / "recipes" / "index.json"
+
+
+def _load_auditor():
+    path = BIN / "audit_result.py"
+    spec = importlib.util.spec_from_file_location("_brief_audit_result", path)
+    if spec is None or spec.loader is None:
+        raise RuntimeError(f"cannot load {path}")
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
 
 
 def _run_rank(r: dict) -> tuple:
@@ -47,6 +60,13 @@ def _run_rank(r: dict) -> tuple:
     return (perf_ok, correct, exit_code == 0, speed, reward)
 
 
+def _schema_rank(value) -> tuple[int, ...]:
+    try:
+        return tuple(int(part) for part in str(value).split("."))
+    except ValueError:
+        return (0,)
+
+
 def _best_prior_run(task: str) -> None:
     d = RUNS / task
     results = sorted(d.glob("*/result.json")) if d.is_dir() else []
@@ -54,19 +74,47 @@ def _best_prior_run(task: str) -> None:
     if not results:
         print("  (no prior runs)")
         return
+    try:
+        auditor = _load_auditor()
+    except Exception as exc:
+        print(f"  (cannot audit prior runs: {exc}; no frontier selected)")
+        return
     best = None
+    invalid = 0
     for f in results:
         try:
             r = json.loads(f.read_text())
         except Exception:
             continue
-        key = _run_rank(r)
+        audit = auditor.audit(f.resolve())
+        if audit.get("errors"):
+            invalid += 1
+            continue
+        # Official evidence outranks provisional evidence before speed. This
+        # prevents an old-schema/noisy result from becoming the warm-start frontier.
+        if audit.get("official"):
+            key = (2,) + _run_rank(r)
+        else:
+            # There is no defensible provisional "frontier": show the most
+            # recent correct context from the newest schema, not the largest
+            # stale headline speedup. A schema-1.0 strawman win must not become
+            # the next agent's starting candidate.
+            timestamp = ((r.get("run") or {}).get("finished_utc") or f.parent.name)
+            key = (
+                1,
+                bool((r.get("verdict") or {}).get("correct"))
+                if isinstance(r.get("verdict"), dict)
+                else str(r.get("verdict")).upper() == "CORRECT",
+                _schema_rank(r.get("schema_version")),
+                str(timestamp),
+                -len(audit.get("warnings") or []),
+            )
         if best is None or key > best[0]:
-            best = (key, r, f)
+            best = (key, r, f, audit)
     if best is None:
         print("  (prior runs unreadable)")
         return
-    _, r, f = best
+    _, r, f, audit = best
     agg, verdict = r.get("aggregate") or {}, r.get("verdict")
     if isinstance(verdict, dict):
         status = (f"correct={bool(verdict.get('correct'))} "
@@ -74,8 +122,54 @@ def _best_prior_run(task: str) -> None:
                   f"exit={verdict.get('exit_code')}")
     else:
         status = str(verdict)
-    print(f"  verdict={status}  {json.dumps(agg)[:300]}")
+    audit_label = "OFFICIAL" if audit.get("official") else "PROVISIONAL"
+    if not audit.get("official"):
+        print("  no official frontier; showing most recent admissible provisional context")
+    print(f"  audit={audit_label}  verdict={status}  {json.dumps(agg)[:300]}")
     print(f"  from {f.relative_to(BIN.parent.parent)}")
+    for warning in (audit.get("warnings") or [])[:2]:
+        print(f"  caveat: {warning}")
+    if invalid:
+        print(f"  excluded {invalid} invalid prior result(s) from ranking")
+
+
+def _atomic_recipes(task: str) -> None:
+    print("== atomic experiment recipes (select and finish one at a time) ==")
+    try:
+        catalog = json.loads(RECIPE_INDEX.read_text())
+    except Exception as exc:
+        print(f"  (recipe catalog unavailable: {exc})")
+        return
+    entries = catalog.get("recipes") or []
+    by_id = {entry.get("id"): entry for entry in entries}
+    selected_ids = [
+        "00-pin-production-contract",
+        "01-capture-kv-context-profile",
+        "02-measure-target-headroom",
+        "03-adversarial-correctness",
+        "04-paired-leaf-timing",
+    ]
+    selected_ids.append(
+        "06-incremental-prefill-kv-matrix"
+        if "prefill" in task else "05-decode-kv-context-matrix"
+    )
+    lower = task.lower()
+    if "moe" in lower or "routed" in lower:
+        selected_ids.append("23-stop-roofline-bound-moe-retuning")
+    if "index" in lower:
+        selected_ids.append("21-tma-split-k-small-m")
+    if "q_b" in lower:
+        selected_ids.append("20-fuse-scale-packing")
+    if "o_proj" in lower:
+        selected_ids.append("22-bounded-compiled-dimension")
+
+    relative = RECIPE_INDEX.relative_to(BIN.parent.parent)
+    print(f"  {catalog.get('title')} — {len(entries)} recipes  [{relative}]")
+    for recipe_id in selected_ids:
+        entry = by_id.get(recipe_id)
+        if entry:
+            print(f"  {recipe_id}: python3 testbench/bin/recipe.py show {recipe_id}")
+    print("  catalog: python3 testbench/bin/recipe.py list")
 
 
 def _knowledge_brief(task: str, limit: int, no_external: bool) -> None:
@@ -134,6 +228,8 @@ def main() -> int:
               file=sys.stderr)
 
     print(f"# warm-start brief — {task}\n")
+    _atomic_recipes(task)
+    print()
     _best_prior_run(task)
     _knowledge_brief(task, args.limit, args.no_external)
     if not args.no_describe:

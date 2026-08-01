@@ -1,0 +1,13 @@
+{
+  "schema_version": 1,
+  "kind": "atomic_experiment_recipe",
+  "id": "08-containing-region-promotion",
+  "title": "Measure one containing production region",
+  "objective": "Determine whether one leaf change reduces the latency of the exact SGLang region that owns its wrapper, dispatch, synchronization, and overlap.",
+  "preconditions": ["Eager+graph leaf win", "Pinned region boundaries and representative context profile"],
+  "steps": ["Time the unchanged production region with reference and candidate dispatch", "Include quantization, packing, page-table transforms, fallback, launches, and synchronization", "Replay every relevant context/batch scenario", "Measure eager and graph modes and record adjacent compute/communication overlap"],
+  "acceptance": {"pass": "The region meets its declared target with no context or mode regression.", "no_win": "Leaf savings are consumed by wrapper work, launches, fallback, or overlap."},
+  "artifacts": ["region definition", "paired eager/graph results", "component profile"],
+  "stop_rule": "Close a boundary-loss result; do not cite the faster device segment as a production win.",
+  "origin_evidence": ["Task06 had a 1.3713x/1.2834x device segment but failed eager, graph, and region promotion."]
+}

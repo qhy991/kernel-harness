@@ -72,6 +72,9 @@ TIMING_PROTOCOL = ("cupti-cold-l2-device-kernel-median" if tb_timing._HAVE_CUPTI
                    else "event-cold-l2-median-NO-CUPTI")
 
 CAT = {"gemm": "GEMM", "bmm": "BMM", "moe": "MoE", "mla": "MLA", "score": "Score"}
+# Fusion entries replace a boundary around one of these leaves; adding them to
+# the leaf sum would double-count the GEMM and produce a meaningless layer total.
+LAYER_OPS = tuple(op for op in ops.ALL_OPS if ops.family(op) != "fusion")
 
 
 def clone_inputs(d: dict) -> dict:
@@ -107,10 +110,15 @@ def _resolve_focus(args, phase: str, index: dict[tuple[str, str], Path]):
             raise SystemExit(
                 f"--task {task.name} is phase={meta['phase']}, but --M={args.M} "
                 f"implies phase={phase}")
+        if meta["operator"] not in LAYER_OPS:
+            raise SystemExit(
+                f"--task {task.name} is a fusion region and cannot be added to the "
+                "12-op leaf budget; use its run.sh and then a containing-region or "
+                "end-to-end serving test")
         return meta["operator"], task
     if args.op is not None:
-        if args.op not in ops.ALL_OPS:
-            raise SystemExit(f"unknown --op {args.op!r}; known: {', '.join(ops.ALL_OPS)}")
+        if args.op not in LAYER_OPS:
+            raise SystemExit(f"unknown leaf --op {args.op!r}; known: {', '.join(LAYER_OPS)}")
         task = index.get((args.op, phase))
         if task is None:
             raise SystemExit(f"no task directory for {args.op}/{phase}")
@@ -162,7 +170,7 @@ def main() -> int:
     ap.add_argument("--device", default="cuda:0")
     ap.add_argument("--task", default=None,
                     help="task dir or name; ONLY this op uses its candidate")
-    ap.add_argument("--op", choices=ops.ALL_OPS, default=None,
+    ap.add_argument("--op", choices=LAYER_OPS, default=None,
                     help="ONLY this op uses its candidate (rest stay on backend)")
     ap.add_argument("--candidate", default=None,
                     help="override candidate for the focused op "
@@ -187,9 +195,9 @@ def main() -> int:
         op_name, sep, path = item.partition("=")
         if not sep or not op_name or not path:
             raise SystemExit(f"invalid --swap {item!r}; expected OP=PATH")
-        if op_name not in ops.ALL_OPS:
+        if op_name not in LAYER_OPS:
             raise SystemExit(
-                f"unknown --swap op {op_name!r}; known: {', '.join(ops.ALL_OPS)}")
+                f"unknown leaf --swap op {op_name!r}; known: {', '.join(LAYER_OPS)}")
         if op_name in swaps:
             raise SystemExit(f"duplicate --swap for {op_name}")
         swaps[op_name] = str(Path(path).expanduser())
@@ -206,7 +214,7 @@ def main() -> int:
     # knobs at import time; interleaving reference/candidate measurements would
     # contaminate later reference baselines in a multi-swap run.
     rows = []
-    for op in ops.ALL_OPS:
+    for op in LAYER_OPS:
         meta = ops.spec(op, phase)
         S = int(args.S if args.S is not None else meta["S"])
         seed = int(args.seed if args.seed is not None else meta["seed"])

@@ -8,7 +8,7 @@ callable that the reference invokes.
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from typing import Any
 
 
@@ -21,6 +21,8 @@ class Workload:
     source_symbol: str
     params: dict[str, Any] = field(default_factory=dict)
     notes: str = ""
+    kv_cache_dependency: str = "not-in-leaf-abi"
+    context_contract: dict[str, Any] = field(default_factory=dict)
 
     @property
     def distributed(self) -> bool:
@@ -191,6 +193,20 @@ def _add_decode_bucket(m: int) -> None:
             page_size=64,
         ),
         "Blackwell FP8-KV production backend (trtllm-gen), not flash_mla_sparse_fwd.",
+        kv_cache_dependency="direct-paged-kv",
+        context_contract={
+            "coverage": "decode-sparse-attention-leaf-only",
+            "logical_context_param": "context",
+            "ragged_context_param": "context_lengths",
+            "runtime_override": "--kv-context or --kv-contexts",
+            "production_distribution_verified": False,
+            "incremental_prefill_covered": False,
+            "not_covered": [
+                "full-context DSA indexer scoring",
+                "top-k/page-table transform",
+                "scheduler and global KV-memory pressure",
+            ],
+        },
     )
 
     name = f"dp_allgather_decode_{suffix}"
@@ -371,6 +387,41 @@ def get_workload(name: str) -> Workload:
         raise KeyError(f"unknown workload {name!r}; choose from: {', '.join(WORKLOADS)}") from exc
 
 
+def with_kv_contexts(workload: Workload, context_lengths: list[int]) -> Workload:
+    """Return a DSA decode workload with explicit logical KV lengths.
+
+    A single value is broadcast across the fixed decode batch.  A ragged vector
+    must have exactly one value per request; silently cycling a short vector would
+    manufacture a batch distribution that was never observed in production.
+    """
+    if workload.family != "dsa_trtllm":
+        raise ValueError(
+            f"{workload.name} does not consume KV cache in its leaf ABI; "
+            "measure its context-conditioned contribution at region/end-to-end scope"
+        )
+    if not context_lengths or any(
+        isinstance(value, bool) or not isinstance(value, int) or value <= 0
+        for value in context_lengths
+    ):
+        raise ValueError("KV context lengths must be positive integers")
+
+    batch = int(workload.params["batch"])
+    if len(context_lengths) == 1:
+        resolved = context_lengths * batch
+    elif len(context_lengths) == batch:
+        resolved = list(context_lengths)
+    else:
+        raise ValueError(
+            f"{workload.name} fixes batch={batch}; provide one KV length to broadcast "
+            f"or exactly {batch} comma-separated lengths, got {len(context_lengths)}"
+        )
+
+    params = dict(workload.params)
+    params["context"] = max(resolved)
+    params["context_lengths"] = resolved
+    return replace(workload, params=params)
+
+
 def as_dict(workload: Workload) -> dict[str, Any]:
     return {
         "name": workload.name,
@@ -381,4 +432,6 @@ def as_dict(workload: Workload) -> dict[str, Any]:
         "source_symbol": workload.source_symbol,
         "params": dict(workload.params),
         "notes": workload.notes,
+        "kv_cache_dependency": workload.kv_cache_dependency,
+        "context_contract": dict(workload.context_contract),
     }

@@ -26,12 +26,24 @@ PY_FILES = [
     "testbench/bin/bw_ceiling.py",
     "testbench/bin/knowledge.py",
     "testbench/bin/kwiki_bridge.py",
+    "testbench/bin/recipe.py",
     "testbench/bin/sync_glm52_tasks.py",
+    "testbench/bin/supervise.py",
     "testbench/bin/verify_harness.py",
     "testbench/harness/evaluate_task.py",
     "testbench/harness/glm52_ops.py",
     "testbench/harness/gpu_lease.py",
+    "testbench/harness/paired_stats.py",
     "testbench/harness/result_store.py",
+    "testbench/harness/timing.py",
+    "rewardbench/glm5_ops_common.py",
+    "rewardbench/bench_GLM5_ops_decode.py",
+    "rewardbench/bench_GLM5_ops_prefill.py",
+    "serving_native/launch.py",
+    "serving_native/context_matrix.py",
+    "serving_native/runner.py",
+    "serving_native/selftest.py",
+    "serving_native/workloads.py",
 ]
 
 DIFF_CHECK_PATHS = [
@@ -43,6 +55,8 @@ DIFF_CHECK_PATHS = [
     "testbench/harness",
     "testbench/knowledge",
     "testbench/tasks/glm52",
+    "rewardbench",
+    "serving_native",
     ":(exclude)testbench/tasks/glm52/*/candidate.py",
 ]
 
@@ -57,6 +71,8 @@ REVIEW_PATHS = [
     "testbench/tasks/glm52/*/README.md",
     "testbench/tasks/glm52/*/problem.json",
     "testbench/tasks/glm52/*/task.json",
+    "rewardbench",
+    "serving_native",
 ]
 
 REVIEW_DIFF_PATHS = [
@@ -68,6 +84,8 @@ REVIEW_DIFF_PATHS = [
     "testbench/harness",
     "testbench/knowledge",
     "testbench/tasks/glm52",
+    "rewardbench",
+    "serving_native",
     ":(exclude)testbench/tasks/glm52/*/candidate.py",
 ]
 
@@ -466,6 +484,7 @@ def main() -> int:
         [sys.executable, "testbench/bin/knowledge.py", "index", "--check"],
         [sys.executable, "testbench/bin/knowledge.py", "distill", "--check"],
         [harness_py, "testbench/bin/sync_glm52_tasks.py", "--check"],
+        [harness_py, "serving_native/selftest.py"],
         ["git", "diff", "--check", "--", *DIFF_CHECK_PATHS],
     ]
     results = []

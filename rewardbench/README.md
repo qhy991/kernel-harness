@@ -28,8 +28,15 @@ python bench_GLM5_ops_decode.py  --kernels-dir <dir>   # 只测 phase==decode  �
 # <dir> 可为父目录（多个候选），也可直接指向单个算子目录（其下有 solution.py），供 flow 单算子调用
 #   结果去向：① 终端逐行打印（带 UTC 时间戳）② 追加进该算子目录下的 reward_bench.csv（带时间戳历史）
 #             ③ 汇总进 glm5_ops_{prefill,decode}_candidates.csv
-#   选项：--repeat N（取最快）、--no-baseline（只出 reward）、--round K、--csv 自定义汇总文件
+#   选项：--repeat N（默认 5；baseline/candidate 按 R/C、C/R 配对且双方取中位数）、
+#         --no-baseline（只出 reward）、--round K、--csv 自定义汇总文件
 ```
+
+candidate 模式不再使用“baseline 只测一次、candidate 取 N 次最快”的非对称
+估计器；这种做法会凭空制造 speedup。双方现在使用相同数量、相邻且顺序平衡的
+样本，并使用同一个中位数估计器。该模块仍然只报告性能，不能替代
+`testbench/tasks/.../run.sh` 的正确性门禁或 `serving_native --execution-mode both`
+的生产 eager/graph 门禁。
 
 candidate 文件夹结构（参照 `best-kernels-reward-bench.zip` 解压树）：
 ```

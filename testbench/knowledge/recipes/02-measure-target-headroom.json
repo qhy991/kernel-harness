@@ -1,0 +1,13 @@
+{
+  "schema_version": 1,
+  "kind": "atomic_experiment_recipe",
+  "id": "02-measure-target-headroom",
+  "title": "Measure one target's attainable headroom",
+  "objective": "Decide numerically whether one target can produce the requested containing-region or end-to-end gain before searching kernels.",
+  "preconditions": ["Pinned production contract", "Representative context profile"],
+  "steps": ["Measure the production baseline and target share in the served region", "Measure deletion/fusion ceiling and the relevant pure-read, copy, or launch floor", "Compute latency reduction f*(1-1/s) and speedup 1/(1-f+f/s), then account for observed overlap", "State one target and one causal mechanism"],
+  "acceptance": {"pass": "The target lies below the attainable ceiling by more than timing uncertainty.", "no_go": "Even deletion cannot meet the target or the mechanism cannot move the limiting resource."},
+  "artifacts": ["baseline profile", "ceiling measurements", "Amdahl calculation", "target decision"],
+  "stop_rule": "Close no-go instead of beginning a configuration sweep when the ceiling misses the target.",
+  "origin_evidence": ["Selected leaf operators were 2.57 ms of a 38.88 ms layer, limiting total deletion gain to 6.6%."]
+}

@@ -101,6 +101,7 @@
       ]
     },
     "tensors_error": null,
+    "required_outputs": null,
     "output_buffer": null,
     "accepted_forms": [
       "Python / PyTorch \u2014 a .py defining run(inputs)",
@@ -122,7 +123,7 @@
         "rel_tol": 0.015703125,
         "abs_tol": "1e-04 * |ref|.max(), computed per shape",
         "why_or": "large elements pass on relative error, near-zero elements on absolute \u2014 neither alone works",
-        "why_derived_abs_tol": "output magnitude spans seven orders across these 12 ops (dsa_attn 0.285, o_proj 564, index_score 1.5e7), so a fixed abs_tol cannot port"
+        "why_derived_abs_tol": "output magnitude spans seven orders across the original leaf ops (dsa_attn 0.285, o_proj 564, index_score 1.5e7), so a fixed abs_tol cannot port"
       },
       {
         "order": 3,
@@ -132,7 +133,7 @@
         "why": "scale-SENSITIVE, unlike cosine \u2014 a uniform k*reference is caught here (k=0.5 or 2 both give 0.2)"
       }
     ],
-    "post_timing_recheck": "correctness is re-checked on freshly built inputs after timing, to catch a kernel that mutates its inputs or drifts across the timed iterations",
+    "post_timing_recheck": "correctness is re-checked after timing on freshly built inputs from a different seed, to catch input memoization as well as state drift",
     "diagnostics": {
       "cosine": "reported, never gated \u2014 it is scale-invariant, so reference*k scores 1.000000 for every k and it cannot catch the likeliest FP8 bug on its own",
       "best_fit_scale": "least-squares k for candidate ~= k*reference",
@@ -140,24 +141,25 @@
     }
   },
   "performance": {
-    "timing": "CUPTI cold-L2 device-kernel median: inputs cloned per iteration and L2 flushed before each, both outside the measured window",
+    "timing": "CUPTI cold-L2 device-kernel median: inputs cloned per iteration and L2 flushed before each, both outside the measured window; the first recorded inner sample is discarded",
     "why_device_time": "the reward is a hardware-utilisation ratio, so it must be paired with device time; a per-call wall-clock timer reports ~99us for this op's ~47us kernel, and the difference is host dispatch stall",
     "gate": "at least one shape WINS and no shape REGRESSES",
     "shape_verdict": {
-      "win": "reference p10 / candidate p90 > 1.0 \u2014 the candidate is ahead even on the reading least favourable to it",
-      "regress": "reference p90 / candidate p10 < 1.0 \u2014 the candidate is behind even on the reading most favourable to it",
-      "neutral": "neither \u2014 inside the noise band; does not veto the run",
-      "why_quantiles": "not max/min: dividing two extremes lets one artifact sample decide the verdict, which at repeat=10 is likely rather than rare",
+      "win": "p10 of adjacent per-pair (reference/candidate) ratios > 1.0",
+      "regress": "p90 of adjacent per-pair (reference/candidate) ratios < 1.0",
+      "neutral": "neither \u2014 inside the paired noise band; does not veto the run",
+      "unstable": "candidate or reference timing spread remains >1.25x after an automatic repeat*3 retry; no performance verdict",
+      "why_pairing": "R/C,C/R adjacent pairs cancel the 2.1--4.7x op-specific drift that invalidated independent quantiles; legacy unpaired estimates remain in result.json for comparison",
       "why_not_all_shapes": "requiring every shape to win is unreachable the moment one shape merely matches \u2014 an identical-to-reference candidate measures sp_cons 0.855-0.989, never above 1.0 \u2014 so it made per-shape fallback impossible to express"
     },
     "fallback_is_allowed": "run() may branch on the shape and hand the losing shapes to glm52_ops.reference(op, phase, inputs). That is what SGLang itself does (deepgemm_w8a8_block_fp8_linear_with_fallback), and it is the expected answer when a kernel wins in one regime only: the fallback shapes land as `neutral` and no longer veto the win. Falling back on EVERY shape scores zero wins and still fails, so this buys nothing unless something real is gained somewhere. Do the dispatch inside run() \u2014 the harness will not do it for you, because then it would be measuring a kernel the candidate does not contain.",
     "defaults": {
-      "warmup": 3,
+      "warmup": 8,
       "repeat": 10,
       "iterations": 30
     },
-    "repeat_note": "--repeat 1 is a probe, not a verdict: at 1 the conservative margin collapses to the median one and a candidate identical to the reference passes a >1.0 gate a good fraction of the time",
-    "reward": "bound-aware roofline utilisation: (flops/latency) / min(peak_flops, ai*peak_bw); unclamped",
+    "repeat_note": "--repeat 1 is a probe, not a verdict: at 1 the conservative margin collapses to the median one and a candidate identical to the reference passes a >1.0 gate a good fraction of the time; any repeat below 10 or restricted shape sweep is probe-only",
+    "reward": "bound-aware roofline utilisation: (flops/latency) / min(peak_flops, ai*peak_bw); unclamped, and >1.0 is a hard invalid measurement rather than a record",
     "peaks": {
       "gpu": "NVIDIA B200",
       "hbm_bytes_per_s": 8000000000000.0,
@@ -168,14 +170,17 @@
   },
   "verdict": {
     "exit_0": "correct on every shape, at least one shape wins, and no shape regresses",
-    "exit_1": "correct on every shape, performance gate not met",
-    "exit_2": "incorrect, incomplete sweep, or correctness did not survive timing",
+    "exit_1": "correct but performance gate not met, probe-only, or unstable no-verdict",
+    "exit_2": "incorrect/post-seed failure, or physically invalid reward >1.0",
     "exit_3": "infrastructure error, or task.json disagrees with glm52_ops",
     "terminal_state": {
       "COMPLETE_WIN": "exit 0; correct complete sweep with >=1 win and 0 regressions",
       "NO_WIN_WITH_EVIDENCE": "exit 1; correct complete sweep but every shape is neutral",
       "PARTIAL_OR_REGRESSED_WITH_EVIDENCE": "exit 1; correct complete sweep but at least one shape regressed",
-      "INCORRECT_OR_INCOMPLETE": "exit 2; correctness failed, the sweep was incomplete, or post-timing correctness failed"
+      "PROBE_ONLY_NO_VERDICT": "exit 1; restricted sweep or repeat below 10",
+      "UNSTABLE_NO_VERDICT": "exit 1; timing still unstable after repeat*3 retry",
+      "INVALID_MEASUREMENT": "exit 2; candidate or reference roofline reward exceeded 1.0",
+      "INCORRECT_OR_INCOMPLETE": "exit 2; correctness failed or the unseen-seed post-timing check failed"
     }
   },
   "run": {

@@ -14,7 +14,8 @@ For every shape in the task's workload:
   3. Run the candidate on those inputs; gate on anomaly positions, then
      elementwise (abs OR rel), then DeepGEMM's calc_diff.
   4. Only if correct, time candidate and reference on the same inputs and ABI.
-  5. Re-check correctness on freshly built inputs after timing.
+  5. Re-check correctness on freshly built inputs with a DIFFERENT seed after
+     timing, so a candidate cannot memoize the one frozen oracle answer.
   6. Turn the candidate latency into a bound-aware roofline reward, and judge the
      shape as win / regress / neutral.
 
@@ -48,21 +49,17 @@ correlating launches to kernels and measuring only the device span.
 The real cold-vs-warm penalty, once dispatch is excluded, is ~12% for this op
 (53us cold vs 47us warm), not the ~2.4x a per-call event timer suggests.
 
-`--repeat K` (default 10) takes K samples per shape and gates on the conservative
-margin: the candidate's p90 against the reference's p10. Not the median, because
-noise here is +-5% and at K=1 the margin collapses to median-vs-median, where a
-candidate that *is* the reference scores 0.947x-1.022x and passes a >1.0 gate
-roughly half the time — so --repeat 1 is a probe, never a verdict.
+`--repeat K` (default and minimum gate-eligible value: 10) alternates adjacent
+reference/candidate pairs as R/C, C/R, ... and gates on the p10 and p90 of the
+per-pair `reference / candidate` ratios.  Pairing cancels the 2.1--4.7x
+op-specific in-process drift measured during the campaign; independent candidate
+and reference quantiles do not.  Raw ordered pairs and the legacy unpaired values
+are both persisted.  A timing spread above 1.25x triggers one automatic 3x retry;
+if it remains unstable the shape is `UNSTABLE_NO_VERDICT`, never a win.  Restricted
+sweeps and repeat counts below 10 are probes and cannot return exit 0.
 
-Not max/min either, though that is what evaluate.py does and what this did first.
-Dividing two extremes lets ONE bad sample decide the verdict, and at K=10 that is
-likely rather than rare: observed sp_cons 0.347x against a 0.999x median because
-one sample of ten came back 2.9x high. Medians are stable to ~0.2% across runs, so
-those are measurement artifacts, not kernel behaviour — CUPTI session churn, GPU
-clock ramp and per-process allocator warmup were each tested and refuted as the
-cause. At a quantile, more samples make the gate better instead of more fragile,
-which is the only reason to raise K at all. The true min/max are still recorded and
-still drive the instability warning. Default warmup is 3.
+The inner timer uses warmup=8 and discards its first recorded iteration, which was
+measured at 3--5x steady state even after the old warmup=3.
 
 Unlike evaluate.py the samples are in-process, so they capture run-level but not
 process-level noise; result.json records this as repeat_scope="in-process".
@@ -76,7 +73,6 @@ import argparse
 import io
 import json
 import math
-import statistics
 import sys
 import traceback
 from functools import partial
@@ -109,15 +105,25 @@ def _sibling(name: str):
 
 import torch  # noqa: E402
 
-ops = _sibling("glm52_ops")          # the single source of truth for all 12 ops
+ops = _sibling("glm52_ops")          # source of truth for all leaf/region contracts
 candidate_loader = _sibling("candidate_loader")
 result_store = _sibling("result_store")
 RH = _sibling("reward_hack")
 tb_timing = _sibling("timing")       # testbench CUPTI timer
 gpu_lease = _sibling("gpu_lease")    # free-GPU pick + per-GPU timing flock
+paired_stats = _sibling("paired_stats")
 
-TIMING_PROTOCOL = ("cupti-cold-l2-device-kernel-median" if tb_timing._HAVE_CUPTI
-                   else "event-cold-l2-median-NO-CUPTI")
+TIMING_PROTOCOL = (
+    "cupti-cold-l2-device-kernel-median-paired-ratio-first-sample-discarded"
+    if tb_timing._HAVE_CUPTI else
+    "event-cold-l2-median-paired-ratio-first-sample-discarded-NO-CUPTI"
+)
+MIN_GATE_REPEAT = 10
+MIN_GATE_ITERATIONS = 2
+DEFAULT_WARMUP = 8
+RETRY_MULTIPLIER = 3
+POST_TIMING_SEED_XOR = 0x5EED
+PHYSICAL_REWARD_LIMIT = 1.0
 
 
 def clone_inputs(d: dict) -> dict:
@@ -181,21 +187,50 @@ def _geomean(xs):
     return math.exp(sum(math.log(x) for x in xs) / len(xs)) if xs else None
 
 
-# Quantile the conservative margin is taken at. 0.90 keeps the gate a statement about
-# the tail ("the candidate's slow end still beats the reference's fast end") while
-# staying out of reach of a single artifact sample. At --repeat 1 or 2 it degenerates
-# to the min/max it replaces, so a probe behaves exactly as before.
-CONS_Q = 0.90
+CONS_Q = paired_stats.CONSERVATIVE_QUANTILE
 
 
-def _pct(xs, q: float) -> float:
-    """Linear-interpolated percentile (numpy's default method), stdlib only."""
-    s = sorted(xs)
-    if len(s) == 1:
-        return s[0]
-    i = q * (len(s) - 1)
-    lo, hi = math.floor(i), math.ceil(i)
-    return s[lo] if lo == hi else s[lo] + (s[hi] - s[lo]) * (i - lo)
+def _measure_pairs(cand_fn, ref_fn, setup, *, warmup, iterations, repeat, device):
+    """Measure adjacent, order-balanced pairs and retain their literal order."""
+    candidate_samples: list[float] = []
+    reference_samples: list[float] = []
+    orders = paired_stats.balanced_orders(repeat)
+
+    def one(fn):
+        return tb_timing.time_runnable(
+            fn, setup=setup, warmup=warmup, rep=iterations, device=device)
+
+    for order in orders:
+        if order == "reference,candidate":
+            reference_samples.append(one(ref_fn))
+            candidate_samples.append(one(cand_fn))
+        else:
+            candidate_samples.append(one(cand_fn))
+            reference_samples.append(one(ref_fn))
+    return candidate_samples, reference_samples, orders
+
+
+def _timing_pair_rows(candidate_samples, reference_samples, orders):
+    return [
+        {
+            "pair": index,
+            "order": order,
+            "candidate_us": round(candidate_ms * 1e3, 3),
+            "reference_us": round(reference_ms * 1e3, 3),
+            "speedup": round(reference_ms / candidate_ms, 6),
+        }
+        for index, (candidate_ms, reference_ms, order) in enumerate(
+            zip(candidate_samples, reference_samples, orders)
+        )
+    ]
+
+
+def _compact_gpu_telemetry(snapshot: dict) -> dict:
+    """Keep the timed GPU row per attempt; the environment block retains all GPUs."""
+    return {
+        key: snapshot.get(key)
+        for key in ("captured_utc", "physical_index", "selected")
+    }
 
 
 class ContractError(RuntimeError):
@@ -282,7 +317,28 @@ def evaluate(task_dir: Path, args) -> tuple[dict, int]:
 
     per_shape, sp_med_all, sp_cons_all, shape_verdicts = [], [], [], []
     all_correct = True
+    measurement_invalid = False
+    all_workloads = _load_workloads(task_dir, None, None)
     workloads = _load_workloads(task_dir, args.M, args.max_workloads)
+    expected_ms = sorted(int(wl["axes"]["M"]) for wl in all_workloads)
+    requested_ms = sorted(int(wl["axes"]["M"]) for wl in workloads)
+    full_sweep_requested = requested_ms == expected_ms
+    probe_reasons = []
+    if not full_sweep_requested:
+        probe_reasons.append(
+            f"restricted workload sweep {requested_ms}; canonical sweep is {expected_ms}")
+    if args.repeat < MIN_GATE_REPEAT:
+        probe_reasons.append(
+            f"repeat={args.repeat} is below the gate minimum {MIN_GATE_REPEAT}")
+    if args.warmup < DEFAULT_WARMUP:
+        probe_reasons.append(
+            f"warmup={args.warmup} is below the gate minimum {DEFAULT_WARMUP}")
+    if args.iterations < MIN_GATE_ITERATIONS:
+        probe_reasons.append(
+            f"iterations={args.iterations} cannot discard an internal first sample")
+    if probe_reasons:
+        print("     PROBE ONLY: " + "; ".join(probe_reasons))
+        print()
 
     for wl in workloads:
         M = int(wl["axes"]["M"])
@@ -315,107 +371,127 @@ def evaluate(task_dir: Path, args) -> tuple[dict, int]:
             print(f"{shape:>7} {'FAIL':>5} {dstr:>10}  {c['reason']}")
             continue
 
-        # ── performance (same inputs, same ABI) ──
+        # ── performance (same inputs, same ABI, adjacent balanced pairs) ──
         inputs = c["inputs"]
         ops.poison(inputs)
         ref_fn = partial(ops.reference, op, phase)
         setup = lambda: clone_inputs(inputs)  # noqa: E731 — cost is not timed
-        cand_s, ref_s = [], []
+        physical_index = getattr(args, "_gpu_lease_physical_index", None)
+
         # The CLI holds the per-GPU lock around the whole GPU gate. Keep this
         # fallback for direct evaluate() callers that did not take the outer lock.
         inner_lock = not (getattr(args, "no_gpu_lock", False) or
                           getattr(args, "_gpu_lock_held", False))
+        attempts = []
+        attempt_repeat = args.repeat
         with gpu_lease.gpu_timing_lock(device, enabled=inner_lock):
-            for _ in range(args.repeat):
-                cand_s.append(tb_timing.time_runnable(cand_fn, setup=setup,
-                                                      warmup=args.warmup,
-                                                      rep=args.iterations, device=device))
-                ref_s.append(tb_timing.time_runnable(ref_fn, setup=setup,
-                                                     warmup=args.warmup,
-                                                     rep=args.iterations, device=device))
+            while True:
+                telemetry_before = result_store.capture_gpu_telemetry(physical_index)
+                cand_s, ref_s, orders = _measure_pairs(
+                    cand_fn, ref_fn, setup, warmup=args.warmup,
+                    iterations=args.iterations, repeat=attempt_repeat, device=device)
+                telemetry_after = result_store.capture_gpu_telemetry(physical_index)
+                summary = paired_stats.summarize_pairs(cand_s, ref_s)
+                attempts.append({
+                    "attempt": len(attempts) + 1,
+                    "repeat": attempt_repeat,
+                    "pairs": _timing_pair_rows(cand_s, ref_s, orders),
+                    "timing_spread": round(summary["timing_spread"], 6),
+                    "timing_unstable": summary["timing_unstable"],
+                    "gpu_telemetry_before": _compact_gpu_telemetry(telemetry_before),
+                    "gpu_telemetry_after": _compact_gpu_telemetry(telemetry_after),
+                })
+                if summary["timing_unstable"] and len(attempts) == 1:
+                    attempt_repeat = args.repeat * RETRY_MULTIPLIER
+                    print(f"{'':>7} {'RETRY':>5}   timing spread "
+                          f"{summary['timing_spread']:.2f}x > "
+                          f"{paired_stats.TIMING_SPREAD_LIMIT:.2f}x; retrying with "
+                          f"{attempt_repeat} adjacent pairs")
+                    continue
+                break
         RH.check_monkey_patch()
 
-        c_lo, c_med, c_hi = min(cand_s), statistics.median(cand_s), max(cand_s)
-        b_lo, b_med, b_hi = min(ref_s), statistics.median(ref_s), max(ref_s)
-        s_med = b_med / c_med
-        # The conservative margin is the candidate's slow tail against the reference's
-        # fast tail, at CONS_Q. It used to be max/min, which mirrored evaluate.py — but
-        # max/min divides two extremes, so ONE bad sample decides the verdict, and at
-        # --repeat 10 that is likely rather than rare: observed sp_cons 0.347x against a
-        # 0.999x median, purely because one of ten samples came back 2.9x high. Medians
-        # here are stable to ~0.2% across runs, so those samples are measurement
-        # artifacts, not kernel behaviour (CUPTI session churn, GPU clock ramp and
-        # per-process allocator warmup were each tested and refuted as causes). Taking
-        # a quantile instead means more samples make the gate *better* rather than more
-        # fragile, which is the whole point of raising repeat. The true min/max are
-        # still recorded and still drive the instability warning.
-        c_tail, b_tail = _pct(cand_s, CONS_Q), _pct(ref_s, 1.0 - CONS_Q)
-        s_cons = b_tail / c_tail
-        # The mirror image: the candidate's fast tail against the reference's slow one.
-        # A shape only counts as a regression if the candidate loses even under this,
-        # the reading most favourable to it — anything else is inside the noise.
-        s_opt = _pct(ref_s, CONS_Q) / _pct(cand_s, 1.0 - CONS_Q)
-        # Three outcomes, not two. min(sp_cons) > 1 required EVERY shape to win, which
-        # is unreachable the moment one shape merely matches: an identical-to-reference
-        # candidate measures sp_cons 0.855-0.989, never above 1.0. That made per-shape
-        # fallback — what SGLang itself does, see
-        # deepgemm_w8a8_block_fp8_linear_with_fallback — impossible to express: winning
-        # 1.5x on M=16 and falling back on M=32 scored "not faster". A shape now wins,
-        # regresses, or is neutral, and neutral does not veto.
-        shape_verdict = ("win" if s_cons > min_speedup_gate
-                         else "regress" if s_opt < 1.0 else "neutral")
-        sp_med_all.append(s_med)
-        sp_cons_all.append(s_cons)
-        shape_verdicts.append(shape_verdict)
+        c_lo = summary["candidate_min_ms"]
+        c_med = summary["candidate_median_ms"]
+        c_hi = summary["candidate_max_ms"]
+        b_lo = summary["reference_min_ms"]
+        b_med = summary["reference_median_ms"]
+        b_hi = summary["reference_max_ms"]
+        s_med = summary["speedup_median"]
+        s_cons = summary["speedup_conservative"]
+        s_opt = summary["speedup_optimistic"]
+        unstable = summary["timing_unstable"]
 
-        # The conservative margin divides extremes, so ONE bad sample decides the
-        # verdict. Medians here are stable to ~0.2% across runs, yet a whole
-        # sample block occasionally comes back ~3x high (observed: 178us against
-        # a 53us median, dragging sp_cons to 0.296x for a candidate identical to
-        # the reference). Root cause is not CUPTI session churn, GPU clock ramp,
-        # or per-process allocator warmup — all three were tested and refuted. It
-        # is infrequent and only ever costs a win, never grants one. Rather than
-        # silently gate on a number we know is junk, say so.
-        spread = max(c_hi / c_lo, b_hi / b_lo)
-        unstable = spread > 1.25
-        row["timing_spread"] = round(spread, 3)
-        row["timing_unstable"] = unstable
         if unstable:
-            print(f"{'':>7} {'WARN':>5}   timing samples spread {spread:.2f}x "
-                  f"(cand {c_lo*1e3:.1f}-{c_hi*1e3:.1f}us, ref {b_lo*1e3:.1f}-"
-                  f"{b_hi*1e3:.1f}us) — sp_cons unreliable, re-run before trusting it")
+            shape_verdict = "unstable"
+            print(f"{'':>7} {'WARN':>5}   retry still spread "
+                  f"{summary['timing_spread']:.2f}x (cand {c_lo*1e3:.1f}-"
+                  f"{c_hi*1e3:.1f}us, ref {b_lo*1e3:.1f}-{b_hi*1e3:.1f}us); "
+                  "this shape has no performance verdict")
+        else:
+            shape_verdict = ("win" if s_cons > min_speedup_gate
+                             else "regress" if s_opt < 1.0 else "neutral")
 
-        # ── post-timing correctness on FRESH inputs ──
-        # Catches a candidate that mutates its inputs or drifts across the timed
-        # iterations; the pre-check alone would not see it.
+        # ── post-timing correctness on a DIFFERENT seed ──
+        # A fresh allocation with the same values does not catch memoization. The
+        # distinct seed makes the post-check an adversarial unseen input as well as
+        # a state-drift check.
+        post_seed = seed ^ POST_TIMING_SEED_XOR
         try:
-            post = _correctness(op, phase, M, S, seed, device, cand_fn)
+            post = _correctness(op, phase, M, S, post_seed, device, cand_fn)
             post_ok = post["pass"]
             row["post_timing_calc_diff"] = post.get("calc_diff")
         except Exception as exc:
             post_ok = False
             row["post_timing_error"] = f"{type(exc).__name__}: {exc}"[:200]
+        row["post_timing_seed"] = post_seed
         row["post_timing_correct"] = post_ok
+        row["correct"] = bool(ok and post_ok)
         if not post_ok:
             all_correct = False
-            row["error"] = "correctness did not survive timing (state drift)"
+            shape_verdict = "invalid"
+            row["error"] = "correctness failed on the unseen post-timing seed"
 
-        # ── reward ──
+        # ── reward and physical plausibility ──
         flops, byts, dtype = ops.cost(op, phase, M, S)
         cand_r = ops.reward(c_med, flops, byts, dtype)
         ref_r = ops.reward(b_med, flops, byts, dtype)
+        physical_violation = max(cand_r["reward"], ref_r["reward"]) > PHYSICAL_REWARD_LIMIT
+        if physical_violation:
+            measurement_invalid = True
+            shape_verdict = "invalid"
+            row["physical_reward_violation"] = {
+                "limit": PHYSICAL_REWARD_LIMIT,
+                "candidate_reward": cand_r["reward"],
+                "reference_reward": ref_r["reward"],
+            }
+            print(f"{'':>7} {'ERROR':>5}   physical reward exceeds 1.0 "
+                  f"(candidate={cand_r['reward']:.4f}, reference={ref_r['reward']:.4f}); "
+                  "byte/cost model or timing is invalid")
+
+        sp_med_all.append(s_med)
+        sp_cons_all.append(s_cons)
+        shape_verdicts.append(shape_verdict)
         row.update(
             flops=flops, bytes_hbm=byts, compute_dtype=dtype,
             candidate_us=round(c_med * 1e3, 3), candidate_us_lo=round(c_lo * 1e3, 3),
             candidate_us_hi=round(c_hi * 1e3, 3),
             reference_us=round(b_med * 1e3, 3), reference_us_lo=round(b_lo * 1e3, 3),
             reference_us_hi=round(b_hi * 1e3, 3),
-            samples=args.repeat,
-            candidate_us_p90=round(c_tail * 1e3, 3),
-            reference_us_p10=round(b_tail * 1e3, 3),
+            samples=len(cand_s), timing_attempts=attempts,
+            timing_retry_performed=len(attempts) > 1,
+            timing_spread=round(summary["timing_spread"], 6),
+            timing_unstable=unstable,
+            timing_pairs=_timing_pair_rows(cand_s, ref_s, orders),
             conservative_quantile=CONS_Q,
             speedup=round(s_med, 4), speedup_conservative=round(s_cons, 4),
-            speedup_optimistic=round(s_opt, 4), shape_verdict=shape_verdict,
+            speedup_optimistic=round(s_opt, 4),
+            speedup_unpaired_median=round(summary["speedup_unpaired_median"], 4),
+            speedup_unpaired_conservative=round(
+                summary["speedup_unpaired_conservative"], 4),
+            speedup_unpaired_optimistic=round(
+                summary["speedup_unpaired_optimistic"], 4),
+            shape_verdict=shape_verdict,
             bound=cand_r["bound"], arithmetic_intensity=cand_r["arithmetic_intensity"],
             ridge=cand_r["ridge"],
             reward=cand_r["reward"], reference_reward=ref_r["reward"],
@@ -424,10 +500,11 @@ def evaluate(task_dir: Path, args) -> tuple[dict, int]:
         )
         per_shape.append(row)
 
-        mark = "PASS" if (ok and post_ok) else "DRIFT"
+        mark = "PASS" if (ok and post_ok and not physical_violation) else "INVALID"
+        shown_verdict = shape_verdict.upper() if shape_verdict != "neutral" else "neutral"
         print(f"{shape:>7} {mark:>5} {c['calc_diff']:>10.2e} "
               f"{c_med*1e3:>9.2f} {b_med*1e3:>9.2f} {s_med:>7.3f}x {s_cons:>7.3f}x "
-              f"{shape_verdict.upper() if shape_verdict != 'neutral' else 'neutral':>8} "
+              f"{shown_verdict:>8} "
               f"{cand_r['arithmetic_intensity']:>7.1f} {cand_r['bound']:>7} "
               f"{cand_r['tflops']:>9.1f} {cand_r['compute_util']*100:>6.2f}% "
               f"{cand_r['gbps']:>9.1f} {cand_r['bw_util']*100:>6.2f}% "
@@ -441,9 +518,15 @@ def evaluate(task_dir: Path, args) -> tuple[dict, int]:
     # ── aggregate ──
     rewards = [r["reward"] for r in per_shape if "reward" in r]
     diffs = [r["calc_diff"] for r in per_shape if r.get("calc_diff") is not None]
-    complete = len(per_shape) == len(workloads)
+    requested_complete = len(per_shape) == len(workloads)
+    complete = bool(requested_complete and full_sweep_requested)
     wins = shape_verdicts.count("win")
     regressions = shape_verdicts.count("regress")
+    unstable_shapes = [r["uuid"] for r in per_shape if r.get("timing_unstable")]
+    invalid_shapes = [r["uuid"] for r in per_shape
+                      if r.get("shape_verdict") == "invalid"]
+    physical_invalid_shapes = [r["uuid"] for r in per_shape
+                               if r.get("physical_reward_violation")]
     aggregate = {
         "min_speedup": round(min(sp_med_all), 4) if sp_med_all else None,
         "geomean_speedup": round(_geomean(sp_med_all), 4) if sp_med_all else None,
@@ -452,9 +535,13 @@ def evaluate(task_dir: Path, args) -> tuple[dict, int]:
         "worst_reward": round(min(rewards), 4) if rewards else None,
         "worst_calc_diff": max(diffs) if diffs else None,
         "shapes_evaluated": len(per_shape),
+        "requested_shapes": len(workloads),
+        "canonical_shapes": len(all_workloads),
+        "requested_complete": requested_complete,
         "complete_sweep": complete,
-        "timing_unstable_shapes": [r["uuid"] for r in per_shape
-                                   if r.get("timing_unstable")],
+        "timing_unstable_shapes": unstable_shapes,
+        "invalid_shapes": invalid_shapes,
+        "measurement_invalid_shapes": physical_invalid_shapes,
         "shapes_won": wins,
         "shapes_regressed": regressions,
         "shapes_neutral": shape_verdicts.count("neutral"),
@@ -462,14 +549,31 @@ def evaluate(task_dir: Path, args) -> tuple[dict, int]:
                              if r.get("shape_verdict") == "regress"],
     }
 
-    correct = bool(all_correct and per_shape and complete)
+    correct = bool(all_correct and per_shape and requested_complete)
+    gate_eligible = bool(
+        complete and args.repeat >= MIN_GATE_REPEAT and args.warmup >= DEFAULT_WARMUP and
+        args.iterations >= MIN_GATE_ITERATIONS and
+        not unstable_shapes and not measurement_invalid
+    )
     # A win is a real gain somewhere with no regression anywhere. Requiring a gain
     # EVERYWHERE punished the correct engineering answer; requiring one nowhere would
     # pass a candidate that only ever falls back.
-    perf_ok = bool(correct and wins >= 1 and regressions == 0)
-    status = "CORRECT" if correct else "INCORRECT"
-    exit_code = 0 if perf_ok else (1 if correct else 2)
-    if perf_ok:
+    perf_ok = bool(correct and gate_eligible and wins >= 1 and regressions == 0)
+    status = "INVALID" if measurement_invalid else ("CORRECT" if correct else "INCORRECT")
+    exit_code = 2 if measurement_invalid else (0 if perf_ok else (1 if correct else 2))
+    if measurement_invalid:
+        terminal_state = "INVALID_MEASUREMENT"
+        terminal_reason = "roofline reward exceeded the physical limit of 1.0"
+    elif not correct:
+        terminal_state = "INCORRECT_OR_INCOMPLETE"
+        terminal_reason = "correctness failed, the requested sweep was incomplete, or the unseen-seed post-check failed"
+    elif probe_reasons:
+        terminal_state = "PROBE_ONLY_NO_VERDICT"
+        terminal_reason = "; ".join(probe_reasons)
+    elif unstable_shapes:
+        terminal_state = "UNSTABLE_NO_VERDICT"
+        terminal_reason = "timing remained unstable after the automatic 3x retry"
+    elif perf_ok:
         terminal_state = "COMPLETE_WIN"
         terminal_reason = "correct on every shape, at least one shape won, and no shape regressed"
     elif correct and wins == 0 and regressions == 0:
@@ -478,18 +582,18 @@ def evaluate(task_dir: Path, args) -> tuple[dict, int]:
     elif correct:
         terminal_state = "PARTIAL_OR_REGRESSED_WITH_EVIDENCE"
         terminal_reason = "correct complete sweep, but the candidate regressed on at least one shape"
-    else:
+    else:  # Defensive: all semantic states above should be exhaustive.
         terminal_state = "INCORRECT_OR_INCOMPLETE"
-        terminal_reason = "correctness failed, the sweep was incomplete, or correctness did not survive timing"
+        terminal_reason = "the run could not produce a gate-eligible verdict"
 
     print()
-    print(f"VERDICT: {status}")
+    print(f"VERDICT: {status}  terminal={terminal_state}")
     if correct:
         print(f"{wins}/{len(shape_verdicts)} shapes WIN, {regressions} regressed, "
               f"{shape_verdicts.count('neutral')} neutral   "
               f"geomean_speedup={aggregate['geomean_speedup']}x  "
               f"best_reward={aggregate['best_reward']}")
-        print(f"performance_gate: >=1 win AND 0 regressions -> "
+        print(f"performance_gate: eligible full sweep AND >=1 win AND 0 regressions -> "
               f"{'MET' if perf_ok else 'NOT MET'}")
         if wins == 0 and regressions == 0:
             print("  (every shape is inside the noise band — a candidate that only "
@@ -498,10 +602,14 @@ def evaluate(task_dir: Path, args) -> tuple[dict, int]:
             print(f"  regressed: {', '.join(aggregate['regressed_shapes'])} — the "
                   f"candidate loses there even at its fastest sample vs the "
                   f"reference's slowest. Fall back to the reference on those shapes.")
-        if aggregate["timing_unstable_shapes"]:
-            print(f"WARNING: unstable timing on "
-                  f"{', '.join(aggregate['timing_unstable_shapes'])} — the "
-                  f"conservative margin above is not trustworthy; re-run.")
+        if unstable_shapes:
+            print(f"NO VERDICT: timing remained unstable on {', '.join(unstable_shapes)} "
+                  "after the automatic retry.")
+        if probe_reasons:
+            print("NO VERDICT: probe-only run — " + "; ".join(probe_reasons))
+    if measurement_invalid:
+        print("HARD FAIL: reward > 1.0 is physically impossible under the recorded "
+              "cost model; inspect timing and modeled bytes before using this result.")
 
     result = {
         "schema_version": result_store.SCHEMA_VERSION,
@@ -513,14 +621,27 @@ def evaluate(task_dir: Path, args) -> tuple[dict, int]:
             "diff_tol": op_meta["diff_tol"], "rel_tol": op_meta["rel_tol"],
             "abs_tol_factor": op_meta["abs_tol_factor"],
             "performance_gate": {"min_speedup": min_speedup_gate,
-                                 "basis": f"conservative (q={CONS_Q})"},
+                                 "basis": f"paired ratio p{int(CONS_Q * 100)}"},
         },
         "run": {
             "run_id": run_id, "started_utc": started,
             "finished_utc": result_store.utc_now(),
-            "repeat": args.repeat, "repeat_scope": "in-process",
-            "iterations": args.iterations, "warmup": args.warmup,
+            "repeat": args.repeat, "minimum_gate_repeat": MIN_GATE_REPEAT,
+            "repeat_scope": "in-process",
+            "iterations": args.iterations,
+            "minimum_gate_iterations": MIN_GATE_ITERATIONS,
+            "warmup": args.warmup,
             "timing_protocol": TIMING_PROTOCOL, "device": args.device,
+            "pairing": "adjacent balanced R/C,C/R",
+            "unstable_retry_multiplier": RETRY_MULTIPLIER,
+            "timing_spread_limit": paired_stats.TIMING_SPREAD_LIMIT,
+            "first_recorded_iteration_discarded": True,
+            "post_timing_seed": seed ^ POST_TIMING_SEED_XOR,
+            "post_timing_seed_differs": True,
+            "full_sweep_requested": full_sweep_requested,
+            "gate_eligible": gate_eligible,
+            "probe_reasons": probe_reasons,
+            "physical_reward_limit": PHYSICAL_REWARD_LIMIT,
             "auto_gpu": bool(getattr(args, "auto_gpu", False)),
             "gpu_lock_enabled": not bool(getattr(args, "no_gpu_lock", False)),
             "gpu_lock_held": bool(getattr(args, "_gpu_lock_held", False)),
@@ -541,6 +662,7 @@ def evaluate(task_dir: Path, args) -> tuple[dict, int]:
         "per_shape": per_shape,
         "aggregate": aggregate,
         "verdict": {"correct": correct, "performance_ok": perf_ok,
+                    "measurement_valid": not measurement_invalid,
                     "status": status, "exit_code": exit_code,
                     "terminal_state": terminal_state,
                     "terminal_reason": terminal_reason},
@@ -558,7 +680,7 @@ def main() -> int:
     ap.add_argument("--repeat", type=int, default=10,
                     help="samples per shape; 1 is a probe and cannot gate a win")
     ap.add_argument("--iterations", type=int, default=30, help="cold-L2 reps per sample")
-    ap.add_argument("--warmup", type=int, default=3)
+    ap.add_argument("--warmup", type=int, default=DEFAULT_WARMUP)
     ap.add_argument("--max-workloads", type=int, default=None)
     ap.add_argument("--candidate", default=None, metavar="PATH",
                     help="a .py defining run(inputs), or a directory holding "
@@ -581,6 +703,8 @@ def main() -> int:
 
     task_dir = Path(args.task_dir).resolve() if args.task_dir else Path.cwd()
     args.repeat = max(1, args.repeat)
+    if args.warmup < 0 or args.iterations < 1:
+        ap.error("--warmup must be >= 0 and --iterations must be >= 1")
 
     if not (task_dir / "task.json").is_file():
         print(f"ERROR: no task.json in {task_dir}", file=sys.stderr)

@@ -22,7 +22,7 @@ _TASKS = _BIN.parent / "tasks"
 HIGH_FAMILIES = {
     "swiglu", "swiglu-fp8-quant", "embedding", "rmsnorm", "gemma-rmsnorm",
     "fused-add-rmsnorm", "gemma-fused-add-rmsnorm", "rope", "act-fp8-quant",
-    "moe-combine",
+    "moe-combine", "fusion",
 }
 MEDIUM_FAMILIES = {
     "sparse-mla-decode", "grouped-moe", "grouped-moe-contiguous", "bmm",

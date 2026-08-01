@@ -1,0 +1,13 @@
+{
+  "schema_version": 1,
+  "kind": "atomic_experiment_recipe",
+  "id": "03-adversarial-correctness",
+  "title": "Break one candidate with adversarial correctness",
+  "objective": "Demonstrate that one candidate computes the production contract rather than caching, aliasing, deferring, or specializing to the visible inputs.",
+  "preconditions": ["Runnable reference and candidate with identical production inputs"],
+  "steps": ["Poison shared outputs and reject aliased or lazy outputs", "Compare before timing, after timing with a different seed, and after graph capture/replay", "Exercise contract boundaries such as ragged KV lengths, DSA indices, scale packing, empty MoE groups, and routing extremes", "Persist maximum error and structural mismatches"],
+  "acceptance": {"pass": "Every numerical and structural case passes before and after timing in each execution mode.", "invalid": "Any input-dependent memoization, alias, skipped work, or deferred output is detected."},
+  "artifacts": ["correctness cases", "pre/post seeds", "graph correctness result"],
+  "stop_rule": "Do not time or tune an incorrect candidate.",
+  "origin_evidence": ["A fixed-seed answer cache once reported 22.5x speedup and impossible bandwidth before the harness was hardened."]
+}

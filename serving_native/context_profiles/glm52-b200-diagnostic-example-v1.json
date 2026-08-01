@@ -1,0 +1,97 @@
+{
+  "schema_version": 1,
+  "id": "glm52-b200-diagnostic-example-v1",
+  "production_evidence": false,
+  "evidence_source": "Diagnostic example only; replace every scenario with a production trace before promotion.",
+  "deployment": {
+    "model": "GLM-5.2",
+    "sglang_commit": "replace-with-pinned-production-commit",
+    "gpu": "NVIDIA B200",
+    "cache_dtype": "float8_e4m3fn",
+    "page_size": 64,
+    "topology": "replace-with-production-TP-DP-EP-layout"
+  },
+  "scenarios": [
+    {
+      "id": "decode-m16-kv2k",
+      "phase": "decode",
+      "weight": 0.25,
+      "workload": "dsa_trtllm_decode_m16",
+      "kv_context": 2048
+    },
+    {
+      "id": "decode-m16-kv8k",
+      "phase": "decode",
+      "weight": 0.25,
+      "workload": "dsa_trtllm_decode_m16",
+      "kv_context": 8192
+    },
+    {
+      "id": "decode-m32-kv32k",
+      "phase": "decode",
+      "weight": 0.25,
+      "workload": "dsa_trtllm_decode_m32",
+      "kv_context": 32768
+    },
+    {
+      "id": "decode-m32-ragged-example",
+      "phase": "decode",
+      "weight": 0.25,
+      "workload": "dsa_trtllm_decode_m32",
+      "kv_contexts": [
+        2048,
+        2048,
+        4096,
+        4096,
+        8192,
+        8192,
+        12288,
+        12288,
+        16384,
+        16384,
+        24576,
+        24576,
+        32768,
+        32768,
+        49152,
+        49152,
+        65536,
+        65536,
+        65536,
+        65536,
+        65536,
+        65536,
+        65536,
+        65536,
+        65536,
+        65536,
+        65536,
+        65536,
+        65536,
+        65536,
+        65536,
+        65536
+      ]
+    },
+    {
+      "id": "incremental-prefill-prefix8k-extend256",
+      "phase": "incremental_prefill",
+      "weight": 0.5,
+      "prefix_tokens": 8192,
+      "extend_tokens": 256,
+      "batch": 16,
+      "execution_scope": "sglang-containing-region",
+      "expected_backend": "trace-at-runtime-do-not-assume"
+    },
+    {
+      "id": "incremental-prefill-prefix32k-extend64",
+      "phase": "incremental_prefill",
+      "weight": 0.5,
+      "prefix_tokens": 32768,
+      "extend_tokens": 64,
+      "batch": 16,
+      "execution_scope": "sglang-end-to-end",
+      "expected_backend": "trace-at-runtime-do-not-assume"
+    }
+  ]
+}

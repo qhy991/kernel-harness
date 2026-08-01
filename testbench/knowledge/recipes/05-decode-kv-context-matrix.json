@@ -1,0 +1,13 @@
+{
+  "schema_version": 1,
+  "kind": "atomic_experiment_recipe",
+  "id": "05-decode-kv-context-matrix",
+  "title": "Gate one sparse-attention decode leaf across paged-KV contexts",
+  "objective": "Determine whether one DSA sparse-attention leaf candidate wins without regression across the traced logical KV-length distribution.",
+  "preconditions": ["A production-evidence context profile", "A correct DSA decode candidate"],
+  "steps": ["Run serving_native/context_matrix.py with the named profile and candidate", "Measure fixed and ragged M16/M32 scenarios with their true seq_lens, FP8 cache, page size, and top-k", "Inspect every eager and graph paired result", "Persist matrix.json and all scenario logs"],
+  "acceptance": {"pass": "Every traced sparse-attention scenario passes correctness and the paired eager+graph leaf gate; full decode remains unproven.", "no_win": "Any stable production scenario misses the speed gate or regresses.", "invalid": "The profile is diagnostic, stale, or not trace-backed."},
+  "artifacts": ["context profile", "per-scenario result JSON", "matrix.json"],
+  "stop_rule": "A win at context=8192 alone, or a sparse-attention win without full-context indexer/top-k region timing, cannot be promoted.",
+  "origin_evidence": ["The earlier serving-native DSA decode contract exercised only context=8192."]
+}

@@ -1,0 +1,13 @@
+{
+  "schema_version": 1,
+  "kind": "atomic_experiment_recipe",
+  "id": "10-no-go-closeout",
+  "title": "Close one no-go result",
+  "objective": "Preserve one failed or impossible mechanism as terminal evidence so a later agent does not repeat it.",
+  "preconditions": ["A measured ceiling, stable no-win, boundary loss, or invalid mechanism"],
+  "steps": ["Name the exact contract, shapes, contexts, mechanism, and evidence", "Separate no-win from invalid measurement and infrastructure failure", "Record attempted bounded variants and the causal reason they failed", "State the only facts that may reopen the result: mechanism class, contract, hardware/stack, or production baseline"],
+  "acceptance": {"pass": "The knowledge entry is auditable and has one terminal disposition.", "invalid": "The result lacks raw evidence or merely says more tuning is needed."},
+  "artifacts": ["audited result JSON", "atomic knowledge entry", "reopen conditions"],
+  "stop_rule": "Do not reopen a no-go with more values of the same knob.",
+  "origin_evidence": ["Session history repeatedly reopened physical constants and bounded sweeps without a new causal mechanism."]
+}

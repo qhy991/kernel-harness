@@ -67,17 +67,17 @@ TASK  q_b/decode — Q-B Projection
                   abs_tol = 1e-04 * |ref|.max(), computed per shape
                   large elements pass on relative error, near-zero elements
                   on absolute — neither alone works
-                  output magnitude spans seven orders across these 12 ops
-                  (dsa_attn 0.285, o_proj 564, index_score 1.5e7), so a
-                  fixed abs_tol cannot port
+                  output magnitude spans seven orders across the original
+                  leaf ops (dsa_attn 0.285, o_proj 564, index_score 1.5e7),
+                  so a fixed abs_tol cannot port
                3. calc_diff <= diff_tol
                   diff_tol = 5e-06
                   formula = ||x-y||^2 / (||x||^2 + ||y||^2)
                   scale-SENSITIVE, unlike cosine — a uniform k*reference is
                   caught here (k=0.5 or 2 both give 0.2)
-             correctness is re-checked on freshly built inputs after timing,
-             to catch a kernel that mutates its inputs or drifts across the
-             timed iterations
+             correctness is re-checked after timing on freshly built inputs
+             from a different seed, to catch input memoization as well as
+             state drift
              diagnostics (reported, never gated):
                paired with calc_diff they name the failure: cosine ~1 with
                a large calc_diff is a magnitude error (check the dequant
@@ -89,11 +89,12 @@ TASK  q_b/decode — Q-B Projection
 
   FAST       CUPTI cold-L2 device-kernel median
              gate: at least one shape WINS and no shape REGRESSES
-               win      reference p10 / candidate p90 > 1.0 — the candidate is
-                        ahead even on the reading least favourable to it
-               regress  reference p90 / candidate p10 < 1.0 — the candidate is
-                        behind even on the reading most favourable to it
-               neutral  neither — inside the noise band; does not veto the run
+               win      p10 of adjacent per-pair (reference/candidate) ratios
+                        > 1.0
+               regress  p90 of adjacent per-pair (reference/candidate) ratios
+                        < 1.0
+               neutral  neither — inside the paired noise band; does not veto
+                        the run
              run() may branch on the shape and hand the losing shapes to
              glm52_ops.reference(op, phase, inputs). That is what SGLang
              itself does (deepgemm_w8a8_block_fp8_linear_with_fallback), and
@@ -104,7 +105,7 @@ TASK  q_b/decode — Q-B Projection
              somewhere. Do the dispatch inside run() — the harness will not
              do it for you, because then it would be measuring a kernel the
              candidate does not contain.
-             defaults: warmup=3, repeat=10, iterations=30
+             defaults: warmup=8, repeat=10, iterations=30
 
   RUN        ./run.sh                        the gate
              ./run.sh --describe [--json]    this text, or it as JSON

@@ -103,7 +103,8 @@ def main():
     # Each <candidate>/solution.py is benchmarked directly; results -> one big CSV.
     ap.add_argument("--kernels-dir", default=None,
                     help="folder of optimized operators to test (prefill candidates only)")
-    ap.add_argument("--repeat", type=int, default=1, help="candidate mode: timing repeats (take fastest)")
+    ap.add_argument("--repeat", type=int, default=5,
+                    help="candidate mode: balanced baseline/candidate pairs (median each)")
     ap.add_argument("--no-baseline", action="store_true", help="candidate mode: skip speedup baseline")
     ap.add_argument("--round", type=int, default=0, help="candidate mode: round index for the CSV")
     args = ap.parse_args()

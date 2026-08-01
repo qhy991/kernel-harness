@@ -1,0 +1,13 @@
+{
+  "schema_version": 1,
+  "kind": "atomic_experiment_recipe",
+  "id": "06-incremental-prefill-kv-matrix",
+  "title": "Gate one candidate on real incremental prefill",
+  "objective": "Measure one candidate across traced prefix_tokens by extend_tokens scenarios while exercising SGLang's real paged-prefix and backend dispatch.",
+  "preconditions": ["A production-evidence context profile with incremental-prefill scenarios", "A reproducible SGLang containing-region replay"],
+  "steps": ["Warm or restore the exact prefix KV without including setup in the timed region", "Replay each suffix/extend chunk with real ForwardBatch prefix and sequence metadata", "Record selected DSA prefill backend and ragged/paged top-k transform for every scenario", "Compare baseline and candidate with balanced pairing in eager/graph modes actually used by production", "Confirm the same scenarios end-to-end without cache contamination between variants"],
+  "acceptance": {"pass": "No traced prefix/extend scenario regresses and the containing region plus end-to-end target is met.", "no_win": "A stable scenario loses or the leaf gain vanishes at the production boundary.", "invalid": "Prefix=0 full prefill, a dense contiguous cache, or a decode callable is used as a substitute."},
+  "artifacts": ["ForwardBatch axes", "backend-selection trace", "region timing pairs", "end-to-end deltas"],
+  "stop_rule": "Do not implement a fake leaf approximation when the candidate changes dispatch, page-table, or prefix-cache behavior.",
+  "origin_evidence": ["On Blackwell FP8 KV, current SGLang selects flashmla_sparse when total_kv_tokens < total_q_tokens*512 and flashmla_kv otherwise."]
+}

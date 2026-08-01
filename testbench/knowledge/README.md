@@ -9,10 +9,19 @@ lesson. Later sessions (any model family, any GPU) query it before touching
 testbench/knowledge/
   README.md        # this contract
   entries/         # one JSON file per session, filename = entry id (append-only)
+  recipes/         # one bounded cross-session experiment per JSON file
   queries/         # generated cross-reference indices by op/bottleneck/technique
   distilled.*      # generated recurring pitfalls and proven-technique rollup
   promotions.json  # append-only ledger of lessons promoted into docs/checks/prompts
 ```
+
+`entries/` answers “what happened in one completed run?”; `recipes/` answers “what
+single bounded experiment can the next agent attempt?”. The SGLang/B200 catalog is
+`recipes/index.json`; every referenced JSON has one objective, acceptance states,
+artifacts, and one stop rule. `testbench/bin/brief.py` recommends individual IDs
+before ranking prior results. Run `recipe.py show <id>`, finish and persist that one
+experiment, then select another. Recipe changes are versioned; do not silently
+rewrite a rule after evidence has depended on it.
 
 Tool (stdlib-only, runs anywhere — like `bin/selftest.py`):
 
@@ -24,6 +33,8 @@ python3 testbench/bin/knowledge.py lint                                  # valid
 python3 testbench/bin/knowledge.py index --check                         # generated indices fresh
 python3 testbench/bin/knowledge.py distill --check                       # generated rollup fresh
 python3 testbench/bin/knowledge.py promote <class> --to reviewer         # record durable owner
+python3 testbench/bin/recipe.py list                                     # atomic experiments
+python3 testbench/bin/recipe.py show 05-decode-kv-context-matrix         # inspect exactly one
 ```
 
 ## Rules (enforced by `knowledge.py`, not just requested)
@@ -31,7 +42,7 @@ python3 testbench/bin/knowledge.py promote <class> --to reviewer         # recor
 - **One entry per session, win or not.** A `no-win` or `failed` entry with honest
   "why" lines on each approach is as valuable as a win — it saves the next agent the
   same detour.
-- **Every number comes from `evaluate_task.py`'s persisted `result.json`.** Never record a
+- **Every result number comes from an audited persisted `result.json`.** Never record a
   `profile.py` (advisory) number or an unmeasured estimate as a result. The linter
   rejects `status: "win"` unless `min_speedup_conservative > 1.0` and at least one
   approach has `outcome: "win"`.

@@ -1,0 +1,26 @@
+{
+  "schema_version": 1,
+  "id": "sglang-b200-atomic-recipes-v1",
+  "title": "Atomic SGLang/B200 kernel experiments",
+  "date": "2026-08-01",
+  "rule": "Run, record, and terminate one recipe at a time. The catalog is an index, not a bundled workflow.",
+  "recipes": [
+    {"order": 0, "id": "00-pin-production-contract", "file": "00-pin-production-contract.json", "category": "protocol", "tags": ["all", "production-abi"]},
+    {"order": 1, "id": "01-capture-kv-context-profile", "file": "01-capture-kv-context-profile.json", "category": "context", "tags": ["prefill", "decode", "kv-cache"]},
+    {"order": 2, "id": "02-measure-target-headroom", "file": "02-measure-target-headroom.json", "category": "protocol", "tags": ["all", "roofline", "amdahl"]},
+    {"order": 3, "id": "03-adversarial-correctness", "file": "03-adversarial-correctness.json", "category": "protocol", "tags": ["all", "correctness"]},
+    {"order": 4, "id": "04-paired-leaf-timing", "file": "04-paired-leaf-timing.json", "category": "protocol", "tags": ["all", "timing"]},
+    {"order": 5, "id": "05-decode-kv-context-matrix", "file": "05-decode-kv-context-matrix.json", "category": "context", "tags": ["decode", "dsa", "kv-cache"]},
+    {"order": 6, "id": "06-incremental-prefill-kv-matrix", "file": "06-incremental-prefill-kv-matrix.json", "category": "context", "tags": ["prefill", "dsa", "kv-cache"]},
+    {"order": 7, "id": "07-eager-graph-promotion", "file": "07-eager-graph-promotion.json", "category": "promotion", "tags": ["all", "cuda-graph"]},
+    {"order": 8, "id": "08-containing-region-promotion", "file": "08-containing-region-promotion.json", "category": "promotion", "tags": ["all", "region"]},
+    {"order": 9, "id": "09-end-to-end-serving-promotion", "file": "09-end-to-end-serving-promotion.json", "category": "promotion", "tags": ["all", "serving"]},
+    {"order": 10, "id": "10-no-go-closeout", "file": "10-no-go-closeout.json", "category": "closeout", "tags": ["all", "no-go"]},
+    {"order": 20, "id": "20-fuse-scale-packing", "file": "20-fuse-scale-packing.json", "category": "technique", "tags": ["fp8", "gemm", "decode"]},
+    {"order": 21, "id": "21-tma-split-k-small-m", "file": "21-tma-split-k-small-m.json", "category": "technique", "tags": ["indexer", "gemm", "decode"]},
+    {"order": 22, "id": "22-bounded-compiled-dimension", "file": "22-bounded-compiled-dimension.json", "category": "technique", "tags": ["gemm", "decode", "configuration"]},
+    {"order": 23, "id": "23-stop-roofline-bound-moe-retuning", "file": "23-stop-roofline-bound-moe-retuning.json", "category": "negative-result", "tags": ["moe", "roofline", "no-go"]},
+    {"order": 24, "id": "24-reject-device-segment-only-win", "file": "24-reject-device-segment-only-win.json", "category": "negative-result", "tags": ["all", "boundary", "cuda-graph"]},
+    {"order": 30, "id": "30-supervise-long-running-experiment", "file": "30-supervise-long-running-experiment.json", "category": "operations", "tags": ["all", "timeout", "cleanup"]}
+  ]
+}

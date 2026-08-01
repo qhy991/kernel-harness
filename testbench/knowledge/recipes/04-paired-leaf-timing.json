@@ -1,0 +1,13 @@
+{
+  "schema_version": 1,
+  "kind": "atomic_experiment_recipe",
+  "id": "04-paired-leaf-timing",
+  "title": "Measure one leaf with paired timing",
+  "objective": "Estimate one candidate/reference leaf ratio while cancelling common-mode clock, cache, and temperature drift.",
+  "preconditions": ["Adversarial correctness passes", "Frozen inputs and a pinned GPU"],
+  "steps": ["Warm up at least 8 times and discard the first retained internal pair", "Collect at least 10 adjacent order-balanced R/C,C/R pairs", "Gate on paired p10 and p90 ratios while retaining raw pairs and legacy unpaired summaries", "If either side spreads above 1.25x, retry once with 3x pairs; continued spread means no verdict", "Record clocks, power, temperature, and reject physical reward above 1.0"],
+  "acceptance": {"pass": "Paired p10 crosses the declared target, p90 shows no regression, and timing is stable.", "no_win": "The stable paired gate is not met.", "invalid": "Continued instability or physical reward above 1.0."},
+  "artifacts": ["ordered timing pairs", "quantiles", "telemetry", "stability state"],
+  "stop_rule": "Do not rank independent candidate and reference medians when paired samples are available.",
+  "origin_evidence": ["Independent quantiles hid real DSA ratios during 2.1-4.7x process drift; paired ratios cancelled it."]
+}

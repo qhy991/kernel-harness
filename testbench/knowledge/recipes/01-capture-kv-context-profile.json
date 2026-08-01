@@ -1,0 +1,13 @@
+{
+  "schema_version": 1,
+  "kind": "atomic_experiment_recipe",
+  "id": "01-capture-kv-context-profile",
+  "title": "Capture one production KV-context profile",
+  "objective": "Turn observed decode KV lengths and incremental-prefill prefix/extend shapes into one auditable workload profile.",
+  "preconditions": ["A pinned deployment", "A representative request trace or scheduler trace"],
+  "steps": ["Record per-request decode KV length, batch bucket, cache dtype, page size, sparse top-k, and topology", "Record incremental-prefill prefix_tokens, extend_tokens, batch/ragged distribution, graph mode, and selected backend", "Choose weighted scenarios from observed frequency and tail percentiles; cite the trace source", "Validate the profile with serving_native/context_matrix.py or serving_native/selftest.py"],
+  "acceptance": {"pass": "The profile covers decode and incremental prefill and every value is trace-backed.", "invalid": "Convenient powers of two or a single fixed context are presented as production evidence."},
+  "artifacts": ["serving_native/context_profiles/<profile-id>.json", "trace query or capture reference"],
+  "stop_rule": "Keep production_evidence=false until the deployment and every scenario have a concrete evidence source.",
+  "origin_evidence": ["The previous serving-native decode workload fixed context=8192 and had no incremental-prefill KV scenario."]
+}

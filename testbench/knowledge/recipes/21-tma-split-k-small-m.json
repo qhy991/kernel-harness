@@ -1,0 +1,13 @@
+{
+  "schema_version": 1,
+  "kind": "atomic_experiment_recipe",
+  "id": "21-tma-split-k-small-m",
+  "title": "Test TMA split-K at one small-M shape",
+  "objective": "Test whether TMA-fed split-K increases useful parallelism for one measured small-M indexer or projection bottleneck.",
+  "preconditions": ["Small M leaves too few independent output tiles", "K reduction or weight traffic dominates", "Production ABI is pinned"],
+  "steps": ["Choose one M bucket and bound split count from occupancy/traffic evidence", "Implement TMA loads and split-K reduction without changing output semantics", "Sweep only the predicted split counts", "Check scratch/reduction overhead in eager, graph, and containing region"],
+  "acceptance": {"pass": "The predicted bucket wins and no owned bucket regresses at the region boundary.", "no_win": "Reduction, launch, or traffic overhead exceeds the added parallelism."},
+  "artifacts": ["occupancy hypothesis", "bounded split sweep", "region result"],
+  "stop_rule": "Do not expand the sweep after the bounded mechanism fails; choose a different bottleneck mechanism.",
+  "origin_evidence": ["index_q_upproj_decode transferred with a Triton TMA split-K mechanism matched to small-M parallelism."]
+}

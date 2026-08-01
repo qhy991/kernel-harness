@@ -1,0 +1,13 @@
+{
+  "schema_version": 1,
+  "kind": "atomic_experiment_recipe",
+  "id": "24-reject-device-segment-only-win",
+  "title": "Test whether a device-segment win survives its boundary",
+  "objective": "Attempt to reproduce one device or SASS-level speedup at eager, graph, and containing-region scope before calling it useful.",
+  "preconditions": ["A correct device-segment win", "Known wrapper and region boundaries"],
+  "steps": ["Retain the original segment measurement as mechanism evidence", "Add dispatch, launch, synchronization, and output-consumption costs", "Measure eager and independent graph replay", "Measure the containing region on representative contexts"],
+  "acceptance": {"pass": "The containing region wins with no mode regression.", "no_win": "The boundary erases or reverses the segment saving."},
+  "artifacts": ["segment result", "eager/graph result", "region result"],
+  "stop_rule": "Source, SASS, or segment proof alone is never labeled a production win.",
+  "origin_evidence": ["Task06 measured 1.3713x/1.2834x for a device segment, while a fused graph variant measured only 0.877x/0.822x."]
+}

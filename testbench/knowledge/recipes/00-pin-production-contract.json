@@ -1,0 +1,13 @@
+{
+  "schema_version": 1,
+  "kind": "atomic_experiment_recipe",
+  "id": "00-pin-production-contract",
+  "title": "Pin one production callable contract",
+  "objective": "Prove the exact SGLang callable, ABI, layout, wrapper work, fallback, commit, and execution mode that one candidate must replace.",
+  "preconditions": ["A named served operator or region", "Access to the target SGLang source and deployment configuration"],
+  "steps": ["Trace eager and graph call paths from the served request", "Record shapes, strides, dtype, scale packing, cache layout, dispatch predicates, fallback, and adjacent wrapper work", "Save SGLang commit, hardware, topology, and launch flags"],
+  "acceptance": {"pass": "One reproducible contract names the same boundary for correctness, timing, and cost.", "invalid": "Any ABI field or production branch is inferred rather than observed."},
+  "artifacts": ["production-contract.json", "call-path evidence", "pinned environment facts"],
+  "stop_rule": "Do not implement or benchmark a replacement until the production boundary is pinned.",
+  "origin_evidence": ["The campaign repeatedly compared synthetic f32 scale paths against production packed int32 UE8M0 paths."]
+}

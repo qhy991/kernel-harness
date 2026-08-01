@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-"""Regenerate the 24 GLM-5.2 task directories from glm52_ops.
+"""Regenerate the 28 GLM-5.2 task directories from glm52_ops.
 
 glm52_ops is the only place an operator is defined. This tool projects it onto
 the task tree, so a task directory holds nothing it could disagree with:
@@ -66,6 +66,12 @@ TASKS: list[tuple[str, str, str]] = [
     ("dsa_attn_decode",        "dsa_attn",       "decode"),
     ("index_score_prefill",    "index_score",    "prefill"),
     ("index_score_decode",     "index_score",    "decode"),
+    # Production-region fusion tasks added by the 2026-07-31 campaign. These are
+    # additive: the 24 leaf tasks above remain intact.
+    ("norm_quant_qkv_decode",   "norm_quant_qkv",  "decode"),
+    ("norm_quant_qkv_prefill",  "norm_quant_qkv",  "prefill"),
+    ("norm_quant_gate_decode",  "norm_quant_gate", "decode"),
+    ("norm_quant_gate_prefill", "norm_quant_gate", "prefill"),
 ]
 
 # Files from the superseded stacks. Each was a second definition of the same
@@ -80,7 +86,7 @@ RUN_SH = '''#!/usr/bin/env bash
 #
 #   ./run.sh --describe          # what is this problem? (generated from glm52_ops)
 #   ./run.sh --describe --json   # ...the same thing, machine-readable (== problem.json)
-#   ./run.sh                 # full sweep; defaults warmup=3, repeat=10
+#   ./run.sh                 # full sweep; defaults warmup=8, repeat=10
 #   ./run.sh --M {m}         # one shape
 #   ./run.sh --repeat 1      # fast probe. CANNOT gate a win.
 #
@@ -90,7 +96,8 @@ RUN_SH = '''#!/usr/bin/env bash
 #   ./run.sh --candidate ~/my_kernels/o_proj.py    # any .py defining run(inputs)
 #   ./run.sh --candidate ~/my_kernels/             # or a dir holding candidate.py
 #
-# Exit: 0 correct+fast · 1 correct+not-faster · 2 incorrect · 3 infra/contract error
+# Exit: 0 gate-eligible correct+fast · 1 no-win/probe/unstable · 2 incorrect/invalid
+#       3 infrastructure, timeout, or contract error
 set -euo pipefail
 HERE="$(cd "$(dirname "${{BASH_SOURCE[0]}}")" && pwd)"
 TESTBENCH="$(cd "$HERE/../../.." && pwd)"
@@ -99,12 +106,41 @@ PYTHON="${{REPO}}/.venv/bin/python"
 if [[ ! -x "$PYTHON" ]]; then
   PYTHON="$(command -v python3)"
 fi
-exec "$PYTHON" "$TESTBENCH/harness/evaluate_task.py" "$HERE" "$@"
+TIMEOUT_SECONDS="${{KERNEL_HARNESS_TIMEOUT_SECONDS:-1800}}"
+exec "$PYTHON" "$TESTBENCH/bin/supervise.py" --timeout "$TIMEOUT_SECONDS" -- \
+  "$PYTHON" "$TESTBENCH/harness/evaluate_task.py" "$HERE" "$@"
 '''
 
 # Per-family default candidate: the real backend call, spelled out, so the agent
 # starts from the baseline it has to beat rather than from an indirection.
 _BODY = {
+    "fusion": '''import deep_gemm
+from sgl_kernel import fused_add_rmsnorm
+from sglang.srt.layers.quantization.fp8_kernel import sglang_per_token_group_quant_fp8
+
+
+def run(inputs: dict):
+    """Starting point: the production three-kernel sequence; replace to optimize.
+
+    QKV must return normalized BF16 because GLM-5.2's DSA indexer consumes it.
+    The post-attention gate site has no such side consumer and returns two tensors.
+    """
+    hidden, residual = inputs["hidden"], inputs["residual"]
+    fused_add_rmsnorm(hidden, residual, inputs["norm_weight"], inputs["eps"])
+    x_fp8, x_scale = sglang_per_token_group_quant_fp8(
+        hidden,
+        inputs["group_size"],
+        column_major_scales=True,
+        scale_tma_aligned=True,
+        scale_ue8m0=True,
+    )
+    out = inputs["out"]
+    deep_gemm.fp8_gemm_nt(
+        (x_fp8, x_scale), (inputs["w_fp8"], inputs["w_scale"]), out)
+    if inputs["requires_bf16_output"]:
+        return out, residual, hidden
+    return out, residual
+''',
     "gemm": '''import deep_gemm
 
 
@@ -186,6 +222,13 @@ def _candidate_src(op: str, phase: str, device) -> str:
     except Exception:
         pass
     table = "\n".join(tensors) or "    (run ./run.sh --describe on a GPU node for the tensor table)"
+    if fam == "fusion":
+        return_contract = ("Return exactly `(out, residual, normed_bf16)`; the third tensor is "
+                           "required by the DSA indexer."
+                           if s["requires_bf16_output"] else
+                           "Return exactly `(out, residual)`; both tensors are gated.")
+    else:
+        return_contract = "Return the output."
     doc = f'''"""GLM-5.2 {s['label']} ({phase}) — the one file to edit for this task.
 
 This file is the DEFAULT candidate, not the only one: `./run.sh --candidate PATH`
@@ -202,7 +245,7 @@ Tensors at M={s['sweep'][0]}:
 
 {table}
 
-Return the output. Correctness against glm52_ops.reference on these inputs is
+{return_contract} Correctness against glm52_ops.reference on these inputs is
 FlashMLA's three-layer check: matching inf/nan positions, then every element
 abs_err < abs_tol OR rel_err < {s['rel_tol']:.4f}, then DeepGEMM's calc_diff
 <= {s['diff_tol']:.0e}. `./run.sh --describe` prints all of it.

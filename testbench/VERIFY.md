@@ -11,24 +11,46 @@ python3 testbench/bin/verify_harness.py --json
 git diff --check -- AGENTS.md testbench/README.md testbench/VERIFY.md \
   testbench/setup_env.sh \
   testbench/bin testbench/harness testbench/knowledge testbench/tasks/glm52 \
+  rewardbench serving_native \
   ':(exclude)testbench/tasks/glm52/*/candidate.py'
 ```
 
 Expected current corpus summary:
 
-- `selftest: 24 tasks, 0 problems`
+- `selftest: 28 tasks, 0 problems`
 - `knowledge lint: 12 entries, 0 problems`
 - `index --check: 0 stale`
 - `distill --check: up to date`
-- `24 task dirs are in sync with glm52_ops`
-- audit sweep: `audited=273 invalid=0 official=0 provisional=273`
-- pointer audit: `index_rows=274 latest_files=22 stale_index=1 stale_latest=0 malformed=0 mismatched=0`
+- `28 task dirs are in sync with glm52_ops`
+- `serving_native selftest OK: 39 fixed workloads; production_source=checked`
+- audit sweep: `audited=280 invalid=0 official=0 provisional=280`
+- pointer audit: `index_rows=281 latest_files=26 stale_index=1 stale_latest=0 malformed=0 mismatched=0`
 
 The stale pointer is historical and advisory in the normal lane:
 
 ```text
 runs/glm52/moe_down_proj_decode/20260718T022352Z-3635ef/result.json
 ```
+
+The four additive fusion-region tasks are covered by the same review lane. The
+preserved Gate-prefill candidate's current complete B200 result is
+`runs/glm52/norm_quant_gate_prefill/20260801T032655Z-bdb223/result.json`: 3/3
+shapes won, 0 regressed, `calc_diff=0`. It is provisional because the integration
+tree and candidate were uncommitted during measurement. QKV deliberately has a
+three-output ABI; the saved two-output Gate kernel is rejected there.
+
+Schema 1.4 results additionally prove paired timing rows, distinct post-timing
+seeds, minimum warmup/repeat/inner iterations, stability/no-verdict behavior, and
+the physical reward limit. Schema 1.3 and older runs remain provisional rather
+than being retroactively invalidated; unstable legacy wins and repeat<10 wins are
+reported as caveats. The production leaf lane is separately exercised with:
+
+```bash
+serving_native/run.sh <workload> --candidate PATH --execution-mode both
+```
+
+Exit 0 there means eager+CUDA-graph leaf evidence only. The structured result still
+requires containing-region and end-to-end SGLang confirmation.
 
 ## Strict Evidence Lanes
 

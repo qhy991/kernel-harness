@@ -28,7 +28,14 @@ if str(SGLANG_PYTHON) not in sys.path:
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
-from serving_native.workloads import WORKLOADS, Workload, as_dict, get_workload
+from serving_native.workloads import (
+    WORKLOADS,
+    Workload,
+    as_dict,
+    get_workload,
+    with_kv_contexts,
+)
+from testbench.harness import paired_stats, result_store
 
 
 @dataclass
@@ -80,6 +87,7 @@ class Runtime:
         self._deepep_buffer_facade = None
         self._normal_dispatch_config = None
         self._normal_combine_config = None
+        self._input_seed_offset = 0
 
         if not torch.cuda.is_available():
             raise RuntimeError("serving-native workloads require CUDA")
@@ -143,10 +151,12 @@ class Runtime:
 
     def _generator(self, offset: int = 0):
         generator = self.torch.Generator(device=self.device)
-        generator.manual_seed(20260722 + self.rank * 1009 + offset)
+        generator.manual_seed(
+            20260722 + self.rank * 1009 + self._input_seed_offset + offset)
         return generator
 
-    def build_inputs(self) -> dict[str, Any]:
+    def build_inputs(self, seed_offset: int = 0) -> dict[str, Any]:
+        self._input_seed_offset = int(seed_offset)
         family = self.workload.family
         if family == "packed_fp8_gemm":
             return self._build_packed_fp8_gemm()
@@ -225,7 +235,7 @@ class Runtime:
         experts = params["experts_per_rank"]
         assignments = params["valid_assignments"]
         generator = self.torch.Generator(device="cpu")
-        generator.manual_seed(20260722)
+        generator.manual_seed(20260722 + self._input_seed_offset)
         expert_ids = self.torch.randint(
             experts, (assignments,), dtype=self.torch.int64, generator=generator
         )
@@ -300,6 +310,7 @@ class Runtime:
                 (experts, slab, n), device=self.device, dtype=self.torch.bfloat16
             ),
             "masked_m": masked_m,
+            "masked_m_counts": tuple(int(value) for value in masked_m.cpu().tolist()),
             "expected_m": p["expected_m"],
         }
 
@@ -323,8 +334,14 @@ class Runtime:
         p = self.workload.params
         batch, heads, head_dim = p["batch"], p["heads"], p["head_dim"]
         context, topk, page = p["context"], p["sparse_topk"], p["page_size"]
-        tokens_per_seq = ((context + page - 1) // page) * page
-        num_pages = batch * tokens_per_seq // page
+        context_lengths = list(p.get("context_lengths") or [context] * batch)
+        if len(context_lengths) != batch:
+            raise RuntimeError(
+                f"resolved context vector has {len(context_lengths)} rows for batch={batch}"
+            )
+        rounded_lengths = [((length + page - 1) // page) * page
+                           for length in context_lengths]
+        num_pages = sum(rounded_lengths) // page
         query = (
             self.torch.randn(
                 (batch, 1, heads, head_dim),
@@ -346,12 +363,20 @@ class Runtime:
         block_tables = self.torch.full(
             (batch, 1, topk), -1, dtype=self.torch.int32, device=self.device
         )
-        effective = min(context, topk)
+        base = 0
         for batch_idx in range(batch):
-            base = batch_idx * tokens_per_seq
-            block_tables[batch_idx, 0, :effective] = self.torch.arange(
-                base, base + effective, dtype=self.torch.int32, device=self.device
-            )
+            effective = min(context_lengths[batch_idx], topk)
+            # The production indexer may select tokens anywhere in the logical
+            # sequence.  Cover the full allocation deterministically instead of
+            # always reading the first top-k rows (which would make long contexts
+            # indistinguishable at the sparse-attention leaf).
+            logical_indices = (
+                self.torch.arange(effective, dtype=self.torch.int64, device=self.device)
+                * context_lengths[batch_idx]
+                // effective
+            ).to(self.torch.int32)
+            block_tables[batch_idx, 0, :effective] = base + logical_indices
+            base += rounded_lengths[batch_idx]
         return {
             "query": query,
             "kv_cache": kv_cache,
@@ -359,10 +384,10 @@ class Runtime:
                 256 * 1024 * 1024, dtype=self.torch.uint8, device=self.device
             ),
             "block_tables": block_tables,
-            "seq_lens": self.torch.full(
-                (batch,), context, dtype=self.torch.int32, device=self.device
+            "seq_lens": self.torch.tensor(
+                context_lengths, dtype=self.torch.int32, device=self.device
             ),
-            "max_seq_len": context,
+            "max_seq_len": max(context_lengths),
             "sparse_topk": topk,
             "bmm1_scale": head_dim**-0.5,
         }
@@ -540,8 +565,8 @@ class Runtime:
                 inputs["expected_m"],
             )
             valid = [
-                inputs["out"][expert, : int(count)]
-                for expert, count in enumerate(inputs["masked_m"].tolist())
+                inputs["out"][expert, :count]
+                for expert, count in enumerate(inputs["masked_m_counts"])
             ]
             return TaskResult(valid)
         if family == "moe_swiglu_quant":
@@ -751,6 +776,12 @@ def _measure(
         fn()
         torch.cuda.synchronize(runtime.device)
     values: list[float] = []
+    # The campaign repeatedly observed the first recorded event sample at 3--5x
+    # steady state even after warmup. Keep it out of the estimator.
+    runtime.prepare_inputs(inputs)
+    runtime.barrier()
+    fn()
+    torch.cuda.synchronize(runtime.device)
     for _ in range(repeat):
         runtime.prepare_inputs(inputs)
         runtime.barrier()
@@ -800,6 +831,10 @@ def _measure_paired(
 
     reference_values: list[float] = []
     candidate_values: list[float] = []
+    # Unrecorded first pair: discard the repeatable first-sample spike without
+    # changing the requested count or unbalancing the retained R/C,C/R order.
+    one(reference_fn)
+    one(candidate_fn)
     for index in range(repeat):
         if index % 2 == 0:
             reference_values.append(one(reference_fn))
@@ -817,81 +852,379 @@ def _summary(values: list[float]) -> dict[str, float]:
         "median_ms": statistics.median(values),
         "min_ms": min(values),
         "p95_ms": ordered[p95_index],
+        "max_ms": max(values),
     }
 
 
+def _capture_graph(
+    runtime: Runtime,
+    inputs: dict[str, Any],
+    fn: Callable[[], TaskResult],
+    warmup: int,
+) -> Callable[[], TaskResult]:
+    """Capture the exact callable once and return a static-input replay callable.
+
+    Capture failure is deliberately fatal for the graph lane. Falling back to an
+    eager number would erase the production boundary this lane exists to test.
+    """
+    torch = runtime.torch
+    for _ in range(max(3, warmup)):
+        runtime.prepare_inputs(inputs)
+        runtime.barrier()
+        fn()
+        torch.cuda.synchronize(runtime.device)
+    runtime.prepare_inputs(inputs)
+    runtime.barrier()
+    torch.cuda.synchronize(runtime.device)
+    graph = torch.cuda.CUDAGraph()
+    with torch.cuda.graph(graph):
+        static_result = fn()
+    torch.cuda.synchronize(runtime.device)
+
+    def replay() -> TaskResult:
+        graph.replay()
+        return static_result
+
+    # The closure owns graph/static_result for the entire timing lane.
+    return replay
+
+
+def _timing_pairs(reference_values: list[float], candidate_values: list[float]) -> list[dict]:
+    return [
+        {
+            "pair": index,
+            "order": ("reference,candidate" if index % 2 == 0
+                      else "candidate,reference"),
+            "reference_ms": ref_ms,
+            "candidate_ms": cand_ms,
+            "speedup": ref_ms / cand_ms,
+        }
+        for index, (ref_ms, cand_ms) in enumerate(zip(reference_values, candidate_values))
+    ]
+
+
+def _measure_lane(
+    runtime: Runtime,
+    inputs: dict[str, Any],
+    reference_fn: Callable[[], TaskResult],
+    candidate_fn: Optional[Callable[[], TaskResult]],
+    *,
+    warmup: int,
+    repeat: int,
+) -> dict[str, Any]:
+    telemetry_before = (
+        result_store.capture_gpu_telemetry() if runtime.rank == 0 else None)
+    if candidate_fn is None:
+        reference_values = _measure(
+            runtime, inputs, reference_fn, warmup=warmup, repeat=repeat)
+        telemetry_after = (
+            result_store.capture_gpu_telemetry() if runtime.rank == 0 else None)
+        return {
+            "reference": _summary(reference_values),
+            "reference_samples_ms": reference_values,
+            "candidate": None,
+            "timing_attempts": 1,
+            "gpu_telemetry_before": telemetry_before,
+            "gpu_telemetry_after": telemetry_after,
+        }
+
+    attempts = []
+    effective_repeat = repeat
+    while True:
+        reference_values, candidate_values = _measure_paired(
+            runtime, inputs, reference_fn, candidate_fn,
+            warmup=warmup, repeat=effective_repeat)
+        paired = paired_stats.summarize_pairs(candidate_values, reference_values)
+        attempts.append({
+            "repeat": effective_repeat,
+            "timing_spread": paired["timing_spread"],
+            "timing_unstable": paired["timing_unstable"],
+            "pairs": _timing_pairs(reference_values, candidate_values),
+        })
+        if paired["timing_unstable"] and len(attempts) == 1:
+            effective_repeat = repeat * 3
+            continue
+        break
+
+    telemetry_after = (
+        result_store.capture_gpu_telemetry() if runtime.rank == 0 else None)
+    candidate_summary = _summary(candidate_values)
+    candidate_summary.update({
+        "speedup": paired["speedup_median"],
+        "paired_p10_speedup": paired["speedup_conservative"],
+        "paired_p90_speedup": paired["speedup_optimistic"],
+        "legacy_unpaired_speedup": paired["speedup_unpaired_median"],
+        "timing_spread": paired["timing_spread"],
+        "timing_unstable": paired["timing_unstable"],
+        "effective_repeat": effective_repeat,
+        "passes_3pct_paired_gate": (
+            not paired["timing_unstable"] and
+            paired["speedup_conservative"] >= 1.03
+        ),
+    })
+    return {
+        "reference": _summary(reference_values),
+        "candidate": candidate_summary,
+        "timing_pairs": _timing_pairs(reference_values, candidate_values),
+        "timing_attempts": attempts,
+        "gpu_telemetry_before": telemetry_before,
+        "gpu_telemetry_after": telemetry_after,
+    }
+
+
+def _parse_context_vector(value: str) -> list[int]:
+    try:
+        parsed = [int(item.strip()) for item in value.split(",") if item.strip()]
+    except ValueError as exc:
+        raise argparse.ArgumentTypeError(
+            "KV contexts must be comma-separated integers"
+        ) from exc
+    if not parsed or any(item <= 0 for item in parsed):
+        raise argparse.ArgumentTypeError("KV contexts must be positive integers")
+    return parsed
+
+
+def _resolve_workload(name: str, args: argparse.Namespace) -> Workload:
+    workload = get_workload(name)
+    scalar = getattr(args, "kv_context", None)
+    vector = getattr(args, "kv_contexts", None)
+    if scalar is not None:
+        return with_kv_contexts(workload, [scalar])
+    if vector is not None:
+        return with_kv_contexts(workload, vector)
+    return workload
+
+
 def run_task(args: argparse.Namespace) -> int:
-    workload = get_workload(args.task)
+    workload = _resolve_workload(args.task, args)
     candidate_module = _load_candidate(args.candidate)
     runtime = Runtime(workload)
     try:
-        inputs = runtime.build_inputs()
+        inputs = runtime.build_inputs(seed_offset=0)
         runtime.prepare_inputs(inputs)
         runtime.barrier()
         reference_once = runtime.reference(inputs)
         runtime.torch.cuda.synchronize(runtime.device)
         reference_snapshot = TaskResult(_clone_observed(reference_once.observed))
 
-        candidate_once = None
+        pre_correct = True
+        correctness_error = None
         if candidate_module is not None:
-            runtime.prepare_inputs(inputs)
-            candidate_once = candidate_module.run(inputs, runtime)
-            if not isinstance(candidate_once, TaskResult):
-                candidate_once = TaskResult(candidate_once)
-            runtime.torch.cuda.synchronize(runtime.device)
-            _compare(reference_snapshot, candidate_once)
+            try:
+                runtime.prepare_inputs(inputs)
+                candidate_once = _candidate_result(candidate_module, inputs, runtime)
+                runtime.torch.cuda.synchronize(runtime.device)
+                _compare(reference_snapshot, candidate_once)
+            except Exception as exc:
+                pre_correct = False
+                correctness_error = f"{type(exc).__name__}: {exc}"[:500]
+
+        modes = (["eager", "graph"] if args.execution_mode == "both"
+                 else [args.execution_mode])
+        lanes: dict[str, Any] = {}
+        graph_output_checked = False
+        graph_post_checked = False
+        if pre_correct:
+            eager_reference = lambda: runtime.reference(inputs)  # noqa: E731
+            eager_candidate = (
+                (lambda: _candidate_result(candidate_module, inputs, runtime))
+                if candidate_module is not None else None)
+            for mode in modes:
+                try:
+                    if mode == "graph":
+                        reference_fn = _capture_graph(
+                            runtime, inputs, eager_reference, args.warmup)
+                        runtime.prepare_inputs(inputs)
+                        runtime.barrier()
+                        graph_reference_once = reference_fn()
+                        runtime.torch.cuda.synchronize(runtime.device)
+                        graph_reference_snapshot = TaskResult(
+                            _clone_observed(graph_reference_once.observed))
+                        candidate_fn = (
+                            _capture_graph(runtime, inputs, eager_candidate, args.warmup)
+                            if eager_candidate is not None else None)
+                        if candidate_fn is not None:
+                            runtime.prepare_inputs(inputs)
+                            runtime.barrier()
+                            graph_candidate_once = candidate_fn()
+                            runtime.torch.cuda.synchronize(runtime.device)
+                            _compare(graph_reference_snapshot, graph_candidate_once)
+                            graph_output_checked = True
+                    else:
+                        reference_fn, candidate_fn = eager_reference, eager_candidate
+                    lane = _measure_lane(
+                        runtime, inputs, reference_fn, candidate_fn,
+                        warmup=args.warmup, repeat=args.repeat)
+                    if lane.get("candidate") is not None:
+                        lane["candidate"]["path"] = str(
+                            Path(args.candidate).expanduser().resolve())
+                    lanes[mode] = lane
+                except Exception as exc:
+                    lanes[mode] = {
+                        "error": f"{type(exc).__name__}: {exc}"[:500],
+                        "reference": None,
+                        "candidate": None,
+                    }
+
+        post_seed_offset = 0x5EED
+        post_correct = pre_correct
+        post_error = None
+        if candidate_module is not None and pre_correct:
+            try:
+                post_inputs = runtime.build_inputs(seed_offset=post_seed_offset)
+                runtime.prepare_inputs(post_inputs)
+                runtime.barrier()
+                post_reference = runtime.reference(post_inputs)
+                runtime.torch.cuda.synchronize(runtime.device)
+                post_snapshot = TaskResult(_clone_observed(post_reference.observed))
+                runtime.prepare_inputs(post_inputs)
+                post_candidate = _candidate_result(candidate_module, post_inputs, runtime)
+                runtime.torch.cuda.synchronize(runtime.device)
+                _compare(post_snapshot, post_candidate)
+                if "graph" in modes:
+                    post_reference_call = lambda: runtime.reference(post_inputs)  # noqa: E731
+                    post_candidate_call = lambda: _candidate_result(  # noqa: E731
+                        candidate_module, post_inputs, runtime)
+                    post_graph_reference = _capture_graph(
+                        runtime, post_inputs, post_reference_call, args.warmup)
+                    runtime.prepare_inputs(post_inputs)
+                    runtime.barrier()
+                    graph_post_reference_once = post_graph_reference()
+                    runtime.torch.cuda.synchronize(runtime.device)
+                    graph_post_snapshot = TaskResult(
+                        _clone_observed(graph_post_reference_once.observed))
+                    post_graph_candidate = _capture_graph(
+                        runtime, post_inputs, post_candidate_call, args.warmup)
+                    runtime.prepare_inputs(post_inputs)
+                    runtime.barrier()
+                    graph_post_candidate_once = post_graph_candidate()
+                    runtime.torch.cuda.synchronize(runtime.device)
+                    _compare(graph_post_snapshot, graph_post_candidate_once)
+                    graph_post_checked = True
+            except Exception as exc:
+                post_correct = False
+                post_error = f"{type(exc).__name__}: {exc}"[:500]
+
+        lane_errors = {mode: lane["error"] for mode, lane in lanes.items()
+                       if lane.get("error")}
+        unstable_modes = [
+            mode for mode, lane in lanes.items()
+            if (lane.get("candidate") or {}).get("timing_unstable")
+        ]
+        protocol_probe_reasons = []
+        if set(modes) != {"eager", "graph"}:
+            protocol_probe_reasons.append(
+                "both eager and CUDA-graph lanes are required for a leaf verdict")
+        if args.repeat < 10:
+            protocol_probe_reasons.append("repeat below 10")
+        if args.warmup < 8:
+            protocol_probe_reasons.append("warmup below 8")
+        gate_eligible = bool(
+            candidate_module is not None and pre_correct and post_correct and
+            not lane_errors and not unstable_modes and not protocol_probe_reasons)
+        leaf_gate_ok = bool(
+            gate_eligible and all(
+                (lanes[mode].get("candidate") or {}).get("passes_3pct_paired_gate")
+                for mode in modes
+            )
+        )
 
         if candidate_module is None:
-            reference_values = _measure(
-                runtime,
-                inputs,
-                lambda: runtime.reference(inputs),
-                warmup=args.warmup,
-                repeat=args.repeat,
-            )
-            candidate_values = None
+            exit_code, terminal_state = 0, "REFERENCE_MEASUREMENT"
+        elif not pre_correct or not post_correct:
+            exit_code, terminal_state = 2, "INCORRECT"
+        elif protocol_probe_reasons:
+            exit_code, terminal_state = 1, "PROBE_ONLY_NO_VERDICT"
+        elif lane_errors:
+            exit_code, terminal_state = 1, "EXECUTION_MODE_UNAVAILABLE"
+        elif unstable_modes:
+            exit_code, terminal_state = 1, "UNSTABLE_NO_VERDICT"
+        elif leaf_gate_ok:
+            exit_code, terminal_state = 0, "EAGER_GRAPH_LEAF_WIN"
         else:
-            reference_values, candidate_values = _measure_paired(
-                runtime,
-                inputs,
-                lambda: runtime.reference(inputs),
-                lambda: _candidate_result(candidate_module, inputs, runtime),
-                warmup=args.warmup,
-                repeat=args.repeat,
-            )
-        result: dict[str, Any] = {
-            "schema_version": 1,
-            "workload": as_dict(workload),
-            "reference": _summary(reference_values),
-            "reference_policy": "SGLANG_GLM52_OPT=0 production path",
-            "execution_mode": "eager_cuda_event",
-            "timing_contract": (
-                "interleaved paired A/B; maximum CUDA-event latency across ranks"
-                if candidate_module is not None
-                else "maximum CUDA-event latency across ranks"
+            exit_code, terminal_state = 1, "NO_LEAF_WIN_WITH_EVIDENCE"
+
+        primary_lane = lanes.get(modes[0], {})
+        context_lengths = workload.params.get("context_lengths")
+        if workload.family == "dsa_trtllm" and context_lengths is None:
+            context_lengths = [workload.params["context"]] * workload.params["batch"]
+        kv_context_coverage = {
+            "leaf_dependency": workload.kv_cache_dependency,
+            "logical_context_lengths": context_lengths,
+            "sparse_selected_tokens_per_request": (
+                [min(length, workload.params["sparse_topk"])
+                 for length in context_lengths]
+                if workload.family == "dsa_trtllm" else None
             ),
-            "candidate": None,
+            "single_scenario_only": workload.family == "dsa_trtllm",
+            "production_distribution_verified": bool(
+                workload.context_contract.get("production_distribution_verified")
+            ),
+            "incremental_prefill_covered": bool(
+                workload.context_contract.get("incremental_prefill_covered")
+            ),
+            "interpretation": (
+                "sparse-attention leaf over paged KV only; full-context indexer scoring, "
+                "top-k/page-table transform, a production context profile, "
+                "incremental-prefill region replay, and end-to-end serving remain required"
+                if workload.family == "dsa_trtllm"
+                else "KV cache is outside this leaf ABI; its end-to-end share and overlap "
+                     "remain context-conditioned"
+            ),
         }
-        if candidate_module is not None:
-            assert candidate_values is not None
-            candidate_summary = _summary(candidate_values)
-            candidate_summary["path"] = str(Path(args.candidate).expanduser().resolve())
-            paired_ratios = [
-                ref_ms / cand_ms
-                for ref_ms, cand_ms in zip(reference_values, candidate_values)
-            ]
-            ordered_ratios = sorted(paired_ratios)
-            candidate_summary["speedup"] = statistics.median(paired_ratios)
-            candidate_summary["passes_3pct_median_gate"] = (
-                candidate_summary["speedup"] >= 1.03
-            )
-            candidate_summary["paired_p10_speedup"] = ordered_ratios[
-                min(len(ordered_ratios) - 1, int(0.1 * len(ordered_ratios)))
-            ]
-            candidate_summary["paired_p90_speedup"] = ordered_ratios[
-                min(len(ordered_ratios) - 1, max(0, int(0.9 * len(ordered_ratios)) - 1))
-            ]
-            result["candidate"] = candidate_summary
+
+        result: dict[str, Any] = {
+            "schema_version": 2,
+            "workload": as_dict(workload),
+            # Compatibility projection for readers of schema 1. `lanes` is the
+            # authoritative multi-mode record.
+            "reference": primary_lane.get("reference"),
+            "candidate": primary_lane.get("candidate"),
+            "reference_policy": "SGLANG_GLM52_OPT=0 production path",
+            "execution_mode": args.execution_mode,
+            "kv_context_coverage": kv_context_coverage,
+            "lanes": lanes,
+            "timing_contract": (
+                "adjacent order-balanced paired R/C,C/R; first pair discarded; "
+                "maximum CUDA-event latency across ranks; unstable spread >1.25x "
+                "retried once at repeat*3"
+            ),
+            "run": {
+                "warmup": args.warmup,
+                "repeat": args.repeat,
+                "minimum_gate_warmup": 8,
+                "minimum_gate_repeat": 10,
+                "pre_seed_offset": 0,
+                "post_seed_offset": post_seed_offset,
+                "gate_eligible": gate_eligible,
+                "probe_reasons": protocol_probe_reasons,
+            },
+            "correctness": {
+                "pre_timing": pre_correct,
+                "post_timing_different_seed": post_correct,
+                "graph_outputs_checked": graph_output_checked,
+                "graph_different_seed_checked": graph_post_checked,
+                "error": correctness_error or post_error,
+            },
+            "verdict": {
+                "leaf_gate_ok": leaf_gate_ok,
+                "exit_code": exit_code,
+                "terminal_state": terminal_state,
+                "lane_errors": lane_errors,
+                "unstable_modes": unstable_modes,
+                "production_ready": False,
+                "next_required": (
+                    (
+                        "production decode KV-context matrix, incremental-prefill "
+                        "containing-region replay, and end-to-end serving confirmation"
+                        if workload.family == "dsa_trtllm"
+                        else "context-conditioned containing-region eager+graph and "
+                             "end-to-end serving confirmation"
+                    )
+                    if leaf_gate_ok else None
+                ),
+            },
+        }
 
         if runtime.rank == 0:
             rendered = json.dumps(result, indent=2, sort_keys=True)
@@ -900,7 +1233,7 @@ def run_task(args: argparse.Namespace) -> int:
                 output_path = Path(args.output).expanduser().resolve()
                 output_path.parent.mkdir(parents=True, exist_ok=True)
                 output_path.write_text(rendered + "\n")
-        return 0
+        return exit_code
     finally:
         runtime.close()
 
@@ -914,9 +1247,23 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--task", choices=tuple(WORKLOADS))
     parser.add_argument("--candidate")
-    parser.add_argument("--warmup", type=int, default=3)
+    parser.add_argument("--warmup", type=int, default=8)
     parser.add_argument("--repeat", type=int, default=10)
+    parser.add_argument(
+        "--execution-mode", choices=("eager", "graph", "both"), default="eager",
+        help="candidate exit 0 requires both eager and CUDA-graph leaf lanes")
     parser.add_argument("--output")
+    context_group = parser.add_mutually_exclusive_group()
+    context_group.add_argument(
+        "--kv-context",
+        type=int,
+        help="broadcast one positive logical KV length across a DSA decode batch",
+    )
+    context_group.add_argument(
+        "--kv-contexts",
+        type=_parse_context_vector,
+        help="comma-separated logical KV lengths (one value or exactly one per request)",
+    )
     parser.add_argument("--list", action="store_true")
     parser.add_argument("--describe")
     args = parser.parse_args()
@@ -924,6 +1271,16 @@ def parse_args() -> argparse.Namespace:
         parser.error("one of --list, --describe, or --task is required")
     if args.warmup < 0 or args.repeat < 1:
         parser.error("--warmup must be >= 0 and --repeat must be >= 1")
+    if args.kv_context is not None and args.kv_context <= 0:
+        parser.error("--kv-context must be a positive integer")
+    if (args.kv_context is not None or args.kv_contexts is not None) and args.list:
+        parser.error("KV context overrides require --task or --describe")
+    target = args.task or args.describe
+    if target and (args.kv_context is not None or args.kv_contexts is not None):
+        try:
+            _resolve_workload(target, args)
+        except ValueError as exc:
+            parser.error(str(exc))
     return args
 
 
@@ -937,7 +1294,8 @@ def main() -> int:
             )
         return 0
     if args.describe is not None:
-        print(json.dumps(as_dict(get_workload(args.describe)), indent=2, sort_keys=True))
+        print(json.dumps(as_dict(_resolve_workload(args.describe, args)), indent=2,
+                         sort_keys=True))
         return 0
     return run_task(args)
 

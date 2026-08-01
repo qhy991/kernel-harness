@@ -1,0 +1,13 @@
+{
+  "schema_version": 1,
+  "kind": "atomic_experiment_recipe",
+  "id": "30-supervise-long-running-experiment",
+  "title": "Supervise one long-running experiment",
+  "objective": "Ensure one compile, profiler, torchrun, or serving experiment terminates with cleanup and an explicit disposition.",
+  "preconditions": ["A command that may spawn children or exceed an interactive turn"],
+  "steps": ["Choose a justified wall timeout and kill grace period", "Launch through testbench/bin/supervise.py or the supervised run.sh", "Persist stdout/stderr and resolved command", "On timeout, verify the process group and GPU allocations are gone", "Record complete, no-go, invalid, or genuinely blocked"],
+  "acceptance": {"pass": "The command finishes or times out with no surviving child and one terminal record.", "invalid": "Workers, GPU memory, or goal state remain active without an owner."},
+  "artifacts": ["command log", "timeout setting", "terminal disposition"],
+  "stop_rule": "Do not leave an experiment running implicitly between agent sessions.",
+  "origin_evidence": ["The session corpus contained stranded precompile, child-process, paused, usage-limited, and stale active work."]
+}
